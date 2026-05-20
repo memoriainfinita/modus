@@ -3,7 +3,7 @@
 ## System
 
 - **Location:** `C:\Users\mykl\OneDrive\Scriptorium\DOCS\CODING GIT\MODUS\`
-- **Status:** Pre-implementation — scaffold pending
+- **Status:** Implementation complete — ready for manual smoke test in Chrome
 - **Dev command:** `node build.js` (watch) + `npx http-server . -p 8080`
 - **Browser:** Chrome or Edge (Web MIDI API required)
 
@@ -127,6 +127,10 @@ modus/
 
 ## History
 
+### 2026-05-21 — Full implementation
+
+All 11 tasks executed in one session without agents. 23 unit tests passing (midi, analyzer, song). All spec gaps from Task 11 implemented inline (substitutions, capture flow, voicing button, quality badges, colour picker, form analysis, cursor insertion, browser warning). TypeScript clean. Ready for manual smoke test.
+
 ### 2026-05-20 — Project initiated
 
 Full brainstorming and spec session. Spec written (rev 5), implementation plan written (11 tasks). Project name chosen: **Modus**. Folder created, git init'd. Ready for scaffold.
@@ -135,8 +139,7 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 
 ## TODO
 
-- [ ] **Next action:** read the plan, then execute with `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans`
-- [ ] Task 1: scaffold (package.json, tsconfig, build.js, index.html, globals.d.ts)
-- [ ] Tasks 2–10: core modules
-- [ ] Task 11: fix spec gaps (12 items — substitutions, capture flow, voicing button, badges, etc.)
-- [ ] Manual smoke test in Chrome with MIDI controller
+- [ ] **Next action:** manual smoke test in Chrome with MIDI controller
+  - Run: `node build.js` + `npx http-server . -p 8080`
+  - Open: `http://localhost:8080`
+  - Checklist in docs/plan.md Task 10 Step 5 + Task 11 Step 13
