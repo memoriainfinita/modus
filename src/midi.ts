@@ -109,6 +109,7 @@ function handleNoteOn(note: number) {
     arpeggioTimer = setTimeout(() => {
       arpeggioNotes = []
       arpeggioTimer = null
+      onNoteChange([])  // clear display after window expires
     }, 1200)
   }
 }
