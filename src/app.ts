@@ -107,20 +107,29 @@ function buildLayout() {
       </select>
       <span id="auto-key-label" style="font-size:11px;color:#6b7280"></span>
     </div>
-    <div style="display:flex;padding:12px;gap:12px">
-      <div id="notation-panel" style="flex:0 0 260px">
+    <div style="display:flex;gap:0">
+
+      <!-- Left: analysis -->
+      <div id="analysis-panel" style="flex:1;min-width:0;padding:10px 12px;border-right:1px solid #2d2d44">
+        <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">👁</button></div>
+        <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px"></div>
+      </div>
+
+      <!-- Right: notation — staff + CoF inline, piano + guitar below -->
+      <div id="notation-panel" style="flex:0 0 600px;padding:10px 12px;display:flex;flex-direction:column;gap:8px">
         <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">👁</button></div>
         <div id="notation-content">
-          <div id="staff-container" style="min-height:80px"></div>
-          <div id="piano-container" style="margin-top:8px"></div>
-          <div id="guitar-container" style="margin-top:8px"></div>
-          <div id="cof-container" style="margin-top:8px"></div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div id="staff-container" style="flex:1;min-height:160px;min-width:0"></div>
+            <div id="cof-container" style="flex:0 0 200px"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:flex-start">
+            <div id="piano-container" style="flex:1;min-width:0"></div>
+            <div id="guitar-container" style="flex:0 0 auto"></div>
+          </div>
         </div>
       </div>
-      <div id="analysis-panel" style="flex:1">
-        <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">👁</button></div>
-        <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px"></div>
-      </div>
+
     </div>
     <div id="midi-banner" style="display:none;background:#7f1d1d;padding:6px 12px;font-size:12px"></div>
   `
@@ -168,6 +177,14 @@ function buildLayout() {
       state.panels[panel] = !state.panels[panel]
       localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]))
       applyPanelVisibility()
+    })
+  })
+
+  // Wire zone navigation bar smooth-scroll buttons
+  document.querySelectorAll<HTMLButtonElement>('.zone-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.target
+      if (target) document.getElementById(target)?.scrollIntoView({ behavior: 'smooth' })
     })
   })
 
@@ -274,14 +291,22 @@ function renderZone1Analysis() {
   const badgeColor = CHORD_QUALITY_COLORS[chordQuality] ?? '#6b7280'
   const pitchClasses = d.notes.map(n => n.replace(/(-?\d+)$/, ''))
 
+  const altCandidates = d.candidates.slice(1, 9)
+
   let html = `
-    <div style="grid-column:1/-1;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
-      <span style="font-size:22px;font-weight:700;padding:2px 8px;border-radius:4px;background:${badgeColor}22;border-left:3px solid ${badgeColor}">${chordName}</span>
-      ${d.candidates.slice(1, 5).map((c, i) =>
-        `<span class="alt-chord" data-idx="${i+1}" style="font-size:12px;color:#9ca3af;cursor:pointer;text-decoration:underline">${c}</span>`
-      ).join('')}
+    <div style="grid-column:1/-1">
+      <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:${altCandidates.length ? '6px' : '0'}">
+        <span style="font-size:26px;font-weight:700;padding:2px 10px;border-radius:4px;background:${badgeColor}22;border-left:3px solid ${badgeColor}">${chordName}</span>
+        <span style="font-size:11px;color:#6b7280">${pitchClasses.join(' · ')}</span>
+      </div>
+      ${altCandidates.length ? `
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          ${altCandidates.map((c, i) =>
+            `<button class="alt-chord" data-idx="${i+1}" style="padding:3px 9px;border-radius:4px;background:#1e1e35;color:#9ca3af;border:1px solid #3a3a5c;cursor:pointer;font-size:12px;font-weight:500">${c}</button>`
+          ).join('')}
+        </div>
+      ` : ''}
     </div>
-    <div><label>Notes</label><span>${pitchClasses.join(' · ')}</span></div>
   `
 
   if (a) {
