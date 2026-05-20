@@ -20,8 +20,8 @@ const state: AppState = {
   historyActiveCursorId: null,
   captureTargetId: null,
   panels: {
-    notation: JSON.parse(localStorage.getItem('panel-notation') ?? 'true'),
-    analysis: JSON.parse(localStorage.getItem('panel-analysis') ?? 'true'),
+    notation: true,
+    analysis: true,
     history: JSON.parse(localStorage.getItem('panel-history') ?? 'true'),
     song: JSON.parse(localStorage.getItem('panel-song') ?? 'true'),
   }
@@ -175,7 +175,10 @@ function buildLayout() {
     btn.addEventListener('click', () => {
       const panel = btn.dataset.panel as keyof typeof state.panels
       state.panels[panel] = !state.panels[panel]
-      localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]))
+      // only persist collapsible zones, not notation/analysis panels
+      if (panel === 'history' || panel === 'song') {
+        localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]))
+      }
       applyPanelVisibility()
     })
   })
