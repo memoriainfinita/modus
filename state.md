@@ -15,11 +15,8 @@
 
 A single-page TypeScript app used alongside MuseScore during song transcription. Connect a MIDI controller, play notes, see chord detection + full harmonic analysis in real time. Build and annotate song structures with Roman numeral degree display.
 
-**Spec (absolute):**
-`C:\Users\mykl\OneDrive\Scriptorium\DOCS\CODING GIT\UNIVERSAL MUSIC LIBRARY - ok\docs\superpowers\specs\2026-05-20-harmony-companion-design.md`
-
-**Plan (absolute):**
-`C:\Users\mykl\OneDrive\Scriptorium\DOCS\CODING GIT\UNIVERSAL MUSIC LIBRARY - ok\docs\superpowers\plans\2026-05-20-harmony-companion.md`
+**Spec:** `docs/spec.md`
+**Plan:** `docs/plan.md`
 
 The plan has **11 tasks**. All code is written out step by step. Start from Task 1.
 
