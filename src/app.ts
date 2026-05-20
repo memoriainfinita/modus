@@ -3,23 +3,25 @@ import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
 import { initAudioOnGesture } from './audio'
 import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderCircleOfFifths } from './diagrams'
 import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyChordDetected, renderHistory } from './history'
-import { loadSong, saveSong, mountSong, updateSongState, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
-import type { AppState, DetectionResult, HistoryEntry, SongChord } from './types'
+import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
+import type { AppState, HistoryEntry, SongChord } from './types'
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
 const state: AppState = {
   midi: { deviceId: null, mode: 'normal', activeNotes: new Set(), lastArpeggioNotes: [], arpeggioTimer: null },
-  activeKey: null,
+  activeKey: localStorage.getItem('active-key') || null,
   detectedKey: null,
   detection: null,
   analysis: null,
   history: [],
   song: loadSong(),
   activeCursorId: null,
+  historyActiveCursorId: null,
   captureTargetId: null,
   panels: {
-    notation: true, analysis: true,
+    notation: JSON.parse(localStorage.getItem('panel-notation') ?? 'true'),
+    analysis: JSON.parse(localStorage.getItem('panel-analysis') ?? 'true'),
     history: JSON.parse(localStorage.getItem('panel-history') ?? 'true'),
     song: JSON.parse(localStorage.getItem('panel-song') ?? 'true'),
   }
@@ -39,31 +41,20 @@ function init() {
   loadGuitarDB()
   buildLayout()
   wireKeyboard()
+
   initMidi().then(result => {
     if (result.denied) {
       showMidiBanner('MIDI access denied. Grant permission in browser settings to use a controller.')
     }
-    if (!result.unsupported) refreshDeviceDropdown()
+    if (!result.unsupported) {
+      refreshDeviceDropdown()
+      // Sync mode buttons with restored mode from localStorage
+      setModeBtn(getMode())
+    }
   })
 
   setNoteChangeCallback(onNoteChange)
   setHistoryChangeCallback(onHistoryChange)
-
-  mountSong($('zone3-content'), state.song, {
-    onChordClick: (id, symbol) => {
-      state.activeCursorId = id
-      if (symbol) triggerChordAnalysis(symbol)
-    },
-    onChordCapture: (id) => {
-      state.captureTargetId = id
-      state.activeCursorId = id
-      renderZone3()
-    },
-    activeCursorId: state.activeCursorId,
-    captureTargetId: state.captureTargetId,
-    activeKey: state.activeKey,
-    onSongChange: (song) => { state.song = song; saveSong(song) }
-  })
 
   window.addEventListener('history-capture-requested', () => {
     if (state.detection?.kind === 'chord') {
@@ -74,6 +65,30 @@ function init() {
   renderZone3()
 }
 
+// ─── Song handlers (always fresh — fixes stale activeCursorId/captureTargetId) ─
+
+function makeSongHandlers() {
+  return {
+    onChordClick: (id: string, symbol: string) => {
+      state.activeCursorId = id
+      if (symbol) triggerChordAnalysis(symbol)
+    },
+    onChordCapture: (id: string) => {
+      state.captureTargetId = id
+      state.activeCursorId = id
+      renderZone3()
+    },
+    activeCursorId: state.activeCursorId,
+    captureTargetId: state.captureTargetId,
+    activeKey: state.activeKey,
+    onSongChange: (song: typeof state.song) => {
+      state.song = song
+      saveSong(song)
+      renderZone3()
+    }
+  }
+}
+
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
 function buildLayout() {
@@ -81,7 +96,7 @@ function buildLayout() {
     <div id="z1-toolbar" style="display:flex;gap:8px;align-items:center;padding:8px 12px;background:#111128;border-bottom:1px solid #2d2d44;flex-wrap:wrap">
       <span id="midi-status" style="font-size:12px;color:#6b7280">MIDI: —</span>
       <select id="midi-device" style="background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:3px;font-size:12px"></select>
-      <button id="btn-normal" class="mode-btn active-mode" data-mode="normal">Normal</button>
+      <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
       <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
       <select id="key-select" style="background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:3px;font-size:12px">
@@ -126,6 +141,11 @@ function buildLayout() {
     <div id="zone3-content"></div>
   `
 
+  // Restore key selector value
+  if (state.activeKey) {
+    ($('key-select') as HTMLSelectElement).value = state.activeKey
+  }
+
   document.querySelectorAll<HTMLButtonElement>('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const m = btn.dataset.mode as any
@@ -138,6 +158,7 @@ function buildLayout() {
 
   $('key-select').addEventListener('change', (e) => {
     state.activeKey = (e.target as HTMLSelectElement).value || null
+    localStorage.setItem('active-key', state.activeKey ?? '')
     refreshAll()
   })
 
@@ -149,6 +170,9 @@ function buildLayout() {
       applyPanelVisibility()
     })
   })
+
+  // Apply saved panel visibility on load
+  applyPanelVisibility()
 }
 
 function applyPanelVisibility() {
@@ -210,8 +234,9 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderPiano($('piano-container'), noteNames, quality)
   if (chordSymbol) renderGuitar($('guitar-container'), chordSymbol)
   renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol ? chordSymbol[0] : null, (key) => {
-    state.activeKey = key;
-    ($('key-select') as HTMLSelectElement).value = key
+    state.activeKey = key
+    localStorage.setItem('active-key', key)
+    ;($('key-select') as HTMLSelectElement).value = key
     refreshAll()
   })
 }
@@ -262,7 +287,7 @@ function renderZone1Analysis() {
   if (a) {
     html += `
       <div><label>Roman</label><span>${a.roman}</span></div>
-      <div><label>Function</label><span>${{T:'Tonic',S:'Subdominant',D:'Dominant',unknown:'Unknown'}[a.function]}</span></div>
+      <div><label>Function</label><span>${({T:'Tonic',S:'Subdominant',D:'Dominant',unknown:'Unknown'} as Record<string,string>)[a.function]}</span></div>
       <div><label>Figured bass</label><span>${a.figuredBass || '—'}</span></div>
       <div><label>Diatonic</label><span>${a.isDiatonic ? 'Yes' : a.isBorrowed ? `Borrowed from ${a.borrowedFrom ?? '?'}` : 'Chromatic'}</span></div>
       ${a.isSecondary ? `<div style="grid-column:1/-1"><label>Secondary</label><span>→ ${a.secondaryTarget}</span></div>` : ''}
@@ -276,10 +301,10 @@ function renderZone1Analysis() {
 
   el.innerHTML = html
 
-  el.querySelectorAll<HTMLElement>('.alt-chord').forEach(el => {
-    el.addEventListener('click', () => {
+  el.querySelectorAll<HTMLElement>('.alt-chord').forEach(altEl => {
+    altEl.addEventListener('click', () => {
       if (state.detection?.kind === 'chord') {
-        state.detection.selectedIndex = parseInt(el.dataset.idx!)
+        state.detection.selectedIndex = parseInt(altEl.dataset.idx!)
         const sym = state.detection.candidates[state.detection.selectedIndex]
         state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
         renderZone1Analysis()
@@ -294,16 +319,18 @@ function renderZone2() {
     $('zone2-content'),
     state.activeKey,
     (entry) => {
-      state.activeCursorId = entry.id
+      // Track which history chip is active — separate from song cursor
+      state.historyActiveCursorId = entry.id
       triggerChordAnalysis(entry.symbol)
+      renderZone2()  // re-render to show chip outline
     },
     (entry) => sendToSong(entry),
-    state.activeCursorId
+    state.historyActiveCursorId  // use dedicated history cursor
   )
 }
 
 function renderZone3() {
-  updateSongState(state.song)
+  mountSong($('zone3-content'), state.song, makeSongHandlers())
 }
 
 function refreshAll() {
@@ -330,10 +357,12 @@ function sendToSong(entry: HistoryEntry) {
   }
 
   if (state.activeCursorId) {
+    // Insert after active song slot cursor
     state.song = insertChordAfter(state.song, state.activeCursorId, entry.symbol)
     const next = findChordAfter(state.song, state.activeCursorId)
     state.activeCursorId = next?.id ?? state.activeCursorId
   } else {
+    // Append to end of last measure of last section
     const lastSection = state.song.sections[state.song.sections.length - 1]
     const lastMeasure = lastSection.measures[lastSection.measures.length - 1]
     state.song = songAddChord(state.song, lastSection.id, lastMeasure.id, entry.symbol)
@@ -377,22 +406,28 @@ function refreshAutoKey() {
 
 // ─── Device dropdown ─────────────────────────────────────────────────────────
 
+let deviceListenersAttached = false
+
 function refreshDeviceDropdown() {
   const sel = $('midi-device') as HTMLSelectElement
   const devices = getDevices()
   sel.innerHTML = devices.length
     ? devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('')
     : '<option>No MIDI devices</option>'
-  sel.addEventListener('change', () => selectDevice(sel.value))
+  sel.onchange = () => selectDevice(sel.value)
   if (devices[0]) selectDevice(devices[0].id)
 
-  window.addEventListener('midi-devices-changed', () => refreshDeviceDropdown())
-  window.addEventListener('midi-device-disconnected', () => {
-    $('midi-status').textContent = 'MIDI: disconnected'
-    $('midi-status').style.color = '#f87171'
-  })
-  $('midi-status').textContent = 'MIDI: connected'
-  $('midi-status').style.color = '#4ade80'
+  $('midi-status').textContent = devices.length ? 'MIDI: connected' : 'MIDI: no devices'
+  $('midi-status').style.color = devices.length ? '#4ade80' : '#6b7280'
+
+  if (!deviceListenersAttached) {
+    deviceListenersAttached = true
+    window.addEventListener('midi-devices-changed', () => refreshDeviceDropdown())
+    window.addEventListener('midi-device-disconnected', () => {
+      $('midi-status').textContent = 'MIDI: disconnected'
+      $('midi-status').style.color = '#f87171'
+    })
+  }
 }
 
 function showMidiBanner(msg: string) {
@@ -418,8 +453,14 @@ function wireKeyboard() {
           addEntry(state.detection.candidates[0], state.detection.notes)
         }
         break
-      case 's': case 'S':
-        if (state.history[0]) sendToSong(state.history[0]); break
+      case 's': case 'S': {
+        // Send active history chip (or most recent if none selected)
+        const activeEntry = state.historyActiveCursorId
+          ? state.history.find(e => e.id === state.historyActiveCursorId)
+          : state.history[0]
+        if (activeEntry) sendToSong(activeEntry)
+        break
+      }
       case 'c': case 'C':
         if (confirm('Clear history?')) clearHistory(); break
       case 'Escape':

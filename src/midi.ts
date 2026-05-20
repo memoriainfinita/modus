@@ -18,6 +18,7 @@ let midiAccess: MIDIAccess | null = null
 let selectedDeviceId: string | null = null
 let mode: MidiMode = 'normal'
 let activeNotes = new Set<number>()
+let physicallyHeldNotes = new Set<number>()  // tracks keys currently depressed in hold mode
 let arpeggioNotes: number[] = []
 let arpeggioTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -37,6 +38,8 @@ export async function initMidi(): Promise<{ ok: boolean; denied: boolean; unsupp
   try {
     midiAccess = await navigator.requestMIDIAccess()
     midiAccess.onstatechange = () => refreshDeviceList()
+    const savedMode = localStorage.getItem('midi-mode') as MidiMode | null
+    if (savedMode && ['normal', 'hold', 'arpeggio'].includes(savedMode)) mode = savedMode
     restoreDevice()
     return { ok: true, denied: false, unsupported: false }
   } catch {
@@ -94,7 +97,9 @@ function handleNoteOn(note: number) {
     activeNotes.add(note)
     onNoteChange(Array.from(activeNotes))
   } else if (mode === 'hold') {
-    activeNotes.clear()
+    // Clear display only when starting a new phrase (no keys physically held)
+    if (physicallyHeldNotes.size === 0) activeNotes.clear()
+    physicallyHeldNotes.add(note)
     activeNotes.add(note)
     onNoteChange(Array.from(activeNotes))
   } else if (mode === 'arpeggio') {
@@ -112,14 +117,18 @@ function handleNoteOff(note: number) {
   if (mode === 'normal') {
     activeNotes.delete(note)
     onNoteChange(Array.from(activeNotes))
+  } else if (mode === 'hold') {
+    physicallyHeldNotes.delete(note)
+    // activeNotes stays — chord held in display
   }
-  // hold + arpeggio: ignore note-off
+  // arpeggio: ignore note-off
 }
 
 export function setMode(m: MidiMode) {
   if (m === mode) return
   mode = m
   activeNotes.clear()
+  physicallyHeldNotes.clear()
   arpeggioNotes = []
   if (arpeggioTimer) { clearTimeout(arpeggioTimer); arpeggioTimer = null }
   localStorage.setItem('midi-mode', m)

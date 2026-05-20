@@ -102,8 +102,9 @@ export interface AppState {
   analysis: HarmonicAnalysis | null
   history: HistoryEntry[]
   song: Song
-  activeCursorId: string | null   // id of active SongChord slot
-  captureTargetId: string | null  // SongChord.id waiting for MIDI capture
+  activeCursorId: string | null        // id of active SongChord slot (Zone 3)
+  historyActiveCursorId: string | null // id of active HistoryEntry chip (Zone 2)
+  captureTargetId: string | null       // SongChord.id waiting for MIDI capture
   panels: {
     notation: boolean
     analysis: boolean
