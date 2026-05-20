@@ -127,6 +127,12 @@ modus/
 
 ## History
 
+### 2026-05-21 — Visual + bug fixes, smoke test partial
+
+Bug fixes: hold mode chord building (physicallyHeldNotes), stale handlers in song.ts (makeSongHandlers fresh each render), activeCursorId conflation history/song (historyActiveCursorId added), device listener accumulation, state restore on load (key, mode, panels). Arpeggio timer now clears display after 1.2s. Chord alternatives shown as visible chips (up to 8). Layout: staff+CoF inline, page scroll, nav bar added. Notation/analysis panels fixed to always-visible (not persisted). App confirmed working with MIDI controller.
+
+Pending visual work (next session): notation panel LEFT / analysis RIGHT, staff bigger, piano range change less jarring, piano/CoF not appearing abruptly.
+
 ### 2026-05-21 — Full implementation
 
 All 11 tasks executed in one session without agents. 23 unit tests passing (midi, analyzer, song). All spec gaps from Task 11 implemented inline (substitutions, capture flow, voicing button, quality badges, colour picker, form analysis, cursor insertion, browser warning). TypeScript clean. Ready for manual smoke test.
@@ -139,7 +145,9 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 
 ## TODO
 
-- [ ] **Next action:** manual smoke test in Chrome with MIDI controller
-  - Run: `node build.js` + `npx http-server . -p 8080`
-  - Open: `http://localhost:8080`
-  - Checklist in docs/plan.md Task 10 Step 5 + Task 11 Step 13
+- [x] Manual smoke test — app confirmed working with MIDI controller
+- [ ] Layout: notación LEFT / análisis RIGHT (interrumpido en sesión anterior)
+- [ ] Staff más grande (min-height mayor, ocupar el espacio bien)
+- [ ] Piano: range adjustment sin saltos bruscos de tamaño
+- [ ] Piano y CoF: no aparecer de repente (transición suave o placeholder)
+- [ ] Revisar header de navegación (usuario lo encuentra confuso)
