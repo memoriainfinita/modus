@@ -10,7 +10,7 @@ Zero runtime dependencies. No server. Open in Chrome and play.
 
 ## What it does
 
-**Zone 1 — Real-time detector**
+**Analyzer — real-time detector**
 
 Connect a MIDI controller and play. The app detects what you're playing:
 
@@ -34,26 +34,29 @@ For each detected chord, the analysis panel shows:
 | Negative harmony | Mirror chord in the active key |
 | Key detection | Krumhansl-Schmuckler running on history pool |
 
-The notation panel shows a staff (abcjs), piano diagram (notae), guitar voicing diagram (notae + chords-db), and an interactive circle of fifths — all updating in real time.
+The notation panel shows a staff (abcjs), guitar voicing (notae + chords-db), and an interactive circle of fifths. Below that, a 4-octave piano (C2–B5) — all updating in real time.
 
 **Input modes:** Normal, Hold (chord stays after release — great for arpeggios), Arpeggio (accumulates notes in a 1.2s window).
 
-**Zone 2 — History**
+**History**
 
-Every chord you play is logged automatically after 0.8s of stability. Each chip shows the chord name, Roman numeral, and a quality colour badge. Click any chip to reload it in Zone 1. Send chords directly to the song structure.
+Every chord you play is logged automatically after 0.8s of stability. Each chip shows the chord name and Roman numeral. Click a chip to reload it in the analyzer. Drag any chip directly onto a song section to add it there. Right-click a chip to remove it.
 
-**Zone 3 — Song structure builder**
+**Song structure builder**
 
 Build a chord chart for the song you're transcribing:
 
 - Sections (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro) with colour coding
 - Unlimited chords per measure, unlimited measures per section
-- Each chord chip shows its Roman numeral degree below — at a glance you see the harmonic map of the whole song
-- Borrowed chords highlighted in amber
-- Capture from MIDI: arm any slot and play the chord to fill it
-- Transpose entire song with enharmonic spelling by target key
+- Each chord shows its Roman numeral degree — borrowed chords highlighted in amber
+- **Drag to reorder:** sections (grab the ⠿ handle), chords within or across sections
+- **Drag from history:** drop any history chip onto a section to insert the chord
+- MIDI fill: arm any chord slot (⊙) and play to fill it from the controller
+- Inline color picker per section, inline repeat count
+- Transpose entire song (semitone selector)
 - Paste a progression as text (`Cmaj7 Am7 F G`)
-- Export as a clean print-ready chord chart
+- Form analysis shown inline in real time (AABA, verse-chorus, etc.)
+- Export as a print-ready chord chart
 
 ---
 
@@ -76,7 +79,7 @@ All dependencies loaded via CDN. No npm install needed to run.
 ## Requirements
 
 - Chrome or Edge (Web MIDI API)
-- A MIDI controller (optional — song builder works without one)
+- A MIDI controller (optional — song builder and click-based analysis work without one)
 - A local server to serve the files (`npx http-server . -p 8080`)
 
 ---
@@ -128,9 +131,8 @@ tests/
 | `A` | Toggle arpeggio mode |
 | `Space` | Capture current chord to history |
 | `S` | Send last history chip to active song slot |
-| `C` | Clear history |
 | `1`–`9` | Select alternative chord interpretation |
-| `Esc` | Cancel capture / deselect |
+| `Esc` | Cancel MIDI fill / deselect |
 
 Shortcuts disabled while typing in chord input fields.
 
