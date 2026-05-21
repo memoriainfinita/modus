@@ -92,24 +92,28 @@ function handleMidiMessage(e: MIDIMessageEvent) {
   }
 }
 
+function sortedNotes(s: Set<number>): number[] {
+  return Array.from(s).sort((a, b) => a - b)
+}
+
 function handleNoteOn(note: number) {
   if (mode === 'normal') {
     activeNotes.add(note)
-    onNoteChange(Array.from(activeNotes))
+    onNoteChange(sortedNotes(activeNotes))
   } else if (mode === 'hold') {
     // Clear display only when starting a new phrase (no keys physically held)
     if (physicallyHeldNotes.size === 0) activeNotes.clear()
     physicallyHeldNotes.add(note)
     activeNotes.add(note)
-    onNoteChange(Array.from(activeNotes))
+    onNoteChange(sortedNotes(activeNotes))
   } else if (mode === 'arpeggio') {
     if (arpeggioTimer) clearTimeout(arpeggioTimer)
     arpeggioNotes.push(note)
-    onNoteChange([...new Set(arpeggioNotes)])
+    onNoteChange([...new Set(arpeggioNotes)].sort((a, b) => a - b))
     arpeggioTimer = setTimeout(() => {
       arpeggioNotes = []
       arpeggioTimer = null
-      onNoteChange([])  // clear display after window expires
+      onNoteChange([])
     }, 1200)
   }
 }
@@ -117,7 +121,7 @@ function handleNoteOn(note: number) {
 function handleNoteOff(note: number) {
   if (mode === 'normal') {
     activeNotes.delete(note)
-    onNoteChange(Array.from(activeNotes))
+    onNoteChange(sortedNotes(activeNotes))
   } else if (mode === 'hold') {
     physicallyHeldNotes.delete(note)
     // activeNotes stays — chord held in display

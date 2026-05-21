@@ -78,21 +78,24 @@
       handleNoteOn(note);
     }
   }
+  function sortedNotes(s) {
+    return Array.from(s).sort((a, b) => a - b);
+  }
   function handleNoteOn(note) {
     if (mode === "normal") {
       activeNotes.add(note);
-      onNoteChange(Array.from(activeNotes));
+      onNoteChange(sortedNotes(activeNotes));
     } else if (mode === "hold") {
       if (physicallyHeldNotes.size === 0)
         activeNotes.clear();
       physicallyHeldNotes.add(note);
       activeNotes.add(note);
-      onNoteChange(Array.from(activeNotes));
+      onNoteChange(sortedNotes(activeNotes));
     } else if (mode === "arpeggio") {
       if (arpeggioTimer)
         clearTimeout(arpeggioTimer);
       arpeggioNotes.push(note);
-      onNoteChange([...new Set(arpeggioNotes)]);
+      onNoteChange([...new Set(arpeggioNotes)].sort((a, b) => a - b));
       arpeggioTimer = setTimeout(() => {
         arpeggioNotes = [];
         arpeggioTimer = null;
@@ -103,7 +106,7 @@
   function handleNoteOff(note) {
     if (mode === "normal") {
       activeNotes.delete(note);
-      onNoteChange(Array.from(activeNotes));
+      onNoteChange(sortedNotes(activeNotes));
     } else if (mode === "hold") {
       physicallyHeldNotes.delete(note);
     }
@@ -173,12 +176,16 @@
       };
       return result2;
     }
-    const umtNotes = noteNames.map(noteNameToUMT);
-    const candidates = UMT.Harmony.detectChords(umtNotes);
+    let candidates = [];
+    try {
+      const umtNotes = noteNames.map(noteNameToUMT);
+      candidates = UMT.Harmony.detectChords(umtNotes) ?? [];
+    } catch {
+    }
     const result = {
       kind: "chord",
       notes: noteNames,
-      candidates: candidates.length ? candidates : ["Unknown"],
+      candidates: candidates.length ? candidates : ["?"],
       selectedIndex: 0
     };
     return result;
@@ -371,76 +378,25 @@
   }
 
   // src/diagrams.ts
-  var guitarDB = null;
-  var CHORDS_DB_URL = "https://cdn.jsdelivr.net/npm/@tombatossals/chords-db@1.4.5/src/data/guitar.json";
-  async function loadGuitarDB() {
-    try {
-      const res = await fetch(CHORDS_DB_URL);
-      const data = await res.json();
-      guitarDB = data.chords;
-    } catch {
-      console.warn("Could not load guitar chord database");
-    }
+  function loadGuitarDB() {
+    return Promise.resolve();
   }
-  var ROOT_MAP = {
-    "C": "C",
-    "C#": "Csharp",
-    "Db": "Db",
-    "D": "D",
-    "D#": "Dsharp",
-    "Eb": "Eb",
-    "E": "E",
-    "F": "F",
-    "F#": "Fsharp",
-    "Gb": "Gb",
-    "G": "G",
-    "G#": "Gsharp",
-    "Ab": "Ab",
-    "A": "A",
-    "A#": "Asharp",
-    "Bb": "Bb",
-    "B": "B"
-  };
-  var QUALITY_MAP = {
-    "major": "major",
-    "minor": "minor",
-    "dominant seventh": "dominant7",
-    "major seventh": "major7",
-    "minor seventh": "minor7",
-    "diminished": "dim",
-    "diminished seventh": "dim7",
-    "half-diminished seventh": "m7b5",
-    "augmented": "aug",
-    "suspended fourth": "sus4",
-    "suspended second": "sus2",
-    "major sixth": "major6",
-    "minor sixth": "minor6",
-    "dominant ninth": "dominant9",
-    "major ninth": "major9",
-    "minor ninth": "minor9"
-  };
-  var voicingIndexMap = /* @__PURE__ */ new Map();
-  function getGuitarVoicings(chordSymbol) {
-    if (!guitarDB)
-      return [];
-    try {
-      const chord = UMT.parseChordSymbol(chordSymbol);
-      const root = chord.root?.name ?? chord.root ?? "";
-      const quality = chord.quality || "major";
-      const dbRoot = ROOT_MAP[root] ?? root;
-      const dbQuality = QUALITY_MAP[quality.toLowerCase()] ?? (quality.toLowerCase().includes("minor") ? "minor" : "major");
-      return guitarDB[dbRoot]?.[dbQuality] ?? [];
-    } catch {
-      return [];
-    }
+  function activeKeyToAbcKey(keyStr) {
+    if (!keyStr)
+      return "none";
+    const [root, mode2] = keyStr.split(" ");
+    return root + (mode2?.toLowerCase() === "minor" ? "m" : "");
   }
-  function nextGuitarVoicing(chordSymbol) {
-    const idx = (voicingIndexMap.get(chordSymbol) ?? 0) + 1;
-    voicingIndexMap.set(chordSymbol, idx);
-  }
-  function renderStaff(container, noteNames) {
+  function renderStaff(container, noteNames, width = 380, keyStr = null) {
+    container.style.width = width + "px";
+    const abcKey = activeKeyToAbcKey(keyStr);
+    const header = `X:1
+M:none
+L:1
+K:${abcKey}
+`;
     if (!noteNames.length) {
-      ABCJS.renderAbc(container, "X:1\nM:4/4\nL:1/4\nK:C\nz4", { responsive: "resize" });
+      ABCJS.renderAbc(container, header + "z", { responsive: "resize" });
       return;
     }
     const abcNotes = noteNames.map((n) => {
@@ -459,12 +415,7 @@
         abc = name + ",".repeat(4 - oct);
       return abc;
     });
-    const abcStr = `X:1
-M:4/4
-L:1/4
-K:C
-[${abcNotes.join("")}]4`;
-    ABCJS.renderAbc(container, abcStr, { responsive: "resize" });
+    ABCJS.renderAbc(container, header + `[${abcNotes.join("")}]1`, { responsive: "resize" });
   }
   var QUALITY_COLORS = {
     major: "#f59e0b",
@@ -496,41 +447,35 @@ K:C
     }
   }
   function renderGuitar(container, chordSymbol) {
-    const voicings = getGuitarVoicings(chordSymbol);
-    const idx = (voicingIndexMap.get(chordSymbol) ?? 0) % Math.max(voicings.length, 1);
+    let voicings = [];
+    try {
+      const chord = UMT.parseChordSymbol(chordSymbol);
+      voicings = UMT.getFretboardVoicings(chord, UMT.GUITAR_STANDARD) ?? [];
+    } catch {
+    }
     if (!voicings.length) {
       container.innerHTML = "";
       return;
     }
-    const v = voicings[idx];
-    const svg = Notae.renderFretboard({
-      name: chordSymbol,
-      frets: v.frets,
-      fingers: v.fingers,
-      baseFret: v.baseFret ?? 1,
-      barres: v.barres ?? [],
-      tuning: ["E", "A", "D", "G", "B", "E"]
-    });
-    const wrap = document.createElement("div");
-    wrap.innerHTML = svg;
-    const nextBtn = document.createElement("button");
-    nextBtn.textContent = "Next voicing \u203A";
-    nextBtn.style.cssText = "display:block;margin:4px auto;font-size:10px;padding:2px 8px;background:#374151;color:#9ca3af;border:none;border-radius:3px;cursor:pointer";
-    nextBtn.addEventListener("click", () => {
-      nextGuitarVoicing(chordSymbol);
-      renderGuitar(container, chordSymbol);
-    });
-    if (voicings.length > 1)
-      wrap.appendChild(nextBtn);
-    container.innerHTML = "";
-    container.appendChild(wrap);
+    const svgs = voicings.slice(0, 3).map((v) => {
+      try {
+        return `<div>${Notae.renderFretboard({ name: chordSymbol, ...v })}</div>`;
+      } catch {
+        return "";
+      }
+    }).join("");
+    container.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">${svgs}</div>`;
   }
   var CIRCLE_KEYS = ["C", "G", "D", "A", "E", "B", "F#/Gb", "Db", "Ab", "Eb", "Bb", "F"];
   var CIRCLE_KEYS_MINOR = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "D#m/Ebm", "Bbm", "Fm", "Cm", "Gm", "Dm"];
-  function renderCircleOfFifths(container, activeKey, chordRoot, onKeyClick) {
-    const size = 160;
+  function renderCircleOfFifths(container, activeKey, chordRoot, onKeyClick, size = 160) {
     const cx = size / 2, cy = size / 2;
-    const outerR = 68, innerR = 44, labelR = 57, minorR = 33;
+    const outerR = size * 0.425;
+    const innerR = size * 0.275;
+    const labelR = size * 0.356;
+    const minorR = size * 0.206;
+    const majorFont = Math.max(7, Math.round(size * 0.0625));
+    const minorFont = Math.max(5, Math.round(size * 0.05));
     let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`;
     CIRCLE_KEYS.forEach((key, i) => {
       const angle = (i * 30 - 90) * Math.PI / 180;
@@ -550,12 +495,12 @@ K:C
       fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
       data-key="${key.split("/")[0]} Major" />`;
       svg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
-      font-size="10" fill="#e0e0e0" pointer-events="none">${key}</text>`;
+      font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${key}</text>`;
       const mKey = CIRCLE_KEYS_MINOR[i];
       const mx = cx + minorR * Math.cos(midAngle);
       const my = cy + minorR * Math.sin(midAngle);
       svg += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle"
-      font-size="8" fill="#9ca3af" pointer-events="none">${mKey}</text>`;
+      font-size="${minorFont}" fill="#9ca3af" pointer-events="none">${mKey}</text>`;
     });
     svg += "</svg>";
     container.innerHTML = svg;
@@ -1607,6 +1552,8 @@ K:C
   }
 
   // src/app.ts
+  var staffWidth = parseInt(localStorage.getItem("staff-width") ?? "380");
+  var cofSize = parseInt(localStorage.getItem("cof-size") ?? "160");
   var state = {
     midi: { deviceId: null, mode: "normal", activeNotes: /* @__PURE__ */ new Set(), lastArpeggioNotes: [], arpeggioTimer: null },
     activeKey: localStorage.getItem("active-key") || null,
@@ -1691,26 +1638,37 @@ K:C
       </select>
       <span id="auto-key-label" style="font-size:11px;color:#6b7280"></span>
     </div>
-    <!-- Top row: notation diagrams + analysis side by side -->
-    <div style="display:flex;gap:0;border-bottom:1px solid #2d2d44">
-      <!-- Left: notation \u2014 staff + CoF + guitar -->
-      <div id="notation-panel" style="flex:0 0 560px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;border-right:1px solid #2d2d44">
-        <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">\u{1F441}</button></div>
-        <div id="notation-content">
-          <div id="staff-container" style="width:100%;min-height:180px"></div>
-          <div style="display:flex;gap:12px;margin-top:8px;align-items:flex-start">
-            <div id="cof-container" style="flex:0 0 auto"></div>
-            <div id="guitar-container" style="flex:1;text-align:center"></div>
+    <!-- Row 1: notation \u2014 staff + CoF side by side, guitar stacked below CoF -->
+    <div id="notation-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+      <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">\u{1F441}</button></div>
+      <div id="notation-content" style="display:flex;gap:12px;align-items:flex-start">
+        <!-- Staff -->
+        <div style="flex:0 0 auto">
+          <div style="display:flex;gap:3px;align-items:center;margin-bottom:4px">
+            <span style="font-size:10px;color:#6b7280">Staff</span>
+            <button id="btn-staff-minus" class="size-ctrl-btn">\u2212</button>
+            <button id="btn-staff-plus" class="size-ctrl-btn">+</button>
           </div>
+          <div id="staff-container"></div>
+        </div>
+        <!-- CoF + Guitar stacked -->
+        <div style="flex:0 0 auto">
+          <div style="display:flex;gap:3px;align-items:center;margin-bottom:4px">
+            <span style="font-size:10px;color:#6b7280">CoF</span>
+            <button id="btn-cof-minus" class="size-ctrl-btn">\u2212</button>
+            <button id="btn-cof-plus" class="size-ctrl-btn">+</button>
+          </div>
+          <div id="cof-container"></div>
+          <div id="guitar-container" style="margin-top:6px;text-align:center"></div>
         </div>
       </div>
-      <!-- Right: analysis -->
-      <div id="analysis-panel" style="flex:1;min-width:0;padding:10px 12px">
-        <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">\u{1F441}</button></div>
-        <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;min-height:260px;align-content:start"></div>
-      </div>
     </div>
-    <!-- Bottom row: piano full width -->
+    <!-- Row 2: analysis -->
+    <div id="analysis-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+      <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">\u{1F441}</button></div>
+      <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px 12px;align-content:start"></div>
+    </div>
+    <!-- Row 3: piano -->
     <div style="padding:8px 12px;border-bottom:1px solid #2d2d44">
       <div id="piano-container"></div>
     </div>
@@ -1730,6 +1688,26 @@ K:C
     </div>
     <div id="zone3-content"></div>
   `;
+    $("btn-staff-minus").addEventListener("click", () => {
+      staffWidth = Math.max(180, staffWidth - 40);
+      localStorage.setItem("staff-width", String(staffWidth));
+      reRenderDiagrams();
+    });
+    $("btn-staff-plus").addEventListener("click", () => {
+      staffWidth = Math.min(640, staffWidth + 40);
+      localStorage.setItem("staff-width", String(staffWidth));
+      reRenderDiagrams();
+    });
+    $("btn-cof-minus").addEventListener("click", () => {
+      cofSize = Math.max(100, cofSize - 20);
+      localStorage.setItem("cof-size", String(cofSize));
+      reRenderDiagrams();
+    });
+    $("btn-cof-plus").addEventListener("click", () => {
+      cofSize = Math.min(280, cofSize + 20);
+      localStorage.setItem("cof-size", String(cofSize));
+      reRenderDiagrams();
+    });
     if (state.activeKey) {
       $("key-select").value = state.activeKey;
     }
@@ -1792,9 +1770,16 @@ K:C
     state.detection = result;
     if (result?.kind === "chord") {
       const sym = result.candidates[result.selectedIndex];
-      state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol());
-      notifyChordDetected(sym, result.notes);
-      renderZone1Diagrams(result.notes, sym);
+      const isKnown = sym !== "?";
+      state.analysis = null;
+      if (isKnown) {
+        try {
+          state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol());
+        } catch {
+        }
+        notifyChordDetected(sym, result.notes);
+      }
+      renderZone1Diagrams(result.notes, isKnown ? sym : null);
     } else if (result?.kind === "note") {
       state.analysis = null;
       renderZone1Diagrams([result.noteName], null);
@@ -1812,7 +1797,7 @@ K:C
     return state.history[0]?.symbol ?? null;
   }
   function renderZone1Diagrams(noteNames, chordSymbol) {
-    renderStaff($("staff-container"), noteNames);
+    renderStaff($("staff-container"), noteNames, staffWidth, state.activeKey);
     const quality = chordSymbol ? getChordQuality(chordSymbol) : "";
     renderPiano($("piano-container"), noteNames, quality);
     if (chordSymbol)
@@ -1822,7 +1807,20 @@ K:C
       localStorage.setItem("active-key", key);
       $("key-select").value = key;
       refreshAll();
-    });
+    }, cofSize);
+  }
+  function reRenderDiagrams() {
+    const d = state.detection;
+    if (!d) {
+      renderZone1Diagrams([], null);
+      return;
+    }
+    if (d.kind === "chord")
+      renderZone1Diagrams(d.notes, d.candidates[d.selectedIndex]);
+    else if (d.kind === "note")
+      renderZone1Diagrams([d.noteName], null);
+    else
+      renderZone1Diagrams(d.notes ?? [], null);
   }
   function getChordQuality(chordSymbol) {
     try {
@@ -1924,6 +1922,7 @@ K:C
     mountSong($("zone3-content"), state.song, makeSongHandlers());
   }
   function refreshAll() {
+    reRenderDiagrams();
     renderZone1Analysis();
     renderZone2();
     renderZone3();

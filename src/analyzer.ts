@@ -48,13 +48,16 @@ export function analyzeNotes(
     return result
   }
 
-  // ≥3 notes: chord detection
-  const umtNotes = noteNames.map(noteNameToUMT)
-  const candidates = UMT.Harmony.detectChords(umtNotes)
+  // ≥3 notes: chord detection (UMT may throw on unusual combinations)
+  let candidates: string[] = []
+  try {
+    const umtNotes = noteNames.map(noteNameToUMT)
+    candidates = UMT.Harmony.detectChords(umtNotes) ?? []
+  } catch { }
   const result: ChordResult = {
     kind: 'chord',
     notes: noteNames,
-    candidates: candidates.length ? candidates : ['Unknown'],
+    candidates: candidates.length ? candidates : ['?'],
     selectedIndex: 0,
   }
   return result
