@@ -4,31 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Harmony Companion</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; }
-    #app { display: flex; flex-direction: column; min-height: 100vh; }
-    #browser-warning { display: none; background: #7c2d12; padding: 8px 16px; text-align: center; font-size: 13px; }
-    #cdn-error-banner { display: none; background: #7f1d1d; padding: 8px 16px; text-align: center; font-size: 13px; }
-    #cdn-error-banner.visible { display: block; }
-    /* Zone styles */
-    .zone-header { display:flex; justify-content:space-between; align-items:center; padding:6px 12px; background:#111128; border-bottom:1px solid #2d2d44; }
-    .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:12px; font-weight:600; color:#9ca3af; }
-    .toggle-btn { background:none; border:none; cursor:pointer; color:#9ca3af; font-size:14px; }
-    .mode-btn { padding:3px 10px; border-radius:4px; background:#252540; color:#9ca3af; border:1px solid #4a4a6a; cursor:pointer; font-size:12px; }
-    .mode-btn.active-mode { background:#4f46e5; color:#fff; border-color:#4f46e5; }
-    #zone1 { border-bottom: 1px solid #2d2d44; }
-    #zone2 { border-bottom: 1px solid #2d2d44; min-height: 48px; }
-    #zone3 { min-height: 200px; }
-    .size-ctrl-btn { background:#252540; border:1px solid #4a4a6a; color:#9ca3af; border-radius:3px; cursor:pointer; font-size:12px; line-height:1; padding:1px 5px; }
-    .no-voicing { font-size:11px; color:#6b7280; text-align:center; padding:16px; }
-    /* Staff container — size controlled by staffwidth option in ABCJS */
-    @keyframes pulse-border {
-      0%, 100% { border-color: #4f46e5; }
-      50% { border-color: #a5b4fc; }
-    }
-    .capture-target { animation: pulse-border 0.8s infinite; }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div id="browser-warning">

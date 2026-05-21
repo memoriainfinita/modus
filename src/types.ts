@@ -111,5 +111,7 @@ export interface AppState {
     neck: boolean
     history: boolean
     song: boolean
+    cofControls: boolean
+    guitarControls: boolean
   }
 }

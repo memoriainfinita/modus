@@ -58,7 +58,7 @@ export function renderHistory(
   activeCursorEntryId: string | null
 ) {
   const strip = document.createElement('div')
-  strip.style.cssText = 'display:flex;gap:6px;overflow-x:auto;padding:8px 12px;align-items:center'
+  strip.className = 'history-strip'
 
   entries.forEach(entry => {
     const analysis = activeKey ? buildHarmonicAnalysis(entry.symbol, activeKey, null) : null
@@ -69,15 +69,11 @@ export function renderHistory(
     const chip = document.createElement('div')
     chip.className = 'history-chip'
     chip.dataset.id = entry.id
-    chip.style.cssText = `
-      display:flex;flex-direction:column;align-items:center;padding:4px 8px;
-      border-radius:6px;border:1.5px solid ${activeCursorEntryId === entry.id ? '#fff' : '#3a3a5c'};
-      background:#252540;cursor:pointer;min-width:50px;user-select:none;
-      border-left:3px solid ${color};
-    `
+    chip.style.border = `1.5px solid ${activeCursorEntryId === entry.id ? '#fff' : '#3a3a5c'}`
+    chip.style.borderLeft = `3px solid ${color}`
     chip.innerHTML = `
-      <span style="font-size:12px;font-weight:600">${entry.symbol}</span>
-      <span style="font-size:10px;color:#9ca3af">${roman}</span>
+      <span class="history-chip-symbol">${entry.symbol}</span>
+      <span class="history-chip-roman">${roman}</span>
     `
 
     chip.addEventListener('click', () => onChipClick(entry))
@@ -107,7 +103,7 @@ export function renderHistory(
   const clearBtn = document.createElement('button')
   clearBtn.textContent = 'Clear'
   clearBtn.title = 'Clear history — click twice to confirm'
-  clearBtn.style.cssText = 'padding:4px 10px;border-radius:4px;background:#374151;color:#fff;border:none;cursor:pointer;flex-shrink:0'
+  clearBtn.className = 'history-clear-btn'
   clearBtn.addEventListener('click', () => {
     if (_clearPending) {
       clearTimeout(_clearTimer)
@@ -128,7 +124,7 @@ export function renderHistory(
   })
 
   const wrap = document.createElement('div')
-  wrap.style.cssText = 'display:flex;gap:8px;align-items:center'
+  wrap.className = 'history-wrap'
   wrap.appendChild(strip)
   wrap.appendChild(clearBtn)
 

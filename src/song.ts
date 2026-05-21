@@ -1,4 +1,5 @@
 import type { Song, Section, Measure, SongChord, SectionColor } from './types'
+import { playChord } from './audio'
 
 export function createSong(): Song {
   return { schemaVersion: 1, title: 'Untitled', sections: [] }
@@ -319,8 +320,6 @@ export function loadSong(): Song {
 
 // ─── Song UI ─────────────────────────────────────────────────────────────────
 
-import { playChord } from './audio'
-
 const SECTION_COLORS: Record<SectionColor, string> = {
   intro: '#7c3aed', verse: '#2563eb', prechorus: '#0891b2',
   chorus: '#16a34a', bridge: '#d97706', outro: '#6b7280', custom: '#4b5563'
@@ -347,13 +346,12 @@ function showNotice(msg: string, type: 'info' | 'warn' = 'info') {
   if (!_container) return
   document.querySelectorAll('.song-notice').forEach(el => el.remove())
   const div = document.createElement('div')
-  div.className = 'song-notice'
-  div.style.cssText = `display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-radius:4px;font-size:12px;margin-bottom:6px;background:${type === 'warn' ? '#7c2d12' : '#1e3a5f'};color:#e0e0e0`
+  div.className = `song-notice${type === 'warn' ? ' warn' : ''}`
   const span = document.createElement('span')
   span.textContent = msg
   const x = document.createElement('button')
   x.textContent = '×'
-  x.style.cssText = 'background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;margin-left:8px;padding:0'
+  x.className = 'song-notice-close'
   x.addEventListener('click', () => div.remove())
   div.append(span, x)
   _container.insertBefore(div, _container.firstChild)
@@ -406,14 +404,14 @@ function rerender() {
 
 function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   const root = document.createElement('div')
-  root.style.cssText = 'padding:12px;display:flex;flex-direction:column;gap:8px'
+  root.className = 'song-root'
 
   const header = document.createElement('div')
-  header.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap'
+  header.className = 'song-header'
 
   const titleInput = document.createElement('input')
   titleInput.value = song.title
-  titleInput.style.cssText = 'font-size:16px;font-weight:700;background:transparent;border:none;border-bottom:1px solid #4a4a6a;color:#e0e0e0;padding:2px 4px;min-width:120px'
+  titleInput.className = 'song-title-input'
   titleInput.addEventListener('blur', () => {
     _song = { ..._song, title: titleInput.value }
     h.onSongChange(_song)
@@ -426,11 +424,12 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
 
   // Inline paste area
   const pasteArea = document.createElement('div')
-  pasteArea.style.cssText = 'display:none;padding:8px 0;width:100%'
+  pasteArea.className = 'paste-area'
+  pasteArea.style.display = 'none'
   const pasteTA = document.createElement('textarea')
   pasteTA.placeholder = 'Am G C F  (space, comma or newline separated)'
   pasteTA.rows = 2
-  pasteTA.style.cssText = 'width:100%;background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:6px;font-size:12px;resize:vertical;box-sizing:border-box'
+  pasteTA.className = 'paste-textarea'
   const pasteSubmit = makeBtn('Add chords', '#4f46e5', () => {
     const text = pasteTA.value.trim()
     if (!text) return
@@ -455,7 +454,7 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
     { label: 'Outro', name: 'Outro', color: 'outro' },
   ]
   const templateWrap = document.createElement('div')
-  templateWrap.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap'
+  templateWrap.className = 'template-wrap'
   templates.forEach(t => {
     const btn = makeBtn(`+ ${t.label}`, SECTION_COLORS[t.color], () => {
       _song = addSection(_song, t.name, t.color); saveSong(_song); h.onSongChange(_song)
@@ -467,7 +466,7 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
 
   const transposeSelect = document.createElement('select')
   transposeSelect.title = 'Transpose all chords up by semitones'
-  transposeSelect.style.cssText = 'background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:3px'
+  transposeSelect.className = 'transpose-select'
   transposeSelect.innerHTML = '<option value="">⇄ Transpose</option>' +
     Array.from({length:11},(_,i)=>`<option value="${i+1}">+${i+1} st</option>`).join('')
   transposeSelect.addEventListener('change', () => {
@@ -497,7 +496,7 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
 
   // Inline real-time form + key summary
   const formInfo = document.createElement('div')
-  formInfo.style.cssText = 'font-size:11px;color:#6b7280;padding:2px 0 4px;width:100%'
+  formInfo.className = 'song-form-info'
   const form = detectForm(_song.sections.map(s => s.name))
   const keyStr = h.activeKey ? ` · Key: ${h.activeKey}` : ''
   formInfo.textContent = _song.sections.length ? `Form: ${form}${keyStr}` : ''
@@ -535,14 +534,15 @@ function buildSectionDOM(
 ): HTMLElement {
   const color = SECTION_COLORS[section.color]
   const wrap = document.createElement('div')
-  wrap.style.cssText = `border-left:3px solid ${color};border-radius:4px;background:#1e1e35;overflow:hidden`
+  wrap.className = 'section-wrap'
+  wrap.style.borderLeft = `3px solid ${color}`
 
   const secHeader = document.createElement('div')
-  secHeader.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;background:#252540'
+  secHeader.className = 'section-header'
 
   const toggle = document.createElement('span')
   toggle.textContent = section.collapsed ? '▶' : '▼'
-  toggle.style.cssText = 'cursor:pointer;font-size:11px;color:#9ca3af'
+  toggle.className = 'section-toggle'
   toggle.addEventListener('click', () => {
     _song = updateSection(_song, section.id, { collapsed: !section.collapsed })
     saveSong(_song); h.onSongChange(_song)
@@ -550,7 +550,8 @@ function buildSectionDOM(
 
   const nameInput = document.createElement('input')
   nameInput.value = section.name
-  nameInput.style.cssText = `font-size:13px;font-weight:600;color:${color};background:transparent;border:none;border-bottom:1px dashed transparent;padding:1px 2px`
+  nameInput.className = 'section-name-input'
+  nameInput.style.color = color
   nameInput.addEventListener('focus', () => nameInput.style.borderBottomColor = color)
   nameInput.addEventListener('blur', () => {
     nameInput.style.borderBottomColor = 'transparent'
@@ -561,18 +562,20 @@ function buildSectionDOM(
   // Colour swatch — inline picker
   const PRESET_COLORS: SectionColor[] = ['intro','verse','prechorus','chorus','bridge','outro','custom']
   const swatchEl = document.createElement('button')
-  swatchEl.style.cssText = `width:14px;height:14px;border-radius:50%;background:${color};border:none;cursor:pointer;flex-shrink:0`
+  swatchEl.className = 'section-swatch'
+  swatchEl.style.background = color
   swatchEl.title = 'Change section color'
   swatchEl.addEventListener('click', (e) => {
     e.stopPropagation()
     document.querySelector('.color-picker-popup')?.remove()
     const picker = document.createElement('div')
     picker.className = 'color-picker-popup'
-    picker.style.cssText = 'position:fixed;z-index:1000;background:#1a1a2e;border:1px solid #4a4a6a;border-radius:6px;padding:6px;display:flex;gap:4px;box-shadow:0 4px 12px rgba(0,0,0,0.6)'
     PRESET_COLORS.forEach(c => {
       const dot = document.createElement('button')
       dot.title = c
-      dot.style.cssText = `width:20px;height:20px;border-radius:50%;background:${SECTION_COLORS[c]};border:2px solid ${c === section.color ? '#fff' : 'transparent'};cursor:pointer;padding:0`
+      dot.className = 'color-picker-dot'
+      dot.style.background = SECTION_COLORS[c]
+      dot.style.borderColor = c === section.color ? '#fff' : 'transparent'
       dot.addEventListener('click', (ev) => {
         ev.stopPropagation()
         picker.remove()
@@ -595,13 +598,13 @@ function buildSectionDOM(
   const repeatBadge = document.createElement('span')
   repeatBadge.textContent = `×${section.repeatCount}`
   repeatBadge.title = 'Repeat count — click to edit'
-  repeatBadge.style.cssText = 'font-size:10px;color:#9ca3af;cursor:pointer;background:#374151;border-radius:3px;padding:1px 4px'
+  repeatBadge.className = 'section-repeat-badge'
   repeatBadge.addEventListener('click', (e) => {
     e.stopPropagation()
     const input = document.createElement('input')
     input.type = 'number'; input.min = '1'; input.max = '16'
     input.value = String(section.repeatCount)
-    input.style.cssText = 'width:36px;background:#252540;color:#e0e0e0;border:1px solid #4f46e5;border-radius:3px;padding:1px 4px;font-size:10px'
+    input.className = 'section-repeat-input'
     repeatBadge.replaceWith(input)
     input.focus(); input.select()
     const commit = () => {
@@ -616,7 +619,7 @@ function buildSectionDOM(
   const dragHandle = document.createElement('span')
   dragHandle.textContent = '⠿'
   dragHandle.title = 'Drag to reorder section'
-  dragHandle.style.cssText = 'cursor:grab;font-size:14px;color:#6b7280;user-select:none;flex-shrink:0;padding:0 2px'
+  dragHandle.className = 'section-drag-handle'
 
   const dupBtn = makeSmallBtn('⧉', () => { _song = duplicateSection(_song, section.id); saveSong(_song); h.onSongChange(_song) })
   dupBtn.title = 'Duplicate section'
@@ -680,7 +683,7 @@ function buildSectionDOM(
 
   if (!section.collapsed) {
     const measuresWrap = document.createElement('div')
-    measuresWrap.style.cssText = 'padding:8px;display:flex;flex-direction:column;gap:6px'
+    measuresWrap.className = 'measures-wrap'
 
     section.measures.forEach(measure => {
       measuresWrap.appendChild(buildMeasureDOM(measure, section, h, measureNums.get(measure.id) ?? 0))
@@ -697,15 +700,15 @@ function buildMeasureDOM(
   h: SongEventHandlers, measureNum: number
 ): HTMLElement {
   const wrap = document.createElement('div')
-  wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px'
+  wrap.className = 'measure-row'
 
   const numLabel = document.createElement('span')
   numLabel.textContent = String(measureNum)
-  numLabel.style.cssText = 'font-size:10px;color:#6b7280;min-width:18px;padding-top:8px'
+  numLabel.className = 'measure-num'
   wrap.appendChild(numLabel)
 
   const chordsRow = document.createElement('div')
-  chordsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;align-items:flex-start'
+  chordsRow.className = 'chords-row'
 
   measure.chords.forEach(chord => {
     chordsRow.appendChild(buildChordChip(chord, section, measure, h))
@@ -713,7 +716,7 @@ function buildMeasureDOM(
 
   const addBtn = document.createElement('button')
   addBtn.textContent = '+'
-  addBtn.style.cssText = 'width:32px;height:40px;border-radius:4px;background:#252540;color:#9ca3af;border:1px dashed #4a4a6a;cursor:pointer;font-size:18px'
+  addBtn.className = 'chord-add-btn'
   addBtn.addEventListener('click', () => {
     _song = addChord(_song, section.id, measure.id, '')
     saveSong(_song); h.onSongChange(_song)
@@ -774,19 +777,13 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   const borrowed = chord.valid && chord.symbol ? isBorrowedChord(chord.symbol, h.activeKey) : false
 
   const wrap = document.createElement('div')
-  if (isCapture) wrap.classList.add('capture-target')
-  wrap.style.cssText = `
-    position:relative;display:flex;flex-direction:column;align-items:center;
-    min-width:52px;padding:4px 6px;border-radius:6px;
-    background:#252540;cursor:pointer;
-    border:1.5px solid ${isActive ? '#fff' : chord.valid === false ? '#ef4444' : '#3a3a5c'};
-  `
+  wrap.className = `chord-chip${isCapture ? ' capture-target' : ''}`
+  wrap.style.borderColor = isActive ? '#fff' : chord.valid === false ? '#ef4444' : '#3a3a5c'
 
   const isEditing = !chord.symbol
   if (isEditing) {
     const input = document.createElement('input')
     input.className = 'chord-input'
-    input.style.cssText = 'width:52px;background:transparent;border:none;color:#e0e0e0;font-size:12px;font-weight:600;text-align:center;outline:none'
     input.placeholder = 'Am7'
 
     const prevValue = chord.symbol
@@ -818,23 +815,24 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
 
   const symbolEl = document.createElement('div')
   symbolEl.textContent = chord.symbol
-  symbolEl.style.cssText = `font-size:12px;font-weight:600;color:${chord.valid ? '#e0e0e0' : '#ef4444'}`
+  symbolEl.className = 'chord-chip-symbol'
+  if (!chord.valid) symbolEl.style.color = '#ef4444'
 
   const degreeEl = document.createElement('div')
   degreeEl.textContent = degree
-  degreeEl.style.cssText = `font-size:9px;color:${borrowed ? '#f59e0b' : '#6b7280'};margin-top:2px`
+  degreeEl.className = 'chord-chip-degree'
+  if (borrowed) degreeEl.style.color = '#f59e0b'
 
   wrap.appendChild(symbolEl)
   wrap.appendChild(degreeEl)
 
   const controls = document.createElement('div')
-  controls.style.cssText = 'display:none;position:absolute;top:-20px;left:0;gap:2px;background:#1a1a2e;border-radius:3px;padding:1px 2px'
+  controls.className = 'chord-chip-controls'
 
   const editBtn = makeSmallBtn('✎', () => {
     const input = document.createElement('input')
     input.className = 'chord-input'
     input.value = chord.symbol
-    input.style.cssText = 'width:52px;background:transparent;border:none;color:#e0e0e0;font-size:12px;font-weight:600;text-align:center;outline:none'
     const prevVal = chord.symbol
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter') { _song = updateChord(_song, chord.id, input.value.trim() || prevVal); saveSong(_song); h.onSongChange(_song) }
@@ -905,7 +903,8 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
 function makeBtn(label: string, bg: string, onClick: () => void): HTMLButtonElement {
   const btn = document.createElement('button')
   btn.textContent = label
-  btn.style.cssText = `padding:4px 10px;border-radius:4px;background:${bg};color:#fff;border:none;cursor:pointer;font-size:12px`
+  btn.className = 'song-btn'
+  btn.style.background = bg
   btn.addEventListener('click', onClick)
   return btn
 }
@@ -913,7 +912,7 @@ function makeBtn(label: string, bg: string, onClick: () => void): HTMLButtonElem
 function makeSmallBtn(label: string, onClick: () => void): HTMLButtonElement {
   const btn = document.createElement('button')
   btn.textContent = label
-  btn.style.cssText = 'padding:2px 5px;border-radius:3px;background:#374151;color:#e0e0e0;border:none;cursor:pointer;font-size:11px'
+  btn.className = 'song-btn-small'
   btn.addEventListener('click', e => { e.stopPropagation(); onClick() })
   return btn
 }

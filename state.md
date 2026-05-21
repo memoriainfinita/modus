@@ -127,6 +127,12 @@ modus/
 
 ## History
 
+### 2026-05-21 — CSS refactor session 10
+
+Estilos inline extraídos a `styles.css` externo (~280 líneas). Eliminado bloque `<style>` de `index.html`, añadido `<link>`. Todos los archivos TS actualizados: `app.ts`, `diagrams.ts`, `history.ts`, `song.ts`. Solo permanecen inline los estilos verdaderamente dinámicos (colores de calidad, colores de sección, border activo). Corregido además import `playChord` mal colocado en mitad de `song.ts` (movido al top). Build limpio, bundle funcional.
+
+También en esta sesión: botones ▼/▲ para ocultar/mostrar controles de CoF y Guitar (con persistencia en localStorage).
+
 ### 2026-05-21 — UI overhaul session 9
 
 Layout de 4 columnas y CoF completo:
