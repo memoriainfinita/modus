@@ -1,62 +1,27 @@
 import { playNoteByName } from './audio'
 
-// ─── Guitar voicings database ─────────────────────────────────────────────────
+// ─── Guitar voicings — via UMT.getFretboardVoicings (no external fetch needed) ─
 
-type GuitarDB = Record<string, Record<string, { frets: number[]; fingers?: number[]; baseFret?: number; barres?: any[] }[]>>
-let guitarDB: GuitarDB | null = null
-const CHORDS_DB_URL = 'https://cdn.jsdelivr.net/npm/@tombatossals/chords-db@1.4.5/src/data/guitar.json'
+// loadGuitarDB kept as no-op so app.ts callers don't need to change
+export function loadGuitarDB(): Promise<void> { return Promise.resolve() }
 
-export async function loadGuitarDB() {
-  try {
-    const res = await fetch(CHORDS_DB_URL)
-    const data = await res.json()
-    guitarDB = data.chords as GuitarDB
-  } catch {
-    console.warn('Could not load guitar chord database')
-  }
-}
-
-const ROOT_MAP: Record<string, string> = {
-  'C': 'C', 'C#': 'Csharp', 'Db': 'Db', 'D': 'D', 'D#': 'Dsharp',
-  'Eb': 'Eb', 'E': 'E', 'F': 'F', 'F#': 'Fsharp', 'Gb': 'Gb',
-  'G': 'G', 'G#': 'Gsharp', 'Ab': 'Ab', 'A': 'A', 'A#': 'Asharp',
-  'Bb': 'Bb', 'B': 'B'
-}
-
-const QUALITY_MAP: Record<string, string> = {
-  'major': 'major', 'minor': 'minor', 'dominant seventh': 'dominant7',
-  'major seventh': 'major7', 'minor seventh': 'minor7',
-  'diminished': 'dim', 'diminished seventh': 'dim7',
-  'half-diminished seventh': 'm7b5', 'augmented': 'aug',
-  'suspended fourth': 'sus4', 'suspended second': 'sus2',
-  'major sixth': 'major6', 'minor sixth': 'minor6',
-  'dominant ninth': 'dominant9', 'major ninth': 'major9', 'minor ninth': 'minor9',
-}
-
-let voicingIndexMap: Map<string, number> = new Map()
-
-function getGuitarVoicings(chordSymbol: string): any[] {
-  if (!guitarDB) return []
-  try {
-    const chord = UMT.parseChordSymbol(chordSymbol)
-    const root = (chord.root?.name ?? chord.root ?? '') as string
-    const quality = (chord.quality || 'major') as string
-    const dbRoot = ROOT_MAP[root] ?? root
-    const dbQuality = QUALITY_MAP[quality.toLowerCase()] ?? (quality.toLowerCase().includes('minor') ? 'minor' : 'major')
-    return guitarDB[dbRoot]?.[dbQuality] ?? []
-  } catch { return [] }
-}
-
-export function nextGuitarVoicing(chordSymbol: string) {
-  const idx = (voicingIndexMap.get(chordSymbol) ?? 0) + 1
-  voicingIndexMap.set(chordSymbol, idx)
-}
+// nextGuitarVoicing kept as no-op — voicings shown all at once now
+export function nextGuitarVoicing(_chordSymbol: string) {}
 
 // ─── Staff ────────────────────────────────────────────────────────────────────
 
-export function renderStaff(container: HTMLElement, noteNames: string[]) {
+function activeKeyToAbcKey(keyStr: string | null): string {
+  if (!keyStr) return 'none'
+  const [root, mode] = keyStr.split(' ')
+  return root + (mode?.toLowerCase() === 'minor' ? 'm' : '')
+}
+
+export function renderStaff(container: HTMLElement, noteNames: string[], width = 380, keyStr: string | null = null) {
+  container.style.width = width + 'px'
+  const abcKey = activeKeyToAbcKey(keyStr)
+  const header = `X:1\nM:none\nL:1\nK:${abcKey}\n`
   if (!noteNames.length) {
-    ABCJS.renderAbc(container, 'X:1\nM:4/4\nL:1/4\nK:C\nz4', { responsive: 'resize' })
+    ABCJS.renderAbc(container, header + 'z', { responsive: 'resize' })
     return
   }
   const abcNotes = noteNames.map(n => {
@@ -73,8 +38,7 @@ export function renderStaff(container: HTMLElement, noteNames: string[]) {
     else abc = name + ','.repeat(4 - oct)
     return abc
   })
-  const abcStr = `X:1\nM:4/4\nL:1/4\nK:C\n[${abcNotes.join('')}]4`
-  ABCJS.renderAbc(container, abcStr, { responsive: 'resize' })
+  ABCJS.renderAbc(container, header + `[${abcNotes.join('')}]1`, { responsive: 'resize' })
 }
 
 // ─── Piano ────────────────────────────────────────────────────────────────────
@@ -108,38 +72,23 @@ export function renderPiano(container: HTMLElement, noteNames: string[], quality
 // ─── Guitar ───────────────────────────────────────────────────────────────────
 
 export function renderGuitar(container: HTMLElement, chordSymbol: string) {
-  const voicings = getGuitarVoicings(chordSymbol)
-  const idx = (voicingIndexMap.get(chordSymbol) ?? 0) % Math.max(voicings.length, 1)
+  let voicings: any[] = []
+  try {
+    const chord = UMT.parseChordSymbol(chordSymbol)
+    voicings = UMT.getFretboardVoicings(chord, UMT.GUITAR_STANDARD) ?? []
+  } catch { }
 
   if (!voicings.length) {
     container.innerHTML = ''
     return
   }
 
-  const v = voicings[idx]
-  const svg = Notae.renderFretboard({
-    name: chordSymbol,
-    frets: v.frets,
-    fingers: v.fingers,
-    baseFret: v.baseFret ?? 1,
-    barres: v.barres ?? [],
-    tuning: ['E', 'A', 'D', 'G', 'B', 'E'],
-  })
+  const svgs = voicings.slice(0, 3).map(v => {
+    try { return `<div>${Notae.renderFretboard({ name: chordSymbol, ...v })}</div>` }
+    catch { return '' }
+  }).join('')
 
-  const wrap = document.createElement('div')
-  wrap.innerHTML = svg
-
-  const nextBtn = document.createElement('button')
-  nextBtn.textContent = 'Next voicing ›'
-  nextBtn.style.cssText = 'display:block;margin:4px auto;font-size:10px;padding:2px 8px;background:#374151;color:#9ca3af;border:none;border-radius:3px;cursor:pointer'
-  nextBtn.addEventListener('click', () => {
-    nextGuitarVoicing(chordSymbol)
-    renderGuitar(container, chordSymbol)
-  })
-  if (voicings.length > 1) wrap.appendChild(nextBtn)
-
-  container.innerHTML = ''
-  container.appendChild(wrap)
+  container.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">${svgs}</div>`
 }
 
 // ─── Circle of fifths ─────────────────────────────────────────────────────────
@@ -151,11 +100,16 @@ export function renderCircleOfFifths(
   container: HTMLElement,
   activeKey: string | null,
   chordRoot: string | null,
-  onKeyClick: (key: string) => void
+  onKeyClick: (key: string) => void,
+  size = 160
 ) {
-  const size = 160
   const cx = size / 2, cy = size / 2
-  const outerR = 68, innerR = 44, labelR = 57, minorR = 33
+  const outerR = size * 0.425
+  const innerR = size * 0.275
+  const labelR = size * 0.356
+  const minorR = size * 0.206
+  const majorFont = Math.max(7, Math.round(size * 0.0625))
+  const minorFont = Math.max(5, Math.round(size * 0.05))
 
   let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`
 
@@ -180,13 +134,13 @@ export function renderCircleOfFifths(
       fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
       data-key="${key.split('/')[0]} Major" />`
     svg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
-      font-size="10" fill="#e0e0e0" pointer-events="none">${key}</text>`
+      font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${key}</text>`
 
     const mKey = CIRCLE_KEYS_MINOR[i]
     const mx = cx + minorR * Math.cos(midAngle)
     const my = cy + minorR * Math.sin(midAngle)
     svg += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle"
-      font-size="8" fill="#9ca3af" pointer-events="none">${mKey}</text>`
+      font-size="${minorFont}" fill="#9ca3af" pointer-events="none">${mKey}</text>`
   })
 
   svg += '</svg>'

@@ -127,6 +127,14 @@ modus/
 
 ## History
 
+### 2026-05-21 — UI overhaul session 5
+
+Layout refactorizado: staff + CoF en misma fila, análisis debajo (grid auto-fill, mínimo 3 por fila), piano debajo del análisis. Guitar (3 voicings en línea) debajo del CoF en la misma columna. Botones +/− para tamaño de staff y CoF (CoF escala bien; staff pendiente — ver TODO).
+
+Guitar: reemplazada dependencia de tombatossals DB (fetch, 404, incompatibilidades) por `UMT.getFretboardVoicings(chord, UMT.GUITAR_STANDARD)` — sin servidor, sin fetch, funciona desde file://. Se muestran 3 voicings simultáneos en flex row.
+
+Bugs corregidos: MIDI normal mode — notas ordenadas por pitch MIDI antes de pasar a UMT (fix para acordes que cambiaban al levantar y repulsar un dedo). Combinaciones no reconocidas por UMT (`?`) ya no crashean — se muestran las notas en staff/piano aunque no haya análisis armónico. Staff muestra clave según key seleccionada (`K:Gm`, `K:Bb`, etc.). Eliminado `4/4` del pentagrama (`M:none`). Análisis: grid `repeat(auto-fill, minmax(130px, 1fr))` — items en múltiples columnas sin scroll horizontal.
+
 ### 2026-05-21 — UI overhaul session 4
 
 Bug crítico: ABC notation para bemoles/sostenidos estaba al revés — `'Bb'.replace('b','_')` daba `'B_'` (ABCJS ignoraba el `_` al final y mostraba B natural). Corrección: accidental ANTES de la letra (`_B`, `^C`). Eso explicaba "detecta como notas naturales" en el pentagrama. Piano confirmado OK — Notae convierte flats→sharps internamente. Staff a ancho completo del panel (~536px). CoF + guitar movidos a fila debajo del staff. CoF escalado a 160px. min-height:260px en analysis-content para reservar espacio y evitar desplazamiento del piano.
@@ -165,4 +173,11 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [x] Staff más grande (ancho completo del panel, ~536px)
 - [x] Piano 4 octavas (C2-B5)
 - [x] Notas bemol/sostenido en pentagrama (bug ABC notation)
-- [ ] Guitar tuning selector — investigar Notae demos para ver opciones de la librería
+- [x] Guitar voicings — UMT.getFretboardVoicings, 3 en línea, sin fetch
+- [x] Notas no reconocidas por UMT — se muestran en staff/piano con badge '?'
+- [x] MIDI note ordering — fix para acordes variables al levantar/repulsar dedos
+- [x] Clave en pentagrama según key selector
+- [x] Quitar 4/4 del pentagrama (M:none)
+- [x] Análisis grid multi-columna (auto-fill minmax 130px)
+- [ ] Staff +/- size control — no funciona. container.style.width + responsive:resize no tiene efecto. Investigar alternativa (scale CSS transform, o wrapping div con overflow:hidden)
+- [ ] Guitar tuning selector — UMT.GUITAR_DROPPED_D, UMT.GUITAR_OPEN_G disponibles

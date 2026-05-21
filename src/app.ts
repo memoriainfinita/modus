@@ -6,6 +6,11 @@ import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyCho
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
 import type { AppState, HistoryEntry, SongChord } from './types'
 
+// ─── Size preferences ────────────────────────────────────────────────────────
+
+let staffWidth = parseInt(localStorage.getItem('staff-width') ?? '380')
+let cofSize = parseInt(localStorage.getItem('cof-size') ?? '160')
+
 // ─── State ───────────────────────────────────────────────────────────────────
 
 const state: AppState = {
@@ -108,26 +113,37 @@ function buildLayout() {
       </select>
       <span id="auto-key-label" style="font-size:11px;color:#6b7280"></span>
     </div>
-    <!-- Top row: notation diagrams + analysis side by side -->
-    <div style="display:flex;gap:0;border-bottom:1px solid #2d2d44">
-      <!-- Left: notation — staff + CoF + guitar -->
-      <div id="notation-panel" style="flex:0 0 560px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;border-right:1px solid #2d2d44">
-        <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">👁</button></div>
-        <div id="notation-content">
-          <div id="staff-container" style="width:100%;min-height:180px"></div>
-          <div style="display:flex;gap:12px;margin-top:8px;align-items:flex-start">
-            <div id="cof-container" style="flex:0 0 auto"></div>
-            <div id="guitar-container" style="flex:1;text-align:center"></div>
+    <!-- Row 1: notation — staff + CoF side by side, guitar stacked below CoF -->
+    <div id="notation-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+      <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">👁</button></div>
+      <div id="notation-content" style="display:flex;gap:12px;align-items:flex-start">
+        <!-- Staff -->
+        <div style="flex:0 0 auto">
+          <div style="display:flex;gap:3px;align-items:center;margin-bottom:4px">
+            <span style="font-size:10px;color:#6b7280">Staff</span>
+            <button id="btn-staff-minus" class="size-ctrl-btn">−</button>
+            <button id="btn-staff-plus" class="size-ctrl-btn">+</button>
           </div>
+          <div id="staff-container"></div>
+        </div>
+        <!-- CoF + Guitar stacked -->
+        <div style="flex:0 0 auto">
+          <div style="display:flex;gap:3px;align-items:center;margin-bottom:4px">
+            <span style="font-size:10px;color:#6b7280">CoF</span>
+            <button id="btn-cof-minus" class="size-ctrl-btn">−</button>
+            <button id="btn-cof-plus" class="size-ctrl-btn">+</button>
+          </div>
+          <div id="cof-container"></div>
+          <div id="guitar-container" style="margin-top:6px;text-align:center"></div>
         </div>
       </div>
-      <!-- Right: analysis -->
-      <div id="analysis-panel" style="flex:1;min-width:0;padding:10px 12px">
-        <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">👁</button></div>
-        <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;min-height:260px;align-content:start"></div>
-      </div>
     </div>
-    <!-- Bottom row: piano full width -->
+    <!-- Row 2: analysis -->
+    <div id="analysis-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+      <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">👁</button></div>
+      <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px 12px;align-content:start"></div>
+    </div>
+    <!-- Row 3: piano -->
     <div style="padding:8px 12px;border-bottom:1px solid #2d2d44">
       <div id="piano-container"></div>
     </div>
@@ -149,6 +165,28 @@ function buildLayout() {
     </div>
     <div id="zone3-content"></div>
   `
+
+  // Size controls
+  $('btn-staff-minus').addEventListener('click', () => {
+    staffWidth = Math.max(180, staffWidth - 40)
+    localStorage.setItem('staff-width', String(staffWidth))
+    reRenderDiagrams()
+  })
+  $('btn-staff-plus').addEventListener('click', () => {
+    staffWidth = Math.min(640, staffWidth + 40)
+    localStorage.setItem('staff-width', String(staffWidth))
+    reRenderDiagrams()
+  })
+  $('btn-cof-minus').addEventListener('click', () => {
+    cofSize = Math.max(100, cofSize - 20)
+    localStorage.setItem('cof-size', String(cofSize))
+    reRenderDiagrams()
+  })
+  $('btn-cof-plus').addEventListener('click', () => {
+    cofSize = Math.min(280, cofSize + 20)
+    localStorage.setItem('cof-size', String(cofSize))
+    reRenderDiagrams()
+  })
 
   // Restore key selector value
   if (state.activeKey) {
@@ -217,9 +255,13 @@ function onNoteChange(notes: number[]) {
 
   if (result?.kind === 'chord') {
     const sym = result.candidates[result.selectedIndex]
-    state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
-    notifyChordDetected(sym, result.notes)
-    renderZone1Diagrams(result.notes, sym)
+    const isKnown = sym !== '?'
+    state.analysis = null
+    if (isKnown) {
+      try { state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol()) } catch { }
+      notifyChordDetected(sym, result.notes)
+    }
+    renderZone1Diagrams(result.notes, isKnown ? sym : null)
   } else if (result?.kind === 'note') {
     state.analysis = null
     renderZone1Diagrams([result.noteName], null)
@@ -242,7 +284,7 @@ function getLastHistorySymbol(): string | null {
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
 function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
-  renderStaff($('staff-container'), noteNames)
+  renderStaff($('staff-container'), noteNames, staffWidth, state.activeKey)
   const quality = chordSymbol ? getChordQuality(chordSymbol) : ''
   renderPiano($('piano-container'), noteNames, quality)
   if (chordSymbol) renderGuitar($('guitar-container'), chordSymbol)
@@ -251,7 +293,15 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
     localStorage.setItem('active-key', key)
     ;($('key-select') as HTMLSelectElement).value = key
     refreshAll()
-  })
+  }, cofSize)
+}
+
+function reRenderDiagrams() {
+  const d = state.detection
+  if (!d) { renderZone1Diagrams([], null); return }
+  if (d.kind === 'chord') renderZone1Diagrams(d.notes, d.candidates[d.selectedIndex])
+  else if (d.kind === 'note') renderZone1Diagrams([d.noteName], null)
+  else renderZone1Diagrams((d as any).notes ?? [], null)
 }
 
 function getChordQuality(chordSymbol: string): string {
@@ -353,6 +403,7 @@ function renderZone3() {
 }
 
 function refreshAll() {
+  reRenderDiagrams()  // key may have changed — re-render staff with new key sig
   renderZone1Analysis()
   renderZone2()
   renderZone3()
