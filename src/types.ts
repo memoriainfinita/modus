@@ -108,6 +108,8 @@ export interface AppState {
   panels: {
     notation: boolean
     analysis: boolean
+    piano: boolean
+    neck: boolean
     history: boolean
     song: boolean
   }

@@ -127,6 +127,21 @@ modus/
 
 ## History
 
+### 2026-05-21 — UI overhaul session 8
+
+Cosmética y controles:
+- Toggle icons unificados: todos los paneles usan ▲/▼ (applyPanelVisibility actualiza icono)
+- Piano y Fretboard neck separados en paneles colapsables independientes, centrados
+- Notation-content wrap + justify-content:center → responsive, apilan en móvil/tablet
+- Guitar: 1 voicing + nav ‹ 1/n › (antes 3 en línea). Sin salto de layout
+- Guitar controls debajo del diagrama, botones +/- de tamaño (guitarSpacing, persiste localStorage)
+- Guitar: Off/Tuning/Notes para etiquetas de cuerda; preset dropdown (Standard/Drop D/Open G/Custom); botón ✎ para editar afinación cuerda a cuerda con auto-detección de preset
+- Custom tuning: deriva posiciones de traste de las notas MIDI activas (en lugar de voicings UMT), refleja correctamente la afinación custom
+- Chord summary encima del staff: nombre del acorde con badge de color, notas, chips de alternativas — siempre visible aunque notation esté colapsado
+- min-height:130px en analysis-content para evitar salto de layout al aparecer/desaparecer análisis
+- Grados en el neck (showDegrees) cuando hay acorde detectado; dotRadius mayor para texto
+- Fixes: stale closure en wireGuitarControls → usa lastGuitarSymbol/lastNoteNames; select handler guardaba null antes de re-render
+
 ### 2026-05-21 — UI overhaul session 7
 
 Diapasón horizontal completo junto al piano (renderNeck): muestra todas las posiciones de las notas pulsadas en el mástil (trastes 0–12, afinación estándar), puntos azules, orientación horizontal. Staff escalado a scale:2 (doble tamaño real de las notas). Guitar placeholder: fretboard vacío con opacity:0.35 en lugar de "—" texto. Correcciones CSS: min-height:220px en guitar-container evita que Notation crezca al aparecer los voicings; align-items:center en fila piano+neck centra el diapasón con el piano.
@@ -188,6 +203,7 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [x] Quitar 4/4 del pentagrama (M:none)
 - [x] Análisis grid multi-columna (auto-fill minmax 130px)
 - [ ] Staff +/- size control — botones eliminados (no funcionaban). Pendiente: probar ABCJS `scale` option o CSS transform en el contenedor.
-- [ ] Guitar tuning selector — UMT.GUITAR_DROPPED_D, UMT.GUITAR_OPEN_G disponibles
+- [x] Guitar tuning selector — Standard/Drop D/Open G presets + custom por cuerda implementados
+- [ ] showNoteNames en Notae — añadir opción a la librería para mostrar nota en los puntos del neck (actualmente usa showDegrees como interim)
 - [x] Fretboard horizontal junto al piano — renderNeck(), trastes 0-12, puntos azules, misma fila que piano
 - [x] Guitar diagrams: diagrama vacío en init — fretboard vacío opacity:0.35 como placeholder
