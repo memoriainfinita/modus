@@ -62,7 +62,10 @@ export function renderStaff(container: HTMLElement, noteNames: string[]) {
   const abcNotes = noteNames.map(n => {
     const m = n.match(/^([A-G][b#]?)(-?\d+)$/)
     if (!m) return 'C'
-    const name = m[1].replace('b', '_').replace('#', '^')
+    const raw = m[1]
+    const name = raw.endsWith('b') ? '_' + raw[0]
+      : raw.endsWith('#') ? '^' + raw[0]
+      : raw
     const oct = parseInt(m[2])
     let abc = name
     if (oct >= 5) abc = name.toLowerCase() + "'".repeat(oct - 5)
@@ -150,9 +153,9 @@ export function renderCircleOfFifths(
   chordRoot: string | null,
   onKeyClick: (key: string) => void
 ) {
-  const size = 220
+  const size = 160
   const cx = size / 2, cy = size / 2
-  const outerR = 95, innerR = 62, labelR = 80, minorR = 48
+  const outerR = 68, innerR = 44, labelR = 57, minorR = 33
 
   let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`
 
