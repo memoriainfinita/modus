@@ -114,17 +114,17 @@ function buildLayout() {
       <div id="notation-panel" style="flex:0 0 560px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;border-right:1px solid #2d2d44">
         <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">👁</button></div>
         <div id="notation-content">
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <div id="staff-container" style="flex:1;min-height:200px;min-width:0"></div>
-            <div id="cof-container" style="flex:0 0 200px"></div>
+          <div id="staff-container" style="width:100%;min-height:180px"></div>
+          <div style="display:flex;gap:12px;margin-top:8px;align-items:flex-start">
+            <div id="cof-container" style="flex:0 0 auto"></div>
+            <div id="guitar-container" style="flex:1;text-align:center"></div>
           </div>
-          <div id="guitar-container" style="margin-top:6px;text-align:center"></div>
         </div>
       </div>
       <!-- Right: analysis -->
       <div id="analysis-panel" style="flex:1;min-width:0;padding:10px 12px">
         <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">👁</button></div>
-        <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px"></div>
+        <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;min-height:260px;align-content:start"></div>
       </div>
     </div>
     <!-- Bottom row: piano full width -->
