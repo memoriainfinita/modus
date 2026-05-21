@@ -1,7 +1,7 @@
 import { initMidi, setNoteChangeCallback, setMode, getMode, getDevices, selectDevice } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
 import { initAudioOnGesture } from './audio'
-import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths } from './diagrams'
+import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible } from './diagrams'
 import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyChordDetected, renderHistory } from './history'
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
 import type { AppState, HistoryEntry, SongChord } from './types'
@@ -34,6 +34,8 @@ const state: AppState = {
     neck: JSON.parse(localStorage.getItem('panel-neck') ?? 'true'),
     history: JSON.parse(localStorage.getItem('panel-history') ?? 'true'),
     song: JSON.parse(localStorage.getItem('panel-song') ?? 'true'),
+    cofControls: JSON.parse(localStorage.getItem('panel-cofControls') ?? 'true'),
+    guitarControls: JSON.parse(localStorage.getItem('panel-guitarControls') ?? 'true'),
   }
 }
 
@@ -105,45 +107,48 @@ function makeSongHandlers() {
 
 function buildLayout() {
   $('zone1').innerHTML = `
-    <div id="z1-toolbar" style="display:flex;gap:8px;align-items:center;padding:8px 12px;background:#111128;border-bottom:1px solid #2d2d44;flex-wrap:wrap">
-      <span id="midi-status" style="font-size:12px;color:#6b7280">MIDI: —</span>
-      <select id="midi-device" style="background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:3px;font-size:12px"></select>
+    <div id="z1-toolbar" class="toolbar">
+      <span id="midi-status" class="midi-status">MIDI: —</span>
+      <select id="midi-device" class="ctrl-select"></select>
       <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
       <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
-      <select id="key-select" style="background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:3px;font-size:12px">
+      <select id="key-select" class="ctrl-select">
         <option value="">Key: Auto</option>
         ${['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'].flatMap(r =>
           [`<option value="${r} Major">${r} Major</option>`, `<option value="${r} Minor">${r} Minor</option>`]
         ).join('')}
       </select>
-      <span id="auto-key-label" style="font-size:11px;color:#6b7280"></span>
+      <span id="auto-key-label" class="auto-key-label"></span>
     </div>
     <!-- Row 1: notation — staff + CoF side by side, guitar stacked below CoF -->
-    <div id="notation-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+    <div id="notation-panel" class="zone-panel">
       <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">▼</button></div>
-      <div id="notation-content" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:center">
+      <div id="notation-content">
         <!-- Column 1: Staff -->
-        <div style="flex:0 0 auto">
-          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Staff</div>
-          <div id="chord-summary" style="min-height:32px;margin-bottom:4px"></div>
+        <div class="col-auto">
+          <div class="col-label">Staff</div>
+          <div id="chord-summary"></div>
           <div id="staff-container"></div>
         </div>
         <!-- Column 2: Analysis -->
-        <div style="flex:0 0 auto;min-width:140px">
-          <div style="font-size:10px;color:#6b7280;margin-bottom:6px">Analysis</div>
-          <div id="analysis-content" style="display:flex;flex-direction:column;gap:4px"></div>
+        <div class="col-analysis">
+          <div class="col-label">Analysis</div>
+          <div id="analysis-content"></div>
         </div>
         <!-- Column 3: CoF -->
-        <div style="flex:0 0 auto">
-          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">CoF</div>
+        <div class="col-auto">
+          <div class="col-header">
+            <div class="col-label">CoF</div>
+            <button class="toggle-btn small" data-panel="cofControls">▼</button>
+          </div>
           <div id="cof-container"></div>
-          <div style="display:flex;flex-direction:column;gap:3px;align-items:center;margin-top:4px">
-            <div style="display:flex;gap:3px">
+          <div id="cof-controls">
+            <div class="ctrl-row">
               <button id="btn-cof-minus" class="size-ctrl-btn" title="Smaller">−</button>
               <button id="btn-cof-plus"  class="size-ctrl-btn" title="Larger">+</button>
             </div>
-            <div style="display:flex;gap:3px">
+            <div class="ctrl-row">
               <button id="btn-cof-flat"   class="size-ctrl-btn" title="Show flat enharmonics (Gb, Db…)">b</button>
               <button id="btn-cof-sharp"  class="size-ctrl-btn" title="Show sharp enharmonics (F#, C#…)">#</button>
               <button id="btn-cof-minor"  class="size-ctrl-btn" title="Show/hide minor and diminished rings">m</button>
@@ -153,36 +158,39 @@ function buildLayout() {
           </div>
         </div>
         <!-- Column 4: Guitar -->
-        <div style="flex:0 0 auto">
-          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Guitar</div>
-          <div id="guitar-container" style="min-height:220px"></div>
+        <div class="col-auto">
+          <div class="col-header">
+            <div class="col-label">Guitar</div>
+            <button class="toggle-btn small" data-panel="guitarControls">▼</button>
+          </div>
+          <div id="guitar-container"></div>
         </div>
       </div>
     </div>
     <!-- Row 3: piano -->
-    <div id="piano-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+    <div id="piano-panel" class="zone-panel">
       <div class="panel-header"><span>Piano</span><button class="toggle-btn" data-panel="piano">▼</button></div>
-      <div id="piano-content" style="overflow-x:auto">
-        <div style="display:flex;justify-content:center">
+      <div id="piano-content">
+        <div class="centered-content">
           <div id="piano-container"></div>
         </div>
       </div>
     </div>
     <!-- Row 4: neck -->
-    <div id="neck-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+    <div id="neck-panel" class="zone-panel">
       <div class="panel-header"><span>Fretboard</span><button class="toggle-btn" data-panel="neck">▼</button></div>
-      <div id="neck-content" style="overflow-x:auto">
-        <div style="display:flex;justify-content:center">
+      <div id="neck-content">
+        <div class="centered-content">
           <div id="neck-container"></div>
         </div>
       </div>
     </div>
-    <div id="midi-banner" style="display:none;background:#7f1d1d;padding:6px 12px;font-size:12px"></div>
+    <div id="midi-banner"></div>
   `
 
   $('zone2').innerHTML = `
     <div class="zone-header">
-      <span style="font-size:12px;font-weight:600">History</span>
+      <span class="zone-title">History</span>
       <button class="toggle-btn" data-panel="history">▼</button>
     </div>
     <div id="zone2-content"></div>
@@ -190,7 +198,7 @@ function buildLayout() {
 
   $('zone3').innerHTML = `
     <div class="zone-header">
-      <span style="font-size:12px;font-weight:600">Song Structure</span>
+      <span class="zone-title">Song Structure</span>
       <button class="toggle-btn" data-panel="song">▼</button>
     </div>
     <div id="zone3-content"></div>
@@ -198,10 +206,8 @@ function buildLayout() {
 
   // CoF controls
   const updateCofButtons = () => {
-    const act = 'background:#4f46e5;color:#fff;border:1px solid #4a4a6a;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px'
-    const def = 'background:#252540;color:#9ca3af;border:1px solid #4a4a6a;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px'
-    ;($('btn-cof-flat')  as HTMLButtonElement).style.cssText = cofAccidental === 'flat'  ? act : def
-    ;($('btn-cof-sharp') as HTMLButtonElement).style.cssText = cofAccidental === 'sharp' ? act : def
+    ;($('btn-cof-flat')  as HTMLButtonElement).classList.toggle('active', cofAccidental === 'flat')
+    ;($('btn-cof-sharp') as HTMLButtonElement).classList.toggle('active', cofAccidental === 'sharp')
     ;($('btn-cof-minor') as HTMLButtonElement).style.opacity = cofShowMinor   ? '1' : '0.4'
     ;($('btn-cof-deg')   as HTMLButtonElement).style.opacity = cofShowDegrees ? '1' : '0.4'
     ;($('btn-cof-7')     as HTMLButtonElement).style.opacity = cofShow7ths    ? '1' : '0.4'
@@ -268,7 +274,7 @@ function buildLayout() {
     btn.addEventListener('click', () => {
       const panel = btn.dataset.panel as keyof typeof state.panels
       state.panels[panel] = !state.panels[panel]
-      if (panel === 'history' || panel === 'song' || panel === 'piano' || panel === 'neck') {
+      if (panel === 'history' || panel === 'song' || panel === 'piano' || panel === 'neck' || panel === 'cofControls' || panel === 'guitarControls') {
         localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]))
       }
       applyPanelVisibility()
@@ -285,7 +291,10 @@ function applyPanelVisibility() {
   const nk = $('neck-content'); if (nk) nk.style.display = state.panels.neck ? '' : 'none'
   const z2 = $('zone2-content'); if (z2) z2.style.display = state.panels.history ? '' : 'none'
   const z3 = $('zone3-content'); if (z3) z3.style.display = state.panels.song ? '' : 'none'
-  ;(['notation', 'piano', 'neck', 'history', 'song'] as const).forEach(key => {
+  const cc = $('cof-controls'); if (cc) cc.style.display = state.panels.cofControls ? '' : 'none'
+  setGuitarControlsVisible(state.panels.guitarControls)
+  const gcw = document.getElementById('guitar-ctrl-wrap'); if (gcw) gcw.style.display = state.panels.guitarControls ? '' : 'none'
+  ;(['notation', 'piano', 'neck', 'history', 'song', 'cofControls', 'guitarControls'] as const).forEach(key => {
     const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-panel="${key}"]`)
     if (btn) btn.textContent = state.panels[key] ? '▲' : '▼'
   })
@@ -389,11 +398,11 @@ function renderChordSummary() {
   const alts = d.candidates.slice(1, 7)
 
   el.innerHTML = `
-    <div style="display:flex;justify-content:center;align-items:baseline;gap:8px;flex-wrap:wrap">
-      <span style="font-size:20px;font-weight:700;padding:1px 8px;border-radius:4px;background:${color}22;border-left:3px solid ${color}">${chordName}</span>
-      <span style="font-size:11px;color:#6b7280">${notes}</span>
+    <div class="chord-summary-row">
+      <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
+      <span class="chord-notes">${notes}</span>
       ${alts.map((c, i) =>
-        `<button class="alt-chord-sum" data-idx="${i + 1}" style="padding:2px 7px;border-radius:3px;background:#1e1e35;color:#9ca3af;border:1px solid #3a3a5c;cursor:pointer;font-size:11px">${c}</button>`
+        `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${c}</button>`
       ).join('')}
     </div>`
 
@@ -419,9 +428,9 @@ function renderZone1Analysis() {
   const a = state.analysis
 
   const row = (label: string, val: string) =>
-    `<div style="display:flex;gap:6px;align-items:baseline">
-      <span style="font-size:10px;color:#6b7280;min-width:58px;flex-shrink:0">${label}</span>
-      <span style="font-size:11px">${val}</span>
+    `<div class="analysis-row">
+      <span class="analysis-label">${label}</span>
+      <span class="analysis-value">${val}</span>
     </div>`
 
   let roman = '—', func_ = '—', figuredBass = '—', diatonic = '—', scales = '—', cadence = '—'

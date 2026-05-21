@@ -378,6 +378,10 @@
   }
 
   // src/diagrams.ts
+  var guitarControlsVisible = JSON.parse(localStorage.getItem("panel-guitarControls") ?? "true");
+  function setGuitarControlsVisible(v) {
+    guitarControlsVisible = v;
+  }
   function loadGuitarDB() {
     return Promise.resolve();
   }
@@ -576,37 +580,31 @@ K:${abcKey}
   <path d="M3,7 L3,2 Q3,0.5 5.5,0.5 Q8,0.5 8,2 L8,7"/>
   <line x1="5.5" y1="7" x2="5.5" y2="12.5"/>
 </svg>`;
-  var NOTE_ICON = `<span style="font-size:13px;line-height:1">\u2669</span>`;
+  var NOTE_ICON = `<span class="note-icon">\u2669</span>`;
   function guitarControls(total, idx) {
-    const b = "border:1px solid #4a4a6a;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px";
-    const btn = (action, label, active, tip) => `<button class="guitar-ctrl" data-action="${action}" title="${tip}" style="${b};background:${active ? "#4f46e5" : "#252540"};color:${active ? "#fff" : "#9ca3af"};display:inline-flex;align-items:center;gap:2px">${label}</button>`;
-    const navB = `${b};font-size:13px;padding:0 5px;line-height:1.6`;
+    const btn = (action, label, active, tip) => `<button class="guitar-ctrl${active ? " active" : ""}" data-action="${action}" title="${tip}">${label}</button>`;
     const nav = total > 1 ? `
-    <button class="guitar-nav" data-dir="-1" title="Previous voicing" style="${navB}">\u2039</button>
-    <span style="font-size:10px;color:#6b7280">${idx + 1}/${total}</span>
-    <button class="guitar-nav" data-dir="1" title="Next voicing" style="${navB}">\u203A</button>` : "";
-    const selStyle = "background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:2px 4px;font-size:11px";
-    const sizeB = `${b};padding:0 4px;font-size:10px;line-height:1.6`;
+    <button class="guitar-nav" data-dir="-1" title="Previous voicing">\u2039</button>
+    <span class="guitar-voicing-count">${idx + 1}/${total}</span>
+    <button class="guitar-nav" data-dir="1" title="Next voicing">\u203A</button>` : "";
     const tunerRow = guitarTunerExpanded ? `
-    <div style="display:flex;gap:4px;align-items:center;margin-top:5px;flex-wrap:wrap;justify-content:center">
+    <div class="tuner-row">
       ${guitarStringTuning.map(
-      (note, i) => `<input class="guitar-string-input" data-string="${i}" value="${note}" title="String ${6 - i}"
-          style="width:28px;background:#1a1a2e;color:#e0e0e0;border:1px solid #4a4a6a;
-                 border-radius:3px;font-size:11px;text-align:center;padding:2px 0" maxlength="2">`
+      (note, i) => `<input class="guitar-string-input" data-string="${i}" value="${note}" title="String ${6 - i}" maxlength="2">`
     ).join("")}
     </div>` : "";
     return `
-    <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">
-      <div style="display:flex;gap:5px;align-items:center;justify-content:center">
-        ${nav || '<span style="font-size:10px;color:#3a3a5c">\u2014</span>'}
-        <button class="guitar-ctrl" data-action="size-minus" title="Smaller diagram" style="${sizeB}">\u2212</button>
-        <button class="guitar-ctrl" data-action="size-plus"  title="Larger diagram"  style="${sizeB}">+</button>
+    <div id="guitar-ctrl-wrap" style="display:${guitarControlsVisible ? "flex" : "none"}">
+      <div class="guitar-ctrl-row">
+        ${nav || '<span class="guitar-nav-placeholder">\u2014</span>'}
+        <button class="guitar-size-btn guitar-ctrl" data-action="size-minus" title="Smaller diagram">\u2212</button>
+        <button class="guitar-size-btn guitar-ctrl" data-action="size-plus"  title="Larger diagram">+</button>
       </div>
-      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center">
+      <div class="guitar-ctrl-row-wrap">
         ${btn("label-none", "Off", guitarLabelMode === "none", "Hide string labels")}
         ${btn("label-tuning", FORK_ICON, guitarLabelMode === "tuning", "Show open string notes (tuning)")}
         ${btn("label-notes", NOTE_ICON, guitarLabelMode === "notes", "Show fretted note names")}
-        <select class="guitar-tuning-sel" title="Tuning preset" style="${selStyle}">
+        <select class="guitar-tuning-sel" title="Tuning preset">
           ${Object.entries(GUITAR_TUNINGS).map(
       ([k, t]) => `<option value="${k}" ${guitarTuningKey === k ? "selected" : ""}>${t.label}</option>`
     ).join("")}
@@ -676,7 +674,7 @@ K:${abcKey}
       lastGuitarSymbol = null;
       try {
         const ph = { ...EMPTY_FRETBOARD, tuning: guitarStringTuning };
-        container.innerHTML = `<div style="opacity:0.35">${Notae.renderFretboard(ph, guitarStyle())}</div>` + guitarControls(0, 0);
+        container.innerHTML = `<div class="guitar-placeholder">${Notae.renderFretboard(ph, guitarStyle())}</div>` + guitarControls(0, 0);
       } catch {
         container.innerHTML = guitarControls(0, 0);
       }
@@ -869,7 +867,7 @@ K:${abcKey}
   }
   function renderHistory(container, activeKey, onChipClick, activeCursorEntryId) {
     const strip = document.createElement("div");
-    strip.style.cssText = "display:flex;gap:6px;overflow-x:auto;padding:8px 12px;align-items:center";
+    strip.className = "history-strip";
     entries.forEach((entry) => {
       const analysis = activeKey ? buildHarmonicAnalysis(entry.symbol, activeKey, null) : null;
       const roman = analysis?.roman ?? "\u2014";
@@ -878,15 +876,11 @@ K:${abcKey}
       const chip = document.createElement("div");
       chip.className = "history-chip";
       chip.dataset.id = entry.id;
-      chip.style.cssText = `
-      display:flex;flex-direction:column;align-items:center;padding:4px 8px;
-      border-radius:6px;border:1.5px solid ${activeCursorEntryId === entry.id ? "#fff" : "#3a3a5c"};
-      background:#252540;cursor:pointer;min-width:50px;user-select:none;
-      border-left:3px solid ${color};
-    `;
+      chip.style.border = `1.5px solid ${activeCursorEntryId === entry.id ? "#fff" : "#3a3a5c"}`;
+      chip.style.borderLeft = `3px solid ${color}`;
       chip.innerHTML = `
-      <span style="font-size:12px;font-weight:600">${entry.symbol}</span>
-      <span style="font-size:10px;color:#9ca3af">${roman}</span>
+      <span class="history-chip-symbol">${entry.symbol}</span>
+      <span class="history-chip-roman">${roman}</span>
     `;
       chip.addEventListener("click", () => onChipClick(entry));
       chip.title = `${entry.symbol} \u2014 drag to song, right-click to remove`;
@@ -910,7 +904,7 @@ K:${abcKey}
     const clearBtn = document.createElement("button");
     clearBtn.textContent = "Clear";
     clearBtn.title = "Clear history \u2014 click twice to confirm";
-    clearBtn.style.cssText = "padding:4px 10px;border-radius:4px;background:#374151;color:#fff;border:none;cursor:pointer;flex-shrink:0";
+    clearBtn.className = "history-clear-btn";
     clearBtn.addEventListener("click", () => {
       if (_clearPending) {
         clearTimeout(_clearTimer);
@@ -930,7 +924,7 @@ K:${abcKey}
       }
     });
     const wrap = document.createElement("div");
-    wrap.style.cssText = "display:flex;gap:8px;align-items:center";
+    wrap.className = "history-wrap";
     wrap.appendChild(strip);
     wrap.appendChild(clearBtn);
     container.innerHTML = "";
@@ -1228,13 +1222,12 @@ K:${abcKey}
       return;
     document.querySelectorAll(".song-notice").forEach((el) => el.remove());
     const div = document.createElement("div");
-    div.className = "song-notice";
-    div.style.cssText = `display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-radius:4px;font-size:12px;margin-bottom:6px;background:${type === "warn" ? "#7c2d12" : "#1e3a5f"};color:#e0e0e0`;
+    div.className = `song-notice${type === "warn" ? " warn" : ""}`;
     const span = document.createElement("span");
     span.textContent = msg;
     const x = document.createElement("button");
     x.textContent = "\xD7";
-    x.style.cssText = "background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;margin-left:8px;padding:0";
+    x.className = "song-notice-close";
     x.addEventListener("click", () => div.remove());
     div.append(span, x);
     _container.insertBefore(div, _container.firstChild);
@@ -1279,12 +1272,12 @@ K:${abcKey}
   }
   function buildSongDOM(song, h) {
     const root = document.createElement("div");
-    root.style.cssText = "padding:12px;display:flex;flex-direction:column;gap:8px";
+    root.className = "song-root";
     const header = document.createElement("div");
-    header.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap";
+    header.className = "song-header";
     const titleInput = document.createElement("input");
     titleInput.value = song.title;
-    titleInput.style.cssText = "font-size:16px;font-weight:700;background:transparent;border:none;border-bottom:1px solid #4a4a6a;color:#e0e0e0;padding:2px 4px;min-width:120px";
+    titleInput.className = "song-title-input";
     titleInput.addEventListener("blur", () => {
       _song = { ..._song, title: titleInput.value };
       h.onSongChange(_song);
@@ -1298,11 +1291,12 @@ K:${abcKey}
     });
     newBtn.title = "Start new song \u2014 click twice to confirm";
     const pasteArea = document.createElement("div");
-    pasteArea.style.cssText = "display:none;padding:8px 0;width:100%";
+    pasteArea.className = "paste-area";
+    pasteArea.style.display = "none";
     const pasteTA = document.createElement("textarea");
     pasteTA.placeholder = "Am G C F  (space, comma or newline separated)";
     pasteTA.rows = 2;
-    pasteTA.style.cssText = "width:100%;background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:6px;font-size:12px;resize:vertical;box-sizing:border-box";
+    pasteTA.className = "paste-textarea";
     const pasteSubmit = makeBtn("Add chords", "#4f46e5", () => {
       const text = pasteTA.value.trim();
       if (!text)
@@ -1331,7 +1325,7 @@ K:${abcKey}
       { label: "Outro", name: "Outro", color: "outro" }
     ];
     const templateWrap = document.createElement("div");
-    templateWrap.style.cssText = "display:flex;gap:4px;flex-wrap:wrap";
+    templateWrap.className = "template-wrap";
     templates.forEach((t) => {
       const btn = makeBtn(`+ ${t.label}`, SECTION_COLORS[t.color], () => {
         _song = addSection(_song, t.name, t.color);
@@ -1344,7 +1338,7 @@ K:${abcKey}
     });
     const transposeSelect = document.createElement("select");
     transposeSelect.title = "Transpose all chords up by semitones";
-    transposeSelect.style.cssText = "background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:3px";
+    transposeSelect.className = "transpose-select";
     transposeSelect.innerHTML = '<option value="">\u21C4 Transpose</option>' + Array.from({ length: 11 }, (_, i) => `<option value="${i + 1}">+${i + 1} st</option>`).join("");
     transposeSelect.addEventListener("change", () => {
       const n = parseInt(transposeSelect.value);
@@ -1373,7 +1367,7 @@ K:${abcKey}
     root.appendChild(header);
     root.appendChild(pasteArea);
     const formInfo = document.createElement("div");
-    formInfo.style.cssText = "font-size:11px;color:#6b7280;padding:2px 0 4px;width:100%";
+    formInfo.className = "song-form-info";
     const form = detectForm(_song.sections.map((s) => s.name));
     const keyStr = h.activeKey ? ` \xB7 Key: ${h.activeKey}` : "";
     formInfo.textContent = _song.sections.length ? `Form: ${form}${keyStr}` : "";
@@ -1407,12 +1401,13 @@ K:${abcKey}
   function buildSectionDOM(section, song, h, measureNums) {
     const color = SECTION_COLORS[section.color];
     const wrap = document.createElement("div");
-    wrap.style.cssText = `border-left:3px solid ${color};border-radius:4px;background:#1e1e35;overflow:hidden`;
+    wrap.className = "section-wrap";
+    wrap.style.borderLeft = `3px solid ${color}`;
     const secHeader = document.createElement("div");
-    secHeader.style.cssText = "display:flex;align-items:center;gap:6px;padding:6px 10px;background:#252540";
+    secHeader.className = "section-header";
     const toggle = document.createElement("span");
     toggle.textContent = section.collapsed ? "\u25B6" : "\u25BC";
-    toggle.style.cssText = "cursor:pointer;font-size:11px;color:#9ca3af";
+    toggle.className = "section-toggle";
     toggle.addEventListener("click", () => {
       _song = updateSection(_song, section.id, { collapsed: !section.collapsed });
       saveSong(_song);
@@ -1420,7 +1415,8 @@ K:${abcKey}
     });
     const nameInput = document.createElement("input");
     nameInput.value = section.name;
-    nameInput.style.cssText = `font-size:13px;font-weight:600;color:${color};background:transparent;border:none;border-bottom:1px dashed transparent;padding:1px 2px`;
+    nameInput.className = "section-name-input";
+    nameInput.style.color = color;
     nameInput.addEventListener("focus", () => nameInput.style.borderBottomColor = color);
     nameInput.addEventListener("blur", () => {
       nameInput.style.borderBottomColor = "transparent";
@@ -1430,18 +1426,20 @@ K:${abcKey}
     });
     const PRESET_COLORS = ["intro", "verse", "prechorus", "chorus", "bridge", "outro", "custom"];
     const swatchEl = document.createElement("button");
-    swatchEl.style.cssText = `width:14px;height:14px;border-radius:50%;background:${color};border:none;cursor:pointer;flex-shrink:0`;
+    swatchEl.className = "section-swatch";
+    swatchEl.style.background = color;
     swatchEl.title = "Change section color";
     swatchEl.addEventListener("click", (e) => {
       e.stopPropagation();
       document.querySelector(".color-picker-popup")?.remove();
       const picker = document.createElement("div");
       picker.className = "color-picker-popup";
-      picker.style.cssText = "position:fixed;z-index:1000;background:#1a1a2e;border:1px solid #4a4a6a;border-radius:6px;padding:6px;display:flex;gap:4px;box-shadow:0 4px 12px rgba(0,0,0,0.6)";
       PRESET_COLORS.forEach((c) => {
         const dot = document.createElement("button");
         dot.title = c;
-        dot.style.cssText = `width:20px;height:20px;border-radius:50%;background:${SECTION_COLORS[c]};border:2px solid ${c === section.color ? "#fff" : "transparent"};cursor:pointer;padding:0`;
+        dot.className = "color-picker-dot";
+        dot.style.background = SECTION_COLORS[c];
+        dot.style.borderColor = c === section.color ? "#fff" : "transparent";
         dot.addEventListener("click", (ev) => {
           ev.stopPropagation();
           picker.remove();
@@ -1468,7 +1466,7 @@ K:${abcKey}
     const repeatBadge = document.createElement("span");
     repeatBadge.textContent = `\xD7${section.repeatCount}`;
     repeatBadge.title = "Repeat count \u2014 click to edit";
-    repeatBadge.style.cssText = "font-size:10px;color:#9ca3af;cursor:pointer;background:#374151;border-radius:3px;padding:1px 4px";
+    repeatBadge.className = "section-repeat-badge";
     repeatBadge.addEventListener("click", (e) => {
       e.stopPropagation();
       const input = document.createElement("input");
@@ -1476,7 +1474,7 @@ K:${abcKey}
       input.min = "1";
       input.max = "16";
       input.value = String(section.repeatCount);
-      input.style.cssText = "width:36px;background:#252540;color:#e0e0e0;border:1px solid #4f46e5;border-radius:3px;padding:1px 4px;font-size:10px";
+      input.className = "section-repeat-input";
       repeatBadge.replaceWith(input);
       input.focus();
       input.select();
@@ -1501,7 +1499,7 @@ K:${abcKey}
     const dragHandle = document.createElement("span");
     dragHandle.textContent = "\u283F";
     dragHandle.title = "Drag to reorder section";
-    dragHandle.style.cssText = "cursor:grab;font-size:14px;color:#6b7280;user-select:none;flex-shrink:0;padding:0 2px";
+    dragHandle.className = "section-drag-handle";
     const dupBtn = makeSmallBtn("\u29C9", () => {
       _song = duplicateSection(_song, section.id);
       saveSong(_song);
@@ -1573,7 +1571,7 @@ K:${abcKey}
     });
     if (!section.collapsed) {
       const measuresWrap = document.createElement("div");
-      measuresWrap.style.cssText = "padding:8px;display:flex;flex-direction:column;gap:6px";
+      measuresWrap.className = "measures-wrap";
       section.measures.forEach((measure) => {
         measuresWrap.appendChild(buildMeasureDOM(measure, section, h, measureNums.get(measure.id) ?? 0));
       });
@@ -1583,19 +1581,19 @@ K:${abcKey}
   }
   function buildMeasureDOM(measure, section, h, measureNum) {
     const wrap = document.createElement("div");
-    wrap.style.cssText = "display:flex;align-items:flex-start;gap:4px";
+    wrap.className = "measure-row";
     const numLabel = document.createElement("span");
     numLabel.textContent = String(measureNum);
-    numLabel.style.cssText = "font-size:10px;color:#6b7280;min-width:18px;padding-top:8px";
+    numLabel.className = "measure-num";
     wrap.appendChild(numLabel);
     const chordsRow = document.createElement("div");
-    chordsRow.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;align-items:flex-start";
+    chordsRow.className = "chords-row";
     measure.chords.forEach((chord) => {
       chordsRow.appendChild(buildChordChip(chord, section, measure, h));
     });
     const addBtn = document.createElement("button");
     addBtn.textContent = "+";
-    addBtn.style.cssText = "width:32px;height:40px;border-radius:4px;background:#252540;color:#9ca3af;border:1px dashed #4a4a6a;cursor:pointer;font-size:18px";
+    addBtn.className = "chord-add-btn";
     addBtn.addEventListener("click", () => {
       _song = addChord(_song, section.id, measure.id, "");
       saveSong(_song);
@@ -1657,19 +1655,12 @@ K:${abcKey}
     const degree = chord.valid && chord.symbol ? computeDegree(chord.symbol, h.activeKey) : "\u2014";
     const borrowed = chord.valid && chord.symbol ? isBorrowedChord(chord.symbol, h.activeKey) : false;
     const wrap = document.createElement("div");
-    if (isCapture)
-      wrap.classList.add("capture-target");
-    wrap.style.cssText = `
-    position:relative;display:flex;flex-direction:column;align-items:center;
-    min-width:52px;padding:4px 6px;border-radius:6px;
-    background:#252540;cursor:pointer;
-    border:1.5px solid ${isActive ? "#fff" : chord.valid === false ? "#ef4444" : "#3a3a5c"};
-  `;
+    wrap.className = `chord-chip${isCapture ? " capture-target" : ""}`;
+    wrap.style.borderColor = isActive ? "#fff" : chord.valid === false ? "#ef4444" : "#3a3a5c";
     const isEditing = !chord.symbol;
     if (isEditing) {
       const input = document.createElement("input");
       input.className = "chord-input";
-      input.style.cssText = "width:52px;background:transparent;border:none;color:#e0e0e0;font-size:12px;font-weight:600;text-align:center;outline:none";
       input.placeholder = "Am7";
       const prevValue = chord.symbol;
       const confirmInput = () => {
@@ -1705,19 +1696,22 @@ K:${abcKey}
     }
     const symbolEl = document.createElement("div");
     symbolEl.textContent = chord.symbol;
-    symbolEl.style.cssText = `font-size:12px;font-weight:600;color:${chord.valid ? "#e0e0e0" : "#ef4444"}`;
+    symbolEl.className = "chord-chip-symbol";
+    if (!chord.valid)
+      symbolEl.style.color = "#ef4444";
     const degreeEl = document.createElement("div");
     degreeEl.textContent = degree;
-    degreeEl.style.cssText = `font-size:9px;color:${borrowed ? "#f59e0b" : "#6b7280"};margin-top:2px`;
+    degreeEl.className = "chord-chip-degree";
+    if (borrowed)
+      degreeEl.style.color = "#f59e0b";
     wrap.appendChild(symbolEl);
     wrap.appendChild(degreeEl);
     const controls = document.createElement("div");
-    controls.style.cssText = "display:none;position:absolute;top:-20px;left:0;gap:2px;background:#1a1a2e;border-radius:3px;padding:1px 2px";
+    controls.className = "chord-chip-controls";
     const editBtn = makeSmallBtn("\u270E", () => {
       const input = document.createElement("input");
       input.className = "chord-input";
       input.value = chord.symbol;
-      input.style.cssText = "width:52px;background:transparent;border:none;color:#e0e0e0;font-size:12px;font-weight:600;text-align:center;outline:none";
       const prevVal = chord.symbol;
       input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
@@ -1806,14 +1800,15 @@ K:${abcKey}
   function makeBtn(label, bg, onClick) {
     const btn = document.createElement("button");
     btn.textContent = label;
-    btn.style.cssText = `padding:4px 10px;border-radius:4px;background:${bg};color:#fff;border:none;cursor:pointer;font-size:12px`;
+    btn.className = "song-btn";
+    btn.style.background = bg;
     btn.addEventListener("click", onClick);
     return btn;
   }
   function makeSmallBtn(label, onClick) {
     const btn = document.createElement("button");
     btn.textContent = label;
-    btn.style.cssText = "padding:2px 5px;border-radius:3px;background:#374151;color:#e0e0e0;border:none;cursor:pointer;font-size:11px";
+    btn.className = "song-btn-small";
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       onClick();
@@ -1892,7 +1887,9 @@ K:${abcKey}
       piano: JSON.parse(localStorage.getItem("panel-piano") ?? "true"),
       neck: JSON.parse(localStorage.getItem("panel-neck") ?? "true"),
       history: JSON.parse(localStorage.getItem("panel-history") ?? "true"),
-      song: JSON.parse(localStorage.getItem("panel-song") ?? "true")
+      song: JSON.parse(localStorage.getItem("panel-song") ?? "true"),
+      cofControls: JSON.parse(localStorage.getItem("panel-cofControls") ?? "true"),
+      guitarControls: JSON.parse(localStorage.getItem("panel-guitarControls") ?? "true")
     }
   };
   var $ = (id) => document.getElementById(id);
@@ -1948,45 +1945,48 @@ K:${abcKey}
   }
   function buildLayout() {
     $("zone1").innerHTML = `
-    <div id="z1-toolbar" style="display:flex;gap:8px;align-items:center;padding:8px 12px;background:#111128;border-bottom:1px solid #2d2d44;flex-wrap:wrap">
-      <span id="midi-status" style="font-size:12px;color:#6b7280">MIDI: \u2014</span>
-      <select id="midi-device" style="background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:3px;font-size:12px"></select>
+    <div id="z1-toolbar" class="toolbar">
+      <span id="midi-status" class="midi-status">MIDI: \u2014</span>
+      <select id="midi-device" class="ctrl-select"></select>
       <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
       <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
-      <select id="key-select" style="background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:3px;font-size:12px">
+      <select id="key-select" class="ctrl-select">
         <option value="">Key: Auto</option>
         ${["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"].flatMap(
       (r) => [`<option value="${r} Major">${r} Major</option>`, `<option value="${r} Minor">${r} Minor</option>`]
     ).join("")}
       </select>
-      <span id="auto-key-label" style="font-size:11px;color:#6b7280"></span>
+      <span id="auto-key-label" class="auto-key-label"></span>
     </div>
     <!-- Row 1: notation \u2014 staff + CoF side by side, guitar stacked below CoF -->
-    <div id="notation-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+    <div id="notation-panel" class="zone-panel">
       <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">\u25BC</button></div>
-      <div id="notation-content" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:center">
+      <div id="notation-content">
         <!-- Column 1: Staff -->
-        <div style="flex:0 0 auto">
-          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Staff</div>
-          <div id="chord-summary" style="min-height:32px;margin-bottom:4px"></div>
+        <div class="col-auto">
+          <div class="col-label">Staff</div>
+          <div id="chord-summary"></div>
           <div id="staff-container"></div>
         </div>
         <!-- Column 2: Analysis -->
-        <div style="flex:0 0 auto;min-width:140px">
-          <div style="font-size:10px;color:#6b7280;margin-bottom:6px">Analysis</div>
-          <div id="analysis-content" style="display:flex;flex-direction:column;gap:4px"></div>
+        <div class="col-analysis">
+          <div class="col-label">Analysis</div>
+          <div id="analysis-content"></div>
         </div>
         <!-- Column 3: CoF -->
-        <div style="flex:0 0 auto">
-          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">CoF</div>
+        <div class="col-auto">
+          <div class="col-header">
+            <div class="col-label">CoF</div>
+            <button class="toggle-btn small" data-panel="cofControls">\u25BC</button>
+          </div>
           <div id="cof-container"></div>
-          <div style="display:flex;flex-direction:column;gap:3px;align-items:center;margin-top:4px">
-            <div style="display:flex;gap:3px">
+          <div id="cof-controls">
+            <div class="ctrl-row">
               <button id="btn-cof-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
               <button id="btn-cof-plus"  class="size-ctrl-btn" title="Larger">+</button>
             </div>
-            <div style="display:flex;gap:3px">
+            <div class="ctrl-row">
               <button id="btn-cof-flat"   class="size-ctrl-btn" title="Show flat enharmonics (Gb, Db\u2026)">b</button>
               <button id="btn-cof-sharp"  class="size-ctrl-btn" title="Show sharp enharmonics (F#, C#\u2026)">#</button>
               <button id="btn-cof-minor"  class="size-ctrl-btn" title="Show/hide minor and diminished rings">m</button>
@@ -1996,51 +1996,53 @@ K:${abcKey}
           </div>
         </div>
         <!-- Column 4: Guitar -->
-        <div style="flex:0 0 auto">
-          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Guitar</div>
-          <div id="guitar-container" style="min-height:220px"></div>
+        <div class="col-auto">
+          <div class="col-header">
+            <div class="col-label">Guitar</div>
+            <button class="toggle-btn small" data-panel="guitarControls">\u25BC</button>
+          </div>
+          <div id="guitar-container"></div>
         </div>
       </div>
     </div>
     <!-- Row 3: piano -->
-    <div id="piano-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+    <div id="piano-panel" class="zone-panel">
       <div class="panel-header"><span>Piano</span><button class="toggle-btn" data-panel="piano">\u25BC</button></div>
-      <div id="piano-content" style="overflow-x:auto">
-        <div style="display:flex;justify-content:center">
+      <div id="piano-content">
+        <div class="centered-content">
           <div id="piano-container"></div>
         </div>
       </div>
     </div>
     <!-- Row 4: neck -->
-    <div id="neck-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+    <div id="neck-panel" class="zone-panel">
       <div class="panel-header"><span>Fretboard</span><button class="toggle-btn" data-panel="neck">\u25BC</button></div>
-      <div id="neck-content" style="overflow-x:auto">
-        <div style="display:flex;justify-content:center">
+      <div id="neck-content">
+        <div class="centered-content">
           <div id="neck-container"></div>
         </div>
       </div>
     </div>
-    <div id="midi-banner" style="display:none;background:#7f1d1d;padding:6px 12px;font-size:12px"></div>
+    <div id="midi-banner"></div>
   `;
     $("zone2").innerHTML = `
     <div class="zone-header">
-      <span style="font-size:12px;font-weight:600">History</span>
+      <span class="zone-title">History</span>
       <button class="toggle-btn" data-panel="history">\u25BC</button>
     </div>
     <div id="zone2-content"></div>
   `;
     $("zone3").innerHTML = `
     <div class="zone-header">
-      <span style="font-size:12px;font-weight:600">Song Structure</span>
+      <span class="zone-title">Song Structure</span>
       <button class="toggle-btn" data-panel="song">\u25BC</button>
     </div>
     <div id="zone3-content"></div>
   `;
     const updateCofButtons = () => {
-      const act = "background:#4f46e5;color:#fff;border:1px solid #4a4a6a;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px";
-      const def = "background:#252540;color:#9ca3af;border:1px solid #4a4a6a;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px";
-      $("btn-cof-flat").style.cssText = cofAccidental === "flat" ? act : def;
-      $("btn-cof-sharp").style.cssText = cofAccidental === "sharp" ? act : def;
+      ;
+      $("btn-cof-flat").classList.toggle("active", cofAccidental === "flat");
+      $("btn-cof-sharp").classList.toggle("active", cofAccidental === "sharp");
       $("btn-cof-minor").style.opacity = cofShowMinor ? "1" : "0.4";
       $("btn-cof-deg").style.opacity = cofShowDegrees ? "1" : "0.4";
       $("btn-cof-7").style.opacity = cofShow7ths ? "1" : "0.4";
@@ -2108,7 +2110,7 @@ K:${abcKey}
       btn.addEventListener("click", () => {
         const panel = btn.dataset.panel;
         state.panels[panel] = !state.panels[panel];
-        if (panel === "history" || panel === "song" || panel === "piano" || panel === "neck") {
+        if (panel === "history" || panel === "song" || panel === "piano" || panel === "neck" || panel === "cofControls" || panel === "guitarControls") {
           localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]));
         }
         applyPanelVisibility();
@@ -2132,7 +2134,14 @@ K:${abcKey}
     const z3 = $("zone3-content");
     if (z3)
       z3.style.display = state.panels.song ? "" : "none";
-    ["notation", "piano", "neck", "history", "song"].forEach((key) => {
+    const cc = $("cof-controls");
+    if (cc)
+      cc.style.display = state.panels.cofControls ? "" : "none";
+    setGuitarControlsVisible(state.panels.guitarControls);
+    const gcw = document.getElementById("guitar-ctrl-wrap");
+    if (gcw)
+      gcw.style.display = state.panels.guitarControls ? "" : "none";
+    ["notation", "piano", "neck", "history", "song", "cofControls", "guitarControls"].forEach((key) => {
       const btn = document.querySelector(`.toggle-btn[data-panel="${key}"]`);
       if (btn)
         btn.textContent = state.panels[key] ? "\u25B2" : "\u25BC";
@@ -2242,11 +2251,11 @@ K:${abcKey}
     const notes = d.notes.map((n) => n.replace(/(-?\d+)$/, "")).join(" \xB7 ");
     const alts = d.candidates.slice(1, 7);
     el.innerHTML = `
-    <div style="display:flex;justify-content:center;align-items:baseline;gap:8px;flex-wrap:wrap">
-      <span style="font-size:20px;font-weight:700;padding:1px 8px;border-radius:4px;background:${color}22;border-left:3px solid ${color}">${chordName}</span>
-      <span style="font-size:11px;color:#6b7280">${notes}</span>
+    <div class="chord-summary-row">
+      <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
+      <span class="chord-notes">${notes}</span>
       ${alts.map(
-      (c, i) => `<button class="alt-chord-sum" data-idx="${i + 1}" style="padding:2px 7px;border-radius:3px;background:#1e1e35;color:#9ca3af;border:1px solid #3a3a5c;cursor:pointer;font-size:11px">${c}</button>`
+      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${c}</button>`
     ).join("")}
     </div>`;
     el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
@@ -2268,9 +2277,9 @@ K:${abcKey}
       return;
     const d = state.detection;
     const a = state.analysis;
-    const row = (label, val) => `<div style="display:flex;gap:6px;align-items:baseline">
-      <span style="font-size:10px;color:#6b7280;min-width:58px;flex-shrink:0">${label}</span>
-      <span style="font-size:11px">${val}</span>
+    const row = (label, val) => `<div class="analysis-row">
+      <span class="analysis-label">${label}</span>
+      <span class="analysis-value">${val}</span>
     </div>`;
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
     let extra = "";

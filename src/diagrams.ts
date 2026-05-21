@@ -1,5 +1,8 @@
 import { playNoteByName } from './audio'
 
+export let guitarControlsVisible = JSON.parse(localStorage.getItem('panel-guitarControls') ?? 'true')
+export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v }
+
 // ─── Guitar voicings — via UMT.getFretboardVoicings (no external fetch needed) ─
 
 // loadGuitarDB kept as no-op so app.ts callers don't need to change
@@ -195,39 +198,33 @@ const FORK_ICON = `<svg width="11" height="13" viewBox="0 0 11 13" fill="none" s
   <path d="M3,7 L3,2 Q3,0.5 5.5,0.5 Q8,0.5 8,2 L8,7"/>
   <line x1="5.5" y1="7" x2="5.5" y2="12.5"/>
 </svg>`
-const NOTE_ICON = `<span style="font-size:13px;line-height:1">♩</span>`
+const NOTE_ICON = `<span class="note-icon">♩</span>`
 
 function guitarControls(total: number, idx: number): string {
-  const b = 'border:1px solid #4a4a6a;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px'
   const btn = (action: string, label: string, active: boolean, tip: string) =>
-    `<button class="guitar-ctrl" data-action="${action}" title="${tip}" style="${b};background:${active ? '#4f46e5' : '#252540'};color:${active ? '#fff' : '#9ca3af'};display:inline-flex;align-items:center;gap:2px">${label}</button>`
-  const navB = `${b};font-size:13px;padding:0 5px;line-height:1.6`
+    `<button class="guitar-ctrl${active ? ' active' : ''}" data-action="${action}" title="${tip}">${label}</button>`
   const nav = total > 1 ? `
-    <button class="guitar-nav" data-dir="-1" title="Previous voicing" style="${navB}">‹</button>
-    <span style="font-size:10px;color:#6b7280">${idx + 1}/${total}</span>
-    <button class="guitar-nav" data-dir="1" title="Next voicing" style="${navB}">›</button>` : ''
-  const selStyle = 'background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:2px 4px;font-size:11px'
-  const sizeB = `${b};padding:0 4px;font-size:10px;line-height:1.6`
+    <button class="guitar-nav" data-dir="-1" title="Previous voicing">‹</button>
+    <span class="guitar-voicing-count">${idx + 1}/${total}</span>
+    <button class="guitar-nav" data-dir="1" title="Next voicing">›</button>` : ''
   const tunerRow = guitarTunerExpanded ? `
-    <div style="display:flex;gap:4px;align-items:center;margin-top:5px;flex-wrap:wrap;justify-content:center">
+    <div class="tuner-row">
       ${guitarStringTuning.map((note, i) =>
-        `<input class="guitar-string-input" data-string="${i}" value="${note}" title="String ${6 - i}"
-          style="width:28px;background:#1a1a2e;color:#e0e0e0;border:1px solid #4a4a6a;
-                 border-radius:3px;font-size:11px;text-align:center;padding:2px 0" maxlength="2">`
+        `<input class="guitar-string-input" data-string="${i}" value="${note}" title="String ${6 - i}" maxlength="2">`
       ).join('')}
     </div>` : ''
   return `
-    <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">
-      <div style="display:flex;gap:5px;align-items:center;justify-content:center">
-        ${nav || '<span style="font-size:10px;color:#3a3a5c">—</span>'}
-        <button class="guitar-ctrl" data-action="size-minus" title="Smaller diagram" style="${sizeB}">−</button>
-        <button class="guitar-ctrl" data-action="size-plus"  title="Larger diagram"  style="${sizeB}">+</button>
+    <div id="guitar-ctrl-wrap" style="display:${guitarControlsVisible ? 'flex' : 'none'}">
+      <div class="guitar-ctrl-row">
+        ${nav || '<span class="guitar-nav-placeholder">—</span>'}
+        <button class="guitar-size-btn guitar-ctrl" data-action="size-minus" title="Smaller diagram">−</button>
+        <button class="guitar-size-btn guitar-ctrl" data-action="size-plus"  title="Larger diagram">+</button>
       </div>
-      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center">
+      <div class="guitar-ctrl-row-wrap">
         ${btn('label-none',   'Off',       guitarLabelMode === 'none',    'Hide string labels')}
         ${btn('label-tuning', FORK_ICON,  guitarLabelMode === 'tuning',  'Show open string notes (tuning)')}
         ${btn('label-notes',  NOTE_ICON,  guitarLabelMode === 'notes',   'Show fretted note names')}
-        <select class="guitar-tuning-sel" title="Tuning preset" style="${selStyle}">
+        <select class="guitar-tuning-sel" title="Tuning preset">
           ${Object.entries(GUITAR_TUNINGS).map(([k, t]) =>
             `<option value="${k}" ${guitarTuningKey === k ? 'selected' : ''}>${t.label}</option>`
           ).join('')}
@@ -302,7 +299,7 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
     try {
       const ph = { ...EMPTY_FRETBOARD, tuning: guitarStringTuning }
       container.innerHTML =
-        `<div style="opacity:0.35">${Notae.renderFretboard(ph as any, guitarStyle())}</div>` +
+        `<div class="guitar-placeholder">${Notae.renderFretboard(ph as any, guitarStyle())}</div>` +
         guitarControls(0, 0)
     } catch {
       container.innerHTML = guitarControls(0, 0)
