@@ -39,10 +39,10 @@ function getGuitarVoicings(chordSymbol: string): any[] {
   if (!guitarDB) return []
   try {
     const chord = UMT.parseChordSymbol(chordSymbol)
-    const root = chord.root?.name ?? chord.root ?? ''
-    const quality = chord.quality ?? 'major'
+    const root = (chord.root?.name ?? chord.root ?? '') as string
+    const quality = (chord.quality || 'major') as string
     const dbRoot = ROOT_MAP[root] ?? root
-    const dbQuality = QUALITY_MAP[quality.toLowerCase()] ?? quality.toLowerCase()
+    const dbQuality = QUALITY_MAP[quality.toLowerCase()] ?? (quality.toLowerCase().includes('minor') ? 'minor' : 'major')
     return guitarDB[dbRoot]?.[dbQuality] ?? []
   } catch { return [] }
 }
@@ -55,7 +55,10 @@ export function nextGuitarVoicing(chordSymbol: string) {
 // ─── Staff ────────────────────────────────────────────────────────────────────
 
 export function renderStaff(container: HTMLElement, noteNames: string[]) {
-  if (!noteNames.length) { container.innerHTML = ''; return }
+  if (!noteNames.length) {
+    ABCJS.renderAbc(container, 'X:1\nM:4/4\nL:1/4\nK:C\nz4', { responsive: 'resize' })
+    return
+  }
   const abcNotes = noteNames.map(n => {
     const m = n.match(/^([A-G][b#]?)(-?\d+)$/)
     if (!m) return 'C'
@@ -84,19 +87,9 @@ export function renderPiano(container: HTMLElement, noteNames: string[], quality
   const color = QUALITY_COLORS[quality?.toLowerCase()] ?? '#6b7280'
   const colors = noteNames.map(() => color)
 
-  // Extend range if notes fall outside default C3-B4
-  let rangeFrom = 'C3', rangeTo = 'B4'
-  const octaves = noteNames.map(n => parseInt(n.match(/(-?\d+)$/)?.[1] ?? '4'))
-  if (octaves.length) {
-    const minOct = Math.min(...octaves)
-    const maxOct = Math.max(...octaves)
-    if (minOct < 3) rangeFrom = `C${minOct}`
-    if (maxOct > 4) rangeTo = `B${maxOct}`
-  }
-
   const svg = Notae.renderPiano({
     name: '', keys: noteNames, colors,
-    range: { from: rangeFrom, to: rangeTo }
+    range: { from: 'C2', to: 'B5' }
   })
   container.innerHTML = svg
 
@@ -116,7 +109,7 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string) {
   const idx = (voicingIndexMap.get(chordSymbol) ?? 0) % Math.max(voicings.length, 1)
 
   if (!voicings.length) {
-    container.innerHTML = `<div class="no-voicing">${chordSymbol}<br><small>no voicing</small></div>`
+    container.innerHTML = ''
     return
   }
 

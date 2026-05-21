@@ -41,6 +41,7 @@ function init() {
   loadGuitarDB()
   buildLayout()
   wireKeyboard()
+  renderZone1Diagrams([], null)
 
   initMidi().then(result => {
     if (result.denied) {
@@ -107,29 +108,28 @@ function buildLayout() {
       </select>
       <span id="auto-key-label" style="font-size:11px;color:#6b7280"></span>
     </div>
-    <div style="display:flex;gap:0">
-
-      <!-- Left: analysis -->
-      <div id="analysis-panel" style="flex:1;min-width:0;padding:10px 12px;border-right:1px solid #2d2d44">
-        <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">👁</button></div>
-        <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px"></div>
-      </div>
-
-      <!-- Right: notation — staff + CoF inline, piano + guitar below -->
-      <div id="notation-panel" style="flex:0 0 600px;padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+    <!-- Top row: notation diagrams + analysis side by side -->
+    <div style="display:flex;gap:0;border-bottom:1px solid #2d2d44">
+      <!-- Left: notation — staff + CoF + guitar -->
+      <div id="notation-panel" style="flex:0 0 560px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;border-right:1px solid #2d2d44">
         <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">👁</button></div>
         <div id="notation-content">
           <div style="display:flex;gap:10px;align-items:flex-start">
-            <div id="staff-container" style="flex:1;min-height:160px;min-width:0"></div>
+            <div id="staff-container" style="flex:1;min-height:200px;min-width:0"></div>
             <div id="cof-container" style="flex:0 0 200px"></div>
           </div>
-          <div style="display:flex;gap:8px;margin-top:8px;align-items:flex-start">
-            <div id="piano-container" style="flex:1;min-width:0"></div>
-            <div id="guitar-container" style="flex:0 0 auto"></div>
-          </div>
+          <div id="guitar-container" style="margin-top:6px;text-align:center"></div>
         </div>
       </div>
-
+      <!-- Right: analysis -->
+      <div id="analysis-panel" style="flex:1;min-width:0;padding:10px 12px">
+        <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">👁</button></div>
+        <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px"></div>
+      </div>
+    </div>
+    <!-- Bottom row: piano full width -->
+    <div style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+      <div id="piano-container"></div>
     </div>
     <div id="midi-banner" style="display:none;background:#7f1d1d;padding:6px 12px;font-size:12px"></div>
   `
@@ -183,14 +183,6 @@ function buildLayout() {
     })
   })
 
-  // Wire zone navigation bar smooth-scroll buttons
-  document.querySelectorAll<HTMLButtonElement>('.zone-nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.target
-      if (target) document.getElementById(target)?.scrollIntoView({ behavior: 'smooth' })
-    })
-  })
-
   // Apply saved panel visibility on load
   applyPanelVisibility()
 }
@@ -236,6 +228,7 @@ function onNoteChange(notes: number[]) {
     renderZone1Diagrams(result.notes, null)
   } else {
     state.analysis = null
+    renderZone1Diagrams([], null)
   }
 
   renderZone1Analysis()
@@ -347,13 +340,11 @@ function renderZone2() {
     $('zone2-content'),
     state.activeKey,
     (entry) => {
-      // Track which history chip is active — separate from song cursor
       state.historyActiveCursorId = entry.id
       triggerChordAnalysis(entry.symbol)
-      renderZone2()  // re-render to show chip outline
+      renderZone2()
     },
-    (entry) => sendToSong(entry),
-    state.historyActiveCursorId  // use dedicated history cursor
+    state.historyActiveCursorId
   )
 }
 

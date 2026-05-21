@@ -127,6 +127,14 @@ modus/
 
 ## History
 
+### 2026-05-21 — UI overhaul session 3
+
+Bug fixes: normal mode stuck note (renderZone1Diagrams called on empty notes). Section DnD fixed (secHeader.draggable instead of wrap — e.target was always wrap). Guitar voicings fixed (chord.quality || 'major' catches empty string; fallback to minor/major on unknown quality). Piano extended to 4 octaves C2-B5. Zone1 layout restructured: notation+CoF+guitar LEFT, analysis RIGHT, piano full-width below. Staff min-height 200px. Cross-section chord drag (moveChordToPosition). History chips now draggable to song measures (dataTransfer 'application/x-history-chord'). Capture and →Song buttons removed from history. History right-click to remove chip. Form shown inline real-time in song header (no more button). Build clean.
+
+### 2026-05-21 — UI overhaul session 2
+
+Header (zone-nav) removed. Layout swapped: notation LEFT, analysis RIGHT. Piano fixed to C3-B4 range. Staff shows empty measure on load. Guitar hides silently when no voicing. All diagrams pre-rendered on init (no abrupt appearance). Transpose bug fixed (chord.root?.name ?? chord.root fallback). Drag & drop added: sections (⠿ handle) and chord chips within measure. System popups replaced with inline: showNotice() for alerts, confirmOnce() double-click for destructive actions, inline color picker (circles), inline repeat count input, inline paste textarea. Capture button renamed ⊕ → ⊙ with tooltip. Tooltips added to all buttons. Build clean (TypeScript + esbuild).
+
 ### 2026-05-21 — Visual + bug fixes, smoke test partial
 
 Bug fixes: hold mode chord building (physicallyHeldNotes), stale handlers in song.ts (makeSongHandlers fresh each render), activeCursorId conflation history/song (historyActiveCursorId added), device listener accumulation, state restore on load (key, mode, panels). Arpeggio timer now clears display after 1.2s. Chord alternatives shown as visible chips (up to 8). Layout: staff+CoF inline, page scroll, nav bar added. Notation/analysis panels fixed to always-visible (not persisted). App confirmed working with MIDI controller.
@@ -146,8 +154,10 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 ## TODO
 
 - [x] Manual smoke test — app confirmed working with MIDI controller
-- [ ] Layout: notación LEFT / análisis RIGHT (interrumpido en sesión anterior)
-- [ ] Staff más grande (min-height mayor, ocupar el espacio bien)
-- [ ] Piano: range adjustment sin saltos bruscos de tamaño
-- [ ] Piano y CoF: no aparecer de repente (transición suave o placeholder)
-- [ ] Revisar header de navegación (usuario lo encuentra confuso)
+- [x] Layout: notación LEFT / análisis RIGHT
+- [x] Piano: fixed range C3-B4 (no dynamic resize)
+- [x] Piano y CoF: no aparecer de repente — renderZone1Diagrams([], null) on init
+- [x] Header de navegación eliminado (zone-nav)
+- [x] Staff más grande (min-height 200px)
+- [x] Piano 4 octavas (C2-B5)
+- [ ] Guitar tuning selector — investigar Notae demos para ver opciones de la librería
