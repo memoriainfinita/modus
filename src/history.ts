@@ -55,7 +55,6 @@ export function renderHistory(
   container: HTMLElement,
   activeKey: string | null,
   onChipClick: (entry: HistoryEntry) => void,
-  onSendToSong: (entry: HistoryEntry) => void,
   activeCursorEntryId: string | null
 ) {
   const strip = document.createElement('div')
@@ -82,42 +81,55 @@ export function renderHistory(
     `
 
     chip.addEventListener('click', () => onChipClick(entry))
+    chip.title = `${entry.symbol} — drag to song, right-click to remove`
+
+    // Drag to song
+    chip.draggable = true
+    chip.addEventListener('dragstart', e => {
+      e.dataTransfer!.setData('application/x-history-chord', JSON.stringify({ id: entry.id, symbol: entry.symbol }))
+      e.dataTransfer!.effectAllowed = 'copy'
+      chip.style.opacity = '0.5'
+    })
+    chip.addEventListener('dragend', () => { chip.style.opacity = '1' })
+
+    // Right-click to remove
     chip.addEventListener('contextmenu', e => {
       e.preventDefault()
-      if (confirm(`Remove ${entry.symbol} from history?`)) removeEntry(entry.id)
+      removeEntry(entry.id)
     })
 
     strip.appendChild(chip)
   })
 
-  const captureBtn = document.createElement('button')
-  captureBtn.textContent = '⊙ Capture'
-  captureBtn.title = 'Add current chord to history (Space)'
-  captureBtn.style.cssText = 'padding:4px 10px;border-radius:4px;background:#374151;color:#fff;border:none;cursor:pointer;white-space:nowrap;font-size:12px'
-  captureBtn.addEventListener('click', () => {
-    window.dispatchEvent(new CustomEvent('history-capture-requested'))
-  })
-
-  const sendBtn = document.createElement('button')
-  sendBtn.textContent = '→ song'
-  sendBtn.style.cssText = 'padding:4px 10px;border-radius:4px;background:#4f46e5;color:#fff;border:none;cursor:pointer;white-space:nowrap'
-  sendBtn.addEventListener('click', () => {
-    const active = activeCursorEntryId ? entries.find(e => e.id === activeCursorEntryId) : entries[0]
-    if (active) onSendToSong(active)
-  })
-
+  // Clear button — double-click to confirm
+  let _clearPending = false
+  let _clearTimer = 0
   const clearBtn = document.createElement('button')
   clearBtn.textContent = 'Clear'
-  clearBtn.style.cssText = 'padding:4px 10px;border-radius:4px;background:#374151;color:#fff;border:none;cursor:pointer'
+  clearBtn.title = 'Clear history — click twice to confirm'
+  clearBtn.style.cssText = 'padding:4px 10px;border-radius:4px;background:#374151;color:#fff;border:none;cursor:pointer;flex-shrink:0'
   clearBtn.addEventListener('click', () => {
-    if (confirm('Clear all history?')) clearHistory()
+    if (_clearPending) {
+      clearTimeout(_clearTimer)
+      _clearPending = false
+      clearBtn.textContent = 'Clear'
+      clearBtn.style.background = '#374151'
+      clearHistory()
+    } else {
+      _clearPending = true
+      clearBtn.textContent = '?'
+      clearBtn.style.background = '#991b1b'
+      _clearTimer = window.setTimeout(() => {
+        _clearPending = false
+        clearBtn.textContent = 'Clear'
+        clearBtn.style.background = '#374151'
+      }, 3000)
+    }
   })
 
   const wrap = document.createElement('div')
   wrap.style.cssText = 'display:flex;gap:8px;align-items:center'
   wrap.appendChild(strip)
-  wrap.appendChild(captureBtn)
-  wrap.appendChild(sendBtn)
   wrap.appendChild(clearBtn)
 
   container.innerHTML = ''

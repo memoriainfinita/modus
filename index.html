@@ -11,11 +11,6 @@
     #browser-warning { display: none; background: #7c2d12; padding: 8px 16px; text-align: center; font-size: 13px; }
     #cdn-error-banner { display: none; background: #7f1d1d; padding: 8px 16px; text-align: center; font-size: 13px; }
     #cdn-error-banner.visible { display: block; }
-    /* Sticky navigation bar */
-    #zone-nav { position: sticky; top: 0; z-index: 200; background: #0d0d1f; display: flex; align-items: center; border-bottom: 1px solid #2d2d44; }
-    #zone-nav .app-title { padding: 7px 14px; font-size: 13px; font-weight: 700; color: #6b7280; letter-spacing: 1px; border-right: 1px solid #2d2d44; }
-    .zone-nav-btn { padding: 7px 14px; background: none; border: none; border-right: 1px solid #2d2d44; color: #9ca3af; cursor: pointer; font-size: 12px; font-weight: 600; transition: color 0.15s, background 0.15s; }
-    .zone-nav-btn:hover { background: #1e1e35; color: #e0e0e0; }
     /* Zone styles */
     .zone-header { display:flex; justify-content:space-between; align-items:center; padding:6px 12px; background:#111128; border-bottom:1px solid #2d2d44; }
     .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:12px; font-weight:600; color:#9ca3af; }
@@ -44,13 +39,7 @@
   </div>
   <div id="cdn-error-banner">Failed to load a required resource. Check your internet connection.</div>
   <div id="app">
-    <div id="zone-nav">
-      <span class="app-title">MODUS</span>
-      <button class="zone-nav-btn" data-target="zone1">Analyzer</button>
-      <button class="zone-nav-btn" data-target="zone2">History</button>
-      <button class="zone-nav-btn" data-target="zone3">Song</button>
-    </div>
-    <div id="zone1"></div>
+<div id="zone1"></div>
     <div id="zone2"></div>
     <div id="zone3"></div>
   </div>

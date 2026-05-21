@@ -157,6 +157,74 @@ export function moveChord(song: Song, chordId: string, direction: 'left' | 'righ
   }
 }
 
+export function moveChordToPosition(
+  song: Song, chordId: string,
+  targetSectionId: string, targetMeasureId: string,
+  beforeChordId?: string
+): Song {
+  let movedChord: SongChord | undefined
+  const without = {
+    ...song,
+    sections: song.sections.map(s => ({
+      ...s,
+      measures: s.measures.map(m => {
+        const idx = m.chords.findIndex(c => c.id === chordId)
+        if (idx === -1) return m
+        movedChord = m.chords[idx]
+        return { ...m, chords: m.chords.filter(c => c.id !== chordId) }
+      })
+    }))
+  }
+  if (!movedChord) return song
+  return {
+    ...without,
+    sections: without.sections.map(s => {
+      if (s.id !== targetSectionId) return s
+      return {
+        ...s,
+        measures: s.measures.map(m => {
+          if (m.id !== targetMeasureId) return m
+          const chords = [...m.chords]
+          const at = beforeChordId ? chords.findIndex(c => c.id === beforeChordId) : -1
+          chords.splice(at === -1 ? chords.length : at, 0, movedChord!)
+          return { ...m, chords }
+        })
+      }
+    })
+  }
+}
+
+export function reorderSections(song: Song, draggedId: string, targetId: string, before: boolean): Song {
+  const sections = [...song.sections]
+  const fromIdx = sections.findIndex(s => s.id === draggedId)
+  if (fromIdx === -1) return song
+  const [moved] = sections.splice(fromIdx, 1)
+  const toIdx = sections.findIndex(s => s.id === targetId)
+  if (toIdx === -1) return song
+  sections.splice(before ? toIdx : toIdx + 1, 0, moved)
+  return { ...song, sections }
+}
+
+export function reorderChordInMeasure(song: Song, draggedId: string, targetId: string, before: boolean): Song {
+  return {
+    ...song,
+    sections: song.sections.map(s => ({
+      ...s,
+      measures: s.measures.map(m => {
+        const fromIdx = m.chords.findIndex(c => c.id === draggedId)
+        if (fromIdx === -1) return m
+        const targetIdx = m.chords.findIndex(c => c.id === targetId)
+        if (targetIdx === -1) return m
+        const chords = [...m.chords]
+        const [moved] = chords.splice(fromIdx, 1)
+        const insertAt = chords.findIndex(c => c.id === targetId)
+        chords.splice(before ? insertAt : insertAt + 1, 0, moved)
+        return { ...m, chords }
+      })
+    }))
+  }
+}
+
 export function computeMeasureNumbers(song: Song): Map<string, number> {
   const map = new Map<string, number>()
   let n = 1
@@ -215,7 +283,7 @@ export function transposeSong(song: Song, semitones: number, targetKey?: string)
   const transposeSymbol = (symbol: string): string => {
     try {
       const chord = UMT.parseChordSymbol(symbol)
-      const root = chord.root?.name ?? ''
+      const root = (chord.root?.name ?? chord.root ?? '') as string
       const newRoot = transposeRoot(root, semitones, preferSharps)
       return symbol.replace(root, newRoot)
     } catch { return symbol }
@@ -271,6 +339,53 @@ let _song: Song = createSong()
 let _handlers: SongEventHandlers | null = null
 let _container: HTMLElement | null = null
 
+let _draggedSectionId: string | null = null
+let _draggedChordId: string | null = null
+let _pendingConfirmEl: { el: HTMLButtonElement; timer: number } | null = null
+
+function showNotice(msg: string, type: 'info' | 'warn' = 'info') {
+  if (!_container) return
+  document.querySelectorAll('.song-notice').forEach(el => el.remove())
+  const div = document.createElement('div')
+  div.className = 'song-notice'
+  div.style.cssText = `display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-radius:4px;font-size:12px;margin-bottom:6px;background:${type === 'warn' ? '#7c2d12' : '#1e3a5f'};color:#e0e0e0`
+  const span = document.createElement('span')
+  span.textContent = msg
+  const x = document.createElement('button')
+  x.textContent = '×'
+  x.style.cssText = 'background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;margin-left:8px;padding:0'
+  x.addEventListener('click', () => div.remove())
+  div.append(span, x)
+  _container.insertBefore(div, _container.firstChild)
+  window.setTimeout(() => div.remove(), 5000)
+}
+
+function confirmOnce(btn: HTMLButtonElement, action: () => void) {
+  if (_pendingConfirmEl?.el === btn) {
+    clearTimeout(_pendingConfirmEl.timer)
+    _pendingConfirmEl = null
+    btn.textContent = btn.dataset.orig!
+    btn.style.background = '#374151'
+    action()
+    return
+  }
+  if (_pendingConfirmEl) {
+    clearTimeout(_pendingConfirmEl.timer)
+    _pendingConfirmEl.el.textContent = _pendingConfirmEl.el.dataset.orig!
+    _pendingConfirmEl.el.style.background = '#374151'
+    _pendingConfirmEl = null
+  }
+  btn.dataset.orig = btn.textContent!
+  btn.textContent = '?'
+  btn.style.background = '#991b1b'
+  const timer = window.setTimeout(() => {
+    btn.textContent = btn.dataset.orig!
+    btn.style.background = '#374151'
+    _pendingConfirmEl = null
+  }, 3000)
+  _pendingConfirmEl = { el: btn, timer }
+}
+
 export function mountSong(container: HTMLElement, song: Song, handlers: SongEventHandlers) {
   _song = song
   _handlers = handlers
@@ -305,10 +420,31 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   })
 
   const newBtn = makeBtn('New', '#374151', () => {
-    if (confirm('Start a new song? Current song will be lost.')) {
-      _song = createSong(); saveSong(_song); h.onSongChange(_song)
-    }
+    confirmOnce(newBtn, () => { _song = createSong(); saveSong(_song); h.onSongChange(_song) })
   })
+  newBtn.title = 'Start new song — click twice to confirm'
+
+  // Inline paste area
+  const pasteArea = document.createElement('div')
+  pasteArea.style.cssText = 'display:none;padding:8px 0;width:100%'
+  const pasteTA = document.createElement('textarea')
+  pasteTA.placeholder = 'Am G C F  (space, comma or newline separated)'
+  pasteTA.rows = 2
+  pasteTA.style.cssText = 'width:100%;background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:6px;font-size:12px;resize:vertical;box-sizing:border-box'
+  const pasteSubmit = makeBtn('Add chords', '#4f46e5', () => {
+    const text = pasteTA.value.trim()
+    if (!text) return
+    const symbols = parseProgressionText(text)
+    if (!_song.sections.length) { _song = addSection(_song, 'Section', 'verse') }
+    const section = _song.sections[_song.sections.length - 1]
+    const measure = newPasteMeasure(symbols)
+    _song = { ..._song, sections: _song.sections.map(s => s.id !== section.id ? s : { ...s, measures: [...s.measures, measure] }) }
+    if (symbols.length > 8) showNotice('All chords added to one measure — split as needed.')
+    pasteTA.value = ''
+    pasteArea.style.display = 'none'
+    saveSong(_song); h.onSongChange(_song)
+  })
+  pasteArea.append(pasteTA, pasteSubmit)
 
   const templates: { label: string; name: string; color: SectionColor }[] = [
     { label: 'Intro', name: 'Intro', color: 'intro' },
@@ -325,10 +461,12 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
       _song = addSection(_song, t.name, t.color); saveSong(_song); h.onSongChange(_song)
     })
     btn.style.fontSize = '11px'
+    btn.title = `Add ${t.name} section`
     templateWrap.appendChild(btn)
   })
 
   const transposeSelect = document.createElement('select')
+  transposeSelect.title = 'Transpose all chords up by semitones'
   transposeSelect.style.cssText = 'background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:3px'
   transposeSelect.innerHTML = '<option value="">⇄ Transpose</option>' +
     Array.from({length:11},(_,i)=>`<option value="${i+1}">+${i+1} st</option>`).join('')
@@ -344,32 +482,26 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
     printWin.document.close()
     printWin.print()
   })
+  exportBtn.title = 'Print / export song to PDF'
 
   const pasteBtn = makeBtn('Paste', '#374151', () => {
-    const text = prompt('Paste chord progression (space/comma/newline separated):')
-    if (!text) return
-    const symbols = parseProgressionText(text)
-    if (!_song.sections.length) { _song = addSection(_song, 'Section', 'verse') }
-    const section = _song.sections[_song.sections.length - 1]
-    const measure = newPasteMeasure(symbols)
-    _song = {
-      ..._song,
-      sections: _song.sections.map(s => s.id !== section.id ? s : {
-        ...s, measures: [...s.measures, measure]
-      })
-    }
-    if (symbols.length > 8) alert('All chords added to one measure — split as needed.')
-    saveSong(_song); h.onSongChange(_song)
+    const open = pasteArea.style.display === 'none'
+    pasteArea.style.display = open ? 'block' : 'none'
+    if (open) pasteTA.focus()
   })
+  pasteBtn.title = 'Paste a chord progression as text'
 
-  const analyzeFormBtn = makeBtn('🔍 Form', '#374151', () => {
-    const names = _song.sections.map(s => s.name)
-    const form = detectForm(names)
-    alert(`Form analysis: ${form}`)
-  })
-
-  header.append(titleInput, newBtn, templateWrap, transposeSelect, exportBtn, pasteBtn, analyzeFormBtn)
+  header.append(titleInput, newBtn, templateWrap, transposeSelect, exportBtn, pasteBtn)
   root.appendChild(header)
+  root.appendChild(pasteArea)
+
+  // Inline real-time form + key summary
+  const formInfo = document.createElement('div')
+  formInfo.style.cssText = 'font-size:11px;color:#6b7280;padding:2px 0 4px;width:100%'
+  const form = detectForm(_song.sections.map(s => s.name))
+  const keyStr = h.activeKey ? ` · Key: ${h.activeKey}` : ''
+  formInfo.textContent = _song.sections.length ? `Form: ${form}${keyStr}` : ''
+  root.appendChild(formInfo)
 
   const measureNums = computeMeasureNumbers(song)
 
@@ -426,52 +558,125 @@ function buildSectionDOM(
     saveSong(_song); h.onSongChange(_song)
   })
 
-  // Colour swatch
+  // Colour swatch — inline picker
   const PRESET_COLORS: SectionColor[] = ['intro','verse','prechorus','chorus','bridge','outro','custom']
   const swatchEl = document.createElement('button')
   swatchEl.style.cssText = `width:14px;height:14px;border-radius:50%;background:${color};border:none;cursor:pointer;flex-shrink:0`
-  swatchEl.title = 'Change section colour'
-  swatchEl.addEventListener('click', () => {
-    const options = PRESET_COLORS.map((c, i) => `${i}: ${c}`).join('\n')
-    const choice = prompt(`Choose colour:\n${options}`, String(PRESET_COLORS.indexOf(section.color)))
-    const idx = parseInt(choice ?? '-1')
-    if (idx >= 0 && idx < PRESET_COLORS.length) {
-      _song = updateSection(_song, section.id, { color: PRESET_COLORS[idx] })
-      saveSong(_song); h.onSongChange(_song)
-    }
+  swatchEl.title = 'Change section color'
+  swatchEl.addEventListener('click', (e) => {
+    e.stopPropagation()
+    document.querySelector('.color-picker-popup')?.remove()
+    const picker = document.createElement('div')
+    picker.className = 'color-picker-popup'
+    picker.style.cssText = 'position:fixed;z-index:1000;background:#1a1a2e;border:1px solid #4a4a6a;border-radius:6px;padding:6px;display:flex;gap:4px;box-shadow:0 4px 12px rgba(0,0,0,0.6)'
+    PRESET_COLORS.forEach(c => {
+      const dot = document.createElement('button')
+      dot.title = c
+      dot.style.cssText = `width:20px;height:20px;border-radius:50%;background:${SECTION_COLORS[c]};border:2px solid ${c === section.color ? '#fff' : 'transparent'};cursor:pointer;padding:0`
+      dot.addEventListener('click', (ev) => {
+        ev.stopPropagation()
+        picker.remove()
+        _song = updateSection(_song, section.id, { color: c })
+        saveSong(_song); h.onSongChange(_song)
+      })
+      picker.appendChild(dot)
+    })
+    const rect = swatchEl.getBoundingClientRect()
+    picker.style.top = `${rect.bottom + 4}px`
+    picker.style.left = `${rect.left}px`
+    document.body.appendChild(picker)
+    setTimeout(() => {
+      const close = (ev: MouseEvent) => { if (!picker.contains(ev.target as Node)) { picker.remove(); document.removeEventListener('click', close) } }
+      document.addEventListener('click', close)
+    }, 0)
   })
 
-  // Repeat count badge — always shown
+  // Repeat count badge — click to edit inline
   const repeatBadge = document.createElement('span')
   repeatBadge.textContent = `×${section.repeatCount}`
-  repeatBadge.title = 'Click to edit repeat count'
+  repeatBadge.title = 'Repeat count — click to edit'
   repeatBadge.style.cssText = 'font-size:10px;color:#9ca3af;cursor:pointer;background:#374151;border-radius:3px;padding:1px 4px'
-  repeatBadge.addEventListener('click', () => {
-    const n = parseInt(prompt('Repeat count (1-16):', String(section.repeatCount)) ?? '1')
-    if (n >= 1 && n <= 16) {
-      _song = updateSection(_song, section.id, { repeatCount: n })
-      saveSong(_song); h.onSongChange(_song)
+  repeatBadge.addEventListener('click', (e) => {
+    e.stopPropagation()
+    const input = document.createElement('input')
+    input.type = 'number'; input.min = '1'; input.max = '16'
+    input.value = String(section.repeatCount)
+    input.style.cssText = 'width:36px;background:#252540;color:#e0e0e0;border:1px solid #4f46e5;border-radius:3px;padding:1px 4px;font-size:10px'
+    repeatBadge.replaceWith(input)
+    input.focus(); input.select()
+    const commit = () => {
+      const n = parseInt(input.value)
+      if (n >= 1 && n <= 16) { _song = updateSection(_song, section.id, { repeatCount: n }); saveSong(_song) }
+      h.onSongChange(_song)
     }
+    input.addEventListener('blur', commit)
+    input.addEventListener('keydown', (ke) => { if (ke.key === 'Enter') input.blur(); if (ke.key === 'Escape') { input.value = String(section.repeatCount); input.blur() } })
   })
 
-  const upBtn = makeSmallBtn('↑', () => { _song = moveSectionUp(_song, section.id); saveSong(_song); h.onSongChange(_song) })
-  const downBtn = makeSmallBtn('↓', () => { _song = moveSectionDown(_song, section.id); saveSong(_song); h.onSongChange(_song) })
+  const dragHandle = document.createElement('span')
+  dragHandle.textContent = '⠿'
+  dragHandle.title = 'Drag to reorder section'
+  dragHandle.style.cssText = 'cursor:grab;font-size:14px;color:#6b7280;user-select:none;flex-shrink:0;padding:0 2px'
+
   const dupBtn = makeSmallBtn('⧉', () => { _song = duplicateSection(_song, section.id); saveSong(_song); h.onSongChange(_song) })
+  dupBtn.title = 'Duplicate section'
   const delBtn = makeSmallBtn('×', () => {
-    if (confirm(`Delete section "${section.name}"?`)) {
-      _song = removeSection(_song, section.id); saveSong(_song); h.onSongChange(_song)
-    }
+    confirmOnce(delBtn, () => { _song = removeSection(_song, section.id); saveSong(_song); h.onSongChange(_song) })
   })
   delBtn.style.color = '#f87171'
+  delBtn.title = 'Delete section — click twice to confirm'
 
-  secHeader.append(toggle, nameInput, swatchEl, repeatBadge, upBtn, downBtn, dupBtn, delBtn)
+  secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn)
 
   const addMeasureBtn = makeSmallBtn('+ Bar', () => {
     _song = addMeasure(_song, section.id); saveSong(_song); h.onSongChange(_song)
   })
+  addMeasureBtn.title = 'Add a measure to this section'
   secHeader.appendChild(addMeasureBtn)
 
   wrap.appendChild(secHeader)
+
+  // Section drag & drop — header is drag source, wrap is drop target
+  secHeader.draggable = true
+  secHeader.style.cursor = 'grab'
+  secHeader.addEventListener('dragstart', e => {
+    _draggedSectionId = section.id
+    _draggedChordId = null
+    e.dataTransfer!.effectAllowed = 'move'
+    requestAnimationFrame(() => { wrap.style.opacity = '0.5' })
+  })
+  secHeader.addEventListener('dragend', () => {
+    _draggedSectionId = null
+    wrap.style.opacity = '1'
+    wrap.style.borderTop = ''
+    wrap.style.borderBottom = ''
+  })
+  wrap.addEventListener('dragover', e => {
+    if (!_draggedSectionId || _draggedSectionId === section.id) return
+    e.preventDefault()
+    e.dataTransfer!.dropEffect = 'move'
+    const rect = wrap.getBoundingClientRect()
+    const before = e.clientY < rect.top + rect.height / 2
+    wrap.style.borderTop = before ? '2px solid #4f46e5' : ''
+    wrap.style.borderBottom = !before ? '2px solid #4f46e5' : ''
+  })
+  wrap.addEventListener('dragleave', e => {
+    if (!wrap.contains(e.relatedTarget as Node)) {
+      wrap.style.borderTop = ''
+      wrap.style.borderBottom = ''
+    }
+  })
+  wrap.addEventListener('drop', e => {
+    if (!_draggedSectionId || _draggedSectionId === section.id) return
+    e.preventDefault()
+    const rect = wrap.getBoundingClientRect()
+    const before = e.clientY < rect.top + rect.height / 2
+    wrap.style.borderTop = ''
+    wrap.style.borderBottom = ''
+    _song = reorderSections(_song, _draggedSectionId, section.id, before)
+    _draggedSectionId = null
+    saveSong(_song); h.onSongChange(_song)
+  })
 
   if (!section.collapsed) {
     const measuresWrap = document.createElement('div')
@@ -518,6 +723,35 @@ function buildMeasureDOM(
     }, 50)
   })
   chordsRow.appendChild(addBtn)
+
+  // Drop zone: accepts history chip drags and cross-section chord drags
+  chordsRow.addEventListener('dragover', e => {
+    const hasHistory = e.dataTransfer!.types.includes('application/x-history-chord')
+    const hasChord = !!_draggedChordId
+    if (!hasHistory && !hasChord) return
+    e.preventDefault()
+    e.dataTransfer!.dropEffect = hasHistory ? 'copy' : 'move'
+    chordsRow.style.outline = '1px dashed #4f46e5'
+  })
+  chordsRow.addEventListener('dragleave', e => {
+    if (!chordsRow.contains(e.relatedTarget as Node)) chordsRow.style.outline = ''
+  })
+  chordsRow.addEventListener('drop', e => {
+    chordsRow.style.outline = ''
+    const histData = e.dataTransfer!.getData('application/x-history-chord')
+    if (histData) {
+      e.preventDefault()
+      const { symbol } = JSON.parse(histData)
+      _song = addChord(_song, section.id, measure.id, symbol)
+      saveSong(_song); h.onSongChange(_song)
+    } else if (_draggedChordId) {
+      e.preventDefault()
+      e.stopPropagation()
+      _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id)
+      _draggedChordId = null
+      saveSong(_song); h.onSongChange(_song)
+    }
+  })
 
   wrap.appendChild(chordsRow)
 
@@ -609,12 +843,14 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
     input.addEventListener('blur', () => { _song = updateChord(_song, chord.id, input.value.trim() || prevVal); saveSong(_song); h.onSongChange(_song) })
     wrap.innerHTML = ''; wrap.appendChild(input); input.focus()
   })
+  editBtn.title = 'Edit chord symbol'
   const delBtn = makeSmallBtn('×', () => { _song = removeChord(_song, chord.id); saveSong(_song); h.onSongChange(_song) })
-  const leftBtn = makeSmallBtn('←', () => { _song = moveChord(_song, chord.id, 'left'); saveSong(_song); h.onSongChange(_song) })
-  const rightBtn = makeSmallBtn('→', () => { _song = moveChord(_song, chord.id, 'right'); saveSong(_song); h.onSongChange(_song) })
-  const captureBtn = makeSmallBtn('⊕', () => h.onChordCapture(chord.id))
+  delBtn.title = 'Remove chord'
+  const captureBtn = makeSmallBtn('⊙', () => h.onChordCapture(chord.id))
+  captureBtn.title = 'MIDI fill: next chord played on MIDI keyboard replaces this slot'
+  if (isCapture) { captureBtn.style.color = '#818cf8'; captureBtn.style.fontWeight = '700' }
 
-  controls.append(leftBtn, rightBtn, editBtn, captureBtn, delBtn)
+  controls.append(editBtn, captureBtn, delBtn)
   wrap.appendChild(controls)
 
   wrap.addEventListener('mouseenter', () => controls.style.display = 'flex')
@@ -622,6 +858,46 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
 
   wrap.addEventListener('click', () => h.onChordClick(chord.id, chord.symbol))
   wrap.addEventListener('dblclick', () => playChord(chord.symbol))
+
+  // Chord drag & drop within measure
+  wrap.draggable = true
+  wrap.addEventListener('dragstart', e => {
+    e.stopPropagation()
+    _draggedChordId = chord.id
+    _draggedSectionId = null
+    e.dataTransfer!.effectAllowed = 'move'
+    requestAnimationFrame(() => { wrap.style.opacity = '0.5' })
+  })
+  wrap.addEventListener('dragend', () => {
+    _draggedChordId = null
+    wrap.style.opacity = '1'
+    wrap.style.outline = ''
+  })
+  wrap.addEventListener('dragover', e => {
+    if (!_draggedChordId || _draggedChordId === chord.id) return
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer!.dropEffect = 'move'
+    const rect = wrap.getBoundingClientRect()
+    wrap.style.outline = e.clientX < rect.left + rect.width / 2 ? '2px solid #4f46e5' : '2px solid #a5b4fc'
+    wrap.style.outlineOffset = '-2px'
+  })
+  wrap.addEventListener('dragleave', () => { wrap.style.outline = '' })
+  wrap.addEventListener('drop', e => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!_draggedChordId || _draggedChordId === chord.id) return
+    const rect = wrap.getBoundingClientRect()
+    const before = e.clientX < rect.left + rect.width / 2
+    wrap.style.outline = ''
+    // Determine insertion point: before this chord, or after (= before next chord)
+    const targetMeasure = _song.sections.find(s => s.id === section.id)?.measures.find(m => m.id === measure.id)
+    const chordIdx = targetMeasure?.chords.findIndex(c => c.id === chord.id) ?? -1
+    const beforeChordId = before ? chord.id : targetMeasure?.chords[chordIdx + 1]?.id
+    _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, beforeChordId)
+    _draggedChordId = null
+    saveSong(_song); h.onSongChange(_song)
+  })
 
   return wrap
 }
