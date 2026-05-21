@@ -127,6 +127,21 @@ modus/
 
 ## History
 
+### 2026-05-21 — UI overhaul session 9
+
+Layout de 4 columnas y CoF completo:
+- Notation panel reorganizado en 4 columnas: Staff | Analysis | CoF | Guitar (panel Analysis separado eliminado)
+- Analysis siempre visible desde init — 6 campos fijos (Roman, Function, Fig. bass, Diatonic, Scales, Cadence) con "—" por defecto, campos condicionales al final (Secondary, Coltrane, Neg. harm., Subs.)
+- chord-summary movido a dentro de la columna Staff (encima del pentagrama)
+- CoF: botones +/- movidos debajo del diagrama (centrados). Tope máximo subido a 400px
+- CoF: nuevos controles — b/# (enarmónicas), m (menores+dim toggle), ° (grados), 7 (7as)
+- CoF: tercer anillo interior de disminuidos (B°, F#°… → Bø7 con 7as). Se oculta con toggle m
+- CoF: grados en los 3 anillos — mayores (I, IV, V…), menores (vi, iii, ii…), dim (nombre+vii°)
+- CoF: font scale default 0.55 (maj:7 min:6 dim:4) — elegido via popup de preview temporal
+- Guitar: controles en 2 filas — fila 1: nav ‹/› + tamaño; fila 2: Off/diapasón/♩ + preset + ✎
+- Guitar: botones Tuning→SVG diapasón, Notes→♩ Unicode. Tooltips en todos los controles
+- Guitar: controles centrados bajo el diagrama
+
 ### 2026-05-21 — UI overhaul session 8
 
 Cosmética y controles:

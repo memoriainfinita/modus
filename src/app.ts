@@ -10,6 +10,10 @@ import type { AppState, HistoryEntry, SongChord } from './types'
 
 let staffWidth = 380
 let cofSize = parseInt(localStorage.getItem('cof-size') ?? '160')
+let cofAccidental = (localStorage.getItem('cof-accidental') ?? 'flat') as 'sharp' | 'flat'
+let cofShowMinor   = JSON.parse(localStorage.getItem('cof-show-minor')   ?? 'true')
+let cofShowDegrees = JSON.parse(localStorage.getItem('cof-show-degrees') ?? 'false')
+let cofShow7ths    = JSON.parse(localStorage.getItem('cof-show-7ths')    ?? 'false')
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -26,7 +30,6 @@ const state: AppState = {
   captureTargetId: null,
   panels: {
     notation: true,
-    analysis: true,
     piano: JSON.parse(localStorage.getItem('panel-piano') ?? 'true'),
     neck: JSON.parse(localStorage.getItem('panel-neck') ?? 'true'),
     history: JSON.parse(localStorage.getItem('panel-history') ?? 'true'),
@@ -49,6 +52,7 @@ function init() {
   buildLayout()
   wireKeyboard()
   renderZone1Diagrams([], null)
+  renderZone1Analysis()
 
   initMidi().then(result => {
     if (result.denied) {
@@ -118,33 +122,42 @@ function buildLayout() {
     <!-- Row 1: notation — staff + CoF side by side, guitar stacked below CoF -->
     <div id="notation-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
       <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">▼</button></div>
-      <div id="chord-summary" style="min-height:32px;margin-bottom:4px"></div>
       <div id="notation-content" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:center">
         <!-- Column 1: Staff -->
         <div style="flex:0 0 auto">
           <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Staff</div>
+          <div id="chord-summary" style="min-height:32px;margin-bottom:4px"></div>
           <div id="staff-container"></div>
         </div>
-        <!-- Column 2: CoF -->
-        <div style="flex:0 0 auto">
-          <div style="display:flex;gap:3px;align-items:center;margin-bottom:4px">
-            <span style="font-size:10px;color:#6b7280">CoF</span>
-            <button id="btn-cof-minus" class="size-ctrl-btn">−</button>
-            <button id="btn-cof-plus" class="size-ctrl-btn">+</button>
-          </div>
-          <div id="cof-container"></div>
+        <!-- Column 2: Analysis -->
+        <div style="flex:0 0 auto;min-width:140px">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:6px">Analysis</div>
+          <div id="analysis-content" style="display:flex;flex-direction:column;gap:4px"></div>
         </div>
-        <!-- Column 3: Guitar -->
+        <!-- Column 3: CoF -->
+        <div style="flex:0 0 auto">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">CoF</div>
+          <div id="cof-container"></div>
+          <div style="display:flex;flex-direction:column;gap:3px;align-items:center;margin-top:4px">
+            <div style="display:flex;gap:3px">
+              <button id="btn-cof-minus" class="size-ctrl-btn" title="Smaller">−</button>
+              <button id="btn-cof-plus"  class="size-ctrl-btn" title="Larger">+</button>
+            </div>
+            <div style="display:flex;gap:3px">
+              <button id="btn-cof-flat"   class="size-ctrl-btn" title="Show flat enharmonics (Gb, Db…)">b</button>
+              <button id="btn-cof-sharp"  class="size-ctrl-btn" title="Show sharp enharmonics (F#, C#…)">#</button>
+              <button id="btn-cof-minor"  class="size-ctrl-btn" title="Show/hide minor and diminished rings">m</button>
+              <button id="btn-cof-deg"    class="size-ctrl-btn" title="Show scale degrees (I, IV, V…)">°</button>
+              <button id="btn-cof-7"      class="size-ctrl-btn" title="Show 7th chords (maj7, m7, ø7)">7</button>
+            </div>
+          </div>
+        </div>
+        <!-- Column 4: Guitar -->
         <div style="flex:0 0 auto">
           <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Guitar</div>
           <div id="guitar-container" style="min-height:220px"></div>
         </div>
       </div>
-    </div>
-    <!-- Row 2: analysis -->
-    <div id="analysis-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
-      <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">▼</button></div>
-      <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px 12px;align-content:start;min-height:130px"></div>
     </div>
     <!-- Row 3: piano -->
     <div id="piano-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
@@ -183,18 +196,53 @@ function buildLayout() {
     <div id="zone3-content"></div>
   `
 
-  // Size controls
+  // CoF controls
+  const updateCofButtons = () => {
+    const act = 'background:#4f46e5;color:#fff;border:1px solid #4a4a6a;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px'
+    const def = 'background:#252540;color:#9ca3af;border:1px solid #4a4a6a;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px'
+    ;($('btn-cof-flat')  as HTMLButtonElement).style.cssText = cofAccidental === 'flat'  ? act : def
+    ;($('btn-cof-sharp') as HTMLButtonElement).style.cssText = cofAccidental === 'sharp' ? act : def
+    ;($('btn-cof-minor') as HTMLButtonElement).style.opacity = cofShowMinor   ? '1' : '0.4'
+    ;($('btn-cof-deg')   as HTMLButtonElement).style.opacity = cofShowDegrees ? '1' : '0.4'
+    ;($('btn-cof-7')     as HTMLButtonElement).style.opacity = cofShow7ths    ? '1' : '0.4'
+  }
+  updateCofButtons()
+
   $('btn-cof-minus').addEventListener('click', () => {
     cofSize = Math.max(100, cofSize - 20)
     localStorage.setItem('cof-size', String(cofSize))
     reRenderDiagrams()
   })
   $('btn-cof-plus').addEventListener('click', () => {
-    cofSize = Math.min(280, cofSize + 20)
+    cofSize = Math.min(400, cofSize + 20)
     localStorage.setItem('cof-size', String(cofSize))
     reRenderDiagrams()
   })
-
+  $('btn-cof-flat').addEventListener('click', () => {
+    cofAccidental = 'flat'
+    localStorage.setItem('cof-accidental', cofAccidental)
+    updateCofButtons(); reRenderDiagrams()
+  })
+  $('btn-cof-sharp').addEventListener('click', () => {
+    cofAccidental = 'sharp'
+    localStorage.setItem('cof-accidental', cofAccidental)
+    updateCofButtons(); reRenderDiagrams()
+  })
+  $('btn-cof-minor').addEventListener('click', () => {
+    cofShowMinor = !cofShowMinor
+    localStorage.setItem('cof-show-minor', String(cofShowMinor))
+    updateCofButtons(); reRenderDiagrams()
+  })
+  $('btn-cof-deg').addEventListener('click', () => {
+    cofShowDegrees = !cofShowDegrees
+    localStorage.setItem('cof-show-degrees', String(cofShowDegrees))
+    updateCofButtons(); reRenderDiagrams()
+  })
+  $('btn-cof-7').addEventListener('click', () => {
+    cofShow7ths = !cofShow7ths
+    localStorage.setItem('cof-show-7ths', String(cofShow7ths))
+    updateCofButtons(); reRenderDiagrams()
+  })
   // Restore key selector value
   if (state.activeKey) {
     ($('key-select') as HTMLSelectElement).value = state.activeKey
@@ -233,12 +281,11 @@ function buildLayout() {
 
 function applyPanelVisibility() {
   const nc = $('notation-content'); if (nc) nc.style.display = state.panels.notation ? 'flex' : 'none'
-  const ac = $('analysis-content'); if (ac) ac.style.display = state.panels.analysis ? 'grid' : 'none'
   const pc = $('piano-content'); if (pc) pc.style.display = state.panels.piano ? '' : 'none'
   const nk = $('neck-content'); if (nk) nk.style.display = state.panels.neck ? '' : 'none'
   const z2 = $('zone2-content'); if (z2) z2.style.display = state.panels.history ? '' : 'none'
   const z3 = $('zone3-content'); if (z3) z3.style.display = state.panels.song ? '' : 'none'
-  ;(['notation', 'analysis', 'piano', 'neck', 'history', 'song'] as const).forEach(key => {
+  ;(['notation', 'piano', 'neck', 'history', 'song'] as const).forEach(key => {
     const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-panel="${key}"]`)
     if (btn) btn.textContent = state.panels[key] ? '▲' : '▼'
   })
@@ -307,7 +354,7 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
     localStorage.setItem('active-key', key)
     ;($('key-select') as HTMLSelectElement).value = key
     refreshAll()
-  }, cofSize)
+  }, cofSize, { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths })
 }
 
 function reRenderDiagrams() {
@@ -367,70 +414,44 @@ function renderZone1Analysis() {
   renderChordSummary()
   const el = $('analysis-content')
   if (!el) return
-  if (!state.detection) { el.innerHTML = '<span style="color:#6b7280;font-size:12px">Play notes to analyze</span>'; return }
 
   const d = state.detection
-  if (d.kind === 'note') {
-    el.innerHTML = `<div><b>${d.noteName}</b><br><small>MIDI ${d.midiNumber} · ${d.pitchClass}</small></div>`
-    return
-  }
-  if (d.kind === 'interval') {
-    el.innerHTML = `<div><b>${d.intervalName}</b><br><small>${d.semitones} semitones · inversion: ${d.inversionName}</small></div>`
-    return
-  }
-
   const a = state.analysis
-  const chordName = d.candidates[d.selectedIndex]
-  const chordQuality = getChordQuality(chordName)
-  const badgeColor = CHORD_QUALITY_COLORS[chordQuality] ?? '#6b7280'
-  const pitchClasses = d.notes.map(n => n.replace(/(-?\d+)$/, ''))
 
-  const altCandidates = d.candidates.slice(1, 9)
+  const row = (label: string, val: string) =>
+    `<div style="display:flex;gap:6px;align-items:baseline">
+      <span style="font-size:10px;color:#6b7280;min-width:58px;flex-shrink:0">${label}</span>
+      <span style="font-size:11px">${val}</span>
+    </div>`
 
-  let html = `
-    <div style="grid-column:1/-1">
-      <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:${altCandidates.length ? '6px' : '0'}">
-        <span style="font-size:26px;font-weight:700;padding:2px 10px;border-radius:4px;background:${badgeColor}22;border-left:3px solid ${badgeColor}">${chordName}</span>
-        <span style="font-size:11px;color:#6b7280">${pitchClasses.join(' · ')}</span>
-      </div>
-      ${altCandidates.length ? `
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          ${altCandidates.map((c, i) =>
-            `<button class="alt-chord" data-idx="${i+1}" style="padding:3px 9px;border-radius:4px;background:#1e1e35;color:#9ca3af;border:1px solid #3a3a5c;cursor:pointer;font-size:12px;font-weight:500">${c}</button>`
-          ).join('')}
-        </div>
-      ` : ''}
-    </div>
-  `
+  let roman = '—', func_ = '—', figuredBass = '—', diatonic = '—', scales = '—', cadence = '—'
+  let extra = ''
 
-  if (a) {
-    html += `
-      <div><label>Roman</label><span>${a.roman}</span></div>
-      <div><label>Function</label><span>${({T:'Tonic',S:'Subdominant',D:'Dominant',unknown:'Unknown'} as Record<string,string>)[a.function]}</span></div>
-      <div><label>Figured bass</label><span>${a.figuredBass || '—'}</span></div>
-      <div><label>Diatonic</label><span>${a.isDiatonic ? 'Yes' : a.isBorrowed ? `Borrowed from ${a.borrowedFrom ?? '?'}` : 'Chromatic'}</span></div>
-      ${a.isSecondary ? `<div style="grid-column:1/-1"><label>Secondary</label><span>→ ${a.secondaryTarget}</span></div>` : ''}
-      <div><label>Scales</label><span>${a.suggestedScales.slice(0, 4).join(', ') || '—'}</span></div>
-      ${a.cadence ? `<div><label>Cadence</label><span>${a.cadence}</span></div>` : ''}
-      ${a.coltraneAxis ? `<div><label>Coltrane axis</label><span>${a.coltraneAxis.join(' · ')}</span></div>` : ''}
-      ${a.negativeHarmony ? `<div><label>Negative harmony</label><span>${a.negativeHarmony}</span></div>` : ''}
-      ${a.substitutions?.length ? `<div style="grid-column:1/-1"><label>Substitutions</label><span>${a.substitutions.join(' · ')}</span></div>` : ''}
-    `
+  if (d?.kind === 'note') {
+    extra = row('Note', `${d.noteName} · MIDI ${d.midiNumber}`)
+  } else if (d?.kind === 'interval') {
+    extra = row('Interval', `${d.intervalName} · ${d.semitones} st`) + row('Inversion', d.inversionName)
+  } else if (d?.kind === 'chord' && a) {
+    roman = a.roman
+    func_ = ({T:'Tonic',S:'Subdominant',D:'Dominant',unknown:'Unknown'} as Record<string,string>)[a.function]
+    figuredBass = a.figuredBass || '—'
+    diatonic = a.isDiatonic ? 'Yes' : a.isBorrowed ? `Borrowed (${a.borrowedFrom ?? '?'})` : 'Chromatic'
+    scales = a.suggestedScales.slice(0, 4).join(', ') || '—'
+    cadence = a.cadence || '—'
+    if (a.isSecondary) extra += row('Secondary', `→ ${a.secondaryTarget}`)
+    if (a.coltraneAxis) extra += row('Coltrane', a.coltraneAxis.join(' · '))
+    if (a.negativeHarmony) extra += row('Neg. harm.', a.negativeHarmony)
+    if (a.substitutions?.length) extra += row('Subs.', a.substitutions.join(', '))
   }
 
-  el.innerHTML = html
-
-  el.querySelectorAll<HTMLElement>('.alt-chord').forEach(altEl => {
-    altEl.addEventListener('click', () => {
-      if (state.detection?.kind === 'chord') {
-        state.detection.selectedIndex = parseInt(altEl.dataset.idx!)
-        const sym = state.detection.candidates[state.detection.selectedIndex]
-        state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
-        renderZone1Analysis()
-        renderZone1Diagrams(state.detection.notes, sym)
-      }
-    })
-  })
+  el.innerHTML =
+    row('Roman', roman) +
+    row('Function', func_) +
+    row('Fig. bass', figuredBass) +
+    row('Diatonic', diatonic) +
+    row('Scales', scales) +
+    row('Cadence', cadence) +
+    extra
 }
 
 function renderZone2() {
