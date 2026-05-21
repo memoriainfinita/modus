@@ -1871,6 +1871,42 @@ K:${abcKey}
   var cofShowMinor = JSON.parse(localStorage.getItem("cof-show-minor") ?? "true");
   var cofShowDegrees = JSON.parse(localStorage.getItem("cof-show-degrees") ?? "false");
   var cofShow7ths = JSON.parse(localStorage.getItem("cof-show-7ths") ?? "false");
+  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "diatonic", "scales", "cadence", "secondary", "coltrane", "negharm", "subs"];
+  var ANALYSIS_FIELD_LABELS = {
+    roman: "Roman",
+    function: "Func",
+    figbass: "Fig",
+    diatonic: "Diat",
+    scales: "Scl",
+    cadence: "Cad",
+    secondary: "Sec",
+    coltrane: "Colt",
+    negharm: "Neg",
+    subs: "Subs"
+  };
+  var analysisFieldsVisible = {
+    roman: JSON.parse(localStorage.getItem("analysis-field-roman") ?? "true"),
+    function: JSON.parse(localStorage.getItem("analysis-field-function") ?? "true"),
+    figbass: JSON.parse(localStorage.getItem("analysis-field-figbass") ?? "true"),
+    diatonic: JSON.parse(localStorage.getItem("analysis-field-diatonic") ?? "true"),
+    scales: JSON.parse(localStorage.getItem("analysis-field-scales") ?? "true"),
+    cadence: JSON.parse(localStorage.getItem("analysis-field-cadence") ?? "true"),
+    secondary: JSON.parse(localStorage.getItem("analysis-field-secondary") ?? "true"),
+    coltrane: JSON.parse(localStorage.getItem("analysis-field-coltrane") ?? "true"),
+    negharm: JSON.parse(localStorage.getItem("analysis-field-negharm") ?? "true"),
+    subs: JSON.parse(localStorage.getItem("analysis-field-subs") ?? "true")
+  };
+  var analysisScale = parseInt(localStorage.getItem("analysis-scale") ?? "11");
+  var SHORTCUTS = [
+    { key: "Space", action: "Capture chord \u2192 History" },
+    { key: "H", action: "Toggle Hold mode" },
+    { key: "A", action: "Toggle Arpeggio mode" },
+    { key: "S", action: "Send history chip \u2192 Song" },
+    { key: "C", action: "Clear history" },
+    { key: "Esc", action: "Clear cursor / capture" },
+    { key: "1\u20139", action: "Select chord candidate" },
+    { key: "?", action: "Show / hide this panel" }
+  ];
   var state = {
     midi: { deviceId: null, mode: "normal", activeNotes: /* @__PURE__ */ new Set(), lastArpeggioNotes: [], arpeggioTimer: null },
     activeKey: localStorage.getItem("active-key") || null,
@@ -1889,9 +1925,48 @@ K:${abcKey}
       history: JSON.parse(localStorage.getItem("panel-history") ?? "true"),
       song: JSON.parse(localStorage.getItem("panel-song") ?? "true"),
       cofControls: JSON.parse(localStorage.getItem("panel-cofControls") ?? "true"),
-      guitarControls: JSON.parse(localStorage.getItem("panel-guitarControls") ?? "true")
+      guitarControls: JSON.parse(localStorage.getItem("panel-guitarControls") ?? "true"),
+      analysisControls: JSON.parse(localStorage.getItem("panel-analysisControls") ?? "true"),
+      colStaff: JSON.parse(localStorage.getItem("panel-colStaff") ?? "true"),
+      colAnalysis: JSON.parse(localStorage.getItem("panel-colAnalysis") ?? "true"),
+      colCoF: JSON.parse(localStorage.getItem("panel-colCoF") ?? "true"),
+      colGuitar: JSON.parse(localStorage.getItem("panel-colGuitar") ?? "true")
     }
   };
+  var helpVisible = false;
+  function closeHelp() {
+    helpVisible = false;
+    document.getElementById("shortcut-help")?.remove();
+    document.removeEventListener("mousedown", closeHelpOnOutsideClick);
+  }
+  function toggleHelp() {
+    if (helpVisible) {
+      closeHelp();
+      return;
+    }
+    helpVisible = true;
+    const popup = document.createElement("div");
+    popup.id = "shortcut-help";
+    popup.className = "shortcut-help-popup";
+    popup.innerHTML = `
+    <div class="shortcut-help-header">
+      <span>Keyboard shortcuts</span>
+      <button class="shortcut-help-close">\xD7</button>
+    </div>
+    ${SHORTCUTS.map((s) => `
+      <div class="shortcut-row">
+        <kbd class="shortcut-key">${s.key}</kbd>
+        <span class="shortcut-action">${s.action}</span>
+      </div>`).join("")}`;
+    document.body.appendChild(popup);
+    popup.querySelector(".shortcut-help-close").addEventListener("click", closeHelp);
+    document.addEventListener("mousedown", closeHelpOnOutsideClick);
+  }
+  function closeHelpOnOutsideClick(e) {
+    const popup = document.getElementById("shortcut-help");
+    if (popup && !popup.contains(e.target))
+      closeHelp();
+  }
   var $ = (id) => document.getElementById(id);
   function init() {
     if (!navigator.requestMIDIAccess) {
@@ -1958,24 +2033,49 @@ K:${abcKey}
     ).join("")}
       </select>
       <span id="auto-key-label" class="auto-key-label"></span>
+      <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
     </div>
     <!-- Row 1: notation \u2014 staff + CoF side by side, guitar stacked below CoF -->
     <div id="notation-panel" class="zone-panel">
-      <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">\u25BC</button></div>
+      <div class="panel-header">
+        <span>Notation</span>
+        <div class="col-vis-row">
+          <button class="col-vis-btn${state.panels.colStaff ? " active" : ""}" data-col="colStaff" title="Staff">St</button>
+          <button class="col-vis-btn${state.panels.colAnalysis ? " active" : ""}" data-col="colAnalysis" title="Analysis">An</button>
+          <button class="col-vis-btn${state.panels.colCoF ? " active" : ""}" data-col="colCoF" title="Circle of Fifths">CoF</button>
+          <button class="col-vis-btn${state.panels.colGuitar ? " active" : ""}" data-col="colGuitar" title="Guitar">Git</button>
+        </div>
+        <button class="toggle-btn" data-panel="notation">\u25BC</button>
+      </div>
       <div id="notation-content">
         <!-- Column 1: Staff -->
-        <div class="col-auto">
+        <div class="col-auto" id="col-staff">
           <div class="col-label">Staff</div>
           <div id="chord-summary"></div>
           <div id="staff-container"></div>
         </div>
         <!-- Column 2: Analysis -->
-        <div class="col-analysis">
-          <div class="col-label">Analysis</div>
+        <div class="col-analysis" id="col-analysis">
+          <div class="col-header">
+            <div class="col-label">Analysis</div>
+            <button class="toggle-btn small" data-panel="analysisControls">\u25BC</button>
+          </div>
           <div id="analysis-content"></div>
+          <div id="analysis-controls">
+            <div class="ctrl-row">
+              <button id="btn-analysis-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
+              <button id="btn-analysis-plus"  class="size-ctrl-btn" title="Larger">+</button>
+            </div>
+            <div class="ctrl-row" style="flex-wrap:wrap;justify-content:center">
+              ${ANALYSIS_FIELD_KEYS.map(
+      (f) => `<button id="btn-field-${f}" class="size-ctrl-btn${analysisFieldsVisible[f] ? " active" : ""}"
+                  title="${ANALYSIS_FIELD_LABELS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
+    ).join("")}
+            </div>
+          </div>
         </div>
         <!-- Column 3: CoF -->
-        <div class="col-auto">
+        <div class="col-auto" id="col-cof">
           <div class="col-header">
             <div class="col-label">CoF</div>
             <button class="toggle-btn small" data-panel="cofControls">\u25BC</button>
@@ -1996,7 +2096,7 @@ K:${abcKey}
           </div>
         </div>
         <!-- Column 4: Guitar -->
-        <div class="col-auto">
+        <div class="col-auto" id="col-guitar">
           <div class="col-header">
             <div class="col-label">Guitar</div>
             <button class="toggle-btn small" data-panel="guitarControls">\u25BC</button>
@@ -2088,6 +2188,39 @@ K:${abcKey}
       updateCofButtons();
       reRenderDiagrams();
     });
+    const updateAnalysisFieldButtons = () => {
+      ANALYSIS_FIELD_KEYS.forEach((f) => {
+        const btn = document.getElementById(`btn-field-${f}`);
+        if (btn)
+          btn.classList.toggle("active", analysisFieldsVisible[f]);
+      });
+    };
+    $("btn-analysis-minus").addEventListener("click", () => {
+      analysisScale = Math.max(8, analysisScale - 1);
+      localStorage.setItem("analysis-scale", String(analysisScale));
+      renderZone1Analysis();
+    });
+    $("btn-analysis-plus").addEventListener("click", () => {
+      analysisScale = Math.min(20, analysisScale + 1);
+      localStorage.setItem("analysis-scale", String(analysisScale));
+      renderZone1Analysis();
+    });
+    ANALYSIS_FIELD_KEYS.forEach((f) => {
+      $(`btn-field-${f}`).addEventListener("click", () => {
+        analysisFieldsVisible[f] = !analysisFieldsVisible[f];
+        localStorage.setItem(`analysis-field-${f}`, String(analysisFieldsVisible[f]));
+        updateAnalysisFieldButtons();
+        renderZone1Analysis();
+      });
+    });
+    document.querySelectorAll(".col-vis-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const col = btn.dataset.col;
+        state.panels[col] = !state.panels[col];
+        localStorage.setItem(`panel-${col}`, JSON.stringify(state.panels[col]));
+        applyPanelVisibility();
+      });
+    });
     if (state.activeKey) {
       $("key-select").value = state.activeKey;
     }
@@ -2110,12 +2243,13 @@ K:${abcKey}
       btn.addEventListener("click", () => {
         const panel = btn.dataset.panel;
         state.panels[panel] = !state.panels[panel];
-        if (panel === "history" || panel === "song" || panel === "piano" || panel === "neck" || panel === "cofControls" || panel === "guitarControls") {
+        if (panel === "history" || panel === "song" || panel === "piano" || panel === "neck" || panel === "cofControls" || panel === "guitarControls" || panel === "analysisControls") {
           localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]));
         }
         applyPanelVisibility();
       });
     });
+    $("btn-help").addEventListener("click", toggleHelp);
     applyPanelVisibility();
   }
   function applyPanelVisibility() {
@@ -2141,7 +2275,27 @@ K:${abcKey}
     const gcw = document.getElementById("guitar-ctrl-wrap");
     if (gcw)
       gcw.style.display = state.panels.guitarControls ? "" : "none";
-    ["notation", "piano", "neck", "history", "song", "cofControls", "guitarControls"].forEach((key) => {
+    const ac = $("analysis-controls");
+    if (ac)
+      ac.style.display = state.panels.analysisControls ? "" : "none";
+    const cs = $("col-staff");
+    if (cs)
+      cs.style.display = state.panels.colStaff ? "" : "none";
+    const ca = $("col-analysis");
+    if (ca)
+      ca.style.display = state.panels.colAnalysis ? "" : "none";
+    const ccof = $("col-cof");
+    if (ccof)
+      ccof.style.display = state.panels.colCoF ? "" : "none";
+    const cg = $("col-guitar");
+    if (cg)
+      cg.style.display = state.panels.colGuitar ? "" : "none";
+    document.querySelectorAll(".col-vis-btn").forEach((btn) => {
+      const col = btn.dataset.col;
+      if (col)
+        btn.classList.toggle("active", !!state.panels[col]);
+    });
+    ["notation", "piano", "neck", "history", "song", "cofControls", "guitarControls", "analysisControls"].forEach((key) => {
       const btn = document.querySelector(`.toggle-btn[data-panel="${key}"]`);
       if (btn)
         btn.textContent = state.panels[key] ? "\u25B2" : "\u25BC";
@@ -2277,10 +2431,13 @@ K:${abcKey}
       return;
     const d = state.detection;
     const a = state.analysis;
+    const labelFs = Math.max(8, analysisScale - 1);
+    const valFs = analysisScale;
     const row = (label, val) => `<div class="analysis-row">
-      <span class="analysis-label">${label}</span>
-      <span class="analysis-value">${val}</span>
+      <span class="analysis-label" style="font-size:${labelFs}px">${label}</span>
+      <span class="analysis-value" style="font-size:${valFs}px">${val}</span>
     </div>`;
+    const maybeRow = (f, label, val) => analysisFieldsVisible[f] ? row(label, val) : "";
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
     let extra = "";
     if (d?.kind === "note") {
@@ -2295,15 +2452,15 @@ K:${abcKey}
       scales = a.suggestedScales.slice(0, 4).join(", ") || "\u2014";
       cadence = a.cadence || "\u2014";
       if (a.isSecondary)
-        extra += row("Secondary", `\u2192 ${a.secondaryTarget}`);
+        extra += maybeRow("secondary", "Secondary", `\u2192 ${a.secondaryTarget}`);
       if (a.coltraneAxis)
-        extra += row("Coltrane", a.coltraneAxis.join(" \xB7 "));
+        extra += maybeRow("coltrane", "Coltrane", a.coltraneAxis.join(" \xB7 "));
       if (a.negativeHarmony)
-        extra += row("Neg. harm.", a.negativeHarmony);
+        extra += maybeRow("negharm", "Neg. harm.", a.negativeHarmony);
       if (a.substitutions?.length)
-        extra += row("Subs.", a.substitutions.join(", "));
+        extra += maybeRow("subs", "Subs.", a.substitutions.join(", "));
     }
-    el.innerHTML = row("Roman", roman) + row("Function", func_) + row("Fig. bass", figuredBass) + row("Diatonic", diatonic) + row("Scales", scales) + row("Cadence", cadence) + extra;
+    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + extra;
   }
   function renderZone2() {
     renderHistory(
@@ -2442,7 +2599,15 @@ K:${abcKey}
           if (confirm("Clear history?"))
             clearHistory();
           break;
+        case "?":
+          e.preventDefault();
+          toggleHelp();
+          break;
         case "Escape":
+          if (helpVisible) {
+            closeHelp();
+            break;
+          }
           state.activeCursorId = null;
           state.captureTargetId = null;
           renderZone3();

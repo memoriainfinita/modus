@@ -113,5 +113,10 @@ export interface AppState {
     song: boolean
     cofControls: boolean
     guitarControls: boolean
+    analysisControls: boolean
+    colStaff: boolean
+    colAnalysis: boolean
+    colCoF: boolean
+    colGuitar: boolean
   }
 }
