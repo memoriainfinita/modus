@@ -127,6 +127,16 @@ modus/
 
 ## History
 
+### 2026-05-22 — UI controls session 11
+
+Controles de Analysis: botones toggle para los 6 campos fijos (Roman, Func, Fig, Diat, Scl, Cad) y los 4 condicionales (Sec, Colt, Neg, Subs). Botones +/- para escala de fuente (8–20px, default 11). Toggle ▼/▲ para mostrar/ocultar el bloque de controles. Todo persiste en localStorage.
+
+Visibilidad de columnas: 4 botones [St][An][CoF][Git] en el panel-header de Notation. Ocultan/muestran columnas enteras del flex. Persisten en localStorage.
+
+Atajos de teclado centralizados: array `SHORTCUTS` como fuente única. Botón `?` redondo en toolbar. Popup flotante centrado con tabla kbd/acción. Se cierra con ×, tecla `?`, `Escape` (Escape cierra el popup primero y solo después limpia cursor).
+
+Archivos modificados: `src/app.ts`, `src/types.ts`, `styles.css`, `dist/app.js`.
+
 ### 2026-05-21 — CSS refactor session 10
 
 Estilos inline extraídos a `styles.css` externo (~280 líneas). Eliminado bloque `<style>` de `index.html`, añadido `<link>`. Todos los archivos TS actualizados: `app.ts`, `diagrams.ts`, `history.ts`, `song.ts`. Solo permanecen inline los estilos verdaderamente dinámicos (colores de calidad, colores de sección, border activo). Corregido además import `playChord` mal colocado en mitad de `song.ts` (movido al top). Build limpio, bundle funcional.
