@@ -388,15 +388,15 @@
     return root + (mode2?.toLowerCase() === "minor" ? "m" : "");
   }
   function renderStaff(container, noteNames, width = 380, keyStr = null) {
-    container.style.width = width + "px";
     const abcKey = activeKeyToAbcKey(keyStr);
     const header = `X:1
 M:none
 L:1
 K:${abcKey}
 `;
+    const opts = { staffwidth: width - 20 };
     if (!noteNames.length) {
-      ABCJS.renderAbc(container, header + "z", { responsive: "resize" });
+      ABCJS.renderAbc(container, header + "z", opts);
       return;
     }
     const abcNotes = noteNames.map((n) => {
@@ -415,7 +415,7 @@ K:${abcKey}
         abc = name + ",".repeat(4 - oct);
       return abc;
     });
-    ABCJS.renderAbc(container, header + `[${abcNotes.join("")}]1`, { responsive: "resize" });
+    ABCJS.renderAbc(container, header + `[${abcNotes.join("")}]1`, opts);
   }
   var QUALITY_COLORS = {
     major: "#f59e0b",
@@ -446,7 +446,18 @@ K:${abcKey}
       });
     }
   }
+  var DARK_FRETBOARD_STYLE = {
+    chordNameColor: "#e0e0e0",
+    fretLabelColor: "#9ca3af",
+    nutColor: "#aaaaaa",
+    indicatorColor: "#9ca3af",
+    stringLabelColor: "#9ca3af"
+  };
   function renderGuitar(container, chordSymbol) {
+    if (!chordSymbol) {
+      container.innerHTML = '<div class="no-voicing">\u2014</div>';
+      return;
+    }
     let voicings = [];
     try {
       const chord = UMT.parseChordSymbol(chordSymbol);
@@ -454,17 +465,17 @@ K:${abcKey}
     } catch {
     }
     if (!voicings.length) {
-      container.innerHTML = "";
+      container.innerHTML = '<div class="no-voicing">No voicings</div>';
       return;
     }
     const svgs = voicings.slice(0, 3).map((v) => {
       try {
-        return `<div>${Notae.renderFretboard({ name: chordSymbol, ...v })}</div>`;
+        return `<div>${Notae.renderFretboard({ name: chordSymbol, ...v }, DARK_FRETBOARD_STYLE)}</div>`;
       } catch {
         return "";
       }
     }).join("");
-    container.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">${svgs}</div>`;
+    container.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:nowrap;align-items:flex-start">${svgs}</div>`;
   }
   var CIRCLE_KEYS = ["C", "G", "D", "A", "E", "B", "F#/Gb", "Db", "Ab", "Eb", "Bb", "F"];
   var CIRCLE_KEYS_MINOR = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "D#m/Ebm", "Bbm", "Fm", "Cm", "Gm", "Dm"];
@@ -1641,17 +1652,13 @@ K:${abcKey}
     <!-- Row 1: notation \u2014 staff + CoF side by side, guitar stacked below CoF -->
     <div id="notation-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
       <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">\u{1F441}</button></div>
-      <div id="notation-content" style="display:flex;gap:12px;align-items:flex-start">
-        <!-- Staff -->
+      <div id="notation-content" style="display:flex;gap:16px;align-items:flex-start">
+        <!-- Column 1: Staff -->
         <div style="flex:0 0 auto">
-          <div style="display:flex;gap:3px;align-items:center;margin-bottom:4px">
-            <span style="font-size:10px;color:#6b7280">Staff</span>
-            <button id="btn-staff-minus" class="size-ctrl-btn">\u2212</button>
-            <button id="btn-staff-plus" class="size-ctrl-btn">+</button>
-          </div>
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Staff</div>
           <div id="staff-container"></div>
         </div>
-        <!-- CoF + Guitar stacked -->
+        <!-- Column 2: CoF -->
         <div style="flex:0 0 auto">
           <div style="display:flex;gap:3px;align-items:center;margin-bottom:4px">
             <span style="font-size:10px;color:#6b7280">CoF</span>
@@ -1659,7 +1666,11 @@ K:${abcKey}
             <button id="btn-cof-plus" class="size-ctrl-btn">+</button>
           </div>
           <div id="cof-container"></div>
-          <div id="guitar-container" style="margin-top:6px;text-align:center"></div>
+        </div>
+        <!-- Column 3: Guitar -->
+        <div style="flex:0 0 auto">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Guitar</div>
+          <div id="guitar-container"></div>
         </div>
       </div>
     </div>
@@ -1688,16 +1699,6 @@ K:${abcKey}
     </div>
     <div id="zone3-content"></div>
   `;
-    $("btn-staff-minus").addEventListener("click", () => {
-      staffWidth = Math.max(180, staffWidth - 40);
-      localStorage.setItem("staff-width", String(staffWidth));
-      reRenderDiagrams();
-    });
-    $("btn-staff-plus").addEventListener("click", () => {
-      staffWidth = Math.min(640, staffWidth + 40);
-      localStorage.setItem("staff-width", String(staffWidth));
-      reRenderDiagrams();
-    });
     $("btn-cof-minus").addEventListener("click", () => {
       cofSize = Math.max(100, cofSize - 20);
       localStorage.setItem("cof-size", String(cofSize));
@@ -1741,10 +1742,10 @@ K:${abcKey}
   function applyPanelVisibility() {
     const nc = $("notation-content");
     if (nc)
-      nc.style.display = state.panels.notation ? "" : "none";
+      nc.style.display = state.panels.notation ? "flex" : "none";
     const ac = $("analysis-content");
     if (ac)
-      ac.style.display = state.panels.analysis ? "" : "none";
+      ac.style.display = state.panels.analysis ? "grid" : "none";
     const z2 = $("zone2-content");
     if (z2)
       z2.style.display = state.panels.history ? "" : "none";
@@ -1800,8 +1801,7 @@ K:${abcKey}
     renderStaff($("staff-container"), noteNames, staffWidth, state.activeKey);
     const quality = chordSymbol ? getChordQuality(chordSymbol) : "";
     renderPiano($("piano-container"), noteNames, quality);
-    if (chordSymbol)
-      renderGuitar($("guitar-container"), chordSymbol);
+    renderGuitar($("guitar-container"), chordSymbol);
     renderCircleOfFifths($("cof-container"), state.activeKey, chordSymbol ? chordSymbol[0] : null, (key) => {
       state.activeKey = key;
       localStorage.setItem("active-key", key);

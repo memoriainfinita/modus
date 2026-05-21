@@ -127,6 +127,10 @@ modus/
 
 ## History
 
+### 2026-05-21 — UI overhaul session 6
+
+Layout 3 columnas en Notation: Staff | CoF | Guitar. Bugs corregidos: `applyPanelVisibility` restauraba `display:''` en vez de `display:flex/grid`, rompiendo el layout al cargar. ABCJS cambiado de `responsive:resize` a `staffwidth` directo (sin depender del CSS para calcular tamaño). Fretboard guitar: colores adaptados a fondo oscuro (chordNameColor, fretLabelColor, nutColor, indicatorColor). Guitar columna independiente (antes anidada dentro del CoF). Botones Staff +/- eliminados (feature descartada temporalmente — ver TODO). Guitar muestra placeholder "—" en init.
+
 ### 2026-05-21 — UI overhaul session 5
 
 Layout refactorizado: staff + CoF en misma fila, análisis debajo (grid auto-fill, mínimo 3 por fila), piano debajo del análisis. Guitar (3 voicings en línea) debajo del CoF en la misma columna. Botones +/− para tamaño de staff y CoF (CoF escala bien; staff pendiente — ver TODO).
@@ -179,5 +183,7 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [x] Clave en pentagrama según key selector
 - [x] Quitar 4/4 del pentagrama (M:none)
 - [x] Análisis grid multi-columna (auto-fill minmax 130px)
-- [ ] Staff +/- size control — no funciona. container.style.width + responsive:resize no tiene efecto. Investigar alternativa (scale CSS transform, o wrapping div con overflow:hidden)
+- [ ] Staff +/- size control — botones eliminados (no funcionaban). Pendiente: probar ABCJS `scale` option o CSS transform en el contenedor.
 - [ ] Guitar tuning selector — UMT.GUITAR_DROPPED_D, UMT.GUITAR_OPEN_G disponibles
+- [ ] Fretboard horizontal junto al piano — mostrar qué notas se pulsan como hace el piano. Notae.renderFretboard con orientation:"horizontal". Va en la misma fila que el piano (zona row 3).
+- [ ] Guitar diagrams: diagrama vacío en init — actualmente muestra "—" en texto. Explorar si Notae puede renderizar un fretboard horizontal vacío (sin notas marcadas) como placeholder visible desde carga.
