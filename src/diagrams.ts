@@ -191,41 +191,49 @@ function guitarStyle(): object {
   }
 }
 
+const FORK_ICON = `<svg width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="vertical-align:middle;display:inline-block">
+  <path d="M3,7 L3,2 Q3,0.5 5.5,0.5 Q8,0.5 8,2 L8,7"/>
+  <line x1="5.5" y1="7" x2="5.5" y2="12.5"/>
+</svg>`
+const NOTE_ICON = `<span style="font-size:13px;line-height:1">♩</span>`
+
 function guitarControls(total: number, idx: number): string {
   const b = 'border:1px solid #4a4a6a;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px'
-  const btn = (action: string, label: string, active: boolean) =>
-    `<button class="guitar-ctrl" data-action="${action}" style="${b};background:${active ? '#4f46e5' : '#252540'};color:${active ? '#fff' : '#9ca3af'}">${label}</button>`
-  const navB = `${b};font-size:13px;padding:0 6px;line-height:1.6`
+  const btn = (action: string, label: string, active: boolean, tip: string) =>
+    `<button class="guitar-ctrl" data-action="${action}" title="${tip}" style="${b};background:${active ? '#4f46e5' : '#252540'};color:${active ? '#fff' : '#9ca3af'};display:inline-flex;align-items:center;gap:2px">${label}</button>`
+  const navB = `${b};font-size:13px;padding:0 5px;line-height:1.6`
   const nav = total > 1 ? `
-    <button class="guitar-nav" data-dir="-1" style="${navB}">‹</button>
+    <button class="guitar-nav" data-dir="-1" title="Previous voicing" style="${navB}">‹</button>
     <span style="font-size:10px;color:#6b7280">${idx + 1}/${total}</span>
-    <button class="guitar-nav" data-dir="1" style="${navB}">›</button>` : ''
+    <button class="guitar-nav" data-dir="1" title="Next voicing" style="${navB}">›</button>` : ''
   const selStyle = 'background:#252540;color:#e0e0e0;border:1px solid #4a4a6a;border-radius:4px;padding:2px 4px;font-size:11px'
-  const sizeB = `${b};padding:0 6px;line-height:1.6`
+  const sizeB = `${b};padding:0 4px;font-size:10px;line-height:1.6`
   const tunerRow = guitarTunerExpanded ? `
-    <div style="display:flex;gap:4px;align-items:center;margin-top:5px;flex-wrap:wrap">
+    <div style="display:flex;gap:4px;align-items:center;margin-top:5px;flex-wrap:wrap;justify-content:center">
       ${guitarStringTuning.map((note, i) =>
-        `<input class="guitar-string-input" data-string="${i}" value="${note}"
+        `<input class="guitar-string-input" data-string="${i}" value="${note}" title="String ${6 - i}"
           style="width:28px;background:#1a1a2e;color:#e0e0e0;border:1px solid #4a4a6a;
                  border-radius:3px;font-size:11px;text-align:center;padding:2px 0" maxlength="2">`
       ).join('')}
     </div>` : ''
   return `
-    <div style="margin-top:6px">
-      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-        ${btn('label-none',   'Off',    guitarLabelMode === 'none')}
-        ${btn('label-tuning', 'Tuning', guitarLabelMode === 'tuning')}
-        ${btn('label-notes',  'Notes',  guitarLabelMode === 'notes')}
-        <select class="guitar-tuning-sel" style="${selStyle}">
+    <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;gap:5px;align-items:center;justify-content:center">
+        ${nav || '<span style="font-size:10px;color:#3a3a5c">—</span>'}
+        <button class="guitar-ctrl" data-action="size-minus" title="Smaller diagram" style="${sizeB}">−</button>
+        <button class="guitar-ctrl" data-action="size-plus"  title="Larger diagram"  style="${sizeB}">+</button>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center">
+        ${btn('label-none',   'Off',       guitarLabelMode === 'none',    'Hide string labels')}
+        ${btn('label-tuning', FORK_ICON,  guitarLabelMode === 'tuning',  'Show open string notes (tuning)')}
+        ${btn('label-notes',  NOTE_ICON,  guitarLabelMode === 'notes',   'Show fretted note names')}
+        <select class="guitar-tuning-sel" title="Tuning preset" style="${selStyle}">
           ${Object.entries(GUITAR_TUNINGS).map(([k, t]) =>
             `<option value="${k}" ${guitarTuningKey === k ? 'selected' : ''}>${t.label}</option>`
           ).join('')}
           <option value="custom" ${guitarTuningKey === 'custom' ? 'selected' : ''}>Custom</option>
         </select>
-        ${btn('toggle-tuner', '✎', guitarTunerExpanded)}
-        ${nav}
-        <button class="guitar-ctrl" data-action="size-minus" style="${sizeB}">−</button>
-        <button class="guitar-ctrl" data-action="size-plus"  style="${sizeB}">+</button>
+        ${btn('toggle-tuner', '✎', guitarTunerExpanded, 'Edit string tuning')}
       </div>
       ${tunerRow}
     </div>`
@@ -360,27 +368,44 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
 
 // ─── Circle of fifths ─────────────────────────────────────────────────────────
 
-const CIRCLE_KEYS = ['C','G','D','A','E','B','F#/Gb','Db','Ab','Eb','Bb','F']
-const CIRCLE_KEYS_MINOR = ['Am','Em','Bm','F#m','C#m','G#m','D#m/Ebm','Bbm','Fm','Cm','Gm','Dm']
+const CIRCLE_KEYS_FLAT  = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F']
+const CIRCLE_KEYS_SHARP = ['C','G','D','A','E','B','F#','C#','G#','D#','Bb','F']
+const CIRCLE_KEYS_MINOR_FLAT  = ['Am','Em','Bm','F#m','C#m','G#m','Ebm','Bbm','Fm','Cm','Gm','Dm']
+const CIRCLE_KEYS_MINOR_SHARP = ['Am','Em','Bm','F#m','C#m','G#m','D#m','Bbm','Fm','Cm','Gm','Dm']
+const CIRCLE_DIM = ['B°','F#°','C#°','G#°','D#°','A#°','F°','C°','G°','D°','A°','E°']
+const COF_DEGREES       = ['I','V','II','VI','III','VII','♭V','♭II','♭VI','♭III','♭VII','IV']
+const COF_DEGREES_MINOR = ['vi','iii','vii','♯iv','♭ii','♭vi','♭iii','♭vii','iv','i','v','ii']
 
 export function renderCircleOfFifths(
   container: HTMLElement,
   activeKey: string | null,
   chordRoot: string | null,
   onKeyClick: (key: string) => void,
-  size = 160
+  size = 160,
+  opts: { accidental: 'sharp' | 'flat', showMinor: boolean, showDegrees: boolean, show7ths: boolean, fontScale?: number } = { accidental: 'flat', showMinor: true, showDegrees: false, show7ths: false }
 ) {
+  const keys = opts.accidental === 'sharp' ? CIRCLE_KEYS_SHARP : CIRCLE_KEYS_FLAT
+  const minorKeys = opts.accidental === 'sharp' ? CIRCLE_KEYS_MINOR_SHARP : CIRCLE_KEYS_MINOR_FLAT
+
+  const activeRoot = activeKey?.split(' ')[0] ?? null
+  const activePos = activeRoot !== null ? keys.findIndex(k => k === activeRoot) : -1
+
   const cx = size / 2, cy = size / 2
-  const outerR = size * 0.425
-  const innerR = size * 0.275
-  const labelR = size * 0.356
-  const minorR = size * 0.206
-  const majorFont = Math.max(7, Math.round(size * 0.0625))
-  const minorFont = Math.max(5, Math.round(size * 0.05))
+  const outerR  = size * 0.425
+  const innerR  = size * 0.275
+  const labelR  = size * 0.356
+  const minorR  = size * 0.21
+  const dimOutR = size * 0.155
+  const dimInR  = size * 0.065
+  const dimLabR = size * 0.11
+  const fs = opts.fontScale ?? 0.55
+  const majorFont = Math.max(4, Math.round(size * 0.0625 * fs))
+  const minorFont = Math.max(3, Math.round(size * 0.05   * fs))
+  const dimFont   = Math.max(3, Math.round(size * 0.04   * fs))
 
   let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`
 
-  CIRCLE_KEYS.forEach((key, i) => {
+  keys.forEach((key, i) => {
     const angle = (i * 30 - 90) * Math.PI / 180
     const nextAngle = ((i + 1) * 30 - 90) * Math.PI / 180
     const x1o = cx + outerR * Math.cos(angle), y1o = cy + outerR * Math.sin(angle)
@@ -388,8 +413,8 @@ export function renderCircleOfFifths(
     const x1i = cx + innerR * Math.cos(angle), y1i = cy + innerR * Math.sin(angle)
     const x2i = cx + innerR * Math.cos(nextAngle), y2i = cy + innerR * Math.sin(nextAngle)
 
-    const isActiveKey = activeKey?.startsWith(key.split('/')[0])
-    const isChordRoot = chordRoot === key.split('/')[0]
+    const isActiveKey = activeRoot && key === activeRoot
+    const isChordRoot = chordRoot === key
     const fill = isActiveKey ? '#4f46e5' : isChordRoot ? '#0d9488' : '#2d2d44'
     const stroke = isChordRoot ? '#0d9488' : '#4a4a6a'
 
@@ -397,17 +422,63 @@ export function renderCircleOfFifths(
     const lx = cx + labelR * Math.cos(midAngle)
     const ly = cy + labelR * Math.sin(midAngle)
 
+    const degree = opts.showDegrees && activePos !== -1
+      ? COF_DEGREES[(i - activePos + 12) % 12]
+      : null
+
     svg += `<path d="M${x1i},${y1i} L${x1o},${y1o} A${outerR},${outerR} 0 0,1 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0,0 ${x1i},${y1i}"
       fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
-      data-key="${key.split('/')[0]} Major" />`
-    svg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
-      font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${key}</text>`
+      data-key="${key} Major" />`
 
-    const mKey = CIRCLE_KEYS_MINOR[i]
-    const mx = cx + minorR * Math.cos(midAngle)
-    const my = cy + minorR * Math.sin(midAngle)
-    svg += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle"
-      font-size="${minorFont}" fill="#9ca3af" pointer-events="none">${mKey}</text>`
+    const keyLabel = key + (opts.show7ths ? 'maj7' : '')
+    if (degree) {
+      svg += `<text x="${lx}" y="${ly - majorFont * 0.45}" text-anchor="middle" dominant-baseline="middle"
+        font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${keyLabel}</text>`
+      svg += `<text x="${lx}" y="${ly + majorFont * 0.7}" text-anchor="middle" dominant-baseline="middle"
+        font-size="${majorFont * 0.85}" fill="#a5b4fc" pointer-events="none">${degree}</text>`
+    } else {
+      svg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
+        font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${keyLabel}</text>`
+    }
+
+    if (opts.showMinor) {
+      const mx = cx + minorR * Math.cos(midAngle)
+      const my = cy + minorR * Math.sin(midAngle)
+      const minorLabel = minorKeys[i] + (opts.show7ths ? '7' : '')
+      const minorDegree = opts.showDegrees && activePos !== -1
+        ? COF_DEGREES_MINOR[(i - activePos + 12) % 12]
+        : null
+      if (minorDegree) {
+        svg += `<text x="${mx}" y="${my - minorFont * 0.55}" text-anchor="middle" dominant-baseline="middle"
+          font-size="${minorFont}" fill="#9ca3af" pointer-events="none">${minorLabel}</text>`
+        svg += `<text x="${mx}" y="${my + minorFont * 0.75}" text-anchor="middle" dominant-baseline="middle"
+          font-size="${minorFont * 0.85}" fill="#818cf8" pointer-events="none">${minorDegree}</text>`
+      } else {
+        svg += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle"
+          font-size="${minorFont}" fill="#9ca3af" pointer-events="none">${minorLabel}</text>`
+      }
+
+      // Diminished inner ring
+      const da = angle, dna = nextAngle
+      const dx1o = cx + dimOutR * Math.cos(da),  dy1o = cy + dimOutR * Math.sin(da)
+      const dx2o = cx + dimOutR * Math.cos(dna), dy2o = cy + dimOutR * Math.sin(dna)
+      const dx1i = cx + dimInR  * Math.cos(da),  dy1i = cy + dimInR  * Math.sin(da)
+      const dx2i = cx + dimInR  * Math.cos(dna), dy2i = cy + dimInR  * Math.sin(dna)
+      svg += `<path d="M${dx1i},${dy1i} L${dx1o},${dy1o} A${dimOutR},${dimOutR} 0 0,1 ${dx2o},${dy2o} L${dx2i},${dy2i} A${dimInR},${dimInR} 0 0,0 ${dx1i},${dy1i}"
+        fill="#1e1e35" stroke="#3a3a5c" stroke-width="1"/>`
+      const dlx = cx + dimLabR * Math.cos(midAngle)
+      const dly = cy + dimLabR * Math.sin(midAngle)
+      const dimChord = opts.show7ths ? CIRCLE_DIM[i].replace('°', 'ø7') : CIRCLE_DIM[i]
+      if (opts.showDegrees && activePos !== -1) {
+        svg += `<text x="${dlx}" y="${dly - dimFont * 0.55}" text-anchor="middle" dominant-baseline="middle"
+          font-size="${dimFont}" fill="#6b7280" pointer-events="none">${dimChord}</text>`
+        svg += `<text x="${dlx}" y="${dly + dimFont * 0.75}" text-anchor="middle" dominant-baseline="middle"
+          font-size="${dimFont * 0.85}" fill="#818cf8" pointer-events="none">vii°</text>`
+      } else {
+        svg += `<text x="${dlx}" y="${dly}" text-anchor="middle" dominant-baseline="middle"
+          font-size="${dimFont}" fill="#6b7280" pointer-events="none">${dimChord}</text>`
+      }
+    }
   })
 
   svg += '</svg>'
