@@ -127,6 +127,10 @@ modus/
 
 ## History
 
+### 2026-05-21 — UI overhaul session 4
+
+Bug crítico: ABC notation para bemoles/sostenidos estaba al revés — `'Bb'.replace('b','_')` daba `'B_'` (ABCJS ignoraba el `_` al final y mostraba B natural). Corrección: accidental ANTES de la letra (`_B`, `^C`). Eso explicaba "detecta como notas naturales" en el pentagrama. Piano confirmado OK — Notae convierte flats→sharps internamente. Staff a ancho completo del panel (~536px). CoF + guitar movidos a fila debajo del staff. CoF escalado a 160px. min-height:260px en analysis-content para reservar espacio y evitar desplazamiento del piano.
+
 ### 2026-05-21 — UI overhaul session 3
 
 Bug fixes: normal mode stuck note (renderZone1Diagrams called on empty notes). Section DnD fixed (secHeader.draggable instead of wrap — e.target was always wrap). Guitar voicings fixed (chord.quality || 'major' catches empty string; fallback to minor/major on unknown quality). Piano extended to 4 octaves C2-B5. Zone1 layout restructured: notation+CoF+guitar LEFT, analysis RIGHT, piano full-width below. Staff min-height 200px. Cross-section chord drag (moveChordToPosition). History chips now draggable to song measures (dataTransfer 'application/x-history-chord'). Capture and →Song buttons removed from history. History right-click to remove chip. Form shown inline real-time in song header (no more button). Build clean.
@@ -158,6 +162,7 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [x] Piano: fixed range C3-B4 (no dynamic resize)
 - [x] Piano y CoF: no aparecer de repente — renderZone1Diagrams([], null) on init
 - [x] Header de navegación eliminado (zone-nav)
-- [x] Staff más grande (min-height 200px)
+- [x] Staff más grande (ancho completo del panel, ~536px)
 - [x] Piano 4 octavas (C2-B5)
+- [x] Notas bemol/sostenido en pentagrama (bug ABC notation)
 - [ ] Guitar tuning selector — investigar Notae demos para ver opciones de la librería
