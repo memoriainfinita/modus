@@ -17,11 +17,11 @@ function activeKeyToAbcKey(keyStr: string | null): string {
 }
 
 export function renderStaff(container: HTMLElement, noteNames: string[], width = 380, keyStr: string | null = null) {
-  container.style.width = width + 'px'
   const abcKey = activeKeyToAbcKey(keyStr)
   const header = `X:1\nM:none\nL:1\nK:${abcKey}\n`
+  const opts = { staffwidth: width - 20 }
   if (!noteNames.length) {
-    ABCJS.renderAbc(container, header + 'z', { responsive: 'resize' })
+    ABCJS.renderAbc(container, header + 'z', opts)
     return
   }
   const abcNotes = noteNames.map(n => {
@@ -38,7 +38,7 @@ export function renderStaff(container: HTMLElement, noteNames: string[], width =
     else abc = name + ','.repeat(4 - oct)
     return abc
   })
-  ABCJS.renderAbc(container, header + `[${abcNotes.join('')}]1`, { responsive: 'resize' })
+  ABCJS.renderAbc(container, header + `[${abcNotes.join('')}]1`, opts)
 }
 
 // ─── Piano ────────────────────────────────────────────────────────────────────
@@ -71,7 +71,20 @@ export function renderPiano(container: HTMLElement, noteNames: string[], quality
 
 // ─── Guitar ───────────────────────────────────────────────────────────────────
 
-export function renderGuitar(container: HTMLElement, chordSymbol: string) {
+const DARK_FRETBOARD_STYLE = {
+  chordNameColor: '#e0e0e0',
+  fretLabelColor: '#9ca3af',
+  nutColor: '#aaaaaa',
+  indicatorColor: '#9ca3af',
+  stringLabelColor: '#9ca3af',
+}
+
+export function renderGuitar(container: HTMLElement, chordSymbol: string | null) {
+  if (!chordSymbol) {
+    container.innerHTML = '<div class="no-voicing">—</div>'
+    return
+  }
+
   let voicings: any[] = []
   try {
     const chord = UMT.parseChordSymbol(chordSymbol)
@@ -79,16 +92,16 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string) {
   } catch { }
 
   if (!voicings.length) {
-    container.innerHTML = ''
+    container.innerHTML = '<div class="no-voicing">No voicings</div>'
     return
   }
 
   const svgs = voicings.slice(0, 3).map(v => {
-    try { return `<div>${Notae.renderFretboard({ name: chordSymbol, ...v })}</div>` }
+    try { return `<div>${Notae.renderFretboard({ name: chordSymbol, ...v }, DARK_FRETBOARD_STYLE)}</div>` }
     catch { return '' }
   }).join('')
 
-  container.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">${svgs}</div>`
+  container.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:nowrap;align-items:flex-start">${svgs}</div>`
 }
 
 // ─── Circle of fifths ─────────────────────────────────────────────────────────
