@@ -27,6 +27,8 @@ const state: AppState = {
   panels: {
     notation: true,
     analysis: true,
+    piano: JSON.parse(localStorage.getItem('panel-piano') ?? 'true'),
+    neck: JSON.parse(localStorage.getItem('panel-neck') ?? 'true'),
     history: JSON.parse(localStorage.getItem('panel-history') ?? 'true'),
     song: JSON.parse(localStorage.getItem('panel-song') ?? 'true'),
   }
@@ -115,8 +117,9 @@ function buildLayout() {
     </div>
     <!-- Row 1: notation — staff + CoF side by side, guitar stacked below CoF -->
     <div id="notation-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
-      <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">👁</button></div>
-      <div id="notation-content" style="display:flex;gap:16px;align-items:flex-start">
+      <div class="panel-header"><span>Notation</span><button class="toggle-btn" data-panel="notation">▼</button></div>
+      <div id="chord-summary" style="min-height:32px;margin-bottom:4px"></div>
+      <div id="notation-content" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:center">
         <!-- Column 1: Staff -->
         <div style="flex:0 0 auto">
           <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Staff</div>
@@ -140,13 +143,26 @@ function buildLayout() {
     </div>
     <!-- Row 2: analysis -->
     <div id="analysis-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
-      <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">👁</button></div>
-      <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px 12px;align-content:start"></div>
+      <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">▼</button></div>
+      <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px 12px;align-content:start;min-height:130px"></div>
     </div>
-    <!-- Row 3: piano + neck -->
-    <div style="padding:8px 12px;border-bottom:1px solid #2d2d44;display:flex;gap:16px;align-items:center">
-      <div id="piano-container"></div>
-      <div id="neck-container"></div>
+    <!-- Row 3: piano -->
+    <div id="piano-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+      <div class="panel-header"><span>Piano</span><button class="toggle-btn" data-panel="piano">▼</button></div>
+      <div id="piano-content" style="overflow-x:auto">
+        <div style="display:flex;justify-content:center">
+          <div id="piano-container"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Row 4: neck -->
+    <div id="neck-panel" style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+      <div class="panel-header"><span>Fretboard</span><button class="toggle-btn" data-panel="neck">▼</button></div>
+      <div id="neck-content" style="overflow-x:auto">
+        <div style="display:flex;justify-content:center">
+          <div id="neck-container"></div>
+        </div>
+      </div>
     </div>
     <div id="midi-banner" style="display:none;background:#7f1d1d;padding:6px 12px;font-size:12px"></div>
   `
@@ -204,8 +220,7 @@ function buildLayout() {
     btn.addEventListener('click', () => {
       const panel = btn.dataset.panel as keyof typeof state.panels
       state.panels[panel] = !state.panels[panel]
-      // only persist collapsible zones, not notation/analysis panels
-      if (panel === 'history' || panel === 'song') {
+      if (panel === 'history' || panel === 'song' || panel === 'piano' || panel === 'neck') {
         localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]))
       }
       applyPanelVisibility()
@@ -219,8 +234,14 @@ function buildLayout() {
 function applyPanelVisibility() {
   const nc = $('notation-content'); if (nc) nc.style.display = state.panels.notation ? 'flex' : 'none'
   const ac = $('analysis-content'); if (ac) ac.style.display = state.panels.analysis ? 'grid' : 'none'
+  const pc = $('piano-content'); if (pc) pc.style.display = state.panels.piano ? '' : 'none'
+  const nk = $('neck-content'); if (nk) nk.style.display = state.panels.neck ? '' : 'none'
   const z2 = $('zone2-content'); if (z2) z2.style.display = state.panels.history ? '' : 'none'
   const z3 = $('zone3-content'); if (z3) z3.style.display = state.panels.song ? '' : 'none'
+  ;(['notation', 'analysis', 'piano', 'neck', 'history', 'song'] as const).forEach(key => {
+    const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-panel="${key}"]`)
+    if (btn) btn.textContent = state.panels[key] ? '▲' : '▼'
+  })
 }
 
 // ─── MIDI callbacks ───────────────────────────────────────────────────────────
@@ -278,8 +299,9 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderStaff($('staff-container'), noteNames, staffWidth, state.activeKey)
   const quality = chordSymbol ? getChordQuality(chordSymbol) : ''
   renderPiano($('piano-container'), noteNames, quality)
-  renderNeck($('neck-container'), noteNames)
-  renderGuitar($('guitar-container'), chordSymbol)
+  const chordRoot = chordSymbol ? (chordSymbol.match(/^([A-G][b#]?)/) ?? [, ''])[1] || null : null
+  renderNeck($('neck-container'), noteNames, chordRoot)
+  renderGuitar($('guitar-container'), chordSymbol, noteNames)
   renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol ? chordSymbol[0] : null, (key) => {
     state.activeKey = key
     localStorage.setItem('active-key', key)
@@ -308,7 +330,41 @@ const CHORD_QUALITY_COLORS: Record<string, string> = {
   sus: '#6b7280',
 }
 
+function renderChordSummary() {
+  const el = $('chord-summary')
+  if (!el) return
+  const d = state.detection
+  if (!d || d.kind !== 'chord') { el.innerHTML = ''; return }
+
+  const chordName = d.candidates[d.selectedIndex]
+  const color = CHORD_QUALITY_COLORS[getChordQuality(chordName)] ?? '#6b7280'
+  const notes = d.notes.map(n => n.replace(/(-?\d+)$/, '')).join(' · ')
+  const alts = d.candidates.slice(1, 7)
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:center;align-items:baseline;gap:8px;flex-wrap:wrap">
+      <span style="font-size:20px;font-weight:700;padding:1px 8px;border-radius:4px;background:${color}22;border-left:3px solid ${color}">${chordName}</span>
+      <span style="font-size:11px;color:#6b7280">${notes}</span>
+      ${alts.map((c, i) =>
+        `<button class="alt-chord-sum" data-idx="${i + 1}" style="padding:2px 7px;border-radius:3px;background:#1e1e35;color:#9ca3af;border:1px solid #3a3a5c;cursor:pointer;font-size:11px">${c}</button>`
+      ).join('')}
+    </div>`
+
+  el.querySelectorAll<HTMLElement>('.alt-chord-sum').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.detection?.kind === 'chord') {
+        state.detection.selectedIndex = parseInt(btn.dataset.idx!)
+        const sym = state.detection.candidates[state.detection.selectedIndex]
+        state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
+        renderZone1Analysis()
+        renderZone1Diagrams(state.detection.notes, sym)
+      }
+    })
+  })
+}
+
 function renderZone1Analysis() {
+  renderChordSummary()
   const el = $('analysis-content')
   if (!el) return
   if (!state.detection) { el.innerHTML = '<span style="color:#6b7280;font-size:12px">Play notes to analyze</span>'; return }
