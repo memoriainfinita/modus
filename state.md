@@ -127,6 +127,10 @@ modus/
 
 ## History
 
+### 2026-05-21 — UI overhaul session 7
+
+Diapasón horizontal completo junto al piano (renderNeck): muestra todas las posiciones de las notas pulsadas en el mástil (trastes 0–12, afinación estándar), puntos azules, orientación horizontal. Staff escalado a scale:2 (doble tamaño real de las notas). Guitar placeholder: fretboard vacío con opacity:0.35 en lugar de "—" texto. Correcciones CSS: min-height:220px en guitar-container evita que Notation crezca al aparecer los voicings; align-items:center en fila piano+neck centra el diapasón con el piano.
+
 ### 2026-05-21 — UI overhaul session 6
 
 Layout 3 columnas en Notation: Staff | CoF | Guitar. Bugs corregidos: `applyPanelVisibility` restauraba `display:''` en vez de `display:flex/grid`, rompiendo el layout al cargar. ABCJS cambiado de `responsive:resize` a `staffwidth` directo (sin depender del CSS para calcular tamaño). Fretboard guitar: colores adaptados a fondo oscuro (chordNameColor, fretLabelColor, nutColor, indicatorColor). Guitar columna independiente (antes anidada dentro del CoF). Botones Staff +/- eliminados (feature descartada temporalmente — ver TODO). Guitar muestra placeholder "—" en init.
@@ -185,5 +189,5 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [x] Análisis grid multi-columna (auto-fill minmax 130px)
 - [ ] Staff +/- size control — botones eliminados (no funcionaban). Pendiente: probar ABCJS `scale` option o CSS transform en el contenedor.
 - [ ] Guitar tuning selector — UMT.GUITAR_DROPPED_D, UMT.GUITAR_OPEN_G disponibles
-- [ ] Fretboard horizontal junto al piano — mostrar qué notas se pulsan como hace el piano. Notae.renderFretboard con orientation:"horizontal". Va en la misma fila que el piano (zona row 3).
-- [ ] Guitar diagrams: diagrama vacío en init — actualmente muestra "—" en texto. Explorar si Notae puede renderizar un fretboard horizontal vacío (sin notas marcadas) como placeholder visible desde carga.
+- [x] Fretboard horizontal junto al piano — renderNeck(), trastes 0-12, puntos azules, misma fila que piano
+- [x] Guitar diagrams: diagrama vacío en init — fretboard vacío opacity:0.35 como placeholder

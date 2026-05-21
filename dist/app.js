@@ -394,7 +394,7 @@ M:none
 L:1
 K:${abcKey}
 `;
-    const opts = { staffwidth: width - 20 };
+    const opts = { staffwidth: width - 20, scale: 2 };
     if (!noteNames.length) {
       ABCJS.renderAbc(container, header + "z", opts);
       return;
@@ -416,6 +416,41 @@ K:${abcKey}
       return abc;
     });
     ABCJS.renderAbc(container, header + `[${abcNotes.join("")}]1`, opts);
+  }
+  var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
+  var PITCH_FLAT_FB = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+  var NECK_FRETS = 12;
+  function noteToMidi(note) {
+    const m = note.match(/^([A-G][b]?)(-?\d+)$/);
+    if (!m)
+      return null;
+    const idx = PITCH_FLAT_FB.indexOf(m[1]);
+    if (idx === -1)
+      return null;
+    return (parseInt(m[2]) + 1) * 12 + idx;
+  }
+  function renderNeck(container, noteNames) {
+    const midi = noteNames.map(noteToMidi).filter((n) => n !== null);
+    const frets = OPEN_MIDI.map((open) => {
+      const pos = midi.map((n) => n - open).filter((f) => f >= 0 && f <= NECK_FRETS);
+      return pos.length ? pos : [null];
+    });
+    const style = {
+      ...DARK_FRETBOARD_STYLE,
+      numFrets: NECK_FRETS,
+      dotColor: "#3b82f6",
+      chordNameSize: 0,
+      chordNameY: 4,
+      chordNameGapH: 4
+    };
+    try {
+      container.innerHTML = Notae.renderFretboard(
+        { name: "", frets, tuning: ["E", "A", "D", "G", "B", "E"] },
+        { ...style, orientation: "horizontal" }
+      );
+    } catch {
+      container.innerHTML = "";
+    }
   }
   var QUALITY_COLORS = {
     major: "#f59e0b",
@@ -453,9 +488,14 @@ K:${abcKey}
     indicatorColor: "#9ca3af",
     stringLabelColor: "#9ca3af"
   };
+  var EMPTY_FRETBOARD = { name: "", frets: [null, null, null, null, null, null], tuning: ["E", "A", "D", "G", "B", "E"] };
   function renderGuitar(container, chordSymbol) {
     if (!chordSymbol) {
-      container.innerHTML = '<div class="no-voicing">\u2014</div>';
+      try {
+        container.innerHTML = `<div style="opacity:0.35">${Notae.renderFretboard(EMPTY_FRETBOARD, DARK_FRETBOARD_STYLE)}</div>`;
+      } catch {
+        container.innerHTML = "";
+      }
       return;
     }
     let voicings = [];
@@ -1563,7 +1603,7 @@ K:${abcKey}
   }
 
   // src/app.ts
-  var staffWidth = parseInt(localStorage.getItem("staff-width") ?? "380");
+  var staffWidth = 380;
   var cofSize = parseInt(localStorage.getItem("cof-size") ?? "160");
   var state = {
     midi: { deviceId: null, mode: "normal", activeNotes: /* @__PURE__ */ new Set(), lastArpeggioNotes: [], arpeggioTimer: null },
@@ -1670,7 +1710,7 @@ K:${abcKey}
         <!-- Column 3: Guitar -->
         <div style="flex:0 0 auto">
           <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Guitar</div>
-          <div id="guitar-container"></div>
+          <div id="guitar-container" style="min-height:220px"></div>
         </div>
       </div>
     </div>
@@ -1679,9 +1719,10 @@ K:${abcKey}
       <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">\u{1F441}</button></div>
       <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px 12px;align-content:start"></div>
     </div>
-    <!-- Row 3: piano -->
-    <div style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+    <!-- Row 3: piano + neck -->
+    <div style="padding:8px 12px;border-bottom:1px solid #2d2d44;display:flex;gap:16px;align-items:center">
       <div id="piano-container"></div>
+      <div id="neck-container"></div>
     </div>
     <div id="midi-banner" style="display:none;background:#7f1d1d;padding:6px 12px;font-size:12px"></div>
   `;
@@ -1801,6 +1842,7 @@ K:${abcKey}
     renderStaff($("staff-container"), noteNames, staffWidth, state.activeKey);
     const quality = chordSymbol ? getChordQuality(chordSymbol) : "";
     renderPiano($("piano-container"), noteNames, quality);
+    renderNeck($("neck-container"), noteNames);
     renderGuitar($("guitar-container"), chordSymbol);
     renderCircleOfFifths($("cof-container"), state.activeKey, chordSymbol ? chordSymbol[0] : null, (key) => {
       state.activeKey = key;

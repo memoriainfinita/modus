@@ -1,14 +1,14 @@
 import { initMidi, setNoteChangeCallback, setMode, getMode, getDevices, selectDevice } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
 import { initAudioOnGesture } from './audio'
-import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderCircleOfFifths } from './diagrams'
+import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths } from './diagrams'
 import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyChordDetected, renderHistory } from './history'
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
 import type { AppState, HistoryEntry, SongChord } from './types'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
-let staffWidth = parseInt(localStorage.getItem('staff-width') ?? '380')
+let staffWidth = 380
 let cofSize = parseInt(localStorage.getItem('cof-size') ?? '160')
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -134,7 +134,7 @@ function buildLayout() {
         <!-- Column 3: Guitar -->
         <div style="flex:0 0 auto">
           <div style="font-size:10px;color:#6b7280;margin-bottom:4px">Guitar</div>
-          <div id="guitar-container"></div>
+          <div id="guitar-container" style="min-height:220px"></div>
         </div>
       </div>
     </div>
@@ -143,9 +143,10 @@ function buildLayout() {
       <div class="panel-header"><span>Analysis</span><button class="toggle-btn" data-panel="analysis">👁</button></div>
       <div id="analysis-content" style="font-size:13px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px 12px;align-content:start"></div>
     </div>
-    <!-- Row 3: piano -->
-    <div style="padding:8px 12px;border-bottom:1px solid #2d2d44">
+    <!-- Row 3: piano + neck -->
+    <div style="padding:8px 12px;border-bottom:1px solid #2d2d44;display:flex;gap:16px;align-items:center">
       <div id="piano-container"></div>
+      <div id="neck-container"></div>
     </div>
     <div id="midi-banner" style="display:none;background:#7f1d1d;padding:6px 12px;font-size:12px"></div>
   `
@@ -277,6 +278,7 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderStaff($('staff-container'), noteNames, staffWidth, state.activeKey)
   const quality = chordSymbol ? getChordQuality(chordSymbol) : ''
   renderPiano($('piano-container'), noteNames, quality)
+  renderNeck($('neck-container'), noteNames)
   renderGuitar($('guitar-container'), chordSymbol)
   renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol ? chordSymbol[0] : null, (key) => {
     state.activeKey = key

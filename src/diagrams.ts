@@ -19,7 +19,7 @@ function activeKeyToAbcKey(keyStr: string | null): string {
 export function renderStaff(container: HTMLElement, noteNames: string[], width = 380, keyStr: string | null = null) {
   const abcKey = activeKeyToAbcKey(keyStr)
   const header = `X:1\nM:none\nL:1\nK:${abcKey}\n`
-  const opts = { staffwidth: width - 20 }
+  const opts = { staffwidth: width - 20, scale: 2 }
   if (!noteNames.length) {
     ABCJS.renderAbc(container, header + 'z', opts)
     return
@@ -39,6 +39,47 @@ export function renderStaff(container: HTMLElement, noteNames: string[], width =
     return abc
   })
   ABCJS.renderAbc(container, header + `[${abcNotes.join('')}]1`, opts)
+}
+
+// ─── Full-neck horizontal fretboard ──────────────────────────────────────────
+
+const OPEN_MIDI = [40, 45, 50, 55, 59, 64]  // E2 A2 D3 G3 B3 E4
+const PITCH_FLAT_FB = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
+const NECK_FRETS = 12
+
+function noteToMidi(note: string): number | null {
+  const m = note.match(/^([A-G][b]?)(-?\d+)$/)
+  if (!m) return null
+  const idx = PITCH_FLAT_FB.indexOf(m[1])
+  if (idx === -1) return null
+  return (parseInt(m[2]) + 1) * 12 + idx
+}
+
+export function renderNeck(container: HTMLElement, noteNames: string[]) {
+  const midi = noteNames.map(noteToMidi).filter((n): n is number => n !== null)
+
+  const frets = OPEN_MIDI.map(open => {
+    const pos = midi.map(n => n - open).filter(f => f >= 0 && f <= NECK_FRETS)
+    return pos.length ? pos : [null]
+  })
+
+  const style = {
+    ...DARK_FRETBOARD_STYLE,
+    numFrets: NECK_FRETS,
+    dotColor: '#3b82f6',
+    chordNameSize: 0,
+    chordNameY: 4,
+    chordNameGapH: 4,
+  }
+
+  try {
+    container.innerHTML = Notae.renderFretboard(
+      { name: '', frets, tuning: ['E','A','D','G','B','E'] } as any,
+      { ...style, orientation: 'horizontal' }
+    )
+  } catch {
+    container.innerHTML = ''
+  }
 }
 
 // ─── Piano ────────────────────────────────────────────────────────────────────
@@ -79,9 +120,15 @@ const DARK_FRETBOARD_STYLE = {
   stringLabelColor: '#9ca3af',
 }
 
+const EMPTY_FRETBOARD = { name: '', frets: [null, null, null, null, null, null], tuning: ['E','A','D','G','B','E'] }
+
 export function renderGuitar(container: HTMLElement, chordSymbol: string | null) {
   if (!chordSymbol) {
-    container.innerHTML = '<div class="no-voicing">—</div>'
+    try {
+      container.innerHTML = `<div style="opacity:0.35">${Notae.renderFretboard(EMPTY_FRETBOARD as any, DARK_FRETBOARD_STYLE)}</div>`
+    } catch {
+      container.innerHTML = ''
+    }
     return
   }
 
