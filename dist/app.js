@@ -19,8 +19,13 @@
   var arpeggioTimer = null;
   var onNoteChange = () => {
   };
+  var onNoteOn = () => {
+  };
   function setNoteChangeCallback(cb) {
     onNoteChange = cb;
+  }
+  function setNoteOnCallback(cb) {
+    onNoteOn = cb;
   }
   async function initMidi() {
     if (!navigator.requestMIDIAccess) {
@@ -82,6 +87,7 @@
     return Array.from(s).sort((a, b) => a - b);
   }
   function handleNoteOn(note) {
+    onNoteOn(note);
     if (mode === "normal") {
       activeNotes.add(note);
       onNoteChange(sortedNotes(activeNotes));
@@ -300,51 +306,148 @@
 
   // src/audio.ts
   var audioCtx = null;
-  var player = null;
-  var ready = false;
-  function ensureContext() {
-    if (!audioCtx) {
-      audioCtx = new AudioContext();
-      player = new WebAudioFontPlayer();
-      player.loader.decodeAfterLoading(audioCtx, "_tone_0000_GeneralUserGS_sf2_file");
-    }
+  var instrument = null;
+  var loadingInstrument = false;
+  var pendingNotes = [];
+  var volume = parseFloat(localStorage.getItem("audio-volume") ?? "0.8");
+  var currentInstrumentName = localStorage.getItem("audio-instrument") ?? "acoustic_grand_piano";
+  var audioStatus = "idle";
+  var onStatusChange = null;
+  function setAudioStatusCallback(cb) {
+    onStatusChange = cb;
   }
-  function initAudioOnGesture() {
-    if (ready)
+  function setStatus(s) {
+    audioStatus = s;
+    onStatusChange?.(s);
+  }
+  var GM_INSTRUMENT_GROUPS = [
+    { label: "Piano", instruments: ["acoustic_grand_piano", "bright_acoustic_piano", "electric_grand_piano", "honkytonk_piano", "electric_piano_1", "electric_piano_2", "harpsichord", "clavinet"] },
+    { label: "Chromatic Perc", instruments: ["celesta", "glockenspiel", "music_box", "vibraphone", "marimba", "xylophone", "tubular_bells", "dulcimer"] },
+    { label: "Organ", instruments: ["drawbar_organ", "percussive_organ", "rock_organ", "church_organ", "reed_organ", "accordion", "harmonica", "tango_accordion"] },
+    { label: "Guitar", instruments: ["acoustic_guitar_nylon", "acoustic_guitar_steel", "electric_guitar_jazz", "electric_guitar_clean", "electric_guitar_muted", "overdriven_guitar", "distortion_guitar", "guitar_harmonics"] },
+    { label: "Bass", instruments: ["acoustic_bass", "electric_bass_finger", "electric_bass_pick", "fretless_bass", "slap_bass_1", "slap_bass_2", "synth_bass_1", "synth_bass_2"] },
+    { label: "Strings", instruments: ["violin", "viola", "cello", "contrabass", "tremolo_strings", "pizzicato_strings", "orchestral_harp", "timpani"] },
+    { label: "Ensemble", instruments: ["string_ensemble_1", "string_ensemble_2", "synth_strings_1", "synth_strings_2", "choir_aahs", "voice_oohs", "synth_voice", "orchestra_hit"] },
+    { label: "Brass", instruments: ["trumpet", "trombone", "tuba", "muted_trumpet", "french_horn", "brass_section", "synth_brass_1", "synth_brass_2"] },
+    { label: "Reed", instruments: ["soprano_sax", "alto_sax", "tenor_sax", "baritone_sax", "oboe", "english_horn", "bassoon", "clarinet"] },
+    { label: "Pipe", instruments: ["piccolo", "flute", "recorder", "pan_flute", "blown_bottle", "shakuhachi", "whistle", "ocarina"] },
+    { label: "Synth Lead", instruments: ["lead_1_square", "lead_2_sawtooth", "lead_3_calliope", "lead_4_chiff", "lead_5_charang", "lead_6_voice", "lead_7_fifths", "lead_8_bass_lead"] },
+    { label: "Synth Pad", instruments: ["pad_1_new_age", "pad_2_warm", "pad_3_polysynth", "pad_4_choir", "pad_5_bowed", "pad_6_metallic", "pad_7_halo", "pad_8_sweep"] },
+    { label: "Synth FX", instruments: ["fx_1_rain", "fx_2_soundtrack", "fx_3_crystal", "fx_4_atmosphere", "fx_5_brightness", "fx_6_goblins", "fx_7_echoes", "fx_8_sci-fi"] },
+    { label: "Ethnic", instruments: ["sitar", "banjo", "shamisen", "koto", "kalimba", "bag_pipe", "fiddle", "shanai"] },
+    { label: "Percussive", instruments: ["tinkle_bell", "agogo", "steel_drums", "woodblock", "taiko_drum", "melodic_tom", "synth_drum", "reverse_cymbal"] },
+    { label: "Sound FX", instruments: ["guitar_fret_noise", "breath_noise", "seashore", "bird_tweet", "telephone_ring", "helicopter", "applause", "gunshot"] }
+  ];
+  function ensureContext() {
+    if (!audioCtx)
+      audioCtx = new AudioContext();
+  }
+  function loadCurrentInstrument() {
+    if (loadingInstrument || !audioCtx)
       return;
-    ensureContext();
-    audioCtx.resume().then(() => {
-      ready = true;
+    loadingInstrument = true;
+    instrument = null;
+    setStatus("loading");
+    Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: "FluidR3_GM" }).then(async (inst) => {
+      instrument = inst;
+      loadingInstrument = false;
+      await audioCtx.resume();
+      setStatus("ready");
+      for (const n of pendingNotes) {
+        instrument.play(n.midi, audioCtx.currentTime, { duration: n.duration, gain: volume });
+      }
+      pendingNotes = [];
+    }).catch((err) => {
+      loadingInstrument = false;
+      setStatus("error");
+      console.error("[audio] load failed:", err);
     });
   }
-  function playNote(midiNumber, duration = 1.5) {
-    if (!audioCtx || !player)
-      return;
+  function initAudioOnGesture() {
+    ensureContext();
     audioCtx.resume();
-    player.queueWaveTable(
-      audioCtx,
-      audioCtx.destination,
-      _tone_0000_GeneralUserGS_sf2_file,
-      0,
-      midiNumber,
-      duration,
-      0.8
-    );
+    if (!instrument && !loadingInstrument)
+      loadCurrentInstrument();
+  }
+  function setInstrument(name) {
+    currentInstrumentName = name;
+    localStorage.setItem("audio-instrument", name);
+    instrument = null;
+    if (audioCtx)
+      loadCurrentInstrument();
+  }
+  function getCurrentInstrument() {
+    return currentInstrumentName;
+  }
+  function setVolume(v) {
+    volume = Math.max(0, Math.min(1, v));
+    localStorage.setItem("audio-volume", String(volume));
+  }
+  function getVolume() {
+    return volume;
+  }
+  function playNote(midiNumber, duration = 1.5) {
+    ensureContext();
+    if (!loadingInstrument && !instrument)
+      loadCurrentInstrument();
+    if (!audioCtx)
+      return;
+    if (!instrument) {
+      pendingNotes = [{ midi: midiNumber, duration }];
+      return;
+    }
+    audioCtx.resume().then(() => {
+      instrument.play(midiNumber, audioCtx.currentTime, { duration, gain: volume });
+    });
   }
   function playNoteByName(noteName, duration = 1.5) {
     const midi = noteNameToMidi(noteName);
     if (midi !== null)
       playNote(midi, duration);
   }
+  function playMidiNotes(midiNotes, duration = 2) {
+    if (!instrument || !audioCtx)
+      return;
+    audioCtx.resume().then(() => {
+      for (const midi of midiNotes) {
+        instrument.play(midi, audioCtx.currentTime, { duration, gain: volume });
+      }
+    });
+  }
+  var QUALITY_INTERVALS = {
+    "major": [0, 4, 7],
+    "minor": [0, 3, 7],
+    "diminished": [0, 3, 6],
+    "augmented": [0, 4, 8],
+    "major7": [0, 4, 7, 11],
+    "minor7": [0, 3, 7, 10],
+    "dominant7": [0, 4, 7, 10],
+    "diminished7": [0, 3, 6, 9],
+    "half-diminished": [0, 3, 6, 10],
+    "sus2": [0, 2, 7],
+    "sus4": [0, 5, 7],
+    "major9": [0, 4, 7, 11, 14],
+    "minor9": [0, 3, 7, 10, 14],
+    "dominant9": [0, 4, 7, 10, 14]
+  };
   function playChord(chordSymbol) {
+    if (!instrument || !audioCtx)
+      return;
     try {
       const chord = UMT.parseChordSymbol(chordSymbol);
-      const notes = chord.getNotes ? chord.getNotes() : [];
-      for (const note of notes) {
-        const name = note.name ?? note._name;
-        if (name)
-          playNoteByName(name);
-      }
+      const rootName = chord.root?.name ?? (typeof chord.root === "string" ? chord.root : null);
+      if (!rootName)
+        return;
+      const rootMidi = noteNameToMidi(rootName + "4");
+      if (rootMidi === null)
+        return;
+      const quality = chord.quality ?? "major";
+      const intervals = QUALITY_INTERVALS[quality] ?? [0, 4, 7];
+      audioCtx.resume().then(() => {
+        for (const interval of intervals) {
+          instrument.play(rootMidi + interval, audioCtx.currentTime, { duration: 2, gain: volume });
+        }
+      });
     } catch {
     }
   }
@@ -478,23 +581,34 @@ K:${abcKey}
     "half-diminished seventh": "#7c3aed",
     augmented: "#0d9488"
   };
+  var PIANO_WHITE_NOTES = [];
+  var PIANO_BLACK_NOTES = [];
+  var WHITE_SEMITONES_P = [0, 2, 4, 5, 7, 9, 11];
+  var BLACK_SEMITONES_P = [1, 3, 6, 8, 10];
+  var NOTE_FLAT_P = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+  for (let oct = 2; oct <= 5; oct++) {
+    WHITE_SEMITONES_P.forEach((s) => PIANO_WHITE_NOTES.push(NOTE_FLAT_P[s] + oct));
+    BLACK_SEMITONES_P.forEach((s) => PIANO_BLACK_NOTES.push(NOTE_FLAT_P[s] + oct));
+  }
+  var PIANO_KEY_ORDER = [...PIANO_WHITE_NOTES, ...PIANO_BLACK_NOTES];
   function renderPiano(container, noteNames, quality) {
     const color = QUALITY_COLORS[quality?.toLowerCase()] ?? "#6b7280";
     const colors = noteNames.map(() => color);
-    const svg = Notae.renderPiano({
+    container.innerHTML = Notae.renderPiano({
       name: "",
       keys: noteNames,
       colors,
       range: { from: "C2", to: "B5" }
     });
-    container.innerHTML = svg;
-    const keyEls = container.querySelectorAll("[data-note]");
-    if (keyEls.length > 0) {
-      keyEls.forEach((el) => {
-        el.style.cursor = "pointer";
-        el.addEventListener("click", () => playNoteByName(el.dataset.note));
-      });
-    }
+    const rects = container.querySelectorAll("rect");
+    rects.forEach((el, i) => {
+      const note = PIANO_KEY_ORDER[i];
+      if (!note)
+        return;
+      el.dataset.note = note;
+      el.style.cursor = "pointer";
+      el.addEventListener("click", () => playNoteByName(note));
+    });
   }
   var DARK_FRETBOARD_STYLE = {
     chordNameColor: "#e0e0e0",
@@ -917,7 +1031,8 @@ K:${abcKey}
       <span class="history-chip-roman">${roman}</span>
     `;
       chip.addEventListener("click", () => onChipClick(entry));
-      chip.title = `${entry.symbol} \u2014 drag to song, right-click to remove`;
+      chip.addEventListener("dblclick", () => playChord(entry.symbol));
+      chip.title = `${entry.symbol} \u2014 dblclick to play, drag to song, right-click to remove`;
       chip.draggable = true;
       chip.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol }));
@@ -1951,8 +2066,11 @@ K:${abcKey}
     { key: "C", action: "Clear history" },
     { key: "Esc", action: "Clear cursor / capture" },
     { key: "1\u20139", action: "Select chord candidate" },
+    { key: "P", action: "Play current chord" },
     { key: "?", action: "Show / hide this panel" }
   ];
+  var lastChordSymbol = null;
+  var lastChordMidi = [];
   var state = {
     midi: { deviceId: null, mode: "normal", activeNotes: /* @__PURE__ */ new Set(), lastArpeggioNotes: [], arpeggioTimer: null },
     activeKey: localStorage.getItem("active-key") || null,
@@ -2064,7 +2182,46 @@ K:${abcKey}
       }
     });
     setNoteChangeCallback(onNoteChange2);
+    setNoteOnCallback((note) => {
+      initAudioOnGesture();
+      playNote(note, 1.5);
+    });
     setHistoryChangeCallback(onHistoryChange);
+    let progressTimer = null;
+    let progressValue = 0;
+    setAudioStatusCallback((status) => {
+      const el = document.getElementById("audio-status");
+      const fill = document.getElementById("audio-progress-fill");
+      if (!el || !fill)
+        return;
+      const labels = { idle: "\u266A idle", loading: "\u266A loading\u2026", ready: "\u266A ready", error: "\u266A error" };
+      el.textContent = labels[status] ?? status;
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+      if (status === "loading") {
+        progressValue = 0;
+        fill.style.transition = "none";
+        fill.style.width = "0%";
+        progressTimer = setInterval(() => {
+          progressValue += (90 - progressValue) * 0.06;
+          fill.style.transition = "width 0.1s linear";
+          fill.style.width = progressValue.toFixed(1) + "%";
+        }, 100);
+      } else if (status === "ready") {
+        fill.style.background = "#22c55e";
+        fill.style.transition = "width 0.2s ease-out";
+        fill.style.width = "100%";
+      } else if (status === "error") {
+        fill.style.background = "#ef4444";
+        fill.style.transition = "width 0.2s ease-out";
+        fill.style.width = "100%";
+      } else {
+        fill.style.transition = "none";
+        fill.style.width = "0%";
+      }
+    });
     window.addEventListener("history-capture-requested", () => {
       if (state.detection?.kind === "chord") {
         addEntry(state.detection.candidates[0], state.detection.notes);
@@ -2109,6 +2266,20 @@ K:${abcKey}
     ).join("")}
       </select>
       <span id="auto-key-label" class="auto-key-label"></span>
+      <span class="toolbar-sep"></span>
+      <div id="audio-progress" class="audio-progress" title="Soundfont status">
+        <div id="audio-progress-fill" class="audio-progress-fill"></div>
+        <span id="audio-status" class="audio-status">\u266A idle</span>
+      </div>
+      <button id="btn-play-chord" class="ctrl-btn" title="Play current chord (P)">\u25B6</button>
+      <select id="audio-instrument" class="ctrl-select" title="Soundfont instrument">
+        ${GM_INSTRUMENT_GROUPS.map(
+      (g) => `<optgroup label="${g.label}">${g.instruments.map(
+        (i) => `<option value="${i}"${i === getCurrentInstrument() ? " selected" : ""}>${i.replace(/_/g, " ")}</option>`
+      ).join("")}</optgroup>`
+    ).join("")}
+      </select>
+      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
       <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
     </div>
     <!-- Row 1: notation \u2014 staff + CoF side by side, guitar stacked below CoF -->
@@ -2346,6 +2517,20 @@ K:${abcKey}
       });
     });
     $("btn-help").addEventListener("click", toggleHelp);
+    $("btn-play-chord").addEventListener("click", () => {
+      initAudioOnGesture();
+      if (lastChordMidi.length > 0) {
+        playMidiNotes(lastChordMidi);
+      } else if (lastChordSymbol) {
+        playChord(lastChordSymbol);
+      }
+    });
+    $("audio-instrument").addEventListener("change", (e) => {
+      setInstrument(e.target.value);
+    });
+    $("audio-volume").addEventListener("input", (e) => {
+      setVolume(parseFloat(e.target.value));
+    });
     applyPanelVisibility();
   }
   function applyPanelVisibility() {
@@ -2418,6 +2603,10 @@ K:${abcKey}
     state.detection = result;
     if (result?.kind === "chord") {
       const sym = result.candidates[result.selectedIndex];
+      if (sym && sym !== "?") {
+        lastChordSymbol = sym;
+        lastChordMidi = [...notes];
+      }
       const isKnown = sym !== "?";
       state.analysis = null;
       if (isKnown) {
@@ -2703,6 +2892,14 @@ K:${abcKey}
             sendToSong(activeEntry);
           break;
         }
+        case "p":
+        case "P":
+          if (lastChordMidi.length > 0) {
+            playMidiNotes(lastChordMidi);
+          } else if (lastChordSymbol) {
+            playChord(lastChordSymbol);
+          }
+          break;
         case "c":
         case "C":
           showModal("Clear history", "Remove all history entries?", clearHistory);
@@ -2741,4 +2938,3 @@ K:${abcKey}
   }
   init();
 })();
-//# sourceMappingURL=app.js.map

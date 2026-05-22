@@ -23,11 +23,13 @@ let arpeggioNotes: number[] = []
 let arpeggioTimer: ReturnType<typeof setTimeout> | null = null
 
 type NoteChangeCallback = (notes: number[]) => void
-let onNoteChange: NoteChangeCallback = () => {}
+type NoteOnCallback = (note: number) => void
 
-export function setNoteChangeCallback(cb: NoteChangeCallback) {
-  onNoteChange = cb
-}
+let onNoteChange: NoteChangeCallback = () => {}
+let onNoteOn: NoteOnCallback = () => {}
+
+export function setNoteChangeCallback(cb: NoteChangeCallback) { onNoteChange = cb }
+export function setNoteOnCallback(cb: NoteOnCallback) { onNoteOn = cb }
 
 // ─── Permission + init ───────────────────────────────────────────────────────
 
@@ -97,6 +99,7 @@ function sortedNotes(s: Set<number>): number[] {
 }
 
 function handleNoteOn(note: number) {
+  onNoteOn(note)
   if (mode === 'normal') {
     activeNotes.add(note)
     onNoteChange(sortedNotes(activeNotes))

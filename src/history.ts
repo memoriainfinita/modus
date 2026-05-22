@@ -77,7 +77,8 @@ export function renderHistory(
     `
 
     chip.addEventListener('click', () => onChipClick(entry))
-    chip.title = `${entry.symbol} — drag to song, right-click to remove`
+    chip.addEventListener('dblclick', () => playChord(entry.symbol))
+    chip.title = `${entry.symbol} — dblclick to play, drag to song, right-click to remove`
 
     // Drag to song
     chip.draggable = true
