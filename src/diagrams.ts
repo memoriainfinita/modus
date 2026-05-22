@@ -58,6 +58,12 @@ function noteToMidi(note: string): number | null {
   return (parseInt(m[2]) + 1) * 12 + idx
 }
 
+let neckSpacing = parseInt(localStorage.getItem('neck-spacing') ?? '16')
+export function adjustNeckSpacing(delta: number) {
+  neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta))
+  localStorage.setItem('neck-spacing', String(neckSpacing))
+}
+
 export function renderNeck(container: HTMLElement, noteNames: string[], root: string | null = null) {
   const midi = noteNames.map(noteToMidi).filter((n): n is number => n !== null)
 
@@ -66,6 +72,7 @@ export function renderNeck(container: HTMLElement, noteNames: string[], root: st
     return pos.length ? pos : [null]
   })
 
+  const sp = neckSpacing
   const style = {
     ...DARK_FRETBOARD_STYLE,
     numFrets: NECK_FRETS,
@@ -73,7 +80,11 @@ export function renderNeck(container: HTMLElement, noteNames: string[], root: st
     chordNameSize: 0,
     chordNameY: 4,
     chordNameGapH: 4,
-    ...(root ? { showDegrees: true, dotRadius: 11, fingerNumberSize: 8 } : {}),
+    stringSpacing: sp,
+    fretSpacing: Math.round(sp * 28 / 16),
+    dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
+    fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
+    ...(root ? { showDegrees: true } : {}),
   }
 
   try {
@@ -376,7 +387,7 @@ const COF_DEGREES_MINOR = ['vi','iii','vii','♯iv','♭ii','♭vi','♭iii','�
 export function renderCircleOfFifths(
   container: HTMLElement,
   activeKey: string | null,
-  chordRoot: string | null,
+  activeChord: string | null,
   onKeyClick: (key: string) => void,
   size = 160,
   opts: { accidental: 'sharp' | 'flat', showMinor: boolean, showDegrees: boolean, show7ths: boolean, fontScale?: number } = { accidental: 'flat', showMinor: true, showDegrees: false, show7ths: false }
@@ -387,20 +398,30 @@ export function renderCircleOfFifths(
   const activeRoot = activeKey?.split(' ')[0] ?? null
   const activePos = activeRoot !== null ? keys.findIndex(k => k === activeRoot) : -1
 
+  const activeChordRoot = activeChord?.match(/^([A-G][b#]?)/)?.[1] ?? null
+  const isMinorActiveChord = activeChord ? /^[A-G][b#]?m(?!aj)/.test(activeChord) : false
+
   const cx = size / 2, cy = size / 2
-  const outerR  = size * 0.425
-  const innerR  = size * 0.275
-  const labelR  = size * 0.356
-  const minorR  = size * 0.21
-  const dimOutR = size * 0.155
-  const dimInR  = size * 0.065
-  const dimLabR = size * 0.11
+  const outerR    = size * 0.425
+  const innerR    = size * 0.275
+  const labelR    = size * 0.356
+  const minorOutR = size * 0.265
+  const minorInR  = size * 0.165
+  const minorR    = size * 0.21
+  const dimOutR   = size * 0.155
+  const dimInR    = size * 0.065
+  const dimLabR   = size * 0.11
   const fs = opts.fontScale ?? 0.55
   const majorFont = Math.max(4, Math.round(size * 0.0625 * fs))
   const minorFont = Math.max(3, Math.round(size * 0.05   * fs))
   const dimFont   = Math.max(3, Math.round(size * 0.04   * fs))
 
   let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`
+
+  const diatonicPos = activePos !== -1
+    ? new Set([(activePos + 11) % 12, activePos, (activePos + 1) % 12])
+    : new Set<number>()
+  const diatonicDimPos = activePos
 
   keys.forEach((key, i) => {
     const angle = (i * 30 - 90) * Math.PI / 180
@@ -411,9 +432,12 @@ export function renderCircleOfFifths(
     const x2i = cx + innerR * Math.cos(nextAngle), y2i = cy + innerR * Math.sin(nextAngle)
 
     const isActiveKey = activeRoot && key === activeRoot
-    const isChordRoot = chordRoot === key
-    const fill = isActiveKey ? '#4f46e5' : isChordRoot ? '#0d9488' : '#2d2d44'
-    const stroke = isChordRoot ? '#0d9488' : '#4a4a6a'
+    const isChordRoot = !isMinorActiveChord && activeChordRoot === key
+    const minorKeyRoot = minorKeys[i].match(/^([A-G][b#]?)/)?.[1] ?? ''
+    const isMinorChordHere = isMinorActiveChord && activeChordRoot === minorKeyRoot
+    const isDiatonic = diatonicPos.has(i)
+    const fill = isActiveKey ? '#4f46e5' : isChordRoot ? '#0d9488' : isDiatonic ? '#252550' : '#2d2d44'
+    const stroke = isChordRoot ? '#0d9488' : isDiatonic ? '#7c7ca0' : '#4a4a6a'
 
     const midAngle = (i * 30 + 15 - 90) * Math.PI / 180
     const lx = cx + labelR * Math.cos(midAngle)
@@ -427,7 +451,9 @@ export function renderCircleOfFifths(
       fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
       data-key="${key} Major" />`
 
-    const keyLabel = key + (opts.show7ths ? 'maj7' : '')
+    const relPos = activePos !== -1 ? (i - activePos + 12) % 12 : -1
+    const suffix7 = opts.show7ths ? (relPos === 1 ? '7' : 'maj7') : ''
+    const keyLabel = key + suffix7
     if (degree) {
       svg += `<text x="${lx}" y="${ly - majorFont * 0.45}" text-anchor="middle" dominant-baseline="middle"
         font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${keyLabel}</text>`
@@ -445,14 +471,28 @@ export function renderCircleOfFifths(
       const minorDegree = opts.showDegrees && activePos !== -1
         ? COF_DEGREES_MINOR[(i - activePos + 12) % 12]
         : null
+
+      // Minor ring path segment
+      const mx1o = cx + minorOutR * Math.cos(angle),    my1o = cy + minorOutR * Math.sin(angle)
+      const mx2o = cx + minorOutR * Math.cos(nextAngle), my2o = cy + minorOutR * Math.sin(nextAngle)
+      const mx1i = cx + minorInR  * Math.cos(angle),    my1i = cy + minorInR  * Math.sin(angle)
+      const mx2i = cx + minorInR  * Math.cos(nextAngle), my2i = cy + minorInR  * Math.sin(nextAngle)
+      const minorSegFill   = isMinorChordHere ? '#0d9488' : isDiatonic ? '#252550' : 'none'
+      const minorSegStroke = isMinorChordHere ? '#0d9488' : isDiatonic ? '#7c7ca0' : 'none'
+      if (minorSegFill !== 'none' || minorSegStroke !== 'none') {
+        svg += `<path d="M${mx1i},${my1i} L${mx1o},${my1o} A${minorOutR},${minorOutR} 0 0,1 ${mx2o},${my2o} L${mx2i},${my2i} A${minorInR},${minorInR} 0 0,0 ${mx1i},${my1i}"
+          fill="${minorSegFill === 'none' ? 'transparent' : minorSegFill}" stroke="${minorSegStroke === 'none' ? 'transparent' : minorSegStroke}" stroke-width="1"/>`
+      }
+
+      const minorFill = isMinorChordHere ? '#e0e0e0' : isDiatonic ? '#c4b5fd' : '#9ca3af'
       if (minorDegree) {
         svg += `<text x="${mx}" y="${my - minorFont * 0.55}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${minorFont}" fill="#9ca3af" pointer-events="none">${minorLabel}</text>`
+          font-size="${minorFont}" fill="${minorFill}" pointer-events="none">${minorLabel}</text>`
         svg += `<text x="${mx}" y="${my + minorFont * 0.75}" text-anchor="middle" dominant-baseline="middle"
           font-size="${minorFont * 0.85}" fill="#818cf8" pointer-events="none">${minorDegree}</text>`
       } else {
         svg += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${minorFont}" fill="#9ca3af" pointer-events="none">${minorLabel}</text>`
+          font-size="${minorFont}" fill="${minorFill}" pointer-events="none">${minorLabel}</text>`
       }
 
       // Diminished inner ring
@@ -461,19 +501,21 @@ export function renderCircleOfFifths(
       const dx2o = cx + dimOutR * Math.cos(dna), dy2o = cy + dimOutR * Math.sin(dna)
       const dx1i = cx + dimInR  * Math.cos(da),  dy1i = cy + dimInR  * Math.sin(da)
       const dx2i = cx + dimInR  * Math.cos(dna), dy2i = cy + dimInR  * Math.sin(dna)
+      const isDiatonicDim = i === diatonicDimPos
       svg += `<path d="M${dx1i},${dy1i} L${dx1o},${dy1o} A${dimOutR},${dimOutR} 0 0,1 ${dx2o},${dy2o} L${dx2i},${dy2i} A${dimInR},${dimInR} 0 0,0 ${dx1i},${dy1i}"
-        fill="#1e1e35" stroke="#3a3a5c" stroke-width="1"/>`
+        fill="${isDiatonicDim ? '#2a2a5a' : '#1e1e35'}" stroke="${isDiatonicDim ? '#a0a0d8' : '#3a3a5c'}" stroke-width="${isDiatonicDim ? 1.5 : 1}"/>`
       const dlx = cx + dimLabR * Math.cos(midAngle)
       const dly = cy + dimLabR * Math.sin(midAngle)
       const dimChord = opts.show7ths ? CIRCLE_DIM[i].replace('°', 'ø7') : CIRCLE_DIM[i]
+      const dimTextFill = isDiatonicDim ? '#a78bfa' : '#6b7280'
       if (opts.showDegrees && activePos !== -1) {
         svg += `<text x="${dlx}" y="${dly - dimFont * 0.55}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${dimFont}" fill="#6b7280" pointer-events="none">${dimChord}</text>`
+          font-size="${dimFont}" fill="${dimTextFill}" pointer-events="none">${dimChord}</text>`
         svg += `<text x="${dlx}" y="${dly + dimFont * 0.75}" text-anchor="middle" dominant-baseline="middle"
           font-size="${dimFont * 0.85}" fill="#818cf8" pointer-events="none">vii°</text>`
       } else {
         svg += `<text x="${dlx}" y="${dly}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${dimFont}" fill="#6b7280" pointer-events="none">${dimChord}</text>`
+          font-size="${dimFont}" fill="${dimTextFill}" pointer-events="none">${dimChord}</text>`
       }
     }
   })
