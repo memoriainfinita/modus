@@ -34,10 +34,13 @@ declare const ABCJS: {
   renderAbc: (target: string | HTMLElement, abc: string, options?: any) => any[]
 }
 
-declare class WebAudioFontPlayer {
-  loader: { decodeAfterLoading: (ctx: AudioContext, varName: string) => void }
-  queueWaveTable: (ctx: AudioContext, dest: AudioNode, instrument: any, when: number, pitch: number, duration: number, volume?: number) => void
-  cancelQueue: (ctx: AudioContext) => void
+declare const Soundfont: {
+  instrument: (
+    audioCtx: AudioContext,
+    name: string,
+    options?: { soundfont?: string }
+  ) => Promise<{
+    play: (note: number | string, when?: number, options?: { duration?: number; gain?: number }) => any
+    stop: () => void
+  }>
 }
-
-declare const _tone_0000_GeneralUserGS_sf2_file: any

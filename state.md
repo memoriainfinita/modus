@@ -127,6 +127,14 @@ modus/
 
 ## History
 
+### 2026-05-22 — Audio session 13
+
+Sistema de audio completo. WebAudioFont (versión 2.1.0 inexistente, CDN 404) reemplazado por soundfont-player@0.12.0 + FluidR3_GM. `audio.ts` reescrito: `playNote`, `playNoteByName`, `playMidiNotes`, `playChord`, `setInstrument`, `setVolume/getVolume`, cola de notas pendientes (`pendingNotes`) para cuando el instrumento aún carga. Selector de 128 instrumentos GM en 16 grupos optgroup. Slider de volumen. Barra de progreso animada (asintótica 0→90%, salta a 100% verde al cargar) con texto integrado dentro. Estado idle/loading/ready/error con callback. `setStatus('ready')` solo dispara tras `await audioCtx.resume()`.
+
+MIDI note-on: `setNoteOnCallback` nuevo en `midi.ts` — dispara en cada note-on con el MIDI number exacto, antes del set de notas activas. Callback en app.ts llama `initAudioOnGesture()` + `playNote(note)`. Primer gesto MIDI inicializa AudioContext aunque no se haya hecho clic. Todas las funciones de reproducción usan `audioCtx.resume().then(...)`.
+
+Botón ▶ y atajo `P`: tocan `lastChordMidi` (notas MIDI exactas del último acorde detectado, persiste tras soltar teclas). Piano instruments: Notae sigue renderizando el visual; post-procesamos los `rect` asignando `data-note` por orden conocido (28 blancas C2→B5, 20 negras Db2→Bb5). Click-to-play funciona. History chips: dblclick → playChord.
+
 ### 2026-05-22 — UI polish session 12
 
 Layout estable: `.col-analysis` con ancho y alto calculados en JS proporcional a `analysisScale` (19px/pt ancho, fórmula `(N*1.6-0.4)*scale` alto). Filas condicionales (Sec, Colt, Neg, Subs) siempre en DOM con `—` cuando no hay datos — sin layout shift al aparecer análisis.
@@ -252,3 +260,6 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [ ] showNoteNames en Notae — añadir opción a la librería para mostrar nota en los puntos del neck (actualmente usa showDegrees como interim)
 - [x] Fretboard horizontal junto al piano — renderNeck(), trastes 0-12, puntos azules, misma fila que piano
 - [x] Guitar diagrams: diagrama vacío en init — fretboard vacío opacity:0.35 como placeholder
+- [x] Audio: soundfont-player (FluidR3_GM), selector 128 instrumentos GM, volumen, barra de carga
+- [x] Piano instruments: SVG propio con click-to-play (Notae no genera data-note)
+- [ ] CoF: click en segmento → reproducir el acorde correspondiente

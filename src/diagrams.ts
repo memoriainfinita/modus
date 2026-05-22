@@ -106,23 +106,36 @@ const QUALITY_COLORS: Record<string, string> = {
   'half-diminished seventh': '#7c3aed', augmented: '#0d9488',
 }
 
+// Notae renderPiano renders: all white keys left→right, then all black keys left→right.
+// Range C2-B5: 4 octaves × 7 white = 28 white keys, 4 × 5 black = 20 black keys.
+const PIANO_WHITE_NOTES: string[] = []
+const PIANO_BLACK_NOTES: string[] = []
+const WHITE_SEMITONES_P = [0, 2, 4, 5, 7, 9, 11]
+const BLACK_SEMITONES_P = [1, 3, 6, 8, 10]
+const NOTE_FLAT_P = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
+for (let oct = 2; oct <= 5; oct++) {
+  WHITE_SEMITONES_P.forEach(s => PIANO_WHITE_NOTES.push(NOTE_FLAT_P[s] + oct))
+  BLACK_SEMITONES_P.forEach(s => PIANO_BLACK_NOTES.push(NOTE_FLAT_P[s] + oct))
+}
+const PIANO_KEY_ORDER = [...PIANO_WHITE_NOTES, ...PIANO_BLACK_NOTES]
+
 export function renderPiano(container: HTMLElement, noteNames: string[], quality: string) {
   const color = QUALITY_COLORS[quality?.toLowerCase()] ?? '#6b7280'
   const colors = noteNames.map(() => color)
 
-  const svg = Notae.renderPiano({
+  container.innerHTML = Notae.renderPiano({
     name: '', keys: noteNames, colors,
     range: { from: 'C2', to: 'B5' }
   })
-  container.innerHTML = svg
 
-  const keyEls = container.querySelectorAll<SVGElement>('[data-note]')
-  if (keyEls.length > 0) {
-    keyEls.forEach(el => {
-      el.style.cursor = 'pointer'
-      el.addEventListener('click', () => playNoteByName(el.dataset.note!))
-    })
-  }
+  const rects = container.querySelectorAll<SVGRectElement>('rect')
+  rects.forEach((el, i) => {
+    const note = PIANO_KEY_ORDER[i]
+    if (!note) return
+    el.dataset.note = note
+    el.style.cursor = 'pointer'
+    el.addEventListener('click', () => playNoteByName(note))
+  })
 }
 
 // ─── Guitar ───────────────────────────────────────────────────────────────────

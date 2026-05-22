@@ -1,6 +1,6 @@
-import { initMidi, setNoteChangeCallback, setMode, getMode, getDevices, selectDevice } from './midi'
+import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
-import { initAudioOnGesture } from './audio'
+import { initAudioOnGesture, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playMidiNotes, playChord as audioPlayChord, GM_INSTRUMENT_GROUPS, setAudioStatusCallback } from './audio'
 import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
 import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyChordDetected, renderHistory } from './history'
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
@@ -50,10 +50,14 @@ const SHORTCUTS: { key: string; action: string }[] = [
   { key: 'C',     action: 'Clear history' },
   { key: 'Esc',   action: 'Clear cursor / capture' },
   { key: '1–9',   action: 'Select chord candidate' },
+  { key: 'P',     action: 'Play current chord' },
   { key: '?',     action: 'Show / hide this panel' },
 ]
 
 // ─── State ───────────────────────────────────────────────────────────────────
+
+let lastChordSymbol: string | null = null
+let lastChordMidi: number[] = []
 
 const state: AppState = {
   midi: { deviceId: null, mode: 'normal', activeNotes: new Set(), lastArpeggioNotes: [], arpeggioTimer: null },
@@ -169,7 +173,44 @@ function init() {
   })
 
   setNoteChangeCallback(onNoteChange)
+  setNoteOnCallback(note => { initAudioOnGesture(); playNote(note, 1.5) })
   setHistoryChangeCallback(onHistoryChange)
+
+  let progressTimer: ReturnType<typeof setInterval> | null = null
+  let progressValue = 0
+
+  setAudioStatusCallback(status => {
+    const el = document.getElementById('audio-status')
+    const fill = document.getElementById('audio-progress-fill')
+    if (!el || !fill) return
+
+    const labels: Record<string, string> = { idle: '♪ idle', loading: '♪ loading…', ready: '♪ ready', error: '♪ error' }
+    el.textContent = labels[status] ?? status
+
+    if (progressTimer) { clearInterval(progressTimer); progressTimer = null }
+
+    if (status === 'loading') {
+      progressValue = 0
+      fill.style.transition = 'none'
+      fill.style.width = '0%'
+      progressTimer = setInterval(() => {
+        progressValue += (90 - progressValue) * 0.06
+        fill.style.transition = 'width 0.1s linear'
+        fill.style.width = progressValue.toFixed(1) + '%'
+      }, 100)
+    } else if (status === 'ready') {
+      fill.style.background = '#22c55e'
+      fill.style.transition = 'width 0.2s ease-out'
+      fill.style.width = '100%'
+    } else if (status === 'error') {
+      fill.style.background = '#ef4444'
+      fill.style.transition = 'width 0.2s ease-out'
+      fill.style.width = '100%'
+    } else {
+      fill.style.transition = 'none'
+      fill.style.width = '0%'
+    }
+  })
 
   window.addEventListener('history-capture-requested', () => {
     if (state.detection?.kind === 'chord') {
@@ -221,6 +262,20 @@ function buildLayout() {
         ).join('')}
       </select>
       <span id="auto-key-label" class="auto-key-label"></span>
+      <span class="toolbar-sep"></span>
+      <div id="audio-progress" class="audio-progress" title="Soundfont status">
+        <div id="audio-progress-fill" class="audio-progress-fill"></div>
+        <span id="audio-status" class="audio-status">♪ idle</span>
+      </div>
+      <button id="btn-play-chord" class="ctrl-btn" title="Play current chord (P)">▶</button>
+      <select id="audio-instrument" class="ctrl-select" title="Soundfont instrument">
+        ${GM_INSTRUMENT_GROUPS.map(g =>
+          `<optgroup label="${g.label}">${g.instruments.map(i =>
+            `<option value="${i}"${i === getCurrentInstrument() ? ' selected' : ''}>${i.replace(/_/g,' ')}</option>`
+          ).join('')}</optgroup>`
+        ).join('')}
+      </select>
+      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
       <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
     </div>
     <!-- Row 1: notation — staff + CoF side by side, guitar stacked below CoF -->
@@ -465,6 +520,23 @@ function buildLayout() {
 
   $('btn-help').addEventListener('click', toggleHelp)
 
+  $('btn-play-chord').addEventListener('click', () => {
+    initAudioOnGesture()
+    if (lastChordMidi.length > 0) {
+      playMidiNotes(lastChordMidi)
+    } else if (lastChordSymbol) {
+      audioPlayChord(lastChordSymbol)
+    }
+  })
+
+  $('audio-instrument').addEventListener('change', (e) => {
+    setInstrument((e.target as HTMLSelectElement).value)
+  })
+
+  $('audio-volume').addEventListener('input', (e) => {
+    setVolume(parseFloat((e.target as HTMLInputElement).value))
+  })
+
   // Apply saved panel visibility on load
   applyPanelVisibility()
 }
@@ -517,6 +589,7 @@ function onNoteChange(notes: number[]) {
 
   if (result?.kind === 'chord') {
     const sym = result.candidates[result.selectedIndex]
+    if (sym && sym !== '?') { lastChordSymbol = sym; lastChordMidi = [...notes] }
     const isKnown = sym !== '?'
     state.analysis = null
     if (isKnown) {
@@ -819,6 +892,13 @@ function wireKeyboard() {
         if (activeEntry) sendToSong(activeEntry)
         break
       }
+      case 'p': case 'P':
+        if (lastChordMidi.length > 0) {
+          playMidiNotes(lastChordMidi)
+        } else if (lastChordSymbol) {
+          audioPlayChord(lastChordSymbol)
+        }
+        break
       case 'c': case 'C':
         showModal('Clear history', 'Remove all history entries?', clearHistory); break
       case '?':
