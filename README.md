@@ -39,7 +39,7 @@ Each analysis field can be toggled on/off. Font scale adjustable with +/−. Col
 **Notation panel**
 
 - Staff (abcjs) — clef follows active key
-- Circle of Fifths — interactive, shows active chord highlighted. Controls: enharmonic (b/♯), minor ring, dim ring, degree labels, 7th labels, size
+- Circle of Fifths — click any segment to play that chord and show it in the staff/analysis. Major ring also sets the active key. Controls: enharmonic (b/♯), minor ring, dim ring, degree labels, 7th labels, size
 - Guitar voicing (notae) — Standard/Drop D/Open G/Custom tuning, fret labels, degree labels
 - Horizontal fretboard (notae) — all note positions across 12 frets
 
@@ -52,7 +52,7 @@ Each analysis field can be toggled on/off. Font scale adjustable with +/−. Col
 
 **Audio**
 
-Any note you play on the MIDI controller sounds through the selected soundfont. Click any piano key to play it. Double-click any history chip or song chord to replay it. Play button (▶) and `P` key replay the last detected chord.
+Any note you play on the MIDI controller sounds through the selected soundfont. Click any piano key to play it. Click any Circle of Fifths segment to play that chord. Double-click any history chip or song chord to replay it. Play button (▶) and `P` key replay the last detected chord.
 
 - 128 GM instruments selectable from the toolbar (grouped by family)
 - Volume slider
