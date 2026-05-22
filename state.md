@@ -127,6 +127,10 @@ modus/
 
 ## History
 
+### 2026-05-22 — Repo cleanup (post session 14)
+
+`server.js` eliminado (archivo antiguo no utilizado, nunca trackeado). `.gitignore` limpiado: eliminadas entradas `dist/` y `package-lock.json` — `dist/` ya estaba trackeado desde sesión 12, `package-lock.json` ahora trackeado para installs reproducibles. Repo listo para publicar como open source.
+
 ### 2026-05-22 — CoF audio + Song playback session 14
 
 `playChord` reescrito para usar `chord.getNotes()` de UMT (misma fuente que staff/piano) con fallback a `QUALITY_INTERVALS`. Inicialización correcta: `ensureContext()` + `loadCurrentInstrument()` + cola en `pendingNotes` si instrumento aún carga. `QUALITY_INTERVALS` actualizado con nombres reales de UMT (`'dominant seventh'`, `'minor seventh'`, etc.).
