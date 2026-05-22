@@ -1,5 +1,5 @@
 import type { Song, Section, Measure, SongChord, SectionColor } from './types'
-import { playChord } from './audio'
+import { playChord, initAudioOnGesture } from './audio'
 
 export function createSong(): Song {
   return { schemaVersion: 1, title: 'Untitled', sections: [] }
@@ -855,7 +855,7 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   wrap.addEventListener('mouseleave', () => controls.style.display = 'none')
 
   wrap.addEventListener('click', () => h.onChordClick(chord.id, chord.symbol))
-  wrap.addEventListener('dblclick', () => playChord(chord.symbol))
+  wrap.addEventListener('dblclick', () => { initAudioOnGesture(); playChord(chord.symbol) })
 
   // Chord drag & drop within measure
   wrap.draggable = true

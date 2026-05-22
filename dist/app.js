@@ -419,33 +419,53 @@
     "minor": [0, 3, 7],
     "diminished": [0, 3, 6],
     "augmented": [0, 4, 8],
-    "major7": [0, 4, 7, 11],
-    "minor7": [0, 3, 7, 10],
-    "dominant7": [0, 4, 7, 10],
-    "diminished7": [0, 3, 6, 9],
-    "half-diminished": [0, 3, 6, 10],
+    "major seventh": [0, 4, 7, 11],
+    "minor seventh": [0, 3, 7, 10],
+    "dominant seventh": [0, 4, 7, 10],
+    "diminished seventh": [0, 3, 6, 9],
+    "half-diminished seventh": [0, 3, 6, 10],
     "sus2": [0, 2, 7],
     "sus4": [0, 5, 7],
-    "major9": [0, 4, 7, 11, 14],
-    "minor9": [0, 3, 7, 10, 14],
-    "dominant9": [0, 4, 7, 10, 14]
+    "major ninth": [0, 4, 7, 11, 14],
+    "minor ninth": [0, 3, 7, 10, 14],
+    "dominant ninth": [0, 4, 7, 10, 14]
   };
   function playChord(chordSymbol) {
-    if (!instrument || !audioCtx)
+    ensureContext();
+    if (!loadingInstrument && !instrument)
+      loadCurrentInstrument();
+    if (!audioCtx)
       return;
     try {
       const chord = UMT.parseChordSymbol(chordSymbol);
-      const rootName = chord.root?.name ?? (typeof chord.root === "string" ? chord.root : null);
-      if (!rootName)
+      const midiNotes = [];
+      const umtNotes = chord.getNotes?.() ?? [];
+      for (const n of umtNotes) {
+        const midi = noteNameToMidi(n.name);
+        if (midi !== null)
+          midiNotes.push(midi);
+      }
+      if (!midiNotes.length) {
+        const rootName = chord.root?.name ?? (typeof chord.root === "string" ? chord.root : null);
+        if (!rootName)
+          return;
+        const rootMidi = noteNameToMidi(rootName + "4");
+        if (rootMidi === null)
+          return;
+        const quality = chord.quality ?? "major";
+        const intervals = QUALITY_INTERVALS[quality] ?? [0, 4, 7];
+        for (const interval of intervals)
+          midiNotes.push(rootMidi + interval);
+      }
+      if (!midiNotes.length)
         return;
-      const rootMidi = noteNameToMidi(rootName + "4");
-      if (rootMidi === null)
+      if (!instrument) {
+        pendingNotes = midiNotes.map((midi) => ({ midi, duration: 2 }));
         return;
-      const quality = chord.quality ?? "major";
-      const intervals = QUALITY_INTERVALS[quality] ?? [0, 4, 7];
+      }
       audioCtx.resume().then(() => {
-        for (const interval of intervals) {
-          instrument.play(rootMidi + interval, audioCtx.currentTime, { duration: 2, gain: volume });
+        for (const midi of midiNotes) {
+          instrument.play(midi, audioCtx.currentTime, { duration: 2, gain: volume });
         }
       });
     } catch {
@@ -903,12 +923,12 @@ K:${abcKey}
       const lx = cx + labelR * Math.cos(midAngle);
       const ly = cy + labelR * Math.sin(midAngle);
       const degree = opts.showDegrees && activePos !== -1 ? COF_DEGREES[(i - activePos + 12) % 12] : null;
-      svg += `<path d="M${x1i},${y1i} L${x1o},${y1o} A${outerR},${outerR} 0 0,1 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0,0 ${x1i},${y1i}"
-      fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
-      data-key="${key} Major" />`;
       const relPos = activePos !== -1 ? (i - activePos + 12) % 12 : -1;
       const suffix7 = opts.show7ths ? relPos === 1 ? "7" : "maj7" : "";
       const keyLabel = key + suffix7;
+      svg += `<path d="M${x1i},${y1i} L${x1o},${y1o} A${outerR},${outerR} 0 0,1 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0,0 ${x1i},${y1i}"
+      fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
+      data-key="${key} Major" data-chord="${key + suffix7}" />`;
       if (degree) {
         svg += `<text x="${lx}" y="${ly - majorFont * 0.45}" text-anchor="middle" dominant-baseline="middle"
         font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${keyLabel}</text>`;
@@ -927,12 +947,12 @@ K:${abcKey}
         const mx2o = cx + minorOutR * Math.cos(nextAngle), my2o = cy + minorOutR * Math.sin(nextAngle);
         const mx1i = cx + minorInR * Math.cos(angle), my1i = cy + minorInR * Math.sin(angle);
         const mx2i = cx + minorInR * Math.cos(nextAngle), my2i = cy + minorInR * Math.sin(nextAngle);
-        const minorSegFill = isMinorChordHere ? "#0d9488" : isDiatonic ? "#252550" : "none";
-        const minorSegStroke = isMinorChordHere ? "#0d9488" : isDiatonic ? "#7c7ca0" : "none";
-        if (minorSegFill !== "none" || minorSegStroke !== "none") {
-          svg += `<path d="M${mx1i},${my1i} L${mx1o},${my1o} A${minorOutR},${minorOutR} 0 0,1 ${mx2o},${my2o} L${mx2i},${my2i} A${minorInR},${minorInR} 0 0,0 ${mx1i},${my1i}"
-          fill="${minorSegFill === "none" ? "transparent" : minorSegFill}" stroke="${minorSegStroke === "none" ? "transparent" : minorSegStroke}" stroke-width="1"/>`;
-        }
+        const minorSegFill = isMinorChordHere ? "#0d9488" : isDiatonic ? "#252550" : "transparent";
+        const minorSegStroke = isMinorChordHere ? "#0d9488" : isDiatonic ? "#7c7ca0" : "transparent";
+        const minorChordSym = minorKeys[i] + (opts.show7ths ? "7" : "");
+        svg += `<path d="M${mx1i},${my1i} L${mx1o},${my1o} A${minorOutR},${minorOutR} 0 0,1 ${mx2o},${my2o} L${mx2i},${my2i} A${minorInR},${minorInR} 0 0,0 ${mx1i},${my1i}"
+        fill="${minorSegFill}" stroke="${minorSegStroke}" stroke-width="1"
+        pointer-events="all" style="cursor:pointer" data-minor-chord="${minorChordSym}"/>`;
         const minorFill = isMinorChordHere ? "#e0e0e0" : isDiatonic ? "#c4b5fd" : "#9ca3af";
         if (minorDegree) {
           svg += `<text x="${mx}" y="${my - minorFont * 0.55}" text-anchor="middle" dominant-baseline="middle"
@@ -949,8 +969,11 @@ K:${abcKey}
         const dx1i = cx + dimInR * Math.cos(da), dy1i = cy + dimInR * Math.sin(da);
         const dx2i = cx + dimInR * Math.cos(dna), dy2i = cy + dimInR * Math.sin(dna);
         const isDiatonicDim = i === diatonicDimPos;
+        const dimRoot = CIRCLE_DIM[i].replace("\xB0", "");
+        const dimChordSym = `${dimRoot}${opts.show7ths ? "m7b5" : "dim"}`;
         svg += `<path d="M${dx1i},${dy1i} L${dx1o},${dy1o} A${dimOutR},${dimOutR} 0 0,1 ${dx2o},${dy2o} L${dx2i},${dy2i} A${dimInR},${dimInR} 0 0,0 ${dx1i},${dy1i}"
-        fill="${isDiatonicDim ? "#2a2a5a" : "#1e1e35"}" stroke="${isDiatonicDim ? "#a0a0d8" : "#3a3a5c"}" stroke-width="${isDiatonicDim ? 1.5 : 1}"/>`;
+        fill="${isDiatonicDim ? "#2a2a5a" : "#1e1e35"}" stroke="${isDiatonicDim ? "#a0a0d8" : "#3a3a5c"}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
+        pointer-events="all" style="cursor:pointer" data-dim-chord="${dimChordSym}"/>`;
         const dlx = cx + dimLabR * Math.cos(midAngle);
         const dly = cy + dimLabR * Math.sin(midAngle);
         const dimChord = opts.show7ths ? CIRCLE_DIM[i].replace("\xB0", "\xF87") : CIRCLE_DIM[i];
@@ -969,7 +992,26 @@ K:${abcKey}
     svg += "</svg>";
     container.innerHTML = svg;
     container.querySelectorAll("[data-key]").forEach((el) => {
-      el.addEventListener("click", () => onKeyClick(el.dataset.key));
+      el.addEventListener("click", () => {
+        initAudioOnGesture();
+        if (el.dataset.chord)
+          playChord(el.dataset.chord);
+        onKeyClick(el.dataset.key, el.dataset.chord);
+      });
+    });
+    container.querySelectorAll("[data-minor-chord]").forEach((el) => {
+      el.addEventListener("click", () => {
+        initAudioOnGesture();
+        playChord(el.dataset.minorChord);
+        onKeyClick(null, el.dataset.minorChord);
+      });
+    });
+    container.querySelectorAll("[data-dim-chord]").forEach((el) => {
+      el.addEventListener("click", () => {
+        initAudioOnGesture();
+        playChord(el.dataset.dimChord);
+        onKeyClick(null, el.dataset.dimChord);
+      });
     });
   }
 
@@ -1899,7 +1941,10 @@ K:${abcKey}
     wrap.addEventListener("mouseenter", () => controls.style.display = "flex");
     wrap.addEventListener("mouseleave", () => controls.style.display = "none");
     wrap.addEventListener("click", () => h.onChordClick(chord.id, chord.symbol));
-    wrap.addEventListener("dblclick", () => playChord(chord.symbol));
+    wrap.addEventListener("dblclick", () => {
+      initAudioOnGesture();
+      playChord(chord.symbol);
+    });
     wrap.draggable = true;
     wrap.addEventListener("dragstart", (e) => {
       e.stopPropagation();
@@ -2640,11 +2685,19 @@ K:${abcKey}
     const chordRoot = chordSymbol ? (chordSymbol.match(/^([A-G][b#]?)/) ?? [, ""])[1] || null : null;
     renderNeck($("neck-container"), noteNames, chordRoot);
     renderGuitar($("guitar-container"), chordSymbol, noteNames);
-    renderCircleOfFifths($("cof-container"), state.activeKey, chordSymbol ?? null, (key) => {
-      state.activeKey = key;
-      localStorage.setItem("active-key", key);
-      $("key-select").value = key;
-      refreshAll();
+    renderCircleOfFifths($("cof-container"), state.activeKey, chordSymbol ?? null, (key, chord) => {
+      if (key) {
+        state.activeKey = key;
+        localStorage.setItem("active-key", key);
+        $("key-select").value = key;
+      }
+      if (chord) {
+        triggerChordAnalysis(chord);
+        renderZone2();
+        renderZone3();
+      } else {
+        refreshAll();
+      }
     }, cofSize, { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths });
   }
   function reRenderDiagrams() {
@@ -2938,3 +2991,4 @@ K:${abcKey}
   }
   init();
 })();
+//# sourceMappingURL=app.js.map

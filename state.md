@@ -127,6 +127,12 @@ modus/
 
 ## History
 
+### 2026-05-22 — CoF audio + Song playback session 14
+
+`playChord` reescrito para usar `chord.getNotes()` de UMT (misma fuente que staff/piano) con fallback a `QUALITY_INTERVALS`. Inicialización correcta: `ensureContext()` + `loadCurrentInstrument()` + cola en `pendingNotes` si instrumento aún carga. `QUALITY_INTERVALS` actualizado con nombres reales de UMT (`'dominant seventh'`, `'minor seventh'`, etc.).
+
+CoF: single click en segmento mayor → selecciona clave + toca acorde + muestra en staff/análisis. Single click en menor/dim → toca acorde + muestra en staff (sin cambio de clave). `onKeyClick` extendido a `(key: string | null, chord?: string)`. Minor/dim segments siempre tienen path SVG con `data-minor-chord`/`data-dim-chord` y `pointer-events="all"`. Song chips: dblclick → `initAudioOnGesture()` + `playChord`. Bug corregido: `suffix7` y `relPos` movidos antes del `<path>` en el render loop del CoF (TDZ).
+
 ### 2026-05-22 — Audio session 13
 
 Sistema de audio completo. WebAudioFont (versión 2.1.0 inexistente, CDN 404) reemplazado por soundfont-player@0.12.0 + FluidR3_GM. `audio.ts` reescrito: `playNote`, `playNoteByName`, `playMidiNotes`, `playChord`, `setInstrument`, `setVolume/getVolume`, cola de notas pendientes (`pendingNotes`) para cuando el instrumento aún carga. Selector de 128 instrumentos GM en 16 grupos optgroup. Slider de volumen. Barra de progreso animada (asintótica 0→90%, salta a 100% verde al cargar) con texto integrado dentro. Estado idle/loading/ready/error con callback. `setStatus('ready')` solo dispara tras `await audioCtx.resume()`.
@@ -262,4 +268,7 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [x] Guitar diagrams: diagrama vacío en init — fretboard vacío opacity:0.35 como placeholder
 - [x] Audio: soundfont-player (FluidR3_GM), selector 128 instrumentos GM, volumen, barra de carga
 - [x] Piano instruments: SVG propio con click-to-play (Notae no genera data-note)
-- [ ] CoF: click en segmento → reproducir el acorde correspondiente
+- [x] CoF: click en segmento mayor → reproducir el acorde (single click = select + play)
+- [x] CoF: click en segmento menor y dim → reproducir el acorde (single click = play only)
+- [ ] CoF: click en segmento menor → seleccionar modo menor (ej. click en Am pone "A Minor" como clave activa, resalta los mismos diatónicos que C Major pero con Am como i — el color de tónica se mueve a Am)
+- [ ] Song: click en acorde → reproducir (actualmente solo dblclick, revisar si es suficiente o añadir botón ▶ por acorde)
