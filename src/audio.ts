@@ -109,34 +109,55 @@ const QUALITY_INTERVALS: Record<string, number[]> = {
   'minor':           [0, 3, 7],
   'diminished':      [0, 3, 6],
   'augmented':       [0, 4, 8],
-  'major7':          [0, 4, 7, 11],
-  'minor7':          [0, 3, 7, 10],
-  'dominant7':       [0, 4, 7, 10],
-  'diminished7':     [0, 3, 6, 9],
-  'half-diminished': [0, 3, 6, 10],
-  'sus2':            [0, 2, 7],
-  'sus4':            [0, 5, 7],
-  'major9':          [0, 4, 7, 11, 14],
-  'minor9':          [0, 3, 7, 10, 14],
-  'dominant9':       [0, 4, 7, 10, 14],
+  'major seventh':           [0, 4, 7, 11],
+  'minor seventh':           [0, 3, 7, 10],
+  'dominant seventh':        [0, 4, 7, 10],
+  'diminished seventh':      [0, 3, 6, 9],
+  'half-diminished seventh': [0, 3, 6, 10],
+  'sus2':                    [0, 2, 7],
+  'sus4':                    [0, 5, 7],
+  'major ninth':             [0, 4, 7, 11, 14],
+  'minor ninth':             [0, 3, 7, 10, 14],
+  'dominant ninth':          [0, 4, 7, 10, 14],
 }
 
 export function playChord(chordSymbol: string) {
-  if (!instrument || !audioCtx) return
+  ensureContext()
+  if (!loadingInstrument && !instrument) loadCurrentInstrument()
+  if (!audioCtx) return
   try {
     const chord = UMT.parseChordSymbol(chordSymbol)
-    const rootName = chord.root?.name ?? (typeof chord.root === 'string' ? chord.root : null)
-    if (!rootName) return
-    const rootMidi = noteNameToMidi(rootName + '4')
-    if (rootMidi === null) return
-    const quality = chord.quality ?? 'major'
-    const intervals = QUALITY_INTERVALS[quality] ?? [0, 4, 7]
+    const midiNotes: number[] = []
+
+    // Use UMT's own note list (same source as staff/piano rendering)
+    const umtNotes: any[] = chord.getNotes?.() ?? []
+    for (const n of umtNotes) {
+      const midi = noteNameToMidi(n.name)
+      if (midi !== null) midiNotes.push(midi)
+    }
+
+    // Fallback: derive from root + quality intervals
+    if (!midiNotes.length) {
+      const rootName = chord.root?.name ?? (typeof chord.root === 'string' ? chord.root : null)
+      if (!rootName) return
+      const rootMidi = noteNameToMidi(rootName + '4')
+      if (rootMidi === null) return
+      const quality = chord.quality ?? 'major'
+      const intervals = QUALITY_INTERVALS[quality] ?? [0, 4, 7]
+      for (const interval of intervals) midiNotes.push(rootMidi + interval)
+    }
+
+    if (!midiNotes.length) return
+    if (!instrument) {
+      pendingNotes = midiNotes.map(midi => ({ midi, duration: 2 }))
+      return
+    }
     audioCtx.resume().then(() => {
-      for (const interval of intervals) {
-        instrument.play(rootMidi + interval, audioCtx!.currentTime, { duration: 2, gain: volume })
+      for (const midi of midiNotes) {
+        instrument!.play(midi, audioCtx!.currentTime, { duration: 2, gain: volume })
       }
     })
-  } catch { /* invalid symbol */ }
+  } catch { }
 }
 
 // ─── Note name → MIDI ────────────────────────────────────────────────────────

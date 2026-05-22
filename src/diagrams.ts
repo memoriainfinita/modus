@@ -1,4 +1,4 @@
-import { playNoteByName } from './audio'
+import { playNoteByName, playChord, initAudioOnGesture } from './audio'
 
 export let guitarControlsVisible = JSON.parse(localStorage.getItem('panel-guitarControls') ?? 'true')
 export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v }
@@ -401,7 +401,7 @@ export function renderCircleOfFifths(
   container: HTMLElement,
   activeKey: string | null,
   activeChord: string | null,
-  onKeyClick: (key: string) => void,
+  onKeyClick: (key: string | null, chord?: string) => void,
   size = 160,
   opts: { accidental: 'sharp' | 'flat', showMinor: boolean, showDegrees: boolean, show7ths: boolean, fontScale?: number } = { accidental: 'flat', showMinor: true, showDegrees: false, show7ths: false }
 ) {
@@ -460,13 +460,13 @@ export function renderCircleOfFifths(
       ? COF_DEGREES[(i - activePos + 12) % 12]
       : null
 
-    svg += `<path d="M${x1i},${y1i} L${x1o},${y1o} A${outerR},${outerR} 0 0,1 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0,0 ${x1i},${y1i}"
-      fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
-      data-key="${key} Major" />`
-
     const relPos = activePos !== -1 ? (i - activePos + 12) % 12 : -1
     const suffix7 = opts.show7ths ? (relPos === 1 ? '7' : 'maj7') : ''
     const keyLabel = key + suffix7
+
+    svg += `<path d="M${x1i},${y1i} L${x1o},${y1o} A${outerR},${outerR} 0 0,1 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0,0 ${x1i},${y1i}"
+      fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
+      data-key="${key} Major" data-chord="${key + suffix7}" />`
     if (degree) {
       svg += `<text x="${lx}" y="${ly - majorFont * 0.45}" text-anchor="middle" dominant-baseline="middle"
         font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${keyLabel}</text>`
@@ -490,12 +490,12 @@ export function renderCircleOfFifths(
       const mx2o = cx + minorOutR * Math.cos(nextAngle), my2o = cy + minorOutR * Math.sin(nextAngle)
       const mx1i = cx + minorInR  * Math.cos(angle),    my1i = cy + minorInR  * Math.sin(angle)
       const mx2i = cx + minorInR  * Math.cos(nextAngle), my2i = cy + minorInR  * Math.sin(nextAngle)
-      const minorSegFill   = isMinorChordHere ? '#0d9488' : isDiatonic ? '#252550' : 'none'
-      const minorSegStroke = isMinorChordHere ? '#0d9488' : isDiatonic ? '#7c7ca0' : 'none'
-      if (minorSegFill !== 'none' || minorSegStroke !== 'none') {
-        svg += `<path d="M${mx1i},${my1i} L${mx1o},${my1o} A${minorOutR},${minorOutR} 0 0,1 ${mx2o},${my2o} L${mx2i},${my2i} A${minorInR},${minorInR} 0 0,0 ${mx1i},${my1i}"
-          fill="${minorSegFill === 'none' ? 'transparent' : minorSegFill}" stroke="${minorSegStroke === 'none' ? 'transparent' : minorSegStroke}" stroke-width="1"/>`
-      }
+      const minorSegFill   = isMinorChordHere ? '#0d9488' : isDiatonic ? '#252550' : 'transparent'
+      const minorSegStroke = isMinorChordHere ? '#0d9488' : isDiatonic ? '#7c7ca0' : 'transparent'
+      const minorChordSym = minorKeys[i] + (opts.show7ths ? '7' : '')
+      svg += `<path d="M${mx1i},${my1i} L${mx1o},${my1o} A${minorOutR},${minorOutR} 0 0,1 ${mx2o},${my2o} L${mx2i},${my2i} A${minorInR},${minorInR} 0 0,0 ${mx1i},${my1i}"
+        fill="${minorSegFill}" stroke="${minorSegStroke}" stroke-width="1"
+        pointer-events="all" style="cursor:pointer" data-minor-chord="${minorChordSym}"/>`
 
       const minorFill = isMinorChordHere ? '#e0e0e0' : isDiatonic ? '#c4b5fd' : '#9ca3af'
       if (minorDegree) {
@@ -515,8 +515,11 @@ export function renderCircleOfFifths(
       const dx1i = cx + dimInR  * Math.cos(da),  dy1i = cy + dimInR  * Math.sin(da)
       const dx2i = cx + dimInR  * Math.cos(dna), dy2i = cy + dimInR  * Math.sin(dna)
       const isDiatonicDim = i === diatonicDimPos
+      const dimRoot = CIRCLE_DIM[i].replace('°', '')
+      const dimChordSym = `${dimRoot}${opts.show7ths ? 'm7b5' : 'dim'}`
       svg += `<path d="M${dx1i},${dy1i} L${dx1o},${dy1o} A${dimOutR},${dimOutR} 0 0,1 ${dx2o},${dy2o} L${dx2i},${dy2i} A${dimInR},${dimInR} 0 0,0 ${dx1i},${dy1i}"
-        fill="${isDiatonicDim ? '#2a2a5a' : '#1e1e35'}" stroke="${isDiatonicDim ? '#a0a0d8' : '#3a3a5c'}" stroke-width="${isDiatonicDim ? 1.5 : 1}"/>`
+        fill="${isDiatonicDim ? '#2a2a5a' : '#1e1e35'}" stroke="${isDiatonicDim ? '#a0a0d8' : '#3a3a5c'}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
+        pointer-events="all" style="cursor:pointer" data-dim-chord="${dimChordSym}"/>`
       const dlx = cx + dimLabR * Math.cos(midAngle)
       const dly = cy + dimLabR * Math.sin(midAngle)
       const dimChord = opts.show7ths ? CIRCLE_DIM[i].replace('°', 'ø7') : CIRCLE_DIM[i]
@@ -537,6 +540,24 @@ export function renderCircleOfFifths(
   container.innerHTML = svg
 
   container.querySelectorAll<SVGPathElement>('[data-key]').forEach(el => {
-    el.addEventListener('click', () => onKeyClick(el.dataset.key!))
+    el.addEventListener('click', () => {
+      initAudioOnGesture()
+      if (el.dataset.chord) playChord(el.dataset.chord)
+      onKeyClick(el.dataset.key!, el.dataset.chord)
+    })
+  })
+  container.querySelectorAll<SVGPathElement>('[data-minor-chord]').forEach(el => {
+    el.addEventListener('click', () => {
+      initAudioOnGesture()
+      playChord(el.dataset.minorChord!)
+      onKeyClick(null, el.dataset.minorChord)
+    })
+  })
+  container.querySelectorAll<SVGPathElement>('[data-dim-chord]').forEach(el => {
+    el.addEventListener('click', () => {
+      initAudioOnGesture()
+      playChord(el.dataset.dimChord!)
+      onKeyClick(null, el.dataset.dimChord)
+    })
   })
 }

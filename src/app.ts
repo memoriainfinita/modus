@@ -625,11 +625,19 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const chordRoot = chordSymbol ? (chordSymbol.match(/^([A-G][b#]?)/) ?? [, ''])[1] || null : null
   renderNeck($('neck-container'), noteNames, chordRoot)
   renderGuitar($('guitar-container'), chordSymbol, noteNames)
-  renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol ?? null, (key) => {
-    state.activeKey = key
-    localStorage.setItem('active-key', key)
-    ;($('key-select') as HTMLSelectElement).value = key
-    refreshAll()
+  renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol ?? null, (key, chord?) => {
+    if (key) {
+      state.activeKey = key
+      localStorage.setItem('active-key', key)
+      ;($('key-select') as HTMLSelectElement).value = key
+    }
+    if (chord) {
+      triggerChordAnalysis(chord)
+      renderZone2()
+      renderZone3()
+    } else {
+      refreshAll()
+    }
   }, cofSize, { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths })
 }
 
