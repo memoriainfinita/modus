@@ -122,7 +122,7 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   justify-content: center;
 }
 .col-auto { flex: 0 0 auto; }
-.col-analysis { flex: 0 0 auto; min-width: 140px; }
+.col-analysis { flex: 0 0 210px; width: 210px; }
 .col-label { font-size: 10px; color: #6b7280; margin-bottom: 4px; }
 .col-vis-row { display: flex; gap: 3px; }
 .col-vis-btn {
@@ -143,7 +143,7 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   margin-bottom: 4px;
 }
 #chord-summary { min-height: 32px; margin-bottom: 4px; }
-#analysis-content { display: flex; flex-direction: column; gap: 4px; }
+#analysis-content { display: flex; flex-direction: column; gap: 0.4em; overflow: hidden; }
 #cof-controls, #analysis-controls {
   display: flex;
   flex-direction: column;
@@ -153,7 +153,8 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
 }
 .ctrl-row { display: flex; gap: 3px; }
 #guitar-container { min-height: 220px; }
-#piano-content, #neck-content { overflow-x: auto; }
+#instruments-content { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; overflow-x: auto; }
+#col-neck { padding-top: 50px; }
 .centered-content { display: flex; justify-content: center; }
 
 /* ─── Chord summary ───────────────────────────────────────────── */
@@ -182,9 +183,9 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
 }
 
 /* ─── Analysis rows ───────────────────────────────────────────── */
-.analysis-row { display: flex; gap: 6px; align-items: baseline; }
-.analysis-label { font-size: 10px; color: #6b7280; min-width: 58px; flex-shrink: 0; }
-.analysis-value { font-size: 11px; }
+.analysis-row { display: flex; gap: 0.5em; align-items: baseline; }
+.analysis-label { font-size: 0.9em; color: #6b7280; min-width: 5.5em; flex-shrink: 0; }
+.analysis-value { font-size: 1em; overflow-wrap: break-word; }
 
 /* ─── Guitar controls ─────────────────────────────────────────── */
 #guitar-ctrl-wrap {
@@ -464,7 +465,7 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   z-index: 1000;
   background: #1a1a2e;
   border: 1px solid #4a4a6a;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 6px;
   display: flex;
   gap: 4px;
@@ -478,6 +479,52 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   cursor: pointer;
   padding: 0;
 }
+
+/* ─── Modal ───────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-popup {
+  background: #1a1a2e;
+  border: 1px solid #4a4a6a;
+  border-radius: 8px;
+  padding: 18px 20px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+  min-width: 240px;
+  max-width: 360px;
+}
+.modal-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.modal-message {
+  font-size: 13px;
+  color: #e0e0e0;
+  margin-bottom: 16px;
+}
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.modal-btn {
+  background: #252540;
+  border: 1px solid #4a4a6a;
+  border-radius: 5px;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 5px 14px;
+}
+.modal-btn:hover { color: #e0e0e0; border-color: #6b7280; }
+.modal-btn-confirm { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+.modal-btn-confirm:hover { background: #6d28d9; border-color: #6d28d9; color: #fff; }
 
 /* ─── Help popup ──────────────────────────────────────────────── */
 .help-btn {

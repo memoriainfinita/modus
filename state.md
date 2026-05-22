@@ -127,6 +127,20 @@ modus/
 
 ## History
 
+### 2026-05-22 — UI polish session 12
+
+Layout estable: `.col-analysis` con ancho y alto calculados en JS proporcional a `analysisScale` (19px/pt ancho, fórmula `(N*1.6-0.4)*scale` alto). Filas condicionales (Sec, Colt, Neg, Subs) siempre en DOM con `—` cuando no hay datos — sin layout shift al aparecer análisis.
+
+Piano + Fretboard unificados en panel "Instruments" con botones [Pi][Fr] para visibilidad individual (igual que Notation). `col-piano` / `col-neck` en state + localStorage. `#col-neck` con `padding-top: 50px`. Controles +/- para el neck (`neckSpacing`, rango 10–28, step 2, default 16), exportados desde `diagrams.ts`.
+
+Modales: función `showModal(title, message, onConfirm, onCancel?)` con backdrop oscuro, mismo estilo que help popup. Reemplaza `confirm()` nativo. CSS: `.modal-backdrop`, `.modal-popup`, `.modal-btn-confirm`, `.modal-btn-cancel`.
+
+Grid 5×2 para botones de campo de análisis. Tooltips completos en los botones toggle (antes usaban abreviaturas). Ancho fijo `.col-analysis` que escala con +/-.
+
+CoF mejorado: V degree muestra "7" (dominante) en lugar de "maj7". Diatónicos resaltados: segmentos IV/I/V con fill/stroke más claro; anillo menor con paths SVG propios para diatónicos (ii/vi/iii) y acorde activo. Dim diatónico (vii°) con fill/stroke visible. Bug corregido: `isMinorChordHere` usaba root del anillo mayor en lugar de `minorKeys[i]`; `diatonicDimPos` era `activePos+5` (A#° en C mayor) — corregido a `activePos` (B°). Acorde activo menor ahora marca en anillo menor correcto.
+
+`.gitignore` creado: `node_modules/`, `package-lock.json`, `dist/`.
+
 ### 2026-05-22 — UI controls session 11
 
 Controles de Analysis: botones toggle para los 6 campos fijos (Roman, Func, Fig, Diat, Scl, Cad) y los 4 condicionales (Sec, Colt, Neg, Subs). Botones +/- para escala de fuente (8–20px, default 11). Toggle ▼/▲ para mostrar/ocultar el bloque de controles. Todo persiste en localStorage.

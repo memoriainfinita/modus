@@ -433,12 +433,18 @@ K:${abcKey}
       return null;
     return (parseInt(m[2]) + 1) * 12 + idx;
   }
+  var neckSpacing = parseInt(localStorage.getItem("neck-spacing") ?? "16");
+  function adjustNeckSpacing(delta) {
+    neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta));
+    localStorage.setItem("neck-spacing", String(neckSpacing));
+  }
   function renderNeck(container, noteNames, root = null) {
     const midi = noteNames.map(noteToMidi).filter((n) => n !== null);
     const frets = OPEN_MIDI.map((open) => {
       const pos = midi.map((n) => n - open).filter((f) => f >= 0 && f <= NECK_FRETS);
       return pos.length ? pos : [null];
     });
+    const sp = neckSpacing;
     const style = {
       ...DARK_FRETBOARD_STYLE,
       numFrets: NECK_FRETS,
@@ -446,7 +452,11 @@ K:${abcKey}
       chordNameSize: 0,
       chordNameY: 4,
       chordNameGapH: 4,
-      ...root ? { showDegrees: true, dotRadius: 11, fingerNumberSize: 8 } : {}
+      stringSpacing: sp,
+      fretSpacing: Math.round(sp * 28 / 16),
+      dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
+      fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
+      ...root ? { showDegrees: true } : {}
     };
     try {
       container.innerHTML = Notae.renderFretboard(
@@ -737,15 +747,19 @@ K:${abcKey}
   var CIRCLE_DIM = ["B\xB0", "F#\xB0", "C#\xB0", "G#\xB0", "D#\xB0", "A#\xB0", "F\xB0", "C\xB0", "G\xB0", "D\xB0", "A\xB0", "E\xB0"];
   var COF_DEGREES = ["I", "V", "II", "VI", "III", "VII", "\u266DV", "\u266DII", "\u266DVI", "\u266DIII", "\u266DVII", "IV"];
   var COF_DEGREES_MINOR = ["vi", "iii", "vii", "\u266Fiv", "\u266Dii", "\u266Dvi", "\u266Diii", "\u266Dvii", "iv", "i", "v", "ii"];
-  function renderCircleOfFifths(container, activeKey, chordRoot, onKeyClick, size = 160, opts = { accidental: "flat", showMinor: true, showDegrees: false, show7ths: false }) {
+  function renderCircleOfFifths(container, activeKey, activeChord, onKeyClick, size = 160, opts = { accidental: "flat", showMinor: true, showDegrees: false, show7ths: false }) {
     const keys = opts.accidental === "sharp" ? CIRCLE_KEYS_SHARP : CIRCLE_KEYS_FLAT;
     const minorKeys = opts.accidental === "sharp" ? CIRCLE_KEYS_MINOR_SHARP : CIRCLE_KEYS_MINOR_FLAT;
     const activeRoot = activeKey?.split(" ")[0] ?? null;
     const activePos = activeRoot !== null ? keys.findIndex((k) => k === activeRoot) : -1;
+    const activeChordRoot = activeChord?.match(/^([A-G][b#]?)/)?.[1] ?? null;
+    const isMinorActiveChord = activeChord ? /^[A-G][b#]?m(?!aj)/.test(activeChord) : false;
     const cx = size / 2, cy = size / 2;
     const outerR = size * 0.425;
     const innerR = size * 0.275;
     const labelR = size * 0.356;
+    const minorOutR = size * 0.265;
+    const minorInR = size * 0.165;
     const minorR = size * 0.21;
     const dimOutR = size * 0.155;
     const dimInR = size * 0.065;
@@ -755,6 +769,8 @@ K:${abcKey}
     const minorFont = Math.max(3, Math.round(size * 0.05 * fs));
     const dimFont = Math.max(3, Math.round(size * 0.04 * fs));
     let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`;
+    const diatonicPos = activePos !== -1 ? /* @__PURE__ */ new Set([(activePos + 11) % 12, activePos, (activePos + 1) % 12]) : /* @__PURE__ */ new Set();
+    const diatonicDimPos = activePos;
     keys.forEach((key, i) => {
       const angle = (i * 30 - 90) * Math.PI / 180;
       const nextAngle = ((i + 1) * 30 - 90) * Math.PI / 180;
@@ -763,9 +779,12 @@ K:${abcKey}
       const x1i = cx + innerR * Math.cos(angle), y1i = cy + innerR * Math.sin(angle);
       const x2i = cx + innerR * Math.cos(nextAngle), y2i = cy + innerR * Math.sin(nextAngle);
       const isActiveKey = activeRoot && key === activeRoot;
-      const isChordRoot = chordRoot === key;
-      const fill = isActiveKey ? "#4f46e5" : isChordRoot ? "#0d9488" : "#2d2d44";
-      const stroke = isChordRoot ? "#0d9488" : "#4a4a6a";
+      const isChordRoot = !isMinorActiveChord && activeChordRoot === key;
+      const minorKeyRoot = minorKeys[i].match(/^([A-G][b#]?)/)?.[1] ?? "";
+      const isMinorChordHere = isMinorActiveChord && activeChordRoot === minorKeyRoot;
+      const isDiatonic = diatonicPos.has(i);
+      const fill = isActiveKey ? "#4f46e5" : isChordRoot ? "#0d9488" : isDiatonic ? "#252550" : "#2d2d44";
+      const stroke = isChordRoot ? "#0d9488" : isDiatonic ? "#7c7ca0" : "#4a4a6a";
       const midAngle = (i * 30 + 15 - 90) * Math.PI / 180;
       const lx = cx + labelR * Math.cos(midAngle);
       const ly = cy + labelR * Math.sin(midAngle);
@@ -773,7 +792,9 @@ K:${abcKey}
       svg += `<path d="M${x1i},${y1i} L${x1o},${y1o} A${outerR},${outerR} 0 0,1 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0,0 ${x1i},${y1i}"
       fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
       data-key="${key} Major" />`;
-      const keyLabel = key + (opts.show7ths ? "maj7" : "");
+      const relPos = activePos !== -1 ? (i - activePos + 12) % 12 : -1;
+      const suffix7 = opts.show7ths ? relPos === 1 ? "7" : "maj7" : "";
+      const keyLabel = key + suffix7;
       if (degree) {
         svg += `<text x="${lx}" y="${ly - majorFont * 0.45}" text-anchor="middle" dominant-baseline="middle"
         font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${keyLabel}</text>`;
@@ -788,33 +809,46 @@ K:${abcKey}
         const my = cy + minorR * Math.sin(midAngle);
         const minorLabel = minorKeys[i] + (opts.show7ths ? "7" : "");
         const minorDegree = opts.showDegrees && activePos !== -1 ? COF_DEGREES_MINOR[(i - activePos + 12) % 12] : null;
+        const mx1o = cx + minorOutR * Math.cos(angle), my1o = cy + minorOutR * Math.sin(angle);
+        const mx2o = cx + minorOutR * Math.cos(nextAngle), my2o = cy + minorOutR * Math.sin(nextAngle);
+        const mx1i = cx + minorInR * Math.cos(angle), my1i = cy + minorInR * Math.sin(angle);
+        const mx2i = cx + minorInR * Math.cos(nextAngle), my2i = cy + minorInR * Math.sin(nextAngle);
+        const minorSegFill = isMinorChordHere ? "#0d9488" : isDiatonic ? "#252550" : "none";
+        const minorSegStroke = isMinorChordHere ? "#0d9488" : isDiatonic ? "#7c7ca0" : "none";
+        if (minorSegFill !== "none" || minorSegStroke !== "none") {
+          svg += `<path d="M${mx1i},${my1i} L${mx1o},${my1o} A${minorOutR},${minorOutR} 0 0,1 ${mx2o},${my2o} L${mx2i},${my2i} A${minorInR},${minorInR} 0 0,0 ${mx1i},${my1i}"
+          fill="${minorSegFill === "none" ? "transparent" : minorSegFill}" stroke="${minorSegStroke === "none" ? "transparent" : minorSegStroke}" stroke-width="1"/>`;
+        }
+        const minorFill = isMinorChordHere ? "#e0e0e0" : isDiatonic ? "#c4b5fd" : "#9ca3af";
         if (minorDegree) {
           svg += `<text x="${mx}" y="${my - minorFont * 0.55}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${minorFont}" fill="#9ca3af" pointer-events="none">${minorLabel}</text>`;
+          font-size="${minorFont}" fill="${minorFill}" pointer-events="none">${minorLabel}</text>`;
           svg += `<text x="${mx}" y="${my + minorFont * 0.75}" text-anchor="middle" dominant-baseline="middle"
           font-size="${minorFont * 0.85}" fill="#818cf8" pointer-events="none">${minorDegree}</text>`;
         } else {
           svg += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${minorFont}" fill="#9ca3af" pointer-events="none">${minorLabel}</text>`;
+          font-size="${minorFont}" fill="${minorFill}" pointer-events="none">${minorLabel}</text>`;
         }
         const da = angle, dna = nextAngle;
         const dx1o = cx + dimOutR * Math.cos(da), dy1o = cy + dimOutR * Math.sin(da);
         const dx2o = cx + dimOutR * Math.cos(dna), dy2o = cy + dimOutR * Math.sin(dna);
         const dx1i = cx + dimInR * Math.cos(da), dy1i = cy + dimInR * Math.sin(da);
         const dx2i = cx + dimInR * Math.cos(dna), dy2i = cy + dimInR * Math.sin(dna);
+        const isDiatonicDim = i === diatonicDimPos;
         svg += `<path d="M${dx1i},${dy1i} L${dx1o},${dy1o} A${dimOutR},${dimOutR} 0 0,1 ${dx2o},${dy2o} L${dx2i},${dy2i} A${dimInR},${dimInR} 0 0,0 ${dx1i},${dy1i}"
-        fill="#1e1e35" stroke="#3a3a5c" stroke-width="1"/>`;
+        fill="${isDiatonicDim ? "#2a2a5a" : "#1e1e35"}" stroke="${isDiatonicDim ? "#a0a0d8" : "#3a3a5c"}" stroke-width="${isDiatonicDim ? 1.5 : 1}"/>`;
         const dlx = cx + dimLabR * Math.cos(midAngle);
         const dly = cy + dimLabR * Math.sin(midAngle);
         const dimChord = opts.show7ths ? CIRCLE_DIM[i].replace("\xB0", "\xF87") : CIRCLE_DIM[i];
+        const dimTextFill = isDiatonicDim ? "#a78bfa" : "#6b7280";
         if (opts.showDegrees && activePos !== -1) {
           svg += `<text x="${dlx}" y="${dly - dimFont * 0.55}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${dimFont}" fill="#6b7280" pointer-events="none">${dimChord}</text>`;
+          font-size="${dimFont}" fill="${dimTextFill}" pointer-events="none">${dimChord}</text>`;
           svg += `<text x="${dlx}" y="${dly + dimFont * 0.75}" text-anchor="middle" dominant-baseline="middle"
           font-size="${dimFont * 0.85}" fill="#818cf8" pointer-events="none">vii\xB0</text>`;
         } else {
           svg += `<text x="${dlx}" y="${dly}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${dimFont}" fill="#6b7280" pointer-events="none">${dimChord}</text>`;
+          font-size="${dimFont}" fill="${dimTextFill}" pointer-events="none">${dimChord}</text>`;
         }
       }
     });
@@ -1884,6 +1918,18 @@ K:${abcKey}
     negharm: "Neg",
     subs: "Subs"
   };
+  var ANALYSIS_FIELD_TOOLTIPS = {
+    roman: "Roman numeral",
+    function: "Harmonic function",
+    figbass: "Figured bass",
+    diatonic: "Diatonic / borrowed",
+    scales: "Suggested scales",
+    cadence: "Cadence",
+    secondary: "Secondary dominant",
+    coltrane: "Coltrane axis",
+    negharm: "Negative harmony",
+    subs: "Substitutions"
+  };
   var analysisFieldsVisible = {
     roman: JSON.parse(localStorage.getItem("analysis-field-roman") ?? "true"),
     function: JSON.parse(localStorage.getItem("analysis-field-function") ?? "true"),
@@ -1920,8 +1966,9 @@ K:${abcKey}
     captureTargetId: null,
     panels: {
       notation: true,
-      piano: JSON.parse(localStorage.getItem("panel-piano") ?? "true"),
-      neck: JSON.parse(localStorage.getItem("panel-neck") ?? "true"),
+      instruments: JSON.parse(localStorage.getItem("panel-instruments") ?? "true"),
+      colPiano: JSON.parse(localStorage.getItem("panel-colPiano") ?? "true"),
+      colNeck: JSON.parse(localStorage.getItem("panel-colNeck") ?? "true"),
       history: JSON.parse(localStorage.getItem("panel-history") ?? "true"),
       song: JSON.parse(localStorage.getItem("panel-song") ?? "true"),
       cofControls: JSON.parse(localStorage.getItem("panel-cofControls") ?? "true"),
@@ -1933,6 +1980,35 @@ K:${abcKey}
       colGuitar: JSON.parse(localStorage.getItem("panel-colGuitar") ?? "true")
     }
   };
+  function showModal(title, message, onConfirm, onCancel) {
+    const backdrop = document.createElement("div");
+    backdrop.className = "modal-backdrop";
+    backdrop.innerHTML = `
+    <div class="modal-popup">
+      <div class="modal-title">${title}</div>
+      <div class="modal-message">${message}</div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel">Cancel</button>
+        <button class="modal-btn modal-btn-confirm">Confirm</button>
+      </div>
+    </div>`;
+    document.body.appendChild(backdrop);
+    const close = () => backdrop.remove();
+    backdrop.querySelector(".modal-btn-cancel").addEventListener("click", () => {
+      close();
+      onCancel?.();
+    });
+    backdrop.querySelector(".modal-btn-confirm").addEventListener("click", () => {
+      close();
+      onConfirm();
+    });
+    backdrop.addEventListener("mousedown", (e) => {
+      if (e.target === backdrop) {
+        close();
+        onCancel?.();
+      }
+    });
+  }
   var helpVisible = false;
   function closeHelp() {
     helpVisible = false;
@@ -2066,10 +2142,10 @@ K:${abcKey}
               <button id="btn-analysis-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
               <button id="btn-analysis-plus"  class="size-ctrl-btn" title="Larger">+</button>
             </div>
-            <div class="ctrl-row" style="flex-wrap:wrap;justify-content:center">
+            <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">
               ${ANALYSIS_FIELD_KEYS.map(
       (f) => `<button id="btn-field-${f}" class="size-ctrl-btn${analysisFieldsVisible[f] ? " active" : ""}"
-                  title="${ANALYSIS_FIELD_LABELS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
+                  title="${ANALYSIS_FIELD_TOOLTIPS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
     ).join("")}
             </div>
           </div>
@@ -2105,21 +2181,24 @@ K:${abcKey}
         </div>
       </div>
     </div>
-    <!-- Row 3: piano -->
-    <div id="piano-panel" class="zone-panel">
-      <div class="panel-header"><span>Piano</span><button class="toggle-btn" data-panel="piano">\u25BC</button></div>
-      <div id="piano-content">
-        <div class="centered-content">
-          <div id="piano-container"></div>
+    <!-- Row 3: instruments (piano + fretboard) -->
+    <div id="instruments-panel" class="zone-panel">
+      <div class="panel-header">
+        <span>Instruments</span>
+        <div class="col-vis-row">
+          <button class="col-vis-btn${state.panels.colPiano ? " active" : ""}" data-col="colPiano" title="Piano">Pi</button>
+          <button class="col-vis-btn${state.panels.colNeck ? " active" : ""}" data-col="colNeck"  title="Fretboard">Fr</button>
         </div>
+        <button class="toggle-btn" data-panel="instruments">\u25BC</button>
       </div>
-    </div>
-    <!-- Row 4: neck -->
-    <div id="neck-panel" class="zone-panel">
-      <div class="panel-header"><span>Fretboard</span><button class="toggle-btn" data-panel="neck">\u25BC</button></div>
-      <div id="neck-content">
-        <div class="centered-content">
+      <div id="instruments-content">
+        <div id="col-piano"><div id="piano-container"></div></div>
+        <div id="col-neck">
           <div id="neck-container"></div>
+          <div class="ctrl-row" style="justify-content:center;margin-top:4px">
+            <button id="btn-neck-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
+            <button id="btn-neck-plus"  class="size-ctrl-btn" title="Larger">+</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2205,6 +2284,23 @@ K:${abcKey}
       localStorage.setItem("analysis-scale", String(analysisScale));
       renderZone1Analysis();
     });
+    const reRenderNeck = () => {
+      const notes = state.detection?.kind !== "note" && state.detection?.notes ? state.detection.notes.map((n) => {
+        const FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+        return FLAT[n % 12] + (Math.floor(n / 12) - 1);
+      }) : [];
+      const sym = state.detection?.kind === "chord" ? state.detection.candidates[state.detection.selectedIndex] : null;
+      const chordRoot = sym ? (sym.match(/^([A-G][b#]?)/) ?? [, ""])[1] || null : null;
+      renderNeck($("neck-container"), notes, chordRoot);
+    };
+    $("btn-neck-minus").addEventListener("click", () => {
+      adjustNeckSpacing(-2);
+      reRenderNeck();
+    });
+    $("btn-neck-plus").addEventListener("click", () => {
+      adjustNeckSpacing(2);
+      reRenderNeck();
+    });
     ANALYSIS_FIELD_KEYS.forEach((f) => {
       $(`btn-field-${f}`).addEventListener("click", () => {
         analysisFieldsVisible[f] = !analysisFieldsVisible[f];
@@ -2243,7 +2339,7 @@ K:${abcKey}
       btn.addEventListener("click", () => {
         const panel = btn.dataset.panel;
         state.panels[panel] = !state.panels[panel];
-        if (panel === "history" || panel === "song" || panel === "piano" || panel === "neck" || panel === "cofControls" || panel === "guitarControls" || panel === "analysisControls") {
+        if (panel === "history" || panel === "song" || panel === "instruments" || panel === "cofControls" || panel === "guitarControls" || panel === "analysisControls") {
           localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]));
         }
         applyPanelVisibility();
@@ -2256,12 +2352,15 @@ K:${abcKey}
     const nc = $("notation-content");
     if (nc)
       nc.style.display = state.panels.notation ? "flex" : "none";
-    const pc = $("piano-content");
-    if (pc)
-      pc.style.display = state.panels.piano ? "" : "none";
-    const nk = $("neck-content");
-    if (nk)
-      nk.style.display = state.panels.neck ? "" : "none";
+    const ic = $("instruments-content");
+    if (ic)
+      ic.style.display = state.panels.instruments ? "" : "none";
+    const cp = $("col-piano");
+    if (cp)
+      cp.style.display = state.panels.colPiano ? "" : "none";
+    const cn = $("col-neck");
+    if (cn)
+      cn.style.display = state.panels.colNeck ? "" : "none";
     const z2 = $("zone2-content");
     if (z2)
       z2.style.display = state.panels.history ? "" : "none";
@@ -2295,7 +2394,7 @@ K:${abcKey}
       if (col)
         btn.classList.toggle("active", !!state.panels[col]);
     });
-    ["notation", "piano", "neck", "history", "song", "cofControls", "guitarControls", "analysisControls"].forEach((key) => {
+    ["notation", "instruments", "history", "song", "cofControls", "guitarControls", "analysisControls"].forEach((key) => {
       const btn = document.querySelector(`.toggle-btn[data-panel="${key}"]`);
       if (btn)
         btn.textContent = state.panels[key] ? "\u25B2" : "\u25BC";
@@ -2352,7 +2451,7 @@ K:${abcKey}
     const chordRoot = chordSymbol ? (chordSymbol.match(/^([A-G][b#]?)/) ?? [, ""])[1] || null : null;
     renderNeck($("neck-container"), noteNames, chordRoot);
     renderGuitar($("guitar-container"), chordSymbol, noteNames);
-    renderCircleOfFifths($("cof-container"), state.activeKey, chordSymbol ? chordSymbol[0] : null, (key) => {
+    renderCircleOfFifths($("cof-container"), state.activeKey, chordSymbol ?? null, (key) => {
       state.activeKey = key;
       localStorage.setItem("active-key", key);
       $("key-select").value = key;
@@ -2431,14 +2530,24 @@ K:${abcKey}
       return;
     const d = state.detection;
     const a = state.analysis;
-    const labelFs = Math.max(8, analysisScale - 1);
-    const valFs = analysisScale;
+    el.style.fontSize = analysisScale + "px";
+    const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => analysisFieldsVisible[f]).length;
+    el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * analysisScale) + "px";
+    const colEl = document.getElementById("col-analysis");
+    if (colEl) {
+      const w = Math.round(analysisScale * 19) + "px";
+      colEl.style.width = w;
+      colEl.style.flex = `0 0 ${w}`;
+    }
     const row = (label, val) => `<div class="analysis-row">
-      <span class="analysis-label" style="font-size:${labelFs}px">${label}</span>
-      <span class="analysis-value" style="font-size:${valFs}px">${val}</span>
+      <span class="analysis-label">${label}</span>
+      <span class="analysis-value">${val}</span>
     </div>`;
     const maybeRow = (f, label, val) => analysisFieldsVisible[f] ? row(label, val) : "";
+    const conditionalRow = (f, label, val) => analysisFieldsVisible[f] ? row(label, val ?? "\u2014") : "";
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
+    let secondary = null, coltrane = null;
+    let negharm = null, subs = null;
     let extra = "";
     if (d?.kind === "note") {
       extra = row("Note", `${d.noteName} \xB7 MIDI ${d.midiNumber}`);
@@ -2452,15 +2561,15 @@ K:${abcKey}
       scales = a.suggestedScales.slice(0, 4).join(", ") || "\u2014";
       cadence = a.cadence || "\u2014";
       if (a.isSecondary)
-        extra += maybeRow("secondary", "Secondary", `\u2192 ${a.secondaryTarget}`);
+        secondary = `\u2192 ${a.secondaryTarget}`;
       if (a.coltraneAxis)
-        extra += maybeRow("coltrane", "Coltrane", a.coltraneAxis.join(" \xB7 "));
+        coltrane = a.coltraneAxis.join(" \xB7 ");
       if (a.negativeHarmony)
-        extra += maybeRow("negharm", "Neg. harm.", a.negativeHarmony);
+        negharm = a.negativeHarmony;
       if (a.substitutions?.length)
-        extra += maybeRow("subs", "Subs.", a.substitutions.join(", "));
+        subs = a.substitutions.join(", ");
     }
-    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + extra;
+    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("coltrane", "Coltrane", coltrane) + conditionalRow("negharm", "Neg. harm.", negharm) + conditionalRow("subs", "Subs.", subs) + extra;
   }
   function renderZone2() {
     renderHistory(
@@ -2596,8 +2705,7 @@ K:${abcKey}
         }
         case "c":
         case "C":
-          if (confirm("Clear history?"))
-            clearHistory();
+          showModal("Clear history", "Remove all history entries?", clearHistory);
           break;
         case "?":
           e.preventDefault();

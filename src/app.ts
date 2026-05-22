@@ -1,7 +1,7 @@
 import { initMidi, setNoteChangeCallback, setMode, getMode, getDevices, selectDevice } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
 import { initAudioOnGesture } from './audio'
-import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible } from './diagrams'
+import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
 import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyChordDetected, renderHistory } from './history'
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
 import type { AppState, HistoryEntry, SongChord } from './types'
@@ -20,6 +20,11 @@ type AnalysisFieldKey = (typeof ANALYSIS_FIELD_KEYS)[number]
 const ANALYSIS_FIELD_LABELS: Record<AnalysisFieldKey, string> = {
   roman: 'Roman', function: 'Func', figbass: 'Fig', diatonic: 'Diat', scales: 'Scl', cadence: 'Cad',
   secondary: 'Sec', coltrane: 'Colt', negharm: 'Neg', subs: 'Subs'
+}
+const ANALYSIS_FIELD_TOOLTIPS: Record<AnalysisFieldKey, string> = {
+  roman: 'Roman numeral', function: 'Harmonic function', figbass: 'Figured bass',
+  diatonic: 'Diatonic / borrowed', scales: 'Suggested scales', cadence: 'Cadence',
+  secondary: 'Secondary dominant', coltrane: 'Coltrane axis', negharm: 'Negative harmony', subs: 'Substitutions'
 }
 let analysisFieldsVisible: Record<AnalysisFieldKey, boolean> = {
   roman:     JSON.parse(localStorage.getItem('analysis-field-roman')     ?? 'true'),
@@ -63,8 +68,9 @@ const state: AppState = {
   captureTargetId: null,
   panels: {
     notation: true,
-    piano: JSON.parse(localStorage.getItem('panel-piano') ?? 'true'),
-    neck: JSON.parse(localStorage.getItem('panel-neck') ?? 'true'),
+    instruments: JSON.parse(localStorage.getItem('panel-instruments') ?? 'true'),
+    colPiano: JSON.parse(localStorage.getItem('panel-colPiano') ?? 'true'),
+    colNeck:  JSON.parse(localStorage.getItem('panel-colNeck')  ?? 'true'),
     history: JSON.parse(localStorage.getItem('panel-history') ?? 'true'),
     song: JSON.parse(localStorage.getItem('panel-song') ?? 'true'),
     cofControls: JSON.parse(localStorage.getItem('panel-cofControls') ?? 'true'),
@@ -75,6 +81,27 @@ const state: AppState = {
     colCoF:      JSON.parse(localStorage.getItem('panel-colCoF')      ?? 'true'),
     colGuitar:   JSON.parse(localStorage.getItem('panel-colGuitar')   ?? 'true'),
   }
+}
+
+// ─── Modal ───────────────────────────────────────────────────────────────────
+
+function showModal(title: string, message: string, onConfirm: () => void, onCancel?: () => void) {
+  const backdrop = document.createElement('div')
+  backdrop.className = 'modal-backdrop'
+  backdrop.innerHTML = `
+    <div class="modal-popup">
+      <div class="modal-title">${title}</div>
+      <div class="modal-message">${message}</div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel">Cancel</button>
+        <button class="modal-btn modal-btn-confirm">Confirm</button>
+      </div>
+    </div>`
+  document.body.appendChild(backdrop)
+  const close = () => backdrop.remove()
+  backdrop.querySelector('.modal-btn-cancel')!.addEventListener('click', () => { close(); onCancel?.() })
+  backdrop.querySelector('.modal-btn-confirm')!.addEventListener('click', () => { close(); onConfirm() })
+  backdrop.addEventListener('mousedown', e => { if (e.target === backdrop) { close(); onCancel?.() } })
 }
 
 // ─── Help popup ──────────────────────────────────────────────────────────────
@@ -227,10 +254,10 @@ function buildLayout() {
               <button id="btn-analysis-minus" class="size-ctrl-btn" title="Smaller">−</button>
               <button id="btn-analysis-plus"  class="size-ctrl-btn" title="Larger">+</button>
             </div>
-            <div class="ctrl-row" style="flex-wrap:wrap;justify-content:center">
+            <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">
               ${ANALYSIS_FIELD_KEYS.map(f =>
                 `<button id="btn-field-${f}" class="size-ctrl-btn${analysisFieldsVisible[f] ? ' active' : ''}"
-                  title="${ANALYSIS_FIELD_LABELS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
+                  title="${ANALYSIS_FIELD_TOOLTIPS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
               ).join('')}
             </div>
           </div>
@@ -266,21 +293,24 @@ function buildLayout() {
         </div>
       </div>
     </div>
-    <!-- Row 3: piano -->
-    <div id="piano-panel" class="zone-panel">
-      <div class="panel-header"><span>Piano</span><button class="toggle-btn" data-panel="piano">▼</button></div>
-      <div id="piano-content">
-        <div class="centered-content">
-          <div id="piano-container"></div>
+    <!-- Row 3: instruments (piano + fretboard) -->
+    <div id="instruments-panel" class="zone-panel">
+      <div class="panel-header">
+        <span>Instruments</span>
+        <div class="col-vis-row">
+          <button class="col-vis-btn${state.panels.colPiano ? ' active' : ''}" data-col="colPiano" title="Piano">Pi</button>
+          <button class="col-vis-btn${state.panels.colNeck  ? ' active' : ''}" data-col="colNeck"  title="Fretboard">Fr</button>
         </div>
+        <button class="toggle-btn" data-panel="instruments">▼</button>
       </div>
-    </div>
-    <!-- Row 4: neck -->
-    <div id="neck-panel" class="zone-panel">
-      <div class="panel-header"><span>Fretboard</span><button class="toggle-btn" data-panel="neck">▼</button></div>
-      <div id="neck-content">
-        <div class="centered-content">
+      <div id="instruments-content">
+        <div id="col-piano"><div id="piano-container"></div></div>
+        <div id="col-neck">
           <div id="neck-container"></div>
+          <div class="ctrl-row" style="justify-content:center;margin-top:4px">
+            <button id="btn-neck-minus" class="size-ctrl-btn" title="Smaller">−</button>
+            <button id="btn-neck-plus"  class="size-ctrl-btn" title="Larger">+</button>
+          </div>
         </div>
       </div>
     </div>
@@ -365,6 +395,23 @@ function buildLayout() {
     localStorage.setItem('analysis-scale', String(analysisScale))
     renderZone1Analysis()
   })
+
+  const reRenderNeck = () => {
+    const notes = state.detection?.kind !== 'note' && (state.detection as any)?.notes
+      ? (state.detection as any).notes.map((n: number) => {
+          const FLAT = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
+          return FLAT[n % 12] + (Math.floor(n / 12) - 1)
+        })
+      : []
+    const sym = state.detection?.kind === 'chord'
+      ? state.detection.candidates[state.detection.selectedIndex]
+      : null
+    const chordRoot = sym ? (sym.match(/^([A-G][b#]?)/) ?? [,''])[1] || null : null
+    renderNeck($('neck-container'), notes, chordRoot)
+  }
+  $('btn-neck-minus').addEventListener('click', () => { adjustNeckSpacing(-2); reRenderNeck() })
+  $('btn-neck-plus').addEventListener('click',  () => { adjustNeckSpacing(2);  reRenderNeck() })
+
   ANALYSIS_FIELD_KEYS.forEach(f => {
     $(`btn-field-${f}`).addEventListener('click', () => {
       analysisFieldsVisible[f] = !analysisFieldsVisible[f]
@@ -409,7 +456,7 @@ function buildLayout() {
     btn.addEventListener('click', () => {
       const panel = btn.dataset.panel as keyof typeof state.panels
       state.panels[panel] = !state.panels[panel]
-      if (panel === 'history' || panel === 'song' || panel === 'piano' || panel === 'neck' || panel === 'cofControls' || panel === 'guitarControls' || panel === 'analysisControls') {
+      if (panel === 'history' || panel === 'song' || panel === 'instruments' || panel === 'cofControls' || panel === 'guitarControls' || panel === 'analysisControls') {
         localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]))
       }
       applyPanelVisibility()
@@ -424,8 +471,9 @@ function buildLayout() {
 
 function applyPanelVisibility() {
   const nc = $('notation-content'); if (nc) nc.style.display = state.panels.notation ? 'flex' : 'none'
-  const pc = $('piano-content'); if (pc) pc.style.display = state.panels.piano ? '' : 'none'
-  const nk = $('neck-content'); if (nk) nk.style.display = state.panels.neck ? '' : 'none'
+  const ic = $('instruments-content'); if (ic) ic.style.display = state.panels.instruments ? '' : 'none'
+  const cp = $('col-piano'); if (cp) cp.style.display = state.panels.colPiano ? '' : 'none'
+  const cn = $('col-neck');  if (cn) cn.style.display = state.panels.colNeck  ? '' : 'none'
   const z2 = $('zone2-content'); if (z2) z2.style.display = state.panels.history ? '' : 'none'
   const z3 = $('zone3-content'); if (z3) z3.style.display = state.panels.song ? '' : 'none'
   const cc = $('cof-controls'); if (cc) cc.style.display = state.panels.cofControls ? '' : 'none'
@@ -440,7 +488,7 @@ function applyPanelVisibility() {
     const col = btn.dataset.col as keyof typeof state.panels
     if (col) btn.classList.toggle('active', !!state.panels[col])
   })
-  ;(['notation', 'piano', 'neck', 'history', 'song', 'cofControls', 'guitarControls', 'analysisControls'] as const).forEach(key => {
+  ;(['notation', 'instruments', 'history', 'song', 'cofControls', 'guitarControls', 'analysisControls'] as const).forEach(key => {
     const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-panel="${key}"]`)
     if (btn) btn.textContent = state.panels[key] ? '▲' : '▼'
   })
@@ -504,7 +552,7 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const chordRoot = chordSymbol ? (chordSymbol.match(/^([A-G][b#]?)/) ?? [, ''])[1] || null : null
   renderNeck($('neck-container'), noteNames, chordRoot)
   renderGuitar($('guitar-container'), chordSymbol, noteNames)
-  renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol ? chordSymbol[0] : null, (key) => {
+  renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol ?? null, (key) => {
     state.activeKey = key
     localStorage.setItem('active-key', key)
     ;($('key-select') as HTMLSelectElement).value = key
@@ -573,17 +621,25 @@ function renderZone1Analysis() {
   const d = state.detection
   const a = state.analysis
 
-  const labelFs = Math.max(8, analysisScale - 1)
-  const valFs = analysisScale
+  el.style.fontSize = analysisScale + 'px'
+  const visibleCount = ANALYSIS_FIELD_KEYS.filter(f => analysisFieldsVisible[f]).length
+  el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * analysisScale) + 'px'
+  const colEl = document.getElementById('col-analysis')
+  if (colEl) { const w = Math.round(analysisScale * 19) + 'px'; colEl.style.width = w; colEl.style.flex = `0 0 ${w}` }
+
   const row = (label: string, val: string) =>
     `<div class="analysis-row">
-      <span class="analysis-label" style="font-size:${labelFs}px">${label}</span>
-      <span class="analysis-value" style="font-size:${valFs}px">${val}</span>
+      <span class="analysis-label">${label}</span>
+      <span class="analysis-value">${val}</span>
     </div>`
   const maybeRow = (f: AnalysisFieldKey, label: string, val: string) =>
     analysisFieldsVisible[f] ? row(label, val) : ''
+  const conditionalRow = (f: AnalysisFieldKey, label: string, val: string | null) =>
+    analysisFieldsVisible[f] ? row(label, val ?? '—') : ''
 
   let roman = '—', func_ = '—', figuredBass = '—', diatonic = '—', scales = '—', cadence = '—'
+  let secondary: string | null = null, coltrane: string | null = null
+  let negharm: string | null = null, subs: string | null = null
   let extra = ''
 
   if (d?.kind === 'note') {
@@ -597,10 +653,10 @@ function renderZone1Analysis() {
     diatonic = a.isDiatonic ? 'Yes' : a.isBorrowed ? `Borrowed (${a.borrowedFrom ?? '?'})` : 'Chromatic'
     scales = a.suggestedScales.slice(0, 4).join(', ') || '—'
     cadence = a.cadence || '—'
-    if (a.isSecondary) extra += maybeRow('secondary', 'Secondary', `→ ${a.secondaryTarget}`)
-    if (a.coltraneAxis) extra += maybeRow('coltrane', 'Coltrane', a.coltraneAxis.join(' · '))
-    if (a.negativeHarmony) extra += maybeRow('negharm', 'Neg. harm.', a.negativeHarmony)
-    if (a.substitutions?.length) extra += maybeRow('subs', 'Subs.', a.substitutions.join(', '))
+    if (a.isSecondary) secondary = `→ ${a.secondaryTarget}`
+    if (a.coltraneAxis) coltrane = a.coltraneAxis.join(' · ')
+    if (a.negativeHarmony) negharm = a.negativeHarmony
+    if (a.substitutions?.length) subs = a.substitutions.join(', ')
   }
 
   el.innerHTML =
@@ -610,6 +666,10 @@ function renderZone1Analysis() {
     maybeRow('diatonic', 'Diatonic', diatonic) +
     maybeRow('scales', 'Scales', scales) +
     maybeRow('cadence', 'Cadence', cadence) +
+    conditionalRow('secondary', 'Secondary', secondary) +
+    conditionalRow('coltrane', 'Coltrane', coltrane) +
+    conditionalRow('negharm', 'Neg. harm.', negharm) +
+    conditionalRow('subs', 'Subs.', subs) +
     extra
 }
 
@@ -760,7 +820,7 @@ function wireKeyboard() {
         break
       }
       case 'c': case 'C':
-        if (confirm('Clear history?')) clearHistory(); break
+        showModal('Clear history', 'Remove all history entries?', clearHistory); break
       case '?':
         e.preventDefault()
         toggleHelp(); break
