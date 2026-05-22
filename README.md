@@ -4,7 +4,7 @@ Real-time MIDI harmonic analysis and song structure builder. Play notes on a MID
 
 Designed to run alongside MuseScore or any notation software during transcription.
 
-Zero runtime dependencies. No server. Open in Chrome and play.
+Zero runtime dependencies to run. No server. Open in Chrome and play.
 
 ---
 
@@ -22,7 +22,7 @@ For each detected chord, the analysis panel shows:
 
 | Field | Detail |
 |---|---|
-| Chord name | Top candidate + all alternatives (clickable) |
+| Chord name | Top candidate + all alternatives (clickable, keys 1–9) |
 | Roman numeral | Scale degree in the active key — `I△7`, `ii7`, `V7/ii`, `bVII` |
 | Harmonic function | Tonic / Subdominant / Dominant |
 | Figured bass | e.g. `6/4`, `7` |
@@ -34,13 +34,33 @@ For each detected chord, the analysis panel shows:
 | Negative harmony | Mirror chord in the active key |
 | Key detection | Krumhansl-Schmuckler running on history pool |
 
-The notation panel shows a staff (abcjs), guitar voicing (notae + chords-db), and an interactive circle of fifths. Below that, a 4-octave piano (C2–B5) — all updating in real time.
+Each analysis field can be toggled on/off. Font scale adjustable with +/−. Column visibility (Staff, Analysis, CoF, Guitar) controlled per column.
+
+**Notation panel**
+
+- Staff (abcjs) — clef follows active key
+- Circle of Fifths — interactive, shows active chord highlighted. Controls: enharmonic (b/♯), minor ring, dim ring, degree labels, 7th labels, size
+- Guitar voicing (notae) — Standard/Drop D/Open G/Custom tuning, fret labels, degree labels
+- Horizontal fretboard (notae) — all note positions across 12 frets
+
+**Instruments panel**
+
+- 4-octave piano (C2–B5, Notae) — click any key to play it
+- Horizontal fretboard — notes highlighted per chord
 
 **Input modes:** Normal, Hold (chord stays after release — great for arpeggios), Arpeggio (accumulates notes in a 1.2s window).
 
+**Audio**
+
+Any note you play on the MIDI controller sounds through the selected soundfont. Click any piano key to play it. Double-click any history chip or song chord to replay it. Play button (▶) and `P` key replay the last detected chord.
+
+- 128 GM instruments selectable from the toolbar (grouped by family)
+- Volume slider
+- Loading progress bar — shows loading/ready/error state
+
 **History**
 
-Every chord you play is logged automatically after 0.8s of stability. Each chip shows the chord name and Roman numeral. Click a chip to reload it in the analyzer. Drag any chip directly onto a song section to add it there. Right-click a chip to remove it.
+Every chord you play is logged automatically after 0.8s of stability. Each chip shows the chord name and Roman numeral. Click to reload in the analyzer, double-click to play, drag onto a song section to insert, right-click to remove.
 
 **Song structure builder**
 
@@ -56,7 +76,6 @@ Build a chord chart for the song you're transcribing:
 - Transpose entire song (semitone selector)
 - Paste a progression as text (`Cmaj7 Am7 F G`)
 - Form analysis shown inline in real time (AABA, verse-chorus, etc.)
-- Export as a print-ready chord chart
 
 ---
 
@@ -66,19 +85,20 @@ Build a chord chart for the song you're transcribing:
 |---|---|
 | App | TypeScript → esbuild |
 | Music theory | [UMT](https://github.com/memoriainfinita/UMT) — Universal Music Theory Library |
-| Diagrams | [notae](https://github.com/memoriainfinita/notae) — SVG chord diagram renderer |
-| Staff | abcjs |
+| Diagrams | [notae](https://github.com/memoriainfinita/notae) — SVG diagram renderer (piano, guitar, fretboard) |
+| Staff | abcjs 6.4.0 |
 | MIDI | Web MIDI API |
-| Guitar voicings | @tombatossals/chords-db |
-| Audio | WebAudioFont (GM piano) |
+| Guitar voicings | UMT.getFretboardVoicings (no fetch needed) |
+| Audio | soundfont-player 0.12.0 + FluidR3_GM (128 GM instruments) |
+| Persistence | localStorage |
 
-All dependencies loaded via CDN. No npm install needed to run.
+All runtime dependencies loaded via CDN. No npm install needed to run the built app.
 
 ---
 
 ## Requirements
 
-- Chrome or Edge (Web MIDI API)
+- Chrome or Edge (Web MIDI API + Web Audio API)
 - A MIDI controller (optional — song builder and click-based analysis work without one)
 - A local server to serve the files (`npx http-server . -p 8080`)
 
@@ -87,19 +107,18 @@ All dependencies loaded via CDN. No npm install needed to run.
 ## Running
 
 ```bash
-# Clone and install dev dependencies (TypeScript + esbuild only)
-git clone https://github.com/memoriainfinita/modus
-cd modus
-npm install
-
-# Build (watch mode)
-node build.js
-
-# Serve (in a second terminal)
+# Serve the built app (no build step needed)
 npx http-server . -p 8080
 ```
 
 Open `http://localhost:8080` in Chrome. Connect your MIDI controller when prompted.
+
+**To rebuild from source:**
+
+```bash
+npm install        # dev dependencies only (esbuild + TypeScript)
+node build.js      # watch mode — rebuilds on save
+```
 
 ---
 
@@ -107,13 +126,13 @@ Open `http://localhost:8080` in Chrome. Connect your MIDI controller when prompt
 
 ```
 src/
-  app.ts          entry point — wires all modules, keyboard shortcuts
+  app.ts          entry point — layout, wiring, keyboard shortcuts
   midi.ts         Web MIDI: device selection, note on/off, modes
   analyzer.ts     chord/interval detection and harmonic analysis via UMT
-  diagrams.ts     staff, piano, guitar, circle of fifths rendering
+  diagrams.ts     staff, piano, guitar, fretboard, circle of fifths rendering
   history.ts      chord history log
-  song.ts         song structure state (pure) + DOM rendering
-  audio.ts        WebAudioFont playback
+  song.ts         song structure state + DOM rendering
+  audio.ts        soundfont-player playback, instrument management
   types.ts        shared TypeScript types
   globals.d.ts    CDN global declarations
 tests/
@@ -127,14 +146,17 @@ tests/
 
 | Key | Action |
 |---|---|
+| `Space` | Capture current chord to history |
 | `H` | Toggle hold mode |
 | `A` | Toggle arpeggio mode |
-| `Space` | Capture current chord to history |
 | `S` | Send last history chip to active song slot |
+| `C` | Clear history (confirm with second press) |
+| `P` | Play last detected chord |
 | `1`–`9` | Select alternative chord interpretation |
-| `Esc` | Cancel MIDI fill / deselect |
+| `Esc` | Cancel MIDI fill / close help / deselect |
+| `?` | Show / hide keyboard shortcuts |
 
-Shortcuts disabled while typing in chord input fields.
+Shortcuts disabled while typing in input fields.
 
 ---
 
