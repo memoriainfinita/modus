@@ -3,7 +3,7 @@
 ## System
 
 - **Location:** `C:\Users\mykl\OneDrive\Scriptorium\DOCS\CODING GIT\MODUS\`
-- **Status:** Implementation complete — ready for manual smoke test in Chrome
+- **Status:** Active development — session 14 complete (audio playback, CoF interaction)
 - **Dev command:** `node build.js` (watch) + `npx http-server . -p 8080`
 - **Browser:** Chrome or Edge (Web MIDI API required)
 
