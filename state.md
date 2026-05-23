@@ -128,6 +128,10 @@ modus/
 
 ## History
 
+### 2026-05-23 — Refactor planning — session 16
+
+Sin cambios de código. Sesión de planificación completa: diagnóstico de `app.ts` (969 líneas), spec auditada 3 veces, plan de implementación escrito y auditado. Decisión: Approach A — extraer `shortcuts.ts` + `analysis-panel.ts`, split interno de `buildLayout`. Hallazgos clave del audit: 3 call sites de `renderZone1Analysis` faltaban (init, refreshAll, wireKeyboard 1–9), parámetro `activeKey` innecesario eliminado de la firma, `npm run build` no corre TypeScript (usar `npx tsc --noEmit`). Plan listo para ejecutar en siguiente sesión. Docs en `docs/superpowers/specs/` y `docs/superpowers/plans/`.
+
 ### 2026-05-23 — Audio, song, UX y build — session 15
 
 Audio loading: eliminado `await audioCtx.resume()` bloqueante en `loadCurrentInstrument` — barra llega al 100% cuando el soundfont carga de verdad. Nuevo estado `'suspended'` (ámbar, "click to activate") cuando el instrumento está listo pero el AudioContext sigue suspendido. `initAudioOnGesture` transiciona de suspended a ready al primer gesto real. `pendingNotes` se descarta al cargar (evita burst de sonido en primer click).
