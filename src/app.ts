@@ -206,8 +206,8 @@ function makeSongHandlers() {
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
-function buildLayout() {
-  $('zone1').innerHTML = `
+function buildToolbar(): string {
+  return `
     <div id="z1-toolbar" class="toolbar">
       <span id="midi-status" class="midi-status">MIDI: —</span>
       <select id="midi-device" class="ctrl-select"></select>
@@ -236,8 +236,11 @@ function buildLayout() {
       </select>
       <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
       <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
-    </div>
-    <!-- Row 1: notation — staff + CoF side by side, guitar stacked below CoF -->
+    </div>`
+}
+
+function buildNotationPanel(): string {
+  return `
     <div id="notation-panel" class="zone-panel">
       <div class="panel-header">
         <span>Notation</span>
@@ -250,13 +253,11 @@ function buildLayout() {
         <button class="toggle-btn" data-panel="notation">▼</button>
       </div>
       <div id="notation-content">
-        <!-- Column 1: Staff -->
         <div class="col-auto" id="col-staff">
           <div class="col-label">Staff</div>
           <div id="chord-summary"></div>
           <div id="staff-container"></div>
         </div>
-        <!-- Column 2: Analysis -->
         <div class="col-analysis" id="col-analysis">
           <div class="col-header">
             <div class="col-label">Analysis</div>
@@ -276,7 +277,6 @@ function buildLayout() {
             </div>
           </div>
         </div>
-        <!-- Column 3: CoF -->
         <div class="col-auto" id="col-cof">
           <div class="col-header">
             <div class="col-label">CoF</div>
@@ -297,7 +297,6 @@ function buildLayout() {
             </div>
           </div>
         </div>
-        <!-- Column 4: Guitar -->
         <div class="col-auto" id="col-guitar">
           <div class="col-header">
             <div class="col-label">Guitar</div>
@@ -306,8 +305,11 @@ function buildLayout() {
           <div id="guitar-container"></div>
         </div>
       </div>
-    </div>
-    <!-- Row 3: instruments (piano + fretboard) -->
+    </div>`
+}
+
+function buildInstrumentsPanel(): string {
+  return `
     <div id="instruments-panel" class="zone-panel">
       <div class="panel-header">
         <span>Instruments</span>
@@ -327,27 +329,26 @@ function buildLayout() {
           </div>
         </div>
       </div>
-    </div>
-    <div id="midi-banner"></div>
-  `
+    </div>`
+}
 
+function buildZoneHeaders() {
   $('zone2').innerHTML = `
     <div class="zone-header">
       <span class="zone-title">History</span>
       <button class="toggle-btn" data-panel="history">▼</button>
     </div>
-    <div id="zone2-content"></div>
-  `
+    <div id="zone2-content"></div>`
 
   $('zone3').innerHTML = `
     <div class="zone-header">
       <span class="zone-title">Song Structure</span>
       <button class="toggle-btn" data-panel="song">▼</button>
     </div>
-    <div id="zone3-content"></div>
-  `
+    <div id="zone3-content"></div>`
+}
 
-  // CoF controls
+function wireLayoutEvents() {
   const updateCofButtons = () => {
     ;($('btn-cof-flat')  as HTMLButtonElement).classList.toggle('active', cofAccidental === 'flat')
     ;($('btn-cof-sharp') as HTMLButtonElement).classList.toggle('active', cofAccidental === 'sharp')
@@ -392,7 +393,7 @@ function buildLayout() {
     localStorage.setItem('cof-show-7ths', String(cofShow7ths))
     updateCofButtons(); reRenderDiagrams()
   })
-  // Analysis controls
+
   const updateAnalysisFieldButtons = () => {
     ANALYSIS_FIELD_KEYS.forEach(f => {
       const btn = document.getElementById(`btn-field-${f}`) as HTMLButtonElement | null
@@ -435,7 +436,6 @@ function buildLayout() {
     })
   })
 
-  // Column visibility toggles
   document.querySelectorAll<HTMLButtonElement>('.col-vis-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const col = btn.dataset.col as keyof typeof state.panels
@@ -445,7 +445,6 @@ function buildLayout() {
     })
   })
 
-  // Restore key selector value
   if (state.activeKey) {
     ($('key-select') as HTMLSelectElement).value = state.activeKey
   }
@@ -495,8 +494,17 @@ function buildLayout() {
   $('audio-volume').addEventListener('input', (e) => {
     setVolume(parseFloat((e.target as HTMLInputElement).value))
   })
+}
 
-  // Apply saved panel visibility on load
+function buildLayout() {
+  $('zone1').innerHTML =
+    buildToolbar() +
+    buildNotationPanel() +
+    buildInstrumentsPanel() +
+    '<div id="midi-banner"></div>'
+
+  buildZoneHeaders()
+  wireLayoutEvents()
   applyPanelVisibility()
 }
 
