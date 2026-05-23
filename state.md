@@ -3,7 +3,7 @@
 ## System
 
 - **Location:** `C:\Users\mykl\OneDrive\Scriptorium\DOCS\CODING GIT\MODUS\`
-- **Status:** Active development — session 14 complete (audio playback, CoF interaction)
+- **Status:** Active development — session 17 complete (app.ts refactor)
 - **Dev command:** `npm run dev` (watch) · `npm run build` (one-shot) · `npx http-server . -p 8080`
 - **Build workflow:** Claude lanza `npm run dev` en background con `run_in_background: true` al inicio de sesión — usa `--watch=forever` para que no pare al cerrarse stdin. No usar `!` en el chat para esto (bloquea). Claude usa `npm run build` solo para verificar errores puntuales.
 - **Browser:** Chrome or Edge (Web MIDI API required)
@@ -127,6 +127,10 @@ modus/
 ---
 
 ## History
+
+### 2026-05-23 — app.ts refactor — session 17
+
+Refactor completo sin cambios de comportamiento. Extraídos dos módulos nuevos: `src/shortcuts.ts` (SHORTCUTS data, helpVisible, closeHelp/toggleHelp) y `src/analysis-panel.ts` (field constants, getChordQuality, renderChordSummary, renderZone1Analysis). `buildLayout` split en 5 sub-funciones: buildToolbar, buildNotationPanel, buildInstrumentsPanel, buildZoneHeaders, wireLayoutEvents. También corregido `types.ts` — AppState.panels tenía `piano/neck` en lugar de `instruments/colPiano/colNeck` (bug preexistente que tsc no detectaba porque esbuild no hace typecheck). tsc limpio, 23/23 tests, smoke test manual OK. 3 commits en master.
 
 ### 2026-05-23 — Refactor planning — session 16
 
