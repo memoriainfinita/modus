@@ -30,22 +30,6 @@ export function updateSection(song: Song, sectionId: string, patch: Partial<Sect
   }
 }
 
-export function moveSectionUp(song: Song, sectionId: string): Song {
-  const idx = song.sections.findIndex(s => s.id === sectionId)
-  if (idx <= 0) return song
-  const sections = [...song.sections]
-  ;[sections[idx - 1], sections[idx]] = [sections[idx], sections[idx - 1]]
-  return { ...song, sections }
-}
-
-export function moveSectionDown(song: Song, sectionId: string): Song {
-  const idx = song.sections.findIndex(s => s.id === sectionId)
-  if (idx < 0 || idx >= song.sections.length - 1) return song
-  const sections = [...song.sections]
-  ;[sections[idx], sections[idx + 1]] = [sections[idx + 1], sections[idx]]
-  return { ...song, sections }
-}
-
 export function duplicateSection(song: Song, sectionId: string): Song {
   const src = song.sections.find(s => s.id === sectionId)
   if (!src) return song
@@ -149,24 +133,6 @@ export function duplicateChord(song: Song, chordId: string): Song {
       if (c) return insertChordAfter(song, chordId, c.symbol, c.notes)
     }
   return song
-}
-
-export function moveChord(song: Song, chordId: string, direction: 'left' | 'right'): Song {
-  return {
-    ...song,
-    sections: song.sections.map(s => ({
-      ...s,
-      measures: s.measures.map(m => {
-        const idx = m.chords.findIndex(c => c.id === chordId)
-        if (idx === -1) return m
-        const chords = [...m.chords]
-        const swapIdx = direction === 'left' ? idx - 1 : idx + 1
-        if (swapIdx < 0 || swapIdx >= chords.length) return m
-        ;[chords[idx], chords[swapIdx]] = [chords[swapIdx], chords[idx]]
-        return { ...m, chords }
-      })
-    }))
-  }
 }
 
 export function moveChordToPosition(
@@ -313,12 +279,12 @@ export function transposeSong(song: Song, semitones: number, targetKey?: string)
 }
 
 export function saveSong(song: Song) {
-  localStorage.setItem('harmony-companion-song', JSON.stringify(song))
+  localStorage.setItem('modus-song', JSON.stringify(song))
 }
 
 export function loadSong(): Song {
   try {
-    const raw = localStorage.getItem('harmony-companion-song')
+    const raw = localStorage.getItem('modus-song') ?? localStorage.getItem('harmony-companion-song')
     if (!raw) return createSong()
     const parsed = JSON.parse(raw)
     if (parsed.schemaVersion !== 1) {
@@ -402,11 +368,6 @@ export function mountSong(container: HTMLElement, song: Song, handlers: SongEven
   _handlers = handlers
   _container = container
   rerender()
-}
-
-export function updateSongState(song: Song) {
-  _song = song
-  if (_container && _handlers) rerender()
 }
 
 function rerender() {

@@ -136,6 +136,26 @@ modus/
 
 ## History
 
+### 2026-05-23 — Dead code cleanup + bug fix — session 19 (part 2)
+
+Eliminated confirmed dead code and fixed one real bug. TSC clean, 97/97 tests.
+
+**Removed:**
+- `diagrams.ts` — `loadGuitarDB()` and `nextGuitarVoicing()` (no-op shims)
+- `app.ts` — `loadGuitarDB` import and call, listener for `'history-capture-requested'` (event never dispatched)
+- `history.ts` — `getHistoryNotes()` (exported, never imported)
+- `song.ts` — `moveChord` (pre-drag-and-drop), `moveSectionUp`, `moveSectionDown`, `updateSongState` (all exported but never imported from src/)
+- `tests/song.test.ts` — moveChord tests removed alongside the function
+
+**Fixed:**
+- `app.ts` — `reRenderNeck` was treating `detection.notes` as `number[]` (applying MIDI conversion) when it is already `string[]`. Fixed to pass notes directly.
+
+**Migrated:**
+- `song.ts` localStorage key `'harmony-companion-song'` → `'modus-song'`. `loadSong` reads `'modus-song'` first, falls back to `'harmony-companion-song'` for silent migration. `saveSong` always writes to `'modus-song'`.
+
+**Not removed:**
+- `PITCH_NAMES_FLAT` import in `analyzer.ts` — confirmed used at line 33 (`pitchClass` field). Original cleanup note was wrong.
+
 ### 2026-05-23 — Comprehensive test suite — session 19 (part 1)
 
 23 → 101 tests. No production code changed.
@@ -335,25 +355,9 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [ ] Revisar shortcuts completos — Space ya reproduce acorde actual/último pero P es redundante. Hacer revisión de todos los shortcuts: cuáles tienen sentido, cuáles sobran, cuáles faltan. Decidir asignaciones antes de tocar código.
 - [ ] CoF audit completo — el comportamiento actual del CoF tiene varias cosas que no son las esperadas (más allá del TODO de modo menor ya anotado). Antes de tocar código, hacer una sesión de revisión: qué hace ahora vs. qué debería hacer, qué interacciones faltan o están mal, qué es confuso visualmente. Documentar y priorizar antes de implementar.
 
-### Limpieza de código (sesión 19 — pendiente)
+### Limpieza de código (sesión 19 — completada)
 
-Antes de ejecutar: añadir tests de cobertura para las funciones exportadas que se van a eliminar (confirmar que no son usadas desde tests externos), luego proceder con cada punto.
-
-**Bugs reales:**
-- [ ] `app.ts` — `reRenderNeck` (dentro de `wireLayoutEvents`) trata `detection.notes` como `number[]` cuando es `string[]`. Reemplazar la función por la implementación correcta: `d.kind === 'chord' ? d.notes : d.kind === 'note' ? [d.noteName] : (d as any).notes ?? []`, usando el `chordRoot` del candidate seleccionado. No llamar a `reRenderDiagrams` (re-renderiza todo incluyendo CoF, demasiado costoso).
-
-**Dead code — eliminar:**
-- [ ] `analyzer.ts:2` — `PITCH_NAMES_FLAT` en el import de midi.ts — nunca usado directamente en este módulo.
-- [ ] `diagrams.ts:8-9` — `loadGuitarDB()` — no-op explícito mantenido como shim. Eliminar función y el `export`.
-- [ ] `diagrams.ts:11-12` — `nextGuitarVoicing()` — no-op, nunca importada en ningún módulo. Eliminar.
-- [ ] `app.ts:4` — eliminar `loadGuitarDB` del import de diagrams.
-- [ ] `app.ts:103` — eliminar llamada `loadGuitarDB()`.
-- [ ] `app.ts:166-170` — listener `'history-capture-requested'` — evento nunca despachado en el código. Eliminar bloque completo.
-- [ ] `history.ts:48-50` — `getHistoryNotes()` — exportada, nunca importada. Eliminar.
-- [ ] `song.ts` — `updateSongState` (líneas ~407-410) — exportada, nunca importada. Eliminar.
-- [ ] `song.ts` — `moveChord` (líneas ~154-170) — exportada, nunca importada. Eliminar.
-- [ ] `song.ts` — `moveSectionUp` (líneas ~33-39) — exportada, nunca importada. Eliminar.
-- [ ] `song.ts` — `moveSectionDown` (líneas ~41-47) — exportada, nunca importada. Eliminar.
-
-**Migración de nombre legacy:**
-- [ ] `song.ts` — clave localStorage `'harmony-companion-song'` → `'modus-song'`. En `loadSong`: leer `'modus-song'` primero, si null intentar `'harmony-companion-song'` (migración silenciosa). En `saveSong`: escribir siempre a `'modus-song'`.
+- [x] Bug `reRenderNeck` — corregido
+- [x] Dead code eliminado (`loadGuitarDB`, `nextGuitarVoicing`, `history-capture-requested`, `getHistoryNotes`, `updateSongState`, `moveChord`, `moveSectionUp`, `moveSectionDown`)
+- [x] localStorage migrado a `'modus-song'`
+- Note: `PITCH_NAMES_FLAT` en `analyzer.ts` NO era dead code — se usa en línea 33.

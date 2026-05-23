@@ -45,10 +45,6 @@ export function notifyChordDetected(symbol: string, notes: string[]) {
   }, 800)
 }
 
-export function getHistoryNotes(): string[] {
-  return entries.flatMap(e => e.notes)
-}
-
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
 export function renderHistory(
