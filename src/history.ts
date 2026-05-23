@@ -1,6 +1,6 @@
 import type { HistoryEntry } from './types'
 import { buildHarmonicAnalysis } from './analyzer'
-import { playChord } from './audio'
+import { playChord, playNoteNames } from './audio'
 
 const MAX_ENTRIES = 200
 const QUALITY_COLORS: Record<string, string> = {
@@ -77,13 +77,16 @@ export function renderHistory(
     `
 
     chip.addEventListener('click', () => onChipClick(entry))
-    chip.addEventListener('dblclick', () => playChord(entry.symbol))
+    chip.addEventListener('dblclick', () => {
+      if (entry.notes.length > 0) playNoteNames(entry.notes)
+      else playChord(entry.symbol)
+    })
     chip.title = `${entry.symbol} — dblclick to play, drag to song, right-click to remove`
 
     // Drag to song
     chip.draggable = true
     chip.addEventListener('dragstart', e => {
-      e.dataTransfer!.setData('application/x-history-chord', JSON.stringify({ id: entry.id, symbol: entry.symbol }))
+      e.dataTransfer!.setData('application/x-history-chord', JSON.stringify({ id: entry.id, symbol: entry.symbol, notes: entry.notes }))
       e.dataTransfer!.effectAllowed = 'copy'
       chip.style.opacity = '0.5'
     })

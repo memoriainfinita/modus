@@ -1,5 +1,5 @@
 import type { Song, Section, Measure, SongChord, SectionColor } from './types'
-import { playChord, initAudioOnGesture } from './audio'
+import { playChord, playNoteNames, initAudioOnGesture } from './audio'
 
 export function createSong(): Song {
   return { schemaVersion: 1, title: 'Untitled', sections: [] }
@@ -82,9 +82,9 @@ export function removeMeasure(song: Song, sectionId: string, measureId: string):
   }
 }
 
-export function addChord(song: Song, sectionId: string, measureId: string, symbol: string): Song {
+export function addChord(song: Song, sectionId: string, measureId: string, symbol: string, notes?: string[]): Song {
   const valid = isValidChordSymbol(symbol)
-  const chord: SongChord = { id: newId(), symbol, valid }
+  const chord: SongChord = { id: newId(), symbol, valid, ...(notes?.length ? { notes } : {}) }
   return {
     ...song,
     sections: song.sections.map(s => s.id !== sectionId ? s : {
@@ -96,9 +96,9 @@ export function addChord(song: Song, sectionId: string, measureId: string, symbo
   }
 }
 
-export function insertChordAfter(song: Song, afterChordId: string, symbol: string): Song {
+export function insertChordAfter(song: Song, afterChordId: string, symbol: string, notes?: string[]): Song {
   const valid = isValidChordSymbol(symbol)
-  const newChord: SongChord = { id: newId(), symbol, valid }
+  const newChord: SongChord = { id: newId(), symbol, valid, ...(notes?.length ? { notes } : {}) }
   return {
     ...song,
     sections: song.sections.map(s => ({
@@ -114,7 +114,7 @@ export function insertChordAfter(song: Song, afterChordId: string, symbol: strin
   }
 }
 
-export function updateChord(song: Song, chordId: string, symbol: string): Song {
+export function updateChord(song: Song, chordId: string, symbol: string, notes?: string[]): Song {
   const valid = isValidChordSymbol(symbol)
   return {
     ...song,
@@ -122,7 +122,9 @@ export function updateChord(song: Song, chordId: string, symbol: string): Song {
       ...s,
       measures: s.measures.map(m => ({
         ...m,
-        chords: m.chords.map(c => c.id === chordId ? { ...c, symbol, valid } : c)
+        chords: m.chords.map(c => c.id === chordId
+          ? { ...c, symbol, valid, ...(notes?.length ? { notes } : { notes: undefined }) }
+          : c)
       }))
     }))
   }
@@ -138,6 +140,15 @@ export function removeChord(song: Song, chordId: string): Song {
       }))
     }))
   }
+}
+
+export function duplicateChord(song: Song, chordId: string): Song {
+  for (const s of song.sections)
+    for (const m of s.measures) {
+      const c = m.chords.find(ch => ch.id === chordId)
+      if (c) return insertChordAfter(song, chordId, c.symbol, c.notes)
+    }
+  return song
 }
 
 export function moveChord(song: Song, chordId: string, direction: 'left' | 'right'): Song {
@@ -326,7 +337,7 @@ const SECTION_COLORS: Record<SectionColor, string> = {
 }
 
 type SongEventHandlers = {
-  onChordClick: (chordId: string, symbol: string) => void
+  onChordClick: (chordId: string, symbol: string, notes?: string[]) => void
   onChordCapture: (chordId: string) => void
   activeCursorId: string | null
   captureTargetId: string | null
@@ -341,6 +352,8 @@ let _container: HTMLElement | null = null
 let _draggedSectionId: string | null = null
 let _draggedChordId: string | null = null
 let _pendingConfirmEl: { el: HTMLButtonElement; timer: number } | null = null
+let _dropIndicator: HTMLElement | null = null
+let _insertBeforeChordId: string | null = null  // null = append to end of measure
 
 function showNotice(msg: string, type: 'info' | 'warn' = 'info') {
   if (!_container) return
@@ -737,21 +750,27 @@ function buildMeasureDOM(
     chordsRow.style.outline = '1px dashed #4f46e5'
   })
   chordsRow.addEventListener('dragleave', e => {
-    if (!chordsRow.contains(e.relatedTarget as Node)) chordsRow.style.outline = ''
+    if (!chordsRow.contains(e.relatedTarget as Node)) {
+      chordsRow.style.outline = ''
+      _dropIndicator?.remove()
+      _insertBeforeChordId = null
+    }
   })
   chordsRow.addEventListener('drop', e => {
     chordsRow.style.outline = ''
+    _dropIndicator?.remove()
     const histData = e.dataTransfer!.getData('application/x-history-chord')
     if (histData) {
       e.preventDefault()
-      const { symbol } = JSON.parse(histData)
-      _song = addChord(_song, section.id, measure.id, symbol)
+      const { symbol, notes } = JSON.parse(histData)
+      _song = addChord(_song, section.id, measure.id, symbol, notes)
       saveSong(_song); h.onSongChange(_song)
     } else if (_draggedChordId) {
       e.preventDefault()
       e.stopPropagation()
-      _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id)
+      _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, _insertBeforeChordId ?? undefined)
       _draggedChordId = null
+      _insertBeforeChordId = null
       saveSong(_song); h.onSongChange(_song)
     }
   })
@@ -830,32 +849,72 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   controls.className = 'chord-chip-controls'
 
   const editBtn = makeSmallBtn('✎', () => {
+    let notesState: string[] | undefined = chord.notes ? [...chord.notes] : undefined
+    const prevVal = chord.symbol
+
+    const editWrap = document.createElement('div')
+    editWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;padding:2px'
+
     const input = document.createElement('input')
     input.className = 'chord-input'
     input.value = chord.symbol
-    const prevVal = chord.symbol
+
+    const commit = () => {
+      _song = updateChord(_song, chord.id, input.value.trim() || prevVal, notesState)
+      saveSong(_song); h.onSongChange(_song)
+    }
     input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { _song = updateChord(_song, chord.id, input.value.trim() || prevVal); saveSong(_song); h.onSongChange(_song) }
-      if (e.key === 'Escape') { h.onSongChange(_song) }
+      if (e.key === 'Enter') commit()
+      if (e.key === 'Escape') h.onSongChange(_song)
     })
-    input.addEventListener('blur', () => { _song = updateChord(_song, chord.id, input.value.trim() || prevVal); saveSong(_song); h.onSongChange(_song) })
-    wrap.innerHTML = ''; wrap.appendChild(input); input.focus()
+    input.addEventListener('blur', commit)
+    editWrap.appendChild(input)
+
+    if (notesState?.length) {
+      const notesRow = document.createElement('div')
+      notesRow.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:9px;color:#9ca3af;white-space:nowrap;overflow:hidden'
+      const notesText = document.createElement('span')
+      notesText.textContent = '♩ ' + notesState.join(' ')
+      notesText.style.overflow = 'hidden'
+      notesText.style.textOverflow = 'ellipsis'
+      const clearBtn = document.createElement('button')
+      clearBtn.textContent = '×'
+      clearBtn.title = 'Clear stored voicing'
+      clearBtn.style.cssText = 'background:none;border:none;color:#6b7280;cursor:pointer;padding:0 2px;font-size:10px;flex-shrink:0'
+      clearBtn.addEventListener('mousedown', e => {
+        e.preventDefault()
+        notesState = undefined
+        notesRow.remove()
+      })
+      notesRow.append(notesText, clearBtn)
+      editWrap.appendChild(notesRow)
+    }
+
+    wrap.innerHTML = ''
+    wrap.appendChild(editWrap)
+    input.focus()
   })
   editBtn.title = 'Edit chord symbol'
+  const dupBtn = makeSmallBtn('⧉', () => { _song = duplicateChord(_song, chord.id); saveSong(_song); h.onSongChange(_song) })
+  dupBtn.title = 'Duplicate chord'
   const delBtn = makeSmallBtn('×', () => { _song = removeChord(_song, chord.id); saveSong(_song); h.onSongChange(_song) })
   delBtn.title = 'Remove chord'
   const captureBtn = makeSmallBtn('⊙', () => h.onChordCapture(chord.id))
   captureBtn.title = 'MIDI fill: next chord played on MIDI keyboard replaces this slot'
   if (isCapture) { captureBtn.style.color = '#818cf8'; captureBtn.style.fontWeight = '700' }
 
-  controls.append(editBtn, captureBtn, delBtn)
+  controls.append(editBtn, dupBtn, captureBtn, delBtn)
   wrap.appendChild(controls)
 
   wrap.addEventListener('mouseenter', () => controls.style.display = 'flex')
   wrap.addEventListener('mouseleave', () => controls.style.display = 'none')
 
-  wrap.addEventListener('click', () => h.onChordClick(chord.id, chord.symbol))
-  wrap.addEventListener('dblclick', () => { initAudioOnGesture(); playChord(chord.symbol) })
+  wrap.addEventListener('click', () => h.onChordClick(chord.id, chord.symbol, chord.notes))
+  wrap.addEventListener('dblclick', () => {
+    initAudioOnGesture()
+    if (chord.notes?.length) playNoteNames(chord.notes)
+    else playChord(chord.symbol)
+  })
 
   // Chord drag & drop within measure
   wrap.draggable = true
@@ -864,36 +923,45 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
     _draggedChordId = chord.id
     _draggedSectionId = null
     e.dataTransfer!.effectAllowed = 'move'
-    requestAnimationFrame(() => { wrap.style.opacity = '0.5' })
+    controls.style.display = 'none'
+    requestAnimationFrame(() => { wrap.style.opacity = '0.2' })
   })
   wrap.addEventListener('dragend', () => {
     _draggedChordId = null
     wrap.style.opacity = '1'
-    wrap.style.outline = ''
+    controls.style.display = 'none'
+    _dropIndicator?.remove()
+    _insertBeforeChordId = null
   })
   wrap.addEventListener('dragover', e => {
     if (!_draggedChordId || _draggedChordId === chord.id) return
     e.preventDefault()
     e.stopPropagation()
     e.dataTransfer!.dropEffect = 'move'
+    if (!_dropIndicator) {
+      _dropIndicator = document.createElement('div')
+      _dropIndicator.className = 'chord-drop-indicator'
+    }
     const rect = wrap.getBoundingClientRect()
-    wrap.style.outline = e.clientX < rect.left + rect.width / 2 ? '2px solid #4f46e5' : '2px solid #a5b4fc'
-    wrap.style.outlineOffset = '-2px'
+    const before = e.clientX < rect.left + rect.width / 2
+    if (before) {
+      _insertBeforeChordId = chord.id
+      wrap.parentNode!.insertBefore(_dropIndicator, wrap)
+    } else {
+      const targetMeasure = _song.sections.find(s => s.id === section.id)?.measures.find(m => m.id === measure.id)
+      const chordIdx = targetMeasure?.chords.findIndex(c => c.id === chord.id) ?? -1
+      _insertBeforeChordId = targetMeasure?.chords[chordIdx + 1]?.id ?? null
+      wrap.parentNode!.insertBefore(_dropIndicator, wrap.nextSibling)
+    }
   })
-  wrap.addEventListener('dragleave', () => { wrap.style.outline = '' })
   wrap.addEventListener('drop', e => {
     e.preventDefault()
     e.stopPropagation()
     if (!_draggedChordId || _draggedChordId === chord.id) return
-    const rect = wrap.getBoundingClientRect()
-    const before = e.clientX < rect.left + rect.width / 2
-    wrap.style.outline = ''
-    // Determine insertion point: before this chord, or after (= before next chord)
-    const targetMeasure = _song.sections.find(s => s.id === section.id)?.measures.find(m => m.id === measure.id)
-    const chordIdx = targetMeasure?.chords.findIndex(c => c.id === chord.id) ?? -1
-    const beforeChordId = before ? chord.id : targetMeasure?.chords[chordIdx + 1]?.id
-    _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, beforeChordId)
+    _dropIndicator?.remove()
+    _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, _insertBeforeChordId ?? undefined)
     _draggedChordId = null
+    _insertBeforeChordId = null
     saveSong(_song); h.onSongChange(_song)
   })
 

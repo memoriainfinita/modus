@@ -64,6 +64,7 @@ export interface SongChord {
   id: string
   symbol: string
   valid: boolean
+  notes?: string[]   // exact note names captured from MIDI or history drag, e.g. ["C3","G3","E4"]
 }
 
 export interface Measure {

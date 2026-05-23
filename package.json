@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node build.js",
+    "build": "esbuild src/app.ts --bundle --outfile=dist/app.js --format=iife --sourcemap",
+    "dev": "esbuild src/app.ts --bundle --outfile=dist/app.js --format=iife --sourcemap --watch=forever",
     "test": "vitest run",
     "test:watch": "vitest"
   },

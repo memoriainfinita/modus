@@ -6,7 +6,7 @@ let pendingNotes: { midi: number; duration: number }[] = []
 let volume = parseFloat(localStorage.getItem('audio-volume') ?? '0.8')
 let currentInstrumentName = localStorage.getItem('audio-instrument') ?? 'acoustic_grand_piano'
 
-export type AudioStatus = 'idle' | 'loading' | 'ready' | 'error'
+export type AudioStatus = 'idle' | 'loading' | 'suspended' | 'ready' | 'error'
 let audioStatus: AudioStatus = 'idle'
 let onStatusChange: ((s: AudioStatus) => void) | null = null
 
@@ -44,22 +44,20 @@ function loadCurrentInstrument() {
   instrument = null
   setStatus('loading')
   Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: 'FluidR3_GM' })
-    .then(async (inst: any) => {
+    .then((inst: any) => {
       instrument = inst
       loadingInstrument = false
-      await audioCtx!.resume()
-      setStatus('ready')
-      for (const n of pendingNotes) {
-        instrument.play(n.midi, audioCtx!.currentTime, { duration: n.duration, gain: volume })
-      }
       pendingNotes = []
+      setStatus(audioCtx!.state === 'suspended' ? 'suspended' : 'ready')
     })
     .catch((err: any) => { loadingInstrument = false; setStatus('error'); console.error('[audio] load failed:', err) })
 }
 
 export function initAudioOnGesture() {
   ensureContext()
-  audioCtx!.resume()
+  audioCtx!.resume().then(() => {
+    if (instrument && audioStatus === 'suspended') setStatus('ready')
+  })
   if (!instrument && !loadingInstrument) loadCurrentInstrument()
 }
 
@@ -99,6 +97,17 @@ export function playMidiNotes(midiNotes: number[], duration = 2) {
   audioCtx.resume().then(() => {
     for (const midi of midiNotes) {
       instrument.play(midi, audioCtx!.currentTime, { duration, gain: volume })
+    }
+  })
+}
+
+export function playNoteNames(noteNames: string[], duration = 2) {
+  if (!instrument || !audioCtx) return
+  const midis = noteNames.map(noteNameToMidi).filter((m): m is number => m !== null)
+  if (!midis.length) return
+  audioCtx.resume().then(() => {
+    for (const midi of midis) {
+      instrument!.play(midi, audioCtx!.currentTime, { duration, gain: volume })
     }
   })
 }
