@@ -2127,13 +2127,57 @@ K:${abcKey}
     return `${pattern}`;
   }
 
-  // src/app.ts
-  var staffWidth = 380;
-  var cofSize = parseInt(localStorage.getItem("cof-size") ?? "160");
-  var cofAccidental = localStorage.getItem("cof-accidental") ?? "flat";
-  var cofShowMinor = JSON.parse(localStorage.getItem("cof-show-minor") ?? "true");
-  var cofShowDegrees = JSON.parse(localStorage.getItem("cof-show-degrees") ?? "false");
-  var cofShow7ths = JSON.parse(localStorage.getItem("cof-show-7ths") ?? "false");
+  // src/shortcuts.ts
+  var SHORTCUTS = [
+    { key: "Space", action: "Play current chord (or last if none active)" },
+    { key: "H", action: "Toggle Hold mode" },
+    { key: "A", action: "Toggle Arpeggio mode" },
+    { key: "S", action: "Send history chip \u2192 Song" },
+    { key: "C", action: "Clear history" },
+    { key: "Esc", action: "Clear cursor / capture" },
+    { key: "1\u20139", action: "Select chord candidate" },
+    { key: "P", action: "Play current chord" },
+    { key: "?", action: "Show / hide this panel" }
+  ];
+  var helpVisible = false;
+  function closeHelp() {
+    if (!helpVisible)
+      return false;
+    helpVisible = false;
+    document.getElementById("shortcut-help")?.remove();
+    document.removeEventListener("mousedown", closeHelpOnOutsideClick);
+    return true;
+  }
+  function toggleHelp() {
+    if (helpVisible) {
+      closeHelp();
+      return;
+    }
+    helpVisible = true;
+    const popup = document.createElement("div");
+    popup.id = "shortcut-help";
+    popup.className = "shortcut-help-popup";
+    popup.innerHTML = `
+    <div class="shortcut-help-header">
+      <span>Keyboard shortcuts</span>
+      <button class="shortcut-help-close">\xD7</button>
+    </div>
+    ${SHORTCUTS.map((s) => `
+      <div class="shortcut-row">
+        <kbd class="shortcut-key">${s.key}</kbd>
+        <span class="shortcut-action">${s.action}</span>
+      </div>`).join("")}`;
+    document.body.appendChild(popup);
+    popup.querySelector(".shortcut-help-close").addEventListener("click", closeHelp);
+    document.addEventListener("mousedown", closeHelpOnOutsideClick);
+  }
+  function closeHelpOnOutsideClick(e) {
+    const popup = document.getElementById("shortcut-help");
+    if (popup && !popup.contains(e.target))
+      closeHelp();
+  }
+
+  // src/analysis-panel.ts
   var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "diatonic", "scales", "cadence", "secondary", "coltrane", "negharm", "subs"];
   var ANALYSIS_FIELD_LABELS = {
     roman: "Roman",
@@ -2159,6 +2203,103 @@ K:${abcKey}
     negharm: "Negative harmony",
     subs: "Substitutions"
   };
+  var CHORD_QUALITY_COLORS = {
+    major: "#f59e0b",
+    minor: "#3b82f6",
+    "dominant seventh": "#ef4444",
+    "major seventh": "#f59e0b",
+    "minor seventh": "#3b82f6",
+    diminished: "#7c3aed",
+    "diminished seventh": "#7c3aed",
+    "half-diminished seventh": "#7c3aed",
+    augmented: "#0d9488",
+    sus: "#6b7280"
+  };
+  function getChordQuality(chordSymbol) {
+    try {
+      return UMT.parseChordSymbol(chordSymbol).quality?.toLowerCase() ?? "";
+    } catch {
+      return "";
+    }
+  }
+  function renderChordSummary(detection, onAltSelect2) {
+    const el = document.getElementById("chord-summary");
+    if (!el)
+      return;
+    if (!detection || detection.kind !== "chord") {
+      el.innerHTML = "";
+      return;
+    }
+    const chordName = detection.candidates[detection.selectedIndex];
+    const color = CHORD_QUALITY_COLORS[getChordQuality(chordName)] ?? "#6b7280";
+    const notes = detection.notes.map((n) => n.replace(/(-?\d+)$/, "")).join(" \xB7 ");
+    const alts = detection.candidates.slice(1, 7);
+    el.innerHTML = `
+    <div class="chord-summary-row">
+      <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
+      <span class="chord-notes">${notes}</span>
+      ${alts.map(
+      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${c}</button>`
+    ).join("")}
+    </div>`;
+    el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
+      btn.addEventListener("click", () => onAltSelect2(parseInt(btn.dataset.idx)));
+    });
+  }
+  function renderZone1Analysis(detection, analysis, fieldsVisible, scale, onAltSelect2) {
+    renderChordSummary(detection, onAltSelect2);
+    const el = document.getElementById("analysis-content");
+    if (!el)
+      return;
+    el.style.fontSize = scale + "px";
+    const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => fieldsVisible[f]).length;
+    el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
+    const colEl = document.getElementById("col-analysis");
+    if (colEl) {
+      const w = Math.round(scale * 19) + "px";
+      colEl.style.width = w;
+      colEl.style.flex = `0 0 ${w}`;
+    }
+    const row = (label, val) => `<div class="analysis-row">
+      <span class="analysis-label">${label}</span>
+      <span class="analysis-value">${val}</span>
+    </div>`;
+    const maybeRow = (f, label, val) => fieldsVisible[f] ? row(label, val) : "";
+    const conditionalRow = (f, label, val) => fieldsVisible[f] ? row(label, val ?? "\u2014") : "";
+    let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
+    let secondary = null, coltrane = null;
+    let negharm = null, subs = null;
+    let extra = "";
+    if (detection?.kind === "note") {
+      extra = row("Note", `${detection.noteName} \xB7 MIDI ${detection.midiNumber}`);
+    } else if (detection?.kind === "interval") {
+      extra = row("Interval", `${detection.intervalName} \xB7 ${detection.semitones} st`) + row("Inversion", detection.inversionName);
+    } else if (detection?.kind === "chord" && analysis) {
+      roman = analysis.roman;
+      func_ = { T: "Tonic", S: "Subdominant", D: "Dominant", unknown: "Unknown" }[analysis.function];
+      figuredBass = analysis.figuredBass || "\u2014";
+      diatonic = analysis.isDiatonic ? "Yes" : analysis.isBorrowed ? `Borrowed (${analysis.borrowedFrom ?? "?"})` : "Chromatic";
+      scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
+      cadence = analysis.cadence || "\u2014";
+      if (analysis.isSecondary)
+        secondary = `\u2192 ${analysis.secondaryTarget}`;
+      if (analysis.coltraneAxis)
+        coltrane = analysis.coltraneAxis.join(" \xB7 ");
+      if (analysis.negativeHarmony)
+        negharm = analysis.negativeHarmony;
+      if (analysis.substitutions?.length)
+        subs = analysis.substitutions.join(", ");
+    }
+    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("coltrane", "Coltrane", coltrane) + conditionalRow("negharm", "Neg. harm.", negharm) + conditionalRow("subs", "Subs.", subs) + extra;
+  }
+
+  // src/app.ts
+  var staffWidth = 380;
+  var cofSize = parseInt(localStorage.getItem("cof-size") ?? "160");
+  var cofAccidental = localStorage.getItem("cof-accidental") ?? "flat";
+  var cofShowMinor = JSON.parse(localStorage.getItem("cof-show-minor") ?? "true");
+  var cofShowDegrees = JSON.parse(localStorage.getItem("cof-show-degrees") ?? "false");
+  var cofShow7ths = JSON.parse(localStorage.getItem("cof-show-7ths") ?? "false");
   var analysisFieldsVisible = {
     roman: JSON.parse(localStorage.getItem("analysis-field-roman") ?? "true"),
     function: JSON.parse(localStorage.getItem("analysis-field-function") ?? "true"),
@@ -2172,17 +2313,6 @@ K:${abcKey}
     subs: JSON.parse(localStorage.getItem("analysis-field-subs") ?? "true")
   };
   var analysisScale = parseInt(localStorage.getItem("analysis-scale") ?? "11");
-  var SHORTCUTS = [
-    { key: "Space", action: "Play current chord (or last if none active)" },
-    { key: "H", action: "Toggle Hold mode" },
-    { key: "A", action: "Toggle Arpeggio mode" },
-    { key: "S", action: "Send history chip \u2192 Song" },
-    { key: "C", action: "Clear history" },
-    { key: "Esc", action: "Clear cursor / capture" },
-    { key: "1\u20139", action: "Select chord candidate" },
-    { key: "P", action: "Play current chord" },
-    { key: "?", action: "Show / hide this panel" }
-  ];
   var lastChordSymbol = null;
   var lastChordMidi = [];
   var state = {
@@ -2241,40 +2371,6 @@ K:${abcKey}
       }
     });
   }
-  var helpVisible = false;
-  function closeHelp() {
-    helpVisible = false;
-    document.getElementById("shortcut-help")?.remove();
-    document.removeEventListener("mousedown", closeHelpOnOutsideClick);
-  }
-  function toggleHelp() {
-    if (helpVisible) {
-      closeHelp();
-      return;
-    }
-    helpVisible = true;
-    const popup = document.createElement("div");
-    popup.id = "shortcut-help";
-    popup.className = "shortcut-help-popup";
-    popup.innerHTML = `
-    <div class="shortcut-help-header">
-      <span>Keyboard shortcuts</span>
-      <button class="shortcut-help-close">\xD7</button>
-    </div>
-    ${SHORTCUTS.map((s) => `
-      <div class="shortcut-row">
-        <kbd class="shortcut-key">${s.key}</kbd>
-        <span class="shortcut-action">${s.action}</span>
-      </div>`).join("")}`;
-    document.body.appendChild(popup);
-    popup.querySelector(".shortcut-help-close").addEventListener("click", closeHelp);
-    document.addEventListener("mousedown", closeHelpOnOutsideClick);
-  }
-  function closeHelpOnOutsideClick(e) {
-    const popup = document.getElementById("shortcut-help");
-    if (popup && !popup.contains(e.target))
-      closeHelp();
-  }
   var $ = (id) => document.getElementById(id);
   function init() {
     if (!navigator.requestMIDIAccess) {
@@ -2285,7 +2381,7 @@ K:${abcKey}
     buildLayout();
     wireKeyboard();
     renderZone1Diagrams([], null);
-    renderZone1Analysis();
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
     initMidi().then((result) => {
       if (result.denied) {
         showMidiBanner("MIDI access denied. Grant permission in browser settings to use a controller.");
@@ -2358,7 +2454,7 @@ K:${abcKey}
         if (notes?.length) {
           state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol());
           state.detection = { kind: "chord", notes, candidates: [symbol], selectedIndex: 0 };
-          renderZone1Analysis();
+          renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
           renderZone1Diagrams(notes, symbol);
         } else {
           triggerChordAnalysis(symbol);
@@ -2379,8 +2475,8 @@ K:${abcKey}
       }
     };
   }
-  function buildLayout() {
-    $("zone1").innerHTML = `
+  function buildToolbar() {
+    return `
     <div id="z1-toolbar" class="toolbar">
       <span id="midi-status" class="midi-status">MIDI: \u2014</span>
       <select id="midi-device" class="ctrl-select"></select>
@@ -2409,8 +2505,10 @@ K:${abcKey}
       </select>
       <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
       <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
-    </div>
-    <!-- Row 1: notation \u2014 staff + CoF side by side, guitar stacked below CoF -->
+    </div>`;
+  }
+  function buildNotationPanel() {
+    return `
     <div id="notation-panel" class="zone-panel">
       <div class="panel-header">
         <span>Notation</span>
@@ -2423,13 +2521,11 @@ K:${abcKey}
         <button class="toggle-btn" data-panel="notation">\u25BC</button>
       </div>
       <div id="notation-content">
-        <!-- Column 1: Staff -->
         <div class="col-auto" id="col-staff">
           <div class="col-label">Staff</div>
           <div id="chord-summary"></div>
           <div id="staff-container"></div>
         </div>
-        <!-- Column 2: Analysis -->
         <div class="col-analysis" id="col-analysis">
           <div class="col-header">
             <div class="col-label">Analysis</div>
@@ -2449,7 +2545,6 @@ K:${abcKey}
             </div>
           </div>
         </div>
-        <!-- Column 3: CoF -->
         <div class="col-auto" id="col-cof">
           <div class="col-header">
             <div class="col-label">CoF</div>
@@ -2470,7 +2565,6 @@ K:${abcKey}
             </div>
           </div>
         </div>
-        <!-- Column 4: Guitar -->
         <div class="col-auto" id="col-guitar">
           <div class="col-header">
             <div class="col-label">Guitar</div>
@@ -2479,8 +2573,10 @@ K:${abcKey}
           <div id="guitar-container"></div>
         </div>
       </div>
-    </div>
-    <!-- Row 3: instruments (piano + fretboard) -->
+    </div>`;
+  }
+  function buildInstrumentsPanel() {
+    return `
     <div id="instruments-panel" class="zone-panel">
       <div class="panel-header">
         <span>Instruments</span>
@@ -2500,23 +2596,23 @@ K:${abcKey}
           </div>
         </div>
       </div>
-    </div>
-    <div id="midi-banner"></div>
-  `;
+    </div>`;
+  }
+  function buildZoneHeaders() {
     $("zone2").innerHTML = `
     <div class="zone-header">
       <span class="zone-title">History</span>
       <button class="toggle-btn" data-panel="history">\u25BC</button>
     </div>
-    <div id="zone2-content"></div>
-  `;
+    <div id="zone2-content"></div>`;
     $("zone3").innerHTML = `
     <div class="zone-header">
       <span class="zone-title">Song Structure</span>
       <button class="toggle-btn" data-panel="song">\u25BC</button>
     </div>
-    <div id="zone3-content"></div>
-  `;
+    <div id="zone3-content"></div>`;
+  }
+  function wireLayoutEvents() {
     const updateCofButtons = () => {
       ;
       $("btn-cof-flat").classList.toggle("active", cofAccidental === "flat");
@@ -2576,12 +2672,12 @@ K:${abcKey}
     $("btn-analysis-minus").addEventListener("click", () => {
       analysisScale = Math.max(8, analysisScale - 1);
       localStorage.setItem("analysis-scale", String(analysisScale));
-      renderZone1Analysis();
+      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
     });
     $("btn-analysis-plus").addEventListener("click", () => {
       analysisScale = Math.min(20, analysisScale + 1);
       localStorage.setItem("analysis-scale", String(analysisScale));
-      renderZone1Analysis();
+      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
     });
     const reRenderNeck = () => {
       const notes = state.detection?.kind !== "note" && state.detection?.notes ? state.detection.notes.map((n) => {
@@ -2605,7 +2701,7 @@ K:${abcKey}
         analysisFieldsVisible[f] = !analysisFieldsVisible[f];
         localStorage.setItem(`analysis-field-${f}`, String(analysisFieldsVisible[f]));
         updateAnalysisFieldButtons();
-        renderZone1Analysis();
+        renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
       });
     });
     document.querySelectorAll(".col-vis-btn").forEach((btn) => {
@@ -2659,6 +2755,11 @@ K:${abcKey}
     $("audio-volume").addEventListener("input", (e) => {
       setVolume(parseFloat(e.target.value));
     });
+  }
+  function buildLayout() {
+    $("zone1").innerHTML = buildToolbar() + buildNotationPanel() + buildInstrumentsPanel() + '<div id="midi-banner"></div>';
+    buildZoneHeaders();
+    wireLayoutEvents();
     applyPanelVisibility();
   }
   function applyPanelVisibility() {
@@ -2755,11 +2856,20 @@ K:${abcKey}
       state.analysis = null;
       renderZone1Diagrams([], null);
     }
-    renderZone1Analysis();
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
     refreshAutoKey();
   }
   function getLastHistorySymbol() {
     return state.history[0]?.symbol ?? null;
+  }
+  function onAltSelect(idx) {
+    if (state.detection?.kind !== "chord")
+      return;
+    state.detection.selectedIndex = idx;
+    const sym = state.detection.candidates[idx];
+    state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol());
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
+    renderZone1Diagrams(state.detection.notes, sym);
   }
   function renderZone1Diagrams(noteNames, chordSymbol) {
     renderStaff($("staff-container"), noteNames, staffWidth, state.activeKey);
@@ -2796,106 +2906,6 @@ K:${abcKey}
     else
       renderZone1Diagrams(d.notes ?? [], null);
   }
-  function getChordQuality(chordSymbol) {
-    try {
-      return UMT.parseChordSymbol(chordSymbol).quality?.toLowerCase() ?? "";
-    } catch {
-      return "";
-    }
-  }
-  var CHORD_QUALITY_COLORS = {
-    major: "#f59e0b",
-    minor: "#3b82f6",
-    "dominant seventh": "#ef4444",
-    "major seventh": "#f59e0b",
-    "minor seventh": "#3b82f6",
-    diminished: "#7c3aed",
-    "diminished seventh": "#7c3aed",
-    "half-diminished seventh": "#7c3aed",
-    augmented: "#0d9488",
-    sus: "#6b7280"
-  };
-  function renderChordSummary() {
-    const el = $("chord-summary");
-    if (!el)
-      return;
-    const d = state.detection;
-    if (!d || d.kind !== "chord") {
-      el.innerHTML = "";
-      return;
-    }
-    const chordName = d.candidates[d.selectedIndex];
-    const color = CHORD_QUALITY_COLORS[getChordQuality(chordName)] ?? "#6b7280";
-    const notes = d.notes.map((n) => n.replace(/(-?\d+)$/, "")).join(" \xB7 ");
-    const alts = d.candidates.slice(1, 7);
-    el.innerHTML = `
-    <div class="chord-summary-row">
-      <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
-      <span class="chord-notes">${notes}</span>
-      ${alts.map(
-      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${c}</button>`
-    ).join("")}
-    </div>`;
-    el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (state.detection?.kind === "chord") {
-          state.detection.selectedIndex = parseInt(btn.dataset.idx);
-          const sym = state.detection.candidates[state.detection.selectedIndex];
-          state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol());
-          renderZone1Analysis();
-          renderZone1Diagrams(state.detection.notes, sym);
-        }
-      });
-    });
-  }
-  function renderZone1Analysis() {
-    renderChordSummary();
-    const el = $("analysis-content");
-    if (!el)
-      return;
-    const d = state.detection;
-    const a = state.analysis;
-    el.style.fontSize = analysisScale + "px";
-    const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => analysisFieldsVisible[f]).length;
-    el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * analysisScale) + "px";
-    const colEl = document.getElementById("col-analysis");
-    if (colEl) {
-      const w = Math.round(analysisScale * 19) + "px";
-      colEl.style.width = w;
-      colEl.style.flex = `0 0 ${w}`;
-    }
-    const row = (label, val) => `<div class="analysis-row">
-      <span class="analysis-label">${label}</span>
-      <span class="analysis-value">${val}</span>
-    </div>`;
-    const maybeRow = (f, label, val) => analysisFieldsVisible[f] ? row(label, val) : "";
-    const conditionalRow = (f, label, val) => analysisFieldsVisible[f] ? row(label, val ?? "\u2014") : "";
-    let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
-    let secondary = null, coltrane = null;
-    let negharm = null, subs = null;
-    let extra = "";
-    if (d?.kind === "note") {
-      extra = row("Note", `${d.noteName} \xB7 MIDI ${d.midiNumber}`);
-    } else if (d?.kind === "interval") {
-      extra = row("Interval", `${d.intervalName} \xB7 ${d.semitones} st`) + row("Inversion", d.inversionName);
-    } else if (d?.kind === "chord" && a) {
-      roman = a.roman;
-      func_ = { T: "Tonic", S: "Subdominant", D: "Dominant", unknown: "Unknown" }[a.function];
-      figuredBass = a.figuredBass || "\u2014";
-      diatonic = a.isDiatonic ? "Yes" : a.isBorrowed ? `Borrowed (${a.borrowedFrom ?? "?"})` : "Chromatic";
-      scales = a.suggestedScales.slice(0, 4).join(", ") || "\u2014";
-      cadence = a.cadence || "\u2014";
-      if (a.isSecondary)
-        secondary = `\u2192 ${a.secondaryTarget}`;
-      if (a.coltraneAxis)
-        coltrane = a.coltraneAxis.join(" \xB7 ");
-      if (a.negativeHarmony)
-        negharm = a.negativeHarmony;
-      if (a.substitutions?.length)
-        subs = a.substitutions.join(", ");
-    }
-    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("coltrane", "Coltrane", coltrane) + conditionalRow("negharm", "Neg. harm.", negharm) + conditionalRow("subs", "Subs.", subs) + extra;
-  }
   function renderZone2() {
     renderHistory(
       $("zone2-content"),
@@ -2905,7 +2915,7 @@ K:${abcKey}
         if (entry.notes.length > 0) {
           state.analysis = buildHarmonicAnalysis(entry.symbol, state.activeKey, getLastHistorySymbol());
           state.detection = { kind: "chord", notes: entry.notes, candidates: [entry.symbol], selectedIndex: 0 };
-          renderZone1Analysis();
+          renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
           renderZone1Diagrams(entry.notes, entry.symbol);
         } else {
           triggerChordAnalysis(entry.symbol);
@@ -2920,14 +2930,14 @@ K:${abcKey}
   }
   function refreshAll() {
     reRenderDiagrams();
-    renderZone1Analysis();
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
     renderZone2();
     renderZone3();
   }
   function triggerChordAnalysis(symbol) {
     state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol());
     state.detection = { kind: "chord", notes: [], candidates: [symbol], selectedIndex: 0 };
-    renderZone1Analysis();
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
     const dummyNotes = [];
     try {
       const chord = UMT.parseChordSymbol(symbol);
@@ -2981,7 +2991,7 @@ K:${abcKey}
       const sym = state.detection?.kind === "chord" ? state.detection.candidates[0] : null;
       if (sym) {
         state.analysis = buildHarmonicAnalysis(sym, auto, getLastHistorySymbol());
-        renderZone1Analysis();
+        renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
       }
     }
   }
@@ -3057,10 +3067,8 @@ K:${abcKey}
           toggleHelp();
           break;
         case "Escape":
-          if (helpVisible) {
-            closeHelp();
+          if (closeHelp())
             break;
-          }
           state.activeCursorId = null;
           state.captureTargetId = null;
           renderZone3();
@@ -3072,7 +3080,7 @@ K:${abcKey}
               state.detection.selectedIndex = idx;
               const sym = state.detection.candidates[idx];
               state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol());
-              renderZone1Analysis();
+              renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
             }
           }
       }
