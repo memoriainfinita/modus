@@ -6,6 +6,11 @@ import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyCho
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
 import type { AppState, HistoryEntry, SongChord } from './types'
 import { toggleHelp, closeHelp } from './shortcuts'
+import {
+  ANALYSIS_FIELD_KEYS, ANALYSIS_FIELD_LABELS, ANALYSIS_FIELD_TOOLTIPS,
+  getChordQuality, renderZone1Analysis
+} from './analysis-panel'
+import type { AnalysisFieldKey } from './analysis-panel'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -16,17 +21,6 @@ let cofShowMinor   = JSON.parse(localStorage.getItem('cof-show-minor')   ?? 'tru
 let cofShowDegrees = JSON.parse(localStorage.getItem('cof-show-degrees') ?? 'false')
 let cofShow7ths    = JSON.parse(localStorage.getItem('cof-show-7ths')    ?? 'false')
 
-const ANALYSIS_FIELD_KEYS = ['roman', 'function', 'figbass', 'diatonic', 'scales', 'cadence', 'secondary', 'coltrane', 'negharm', 'subs'] as const
-type AnalysisFieldKey = (typeof ANALYSIS_FIELD_KEYS)[number]
-const ANALYSIS_FIELD_LABELS: Record<AnalysisFieldKey, string> = {
-  roman: 'Roman', function: 'Func', figbass: 'Fig', diatonic: 'Diat', scales: 'Scl', cadence: 'Cad',
-  secondary: 'Sec', coltrane: 'Colt', negharm: 'Neg', subs: 'Subs'
-}
-const ANALYSIS_FIELD_TOOLTIPS: Record<AnalysisFieldKey, string> = {
-  roman: 'Roman numeral', function: 'Harmonic function', figbass: 'Figured bass',
-  diatonic: 'Diatonic / borrowed', scales: 'Suggested scales', cadence: 'Cadence',
-  secondary: 'Secondary dominant', coltrane: 'Coltrane axis', negharm: 'Negative harmony', subs: 'Substitutions'
-}
 let analysisFieldsVisible: Record<AnalysisFieldKey, boolean> = {
   roman:     JSON.parse(localStorage.getItem('analysis-field-roman')     ?? 'true'),
   function:  JSON.parse(localStorage.getItem('analysis-field-function')  ?? 'true'),
@@ -110,7 +104,7 @@ function init() {
   buildLayout()
   wireKeyboard()
   renderZone1Diagrams([], null)
-  renderZone1Analysis()
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
 
   initMidi().then(result => {
     if (result.denied) {
@@ -188,7 +182,7 @@ function makeSongHandlers() {
       if (notes?.length) {
         state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol())
         state.detection = { kind: 'chord', notes, candidates: [symbol], selectedIndex: 0 }
-        renderZone1Analysis()
+        renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
         renderZone1Diagrams(notes, symbol)
       } else {
         triggerChordAnalysis(symbol)
@@ -408,12 +402,12 @@ function buildLayout() {
   $('btn-analysis-minus').addEventListener('click', () => {
     analysisScale = Math.max(8, analysisScale - 1)
     localStorage.setItem('analysis-scale', String(analysisScale))
-    renderZone1Analysis()
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
   })
   $('btn-analysis-plus').addEventListener('click', () => {
     analysisScale = Math.min(20, analysisScale + 1)
     localStorage.setItem('analysis-scale', String(analysisScale))
-    renderZone1Analysis()
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
   })
 
   const reRenderNeck = () => {
@@ -437,7 +431,7 @@ function buildLayout() {
       analysisFieldsVisible[f] = !analysisFieldsVisible[f]
       localStorage.setItem(`analysis-field-${f}`, String(analysisFieldsVisible[f]))
       updateAnalysisFieldButtons()
-      renderZone1Analysis()
+      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
     })
   })
 
@@ -573,12 +567,21 @@ function onNoteChange(notes: number[]) {
     renderZone1Diagrams([], null)
   }
 
-  renderZone1Analysis()
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
   refreshAutoKey()
 }
 
 function getLastHistorySymbol(): string | null {
   return state.history[0]?.symbol ?? null
+}
+
+function onAltSelect(idx: number) {
+  if (state.detection?.kind !== 'chord') return
+  state.detection.selectedIndex = idx
+  const sym = state.detection.candidates[idx]
+  state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+  renderZone1Diagrams(state.detection.notes, sym)
 }
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
@@ -614,111 +617,6 @@ function reRenderDiagrams() {
   else renderZone1Diagrams((d as any).notes ?? [], null)
 }
 
-function getChordQuality(chordSymbol: string): string {
-  try { return UMT.parseChordSymbol(chordSymbol).quality?.toLowerCase() ?? '' } catch { return '' }
-}
-
-const CHORD_QUALITY_COLORS: Record<string, string> = {
-  major: '#f59e0b', minor: '#3b82f6', 'dominant seventh': '#ef4444',
-  'major seventh': '#f59e0b', 'minor seventh': '#3b82f6',
-  diminished: '#7c3aed', 'diminished seventh': '#7c3aed',
-  'half-diminished seventh': '#7c3aed', augmented: '#0d9488',
-  sus: '#6b7280',
-}
-
-function renderChordSummary() {
-  const el = $('chord-summary')
-  if (!el) return
-  const d = state.detection
-  if (!d || d.kind !== 'chord') { el.innerHTML = ''; return }
-
-  const chordName = d.candidates[d.selectedIndex]
-  const color = CHORD_QUALITY_COLORS[getChordQuality(chordName)] ?? '#6b7280'
-  const notes = d.notes.map(n => n.replace(/(-?\d+)$/, '')).join(' · ')
-  const alts = d.candidates.slice(1, 7)
-
-  el.innerHTML = `
-    <div class="chord-summary-row">
-      <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
-      <span class="chord-notes">${notes}</span>
-      ${alts.map((c, i) =>
-        `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${c}</button>`
-      ).join('')}
-    </div>`
-
-  el.querySelectorAll<HTMLElement>('.alt-chord-sum').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (state.detection?.kind === 'chord') {
-        state.detection.selectedIndex = parseInt(btn.dataset.idx!)
-        const sym = state.detection.candidates[state.detection.selectedIndex]
-        state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
-        renderZone1Analysis()
-        renderZone1Diagrams(state.detection.notes, sym)
-      }
-    })
-  })
-}
-
-function renderZone1Analysis() {
-  renderChordSummary()
-  const el = $('analysis-content')
-  if (!el) return
-
-  const d = state.detection
-  const a = state.analysis
-
-  el.style.fontSize = analysisScale + 'px'
-  const visibleCount = ANALYSIS_FIELD_KEYS.filter(f => analysisFieldsVisible[f]).length
-  el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * analysisScale) + 'px'
-  const colEl = document.getElementById('col-analysis')
-  if (colEl) { const w = Math.round(analysisScale * 19) + 'px'; colEl.style.width = w; colEl.style.flex = `0 0 ${w}` }
-
-  const row = (label: string, val: string) =>
-    `<div class="analysis-row">
-      <span class="analysis-label">${label}</span>
-      <span class="analysis-value">${val}</span>
-    </div>`
-  const maybeRow = (f: AnalysisFieldKey, label: string, val: string) =>
-    analysisFieldsVisible[f] ? row(label, val) : ''
-  const conditionalRow = (f: AnalysisFieldKey, label: string, val: string | null) =>
-    analysisFieldsVisible[f] ? row(label, val ?? '—') : ''
-
-  let roman = '—', func_ = '—', figuredBass = '—', diatonic = '—', scales = '—', cadence = '—'
-  let secondary: string | null = null, coltrane: string | null = null
-  let negharm: string | null = null, subs: string | null = null
-  let extra = ''
-
-  if (d?.kind === 'note') {
-    extra = row('Note', `${d.noteName} · MIDI ${d.midiNumber}`)
-  } else if (d?.kind === 'interval') {
-    extra = row('Interval', `${d.intervalName} · ${d.semitones} st`) + row('Inversion', d.inversionName)
-  } else if (d?.kind === 'chord' && a) {
-    roman = a.roman
-    func_ = ({T:'Tonic',S:'Subdominant',D:'Dominant',unknown:'Unknown'} as Record<string,string>)[a.function]
-    figuredBass = a.figuredBass || '—'
-    diatonic = a.isDiatonic ? 'Yes' : a.isBorrowed ? `Borrowed (${a.borrowedFrom ?? '?'})` : 'Chromatic'
-    scales = a.suggestedScales.slice(0, 4).join(', ') || '—'
-    cadence = a.cadence || '—'
-    if (a.isSecondary) secondary = `→ ${a.secondaryTarget}`
-    if (a.coltraneAxis) coltrane = a.coltraneAxis.join(' · ')
-    if (a.negativeHarmony) negharm = a.negativeHarmony
-    if (a.substitutions?.length) subs = a.substitutions.join(', ')
-  }
-
-  el.innerHTML =
-    maybeRow('roman', 'Roman', roman) +
-    maybeRow('function', 'Function', func_) +
-    maybeRow('figbass', 'Fig. bass', figuredBass) +
-    maybeRow('diatonic', 'Diatonic', diatonic) +
-    maybeRow('scales', 'Scales', scales) +
-    maybeRow('cadence', 'Cadence', cadence) +
-    conditionalRow('secondary', 'Secondary', secondary) +
-    conditionalRow('coltrane', 'Coltrane', coltrane) +
-    conditionalRow('negharm', 'Neg. harm.', negharm) +
-    conditionalRow('subs', 'Subs.', subs) +
-    extra
-}
-
 function renderZone2() {
   renderHistory(
     $('zone2-content'),
@@ -728,7 +626,7 @@ function renderZone2() {
       if (entry.notes.length > 0) {
         state.analysis = buildHarmonicAnalysis(entry.symbol, state.activeKey, getLastHistorySymbol())
         state.detection = { kind: 'chord', notes: entry.notes, candidates: [entry.symbol], selectedIndex: 0 }
-        renderZone1Analysis()
+        renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
         renderZone1Diagrams(entry.notes, entry.symbol)
       } else {
         triggerChordAnalysis(entry.symbol)
@@ -745,7 +643,7 @@ function renderZone3() {
 
 function refreshAll() {
   reRenderDiagrams()  // key may have changed — re-render staff with new key sig
-  renderZone1Analysis()
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
   renderZone2()
   renderZone3()
 }
@@ -753,7 +651,7 @@ function refreshAll() {
 function triggerChordAnalysis(symbol: string) {
   state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol())
   state.detection = { kind: 'chord', notes: [], candidates: [symbol], selectedIndex: 0 }
-  renderZone1Analysis()
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
   const dummyNotes: string[] = []
   try {
     const chord = UMT.parseChordSymbol(symbol)
@@ -810,7 +708,7 @@ function refreshAutoKey() {
     const sym = state.detection?.kind === 'chord' ? state.detection.candidates[0] : null
     if (sym) {
       state.analysis = buildHarmonicAnalysis(sym, auto, getLastHistorySymbol())
-      renderZone1Analysis()
+      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
     }
   }
 }
@@ -901,7 +799,7 @@ function wireKeyboard() {
             state.detection.selectedIndex = idx
             const sym = state.detection.candidates[idx]
             state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
-            renderZone1Analysis()
+            renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
           }
         }
     }
