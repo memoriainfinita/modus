@@ -516,9 +516,6 @@
   function setGuitarControlsVisible(v) {
     guitarControlsVisible = v;
   }
-  function loadGuitarDB() {
-    return Promise.resolve();
-  }
   function activeKeyToAbcKey(keyStr) {
     if (!keyStr)
       return "none";
@@ -1401,11 +1398,11 @@ K:${abcKey}
     };
   }
   function saveSong(song) {
-    localStorage.setItem("harmony-companion-song", JSON.stringify(song));
+    localStorage.setItem("modus-song", JSON.stringify(song));
   }
   function loadSong() {
     try {
-      const raw = localStorage.getItem("harmony-companion-song");
+      const raw = localStorage.getItem("modus-song") ?? localStorage.getItem("harmony-companion-song");
       if (!raw)
         return createSong();
       const parsed = JSON.parse(raw);
@@ -2377,7 +2374,6 @@ K:${abcKey}
       $("browser-warning").style.display = "block";
     }
     document.addEventListener("click", initAudioOnGesture, { once: true });
-    loadGuitarDB();
     buildLayout();
     wireKeyboard();
     renderZone1Diagrams([], null);
@@ -2436,11 +2432,6 @@ K:${abcKey}
         fill.style.background = "";
         fill.style.transition = "none";
         fill.style.width = "0%";
-      }
-    });
-    window.addEventListener("history-capture-requested", () => {
-      if (state.detection?.kind === "chord") {
-        addEntry(state.detection.candidates[0], state.detection.notes);
       }
     });
     renderZone3();
@@ -2680,11 +2671,9 @@ K:${abcKey}
       renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
     });
     const reRenderNeck = () => {
-      const notes = state.detection?.kind !== "note" && state.detection?.notes ? state.detection.notes.map((n) => {
-        const FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
-        return FLAT[n % 12] + (Math.floor(n / 12) - 1);
-      }) : [];
-      const sym = state.detection?.kind === "chord" ? state.detection.candidates[state.detection.selectedIndex] : null;
+      const d = state.detection;
+      const notes = d?.kind === "chord" ? d.notes : d?.kind === "note" ? [d.noteName] : d?.notes ?? [];
+      const sym = d?.kind === "chord" ? d.candidates[d.selectedIndex] : null;
       const chordRoot = sym ? (sym.match(/^([A-G][b#]?)/) ?? [, ""])[1] || null : null;
       renderNeck($("neck-container"), notes, chordRoot);
     };
