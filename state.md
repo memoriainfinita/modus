@@ -136,6 +136,16 @@ modus/
 
 ## History
 
+### 2026-05-23 — Comprehensive test suite — session 19 (part 1)
+
+23 → 101 tests. No production code changed.
+
+New files: `tests/history.test.ts` (18 tests — full state coverage: addEntry, removeEntry, clearHistory, callbacks, debounce/dedup in notifyChordDetected), `tests/analysis-panel.test.ts` (7 tests — FIELD_KEYS/LABELS/TOOLTIPS completeness, getChordQuality including error path).
+
+Extended: `tests/analyzer.test.ts` (+11 — interval detection for 2-note input, full buildHarmonicAnalysis suite with/without key, cadence, scales, coltraneAxis, negativeHarmony), `tests/song.test.ts` (+33 — removeSection, addMeasure, removeMeasure, updateSection, duplicateSection, insertChordAfter, updateChord, duplicateChord, moveChord, moveChordToPosition, reorderSections, reorderChordInMeasure, transposeSong, computeDegree, isBorrowedChord).
+
+Behavior documented: `insertChordAfter` with unknown id does nothing (no append). UMT mock in song.test.ts updated to return real analysis data for computeDegree tests.
+
 ### 2026-05-23 — dist/ fix + language convention — session 18 (cont.)
 
 dist/app.js no estaba sincronizado con el refactor de sesión 17 — commiteado. Confirmado que dist/ debe estar trackeado en git (igual que notae y UMT — jsDelivr lo sirve directamente desde el repo). El .gitignore solo tiene node_modules/, correcto. Añadida convención de idioma inglés a spec y state.md Patterns.
@@ -324,3 +334,26 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [ ] UX audit — hay comportamientos no obvios repartidos por la app que el usuario no sabe que existen o no entiende: debounce de 800ms en historial, que el mismo acorde no se registra dos veces seguidas, dblclick para reproducir, ⊙ para captura MIDI, drag entre secciones, etc. Hacer un recorrido sistemático de toda la app e identificar qué necesita: cambio de comportamiento, tooltip, texto de ayuda en el popup ?, o nada. Priorizar lo que causa confusión activa.
 - [ ] Revisar shortcuts completos — Space ya reproduce acorde actual/último pero P es redundante. Hacer revisión de todos los shortcuts: cuáles tienen sentido, cuáles sobran, cuáles faltan. Decidir asignaciones antes de tocar código.
 - [ ] CoF audit completo — el comportamiento actual del CoF tiene varias cosas que no son las esperadas (más allá del TODO de modo menor ya anotado). Antes de tocar código, hacer una sesión de revisión: qué hace ahora vs. qué debería hacer, qué interacciones faltan o están mal, qué es confuso visualmente. Documentar y priorizar antes de implementar.
+
+### Limpieza de código (sesión 19 — pendiente)
+
+Antes de ejecutar: añadir tests de cobertura para las funciones exportadas que se van a eliminar (confirmar que no son usadas desde tests externos), luego proceder con cada punto.
+
+**Bugs reales:**
+- [ ] `app.ts` — `reRenderNeck` (dentro de `wireLayoutEvents`) trata `detection.notes` como `number[]` cuando es `string[]`. Reemplazar la función por la implementación correcta: `d.kind === 'chord' ? d.notes : d.kind === 'note' ? [d.noteName] : (d as any).notes ?? []`, usando el `chordRoot` del candidate seleccionado. No llamar a `reRenderDiagrams` (re-renderiza todo incluyendo CoF, demasiado costoso).
+
+**Dead code — eliminar:**
+- [ ] `analyzer.ts:2` — `PITCH_NAMES_FLAT` en el import de midi.ts — nunca usado directamente en este módulo.
+- [ ] `diagrams.ts:8-9` — `loadGuitarDB()` — no-op explícito mantenido como shim. Eliminar función y el `export`.
+- [ ] `diagrams.ts:11-12` — `nextGuitarVoicing()` — no-op, nunca importada en ningún módulo. Eliminar.
+- [ ] `app.ts:4` — eliminar `loadGuitarDB` del import de diagrams.
+- [ ] `app.ts:103` — eliminar llamada `loadGuitarDB()`.
+- [ ] `app.ts:166-170` — listener `'history-capture-requested'` — evento nunca despachado en el código. Eliminar bloque completo.
+- [ ] `history.ts:48-50` — `getHistoryNotes()` — exportada, nunca importada. Eliminar.
+- [ ] `song.ts` — `updateSongState` (líneas ~407-410) — exportada, nunca importada. Eliminar.
+- [ ] `song.ts` — `moveChord` (líneas ~154-170) — exportada, nunca importada. Eliminar.
+- [ ] `song.ts` — `moveSectionUp` (líneas ~33-39) — exportada, nunca importada. Eliminar.
+- [ ] `song.ts` — `moveSectionDown` (líneas ~41-47) — exportada, nunca importada. Eliminar.
+
+**Migración de nombre legacy:**
+- [ ] `song.ts` — clave localStorage `'harmony-companion-song'` → `'modus-song'`. En `loadSong`: leer `'modus-song'` primero, si null intentar `'harmony-companion-song'` (migración silenciosa). En `saveSong`: escribir siempre a `'modus-song'`.
