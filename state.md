@@ -4,7 +4,8 @@
 
 - **Location:** `C:\Users\mykl\OneDrive\Scriptorium\DOCS\CODING GIT\MODUS\`
 - **Status:** Active development — session 14 complete (audio playback, CoF interaction)
-- **Dev command:** `node build.js` (watch) + `npx http-server . -p 8080`
+- **Dev command:** `npm run dev` (watch) · `npm run build` (one-shot) · `npx http-server . -p 8080`
+- **Build workflow:** Claude lanza `npm run dev` en background con `run_in_background: true` al inicio de sesión — usa `--watch=forever` para que no pare al cerrarse stdin. No usar `!` en el chat para esto (bloquea). Claude usa `npm run build` solo para verificar errores puntuales.
 - **Browser:** Chrome or Edge (Web MIDI API required)
 
 ---
@@ -126,6 +127,18 @@ modus/
 ---
 
 ## History
+
+### 2026-05-23 — Audio, song, UX y build — session 15
+
+Audio loading: eliminado `await audioCtx.resume()` bloqueante en `loadCurrentInstrument` — barra llega al 100% cuando el soundfont carga de verdad. Nuevo estado `'suspended'` (ámbar, "click to activate") cuando el instrumento está listo pero el AudioContext sigue suspendido. `initAudioOnGesture` transiciona de suspended a ready al primer gesto real. `pendingNotes` se descarta al cargar (evita burst de sonido en primer click).
+
+Voicing real en historial y canción: `HistoryEntry.notes` y `SongChord.notes` (nuevo campo opcional) se usan en toda la cadena — drag historial→canción, captura MIDI (⊙), dblclick en historial/canción, click en chip de historial, click en chip de canción. Todos muestran y reproducen la voicing exacta capturada. Fallback a `playChord(symbol)` cuando no hay notas almacenadas (entrada manual, CoF).
+
+Song chips: botón ⧉ duplicar (copia símbolo + notas). Edit mode muestra notas guardadas con × para limpiar voicing. Drag & drop reescrito: indicador vertical azul de 2px entre chips en lugar de outline en el chip destino. `_insertBeforeChordId` global para coordinar drop en chip vs. drop en chordsRow. Ghost del drag sin controles (ocultos síncronamente en dragstart) y con opacity 0.2 (rAF).
+
+Build: eliminado `build.js`, scripts npm: `build` (one-shot) y `dev` (`--watch=forever`). Claude lanza `npm run dev` en background al inicio de sesión.
+
+Shortcuts: Space reasignado de "capture → history" a "play current chord" (reproduce notas activas en hold mode, o último acorde si no hay detección activa). `playNoteNames` importado en app.ts.
 
 ### 2026-05-22 — Repo cleanup (post session 14)
 
@@ -276,3 +289,8 @@ Full brainstorming and spec session. Spec written (rev 5), implementation plan w
 - [x] CoF: click en segmento menor y dim → reproducir el acorde (single click = play only)
 - [ ] CoF: click en segmento menor → seleccionar modo menor (ej. click en Am pone "A Minor" como clave activa, resalta los mismos diatónicos que C Major pero con Am como i — el color de tónica se mueve a Am)
 - [ ] Song: click en acorde → reproducir (actualmente solo dblclick, revisar si es suficiente o añadir botón ▶ por acorde)
+- [ ] Revisión de organización de código — app.ts es el fichero principal pero ha crecido mucho. Evaluar si conviene extraer más responsabilidades a módulos (p.ej. zone renderers, keyboard shortcuts, panel state). Ver si la separación actual src/*.ts es la correcta o hay que reorganizar.
+- [ ] Revisión de cobertura de tests — los tests actuales cubren analyzer y song (lógica pura). Pendiente: revisar qué casos críticos no están cubiertos y si hay lógica en audio.ts, diagrams.ts o app.ts que merezca test.
+- [ ] UX audit — hay comportamientos no obvios repartidos por la app que el usuario no sabe que existen o no entiende: debounce de 800ms en historial, que el mismo acorde no se registra dos veces seguidas, dblclick para reproducir, ⊙ para captura MIDI, drag entre secciones, etc. Hacer un recorrido sistemático de toda la app e identificar qué necesita: cambio de comportamiento, tooltip, texto de ayuda en el popup ?, o nada. Priorizar lo que causa confusión activa.
+- [ ] Revisar shortcuts completos — Space ya reproduce acorde actual/último pero P es redundante. Hacer revisión de todos los shortcuts: cuáles tienen sentido, cuáles sobran, cuáles faltan. Decidir asignaciones antes de tocar código.
+- [ ] CoF audit completo — el comportamiento actual del CoF tiene varias cosas que no son las esperadas (más allá del TODO de modo menor ya anotado). Antes de tocar código, hacer una sesión de revisión: qué hace ahora vs. qué debería hacer, qué interacciones faltan o están mal, qué es confuso visualmente. Documentar y priorizar antes de implementar.

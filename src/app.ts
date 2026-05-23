@@ -1,6 +1,6 @@
 import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
-import { initAudioOnGesture, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playMidiNotes, playChord as audioPlayChord, GM_INSTRUMENT_GROUPS, setAudioStatusCallback } from './audio'
+import { initAudioOnGesture, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playMidiNotes, playNoteNames, playChord as audioPlayChord, GM_INSTRUMENT_GROUPS, setAudioStatusCallback } from './audio'
 import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
 import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyChordDetected, renderHistory } from './history'
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
@@ -43,7 +43,7 @@ let analysisScale = parseInt(localStorage.getItem('analysis-scale') ?? '11')
 // ─── Keyboard shortcuts registry ─────────────────────────────────────────────
 
 const SHORTCUTS: { key: string; action: string }[] = [
-  { key: 'Space', action: 'Capture chord → History' },
+  { key: 'Space', action: 'Play current chord (or last if none active)' },
   { key: 'H',     action: 'Toggle Hold mode' },
   { key: 'A',     action: 'Toggle Arpeggio mode' },
   { key: 'S',     action: 'Send history chip → Song' },
@@ -184,13 +184,14 @@ function init() {
     const fill = document.getElementById('audio-progress-fill')
     if (!el || !fill) return
 
-    const labels: Record<string, string> = { idle: '♪ idle', loading: '♪ loading…', ready: '♪ ready', error: '♪ error' }
+    const labels: Record<string, string> = { idle: '♪ idle', loading: '♪ loading…', suspended: '♪ click to activate', ready: '♪ ready', error: '♪ error' }
     el.textContent = labels[status] ?? status
 
     if (progressTimer) { clearInterval(progressTimer); progressTimer = null }
 
     if (status === 'loading') {
       progressValue = 0
+      fill.style.background = ''
       fill.style.transition = 'none'
       fill.style.width = '0%'
       progressTimer = setInterval(() => {
@@ -198,6 +199,10 @@ function init() {
         fill.style.transition = 'width 0.1s linear'
         fill.style.width = progressValue.toFixed(1) + '%'
       }, 100)
+    } else if (status === 'suspended') {
+      fill.style.background = '#f59e0b'
+      fill.style.transition = 'width 0.3s ease-out'
+      fill.style.width = '100%'
     } else if (status === 'ready') {
       fill.style.background = '#22c55e'
       fill.style.transition = 'width 0.2s ease-out'
@@ -207,6 +212,7 @@ function init() {
       fill.style.transition = 'width 0.2s ease-out'
       fill.style.width = '100%'
     } else {
+      fill.style.background = ''
       fill.style.transition = 'none'
       fill.style.width = '0%'
     }
@@ -225,9 +231,17 @@ function init() {
 
 function makeSongHandlers() {
   return {
-    onChordClick: (id: string, symbol: string) => {
+    onChordClick: (id: string, symbol: string, notes?: string[]) => {
       state.activeCursorId = id
-      if (symbol) triggerChordAnalysis(symbol)
+      if (!symbol) return
+      if (notes?.length) {
+        state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol())
+        state.detection = { kind: 'chord', notes, candidates: [symbol], selectedIndex: 0 }
+        renderZone1Analysis()
+        renderZone1Diagrams(notes, symbol)
+      } else {
+        triggerChordAnalysis(symbol)
+      }
     },
     onChordCapture: (id: string) => {
       state.captureTargetId = id
@@ -574,7 +588,7 @@ function onNoteChange(notes: number[]) {
     const result = analyzeNotes(notes, state.activeKey, getLastHistorySymbol())
     if (result?.kind === 'chord') {
       const sym = result.candidates[0]
-      state.song = updateChord(state.song, state.captureTargetId, sym)
+      state.song = updateChord(state.song, state.captureTargetId, sym, result.notes)
       saveSong(state.song)
       const next = findChordAfter(state.song, state.captureTargetId)
       state.activeCursorId = next?.id ?? null
@@ -760,7 +774,14 @@ function renderZone2() {
     state.activeKey,
     (entry) => {
       state.historyActiveCursorId = entry.id
-      triggerChordAnalysis(entry.symbol)
+      if (entry.notes.length > 0) {
+        state.analysis = buildHarmonicAnalysis(entry.symbol, state.activeKey, getLastHistorySymbol())
+        state.detection = { kind: 'chord', notes: entry.notes, candidates: [entry.symbol], selectedIndex: 0 }
+        renderZone1Analysis()
+        renderZone1Diagrams(entry.notes, entry.symbol)
+      } else {
+        triggerChordAnalysis(entry.symbol)
+      }
       renderZone2()
     },
     state.historyActiveCursorId
@@ -888,8 +909,13 @@ function wireKeyboard() {
         setModeBtn(getMode() === 'arpeggio' ? 'normal' : 'arpeggio'); break
       case ' ':
         e.preventDefault()
-        if (state.detection?.kind === 'chord') {
-          addEntry(state.detection.candidates[0], state.detection.notes)
+        initAudioOnGesture()
+        if (state.detection?.kind === 'chord' && state.detection.notes.length > 0) {
+          playNoteNames(state.detection.notes)
+        } else if (lastChordMidi.length > 0) {
+          playMidiNotes(lastChordMidi)
+        } else if (lastChordSymbol) {
+          audioPlayChord(lastChordSymbol)
         }
         break
       case 's': case 'S': {

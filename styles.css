@@ -418,6 +418,7 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
 .measure-row { display: flex; align-items: flex-start; gap: 4px; }
 .measure-num { font-size: 10px; color: #6b7280; min-width: 18px; padding-top: 8px; }
 .chords-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; }
+.chord-drop-indicator { width: 2px; min-height: 40px; background: #4f46e5; border-radius: 2px; pointer-events: none; align-self: stretch; flex-shrink: 0; }
 .chord-add-btn {
   width: 32px;
   height: 40px;

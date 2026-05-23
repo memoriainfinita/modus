@@ -348,15 +348,11 @@
     loadingInstrument = true;
     instrument = null;
     setStatus("loading");
-    Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: "FluidR3_GM" }).then(async (inst) => {
+    Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: "FluidR3_GM" }).then((inst) => {
       instrument = inst;
       loadingInstrument = false;
-      await audioCtx.resume();
-      setStatus("ready");
-      for (const n of pendingNotes) {
-        instrument.play(n.midi, audioCtx.currentTime, { duration: n.duration, gain: volume });
-      }
       pendingNotes = [];
+      setStatus(audioCtx.state === "suspended" ? "suspended" : "ready");
     }).catch((err) => {
       loadingInstrument = false;
       setStatus("error");
@@ -365,7 +361,10 @@
   }
   function initAudioOnGesture() {
     ensureContext();
-    audioCtx.resume();
+    audioCtx.resume().then(() => {
+      if (instrument && audioStatus === "suspended")
+        setStatus("ready");
+    });
     if (!instrument && !loadingInstrument)
       loadCurrentInstrument();
   }
@@ -410,6 +409,18 @@
       return;
     audioCtx.resume().then(() => {
       for (const midi of midiNotes) {
+        instrument.play(midi, audioCtx.currentTime, { duration, gain: volume });
+      }
+    });
+  }
+  function playNoteNames(noteNames, duration = 2) {
+    if (!instrument || !audioCtx)
+      return;
+    const midis = noteNames.map(noteNameToMidi).filter((m) => m !== null);
+    if (!midis.length)
+      return;
+    audioCtx.resume().then(() => {
+      for (const midi of midis) {
         instrument.play(midi, audioCtx.currentTime, { duration, gain: volume });
       }
     });
@@ -1073,11 +1084,16 @@ K:${abcKey}
       <span class="history-chip-roman">${roman}</span>
     `;
       chip.addEventListener("click", () => onChipClick(entry));
-      chip.addEventListener("dblclick", () => playChord(entry.symbol));
+      chip.addEventListener("dblclick", () => {
+        if (entry.notes.length > 0)
+          playNoteNames(entry.notes);
+        else
+          playChord(entry.symbol);
+      });
       chip.title = `${entry.symbol} \u2014 dblclick to play, drag to song, right-click to remove`;
       chip.draggable = true;
       chip.addEventListener("dragstart", (e) => {
-        e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol }));
+        e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol, notes: entry.notes }));
         e.dataTransfer.effectAllowed = "copy";
         chip.style.opacity = "0.5";
       });
@@ -1187,9 +1203,9 @@ K:${abcKey}
       })
     };
   }
-  function addChord(song, sectionId, measureId, symbol) {
+  function addChord(song, sectionId, measureId, symbol, notes) {
     const valid = isValidChordSymbol(symbol);
-    const chord = { id: newId(), symbol, valid };
+    const chord = { id: newId(), symbol, valid, ...notes?.length ? { notes } : {} };
     return {
       ...song,
       sections: song.sections.map((s) => s.id !== sectionId ? s : {
@@ -1201,9 +1217,9 @@ K:${abcKey}
       })
     };
   }
-  function insertChordAfter(song, afterChordId, symbol) {
+  function insertChordAfter(song, afterChordId, symbol, notes) {
     const valid = isValidChordSymbol(symbol);
-    const newChord = { id: newId(), symbol, valid };
+    const newChord = { id: newId(), symbol, valid, ...notes?.length ? { notes } : {} };
     return {
       ...song,
       sections: song.sections.map((s) => ({
@@ -1219,7 +1235,7 @@ K:${abcKey}
       }))
     };
   }
-  function updateChord(song, chordId, symbol) {
+  function updateChord(song, chordId, symbol, notes) {
     const valid = isValidChordSymbol(symbol);
     return {
       ...song,
@@ -1227,7 +1243,7 @@ K:${abcKey}
         ...s,
         measures: s.measures.map((m) => ({
           ...m,
-          chords: m.chords.map((c) => c.id === chordId ? { ...c, symbol, valid } : c)
+          chords: m.chords.map((c) => c.id === chordId ? { ...c, symbol, valid, ...notes?.length ? { notes } : { notes: void 0 } } : c)
         }))
       }))
     };
@@ -1243,6 +1259,15 @@ K:${abcKey}
         }))
       }))
     };
+  }
+  function duplicateChord(song, chordId) {
+    for (const s of song.sections)
+      for (const m of s.measures) {
+        const c = m.chords.find((ch) => ch.id === chordId);
+        if (c)
+          return insertChordAfter(song, chordId, c.symbol, c.notes);
+      }
+    return song;
   }
   function moveChordToPosition(song, chordId, targetSectionId, targetMeasureId, beforeChordId) {
     let movedChord;
@@ -1408,6 +1433,8 @@ K:${abcKey}
   var _draggedSectionId = null;
   var _draggedChordId = null;
   var _pendingConfirmEl = null;
+  var _dropIndicator = null;
+  var _insertBeforeChordId = null;
   function showNotice(msg, type = "info") {
     if (!_container)
       return;
@@ -1805,23 +1832,28 @@ K:${abcKey}
       chordsRow.style.outline = "1px dashed #4f46e5";
     });
     chordsRow.addEventListener("dragleave", (e) => {
-      if (!chordsRow.contains(e.relatedTarget))
+      if (!chordsRow.contains(e.relatedTarget)) {
         chordsRow.style.outline = "";
+        _dropIndicator?.remove();
+        _insertBeforeChordId = null;
+      }
     });
     chordsRow.addEventListener("drop", (e) => {
       chordsRow.style.outline = "";
+      _dropIndicator?.remove();
       const histData = e.dataTransfer.getData("application/x-history-chord");
       if (histData) {
         e.preventDefault();
-        const { symbol } = JSON.parse(histData);
-        _song = addChord(_song, section.id, measure.id, symbol);
+        const { symbol, notes } = JSON.parse(histData);
+        _song = addChord(_song, section.id, measure.id, symbol, notes);
         saveSong(_song);
         h.onSongChange(_song);
       } else if (_draggedChordId) {
         e.preventDefault();
         e.stopPropagation();
-        _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id);
+        _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, _insertBeforeChordId ?? void 0);
         _draggedChordId = null;
+        _insertBeforeChordId = null;
         saveSong(_song);
         h.onSongChange(_song);
       }
@@ -1900,30 +1932,56 @@ K:${abcKey}
     const controls = document.createElement("div");
     controls.className = "chord-chip-controls";
     const editBtn = makeSmallBtn("\u270E", () => {
+      let notesState = chord.notes ? [...chord.notes] : void 0;
+      const prevVal = chord.symbol;
+      const editWrap = document.createElement("div");
+      editWrap.style.cssText = "display:flex;flex-direction:column;gap:2px;padding:2px";
       const input = document.createElement("input");
       input.className = "chord-input";
       input.value = chord.symbol;
-      const prevVal = chord.symbol;
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          _song = updateChord(_song, chord.id, input.value.trim() || prevVal);
-          saveSong(_song);
-          h.onSongChange(_song);
-        }
-        if (e.key === "Escape") {
-          h.onSongChange(_song);
-        }
-      });
-      input.addEventListener("blur", () => {
-        _song = updateChord(_song, chord.id, input.value.trim() || prevVal);
+      const commit = () => {
+        _song = updateChord(_song, chord.id, input.value.trim() || prevVal, notesState);
         saveSong(_song);
         h.onSongChange(_song);
+      };
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter")
+          commit();
+        if (e.key === "Escape")
+          h.onSongChange(_song);
       });
+      input.addEventListener("blur", commit);
+      editWrap.appendChild(input);
+      if (notesState?.length) {
+        const notesRow = document.createElement("div");
+        notesRow.style.cssText = "display:flex;align-items:center;gap:3px;font-size:9px;color:#9ca3af;white-space:nowrap;overflow:hidden";
+        const notesText = document.createElement("span");
+        notesText.textContent = "\u2669 " + notesState.join(" ");
+        notesText.style.overflow = "hidden";
+        notesText.style.textOverflow = "ellipsis";
+        const clearBtn = document.createElement("button");
+        clearBtn.textContent = "\xD7";
+        clearBtn.title = "Clear stored voicing";
+        clearBtn.style.cssText = "background:none;border:none;color:#6b7280;cursor:pointer;padding:0 2px;font-size:10px;flex-shrink:0";
+        clearBtn.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          notesState = void 0;
+          notesRow.remove();
+        });
+        notesRow.append(notesText, clearBtn);
+        editWrap.appendChild(notesRow);
+      }
       wrap.innerHTML = "";
-      wrap.appendChild(input);
+      wrap.appendChild(editWrap);
       input.focus();
     });
     editBtn.title = "Edit chord symbol";
+    const dupBtn = makeSmallBtn("\u29C9", () => {
+      _song = duplicateChord(_song, chord.id);
+      saveSong(_song);
+      h.onSongChange(_song);
+    });
+    dupBtn.title = "Duplicate chord";
     const delBtn = makeSmallBtn("\xD7", () => {
       _song = removeChord(_song, chord.id);
       saveSong(_song);
@@ -1936,14 +1994,17 @@ K:${abcKey}
       captureBtn.style.color = "#818cf8";
       captureBtn.style.fontWeight = "700";
     }
-    controls.append(editBtn, captureBtn, delBtn);
+    controls.append(editBtn, dupBtn, captureBtn, delBtn);
     wrap.appendChild(controls);
     wrap.addEventListener("mouseenter", () => controls.style.display = "flex");
     wrap.addEventListener("mouseleave", () => controls.style.display = "none");
-    wrap.addEventListener("click", () => h.onChordClick(chord.id, chord.symbol));
+    wrap.addEventListener("click", () => h.onChordClick(chord.id, chord.symbol, chord.notes));
     wrap.addEventListener("dblclick", () => {
       initAudioOnGesture();
-      playChord(chord.symbol);
+      if (chord.notes?.length)
+        playNoteNames(chord.notes);
+      else
+        playChord(chord.symbol);
     });
     wrap.draggable = true;
     wrap.addEventListener("dragstart", (e) => {
@@ -1951,14 +2012,17 @@ K:${abcKey}
       _draggedChordId = chord.id;
       _draggedSectionId = null;
       e.dataTransfer.effectAllowed = "move";
+      controls.style.display = "none";
       requestAnimationFrame(() => {
-        wrap.style.opacity = "0.5";
+        wrap.style.opacity = "0.2";
       });
     });
     wrap.addEventListener("dragend", () => {
       _draggedChordId = null;
       wrap.style.opacity = "1";
-      wrap.style.outline = "";
+      controls.style.display = "none";
+      _dropIndicator?.remove();
+      _insertBeforeChordId = null;
     });
     wrap.addEventListener("dragover", (e) => {
       if (!_draggedChordId || _draggedChordId === chord.id)
@@ -1966,26 +2030,31 @@ K:${abcKey}
       e.preventDefault();
       e.stopPropagation();
       e.dataTransfer.dropEffect = "move";
+      if (!_dropIndicator) {
+        _dropIndicator = document.createElement("div");
+        _dropIndicator.className = "chord-drop-indicator";
+      }
       const rect = wrap.getBoundingClientRect();
-      wrap.style.outline = e.clientX < rect.left + rect.width / 2 ? "2px solid #4f46e5" : "2px solid #a5b4fc";
-      wrap.style.outlineOffset = "-2px";
-    });
-    wrap.addEventListener("dragleave", () => {
-      wrap.style.outline = "";
+      const before = e.clientX < rect.left + rect.width / 2;
+      if (before) {
+        _insertBeforeChordId = chord.id;
+        wrap.parentNode.insertBefore(_dropIndicator, wrap);
+      } else {
+        const targetMeasure = _song.sections.find((s) => s.id === section.id)?.measures.find((m) => m.id === measure.id);
+        const chordIdx = targetMeasure?.chords.findIndex((c) => c.id === chord.id) ?? -1;
+        _insertBeforeChordId = targetMeasure?.chords[chordIdx + 1]?.id ?? null;
+        wrap.parentNode.insertBefore(_dropIndicator, wrap.nextSibling);
+      }
     });
     wrap.addEventListener("drop", (e) => {
       e.preventDefault();
       e.stopPropagation();
       if (!_draggedChordId || _draggedChordId === chord.id)
         return;
-      const rect = wrap.getBoundingClientRect();
-      const before = e.clientX < rect.left + rect.width / 2;
-      wrap.style.outline = "";
-      const targetMeasure = _song.sections.find((s) => s.id === section.id)?.measures.find((m) => m.id === measure.id);
-      const chordIdx = targetMeasure?.chords.findIndex((c) => c.id === chord.id) ?? -1;
-      const beforeChordId = before ? chord.id : targetMeasure?.chords[chordIdx + 1]?.id;
-      _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, beforeChordId);
+      _dropIndicator?.remove();
+      _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, _insertBeforeChordId ?? void 0);
       _draggedChordId = null;
+      _insertBeforeChordId = null;
       saveSong(_song);
       h.onSongChange(_song);
     });
@@ -2104,7 +2173,7 @@ K:${abcKey}
   };
   var analysisScale = parseInt(localStorage.getItem("analysis-scale") ?? "11");
   var SHORTCUTS = [
-    { key: "Space", action: "Capture chord \u2192 History" },
+    { key: "Space", action: "Play current chord (or last if none active)" },
     { key: "H", action: "Toggle Hold mode" },
     { key: "A", action: "Toggle Arpeggio mode" },
     { key: "S", action: "Send history chip \u2192 Song" },
@@ -2239,7 +2308,7 @@ K:${abcKey}
       const fill = document.getElementById("audio-progress-fill");
       if (!el || !fill)
         return;
-      const labels = { idle: "\u266A idle", loading: "\u266A loading\u2026", ready: "\u266A ready", error: "\u266A error" };
+      const labels = { idle: "\u266A idle", loading: "\u266A loading\u2026", suspended: "\u266A click to activate", ready: "\u266A ready", error: "\u266A error" };
       el.textContent = labels[status] ?? status;
       if (progressTimer) {
         clearInterval(progressTimer);
@@ -2247,6 +2316,7 @@ K:${abcKey}
       }
       if (status === "loading") {
         progressValue = 0;
+        fill.style.background = "";
         fill.style.transition = "none";
         fill.style.width = "0%";
         progressTimer = setInterval(() => {
@@ -2254,6 +2324,10 @@ K:${abcKey}
           fill.style.transition = "width 0.1s linear";
           fill.style.width = progressValue.toFixed(1) + "%";
         }, 100);
+      } else if (status === "suspended") {
+        fill.style.background = "#f59e0b";
+        fill.style.transition = "width 0.3s ease-out";
+        fill.style.width = "100%";
       } else if (status === "ready") {
         fill.style.background = "#22c55e";
         fill.style.transition = "width 0.2s ease-out";
@@ -2263,6 +2337,7 @@ K:${abcKey}
         fill.style.transition = "width 0.2s ease-out";
         fill.style.width = "100%";
       } else {
+        fill.style.background = "";
         fill.style.transition = "none";
         fill.style.width = "0%";
       }
@@ -2276,10 +2351,18 @@ K:${abcKey}
   }
   function makeSongHandlers() {
     return {
-      onChordClick: (id, symbol) => {
+      onChordClick: (id, symbol, notes) => {
         state.activeCursorId = id;
-        if (symbol)
+        if (!symbol)
+          return;
+        if (notes?.length) {
+          state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol());
+          state.detection = { kind: "chord", notes, candidates: [symbol], selectedIndex: 0 };
+          renderZone1Analysis();
+          renderZone1Diagrams(notes, symbol);
+        } else {
           triggerChordAnalysis(symbol);
+        }
       },
       onChordCapture: (id) => {
         state.captureTargetId = id;
@@ -2635,7 +2718,7 @@ K:${abcKey}
       const result2 = analyzeNotes(notes, state.activeKey, getLastHistorySymbol());
       if (result2?.kind === "chord") {
         const sym = result2.candidates[0];
-        state.song = updateChord(state.song, state.captureTargetId, sym);
+        state.song = updateChord(state.song, state.captureTargetId, sym, result2.notes);
         saveSong(state.song);
         const next = findChordAfter(state.song, state.captureTargetId);
         state.activeCursorId = next?.id ?? null;
@@ -2819,7 +2902,14 @@ K:${abcKey}
       state.activeKey,
       (entry) => {
         state.historyActiveCursorId = entry.id;
-        triggerChordAnalysis(entry.symbol);
+        if (entry.notes.length > 0) {
+          state.analysis = buildHarmonicAnalysis(entry.symbol, state.activeKey, getLastHistorySymbol());
+          state.detection = { kind: "chord", notes: entry.notes, candidates: [entry.symbol], selectedIndex: 0 };
+          renderZone1Analysis();
+          renderZone1Diagrams(entry.notes, entry.symbol);
+        } else {
+          triggerChordAnalysis(entry.symbol);
+        }
         renderZone2();
       },
       state.historyActiveCursorId
@@ -2934,8 +3024,13 @@ K:${abcKey}
           break;
         case " ":
           e.preventDefault();
-          if (state.detection?.kind === "chord") {
-            addEntry(state.detection.candidates[0], state.detection.notes);
+          initAudioOnGesture();
+          if (state.detection?.kind === "chord" && state.detection.notes.length > 0) {
+            playNoteNames(state.detection.notes);
+          } else if (lastChordMidi.length > 0) {
+            playMidiNotes(lastChordMidi);
+          } else if (lastChordSymbol) {
+            playChord(lastChordSymbol);
           }
           break;
         case "s":
