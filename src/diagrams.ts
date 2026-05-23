@@ -3,14 +3,6 @@ import { playNoteByName, playChord, initAudioOnGesture } from './audio'
 export let guitarControlsVisible = JSON.parse(localStorage.getItem('panel-guitarControls') ?? 'true')
 export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v }
 
-// ─── Guitar voicings — via UMT.getFretboardVoicings (no external fetch needed) ─
-
-// loadGuitarDB kept as no-op so app.ts callers don't need to change
-export function loadGuitarDB(): Promise<void> { return Promise.resolve() }
-
-// nextGuitarVoicing kept as no-op — voicings shown all at once now
-export function nextGuitarVoicing(_chordSymbol: string) {}
-
 // ─── Staff ────────────────────────────────────────────────────────────────────
 
 function activeKeyToAbcKey(keyStr: string | null): string {

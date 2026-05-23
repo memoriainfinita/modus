@@ -3,7 +3,7 @@ import {
   createSong, addSection, addMeasure, removeMeasure, addChord,
   removeChord, removeSection, updateSection, transposeSong,
   parseProgressionText, computeMeasureNumbers, duplicateSection,
-  insertChordAfter, updateChord, duplicateChord, moveChord,
+  insertChordAfter, updateChord, duplicateChord,
   moveChordToPosition, reorderSections, reorderChordInMeasure,
   computeDegree, isBorrowedChord,
 } from '../src/song'
@@ -286,43 +286,6 @@ describe('duplicateChord', () => {
     const before = s.sections[0].measures[0].chords.length
     s = duplicateChord(s, id)
     expect(s.sections[0].measures[0].chords).toHaveLength(before + 1)
-  })
-})
-
-// ─── moveChord ────────────────────────────────────────────────────────────────
-
-describe('moveChord', () => {
-  it('moves chord left', () => {
-    let s = songWithChords()
-    const id = s.sections[0].measures[0].chords[1].id // Am7 (index 1)
-    s = moveChord(s, id, 'left')
-    const chords = s.sections[0].measures[0].chords
-    expect(chords[0].symbol).toBe('Am7')
-    expect(chords[1].symbol).toBe('Cmaj7')
-  })
-
-  it('moves chord right', () => {
-    let s = songWithChords()
-    const id = s.sections[0].measures[0].chords[0].id // Cmaj7
-    s = moveChord(s, id, 'right')
-    const chords = s.sections[0].measures[0].chords
-    expect(chords[0].symbol).toBe('Am7')
-    expect(chords[1].symbol).toBe('Cmaj7')
-  })
-
-  it('no-op at left boundary', () => {
-    let s = songWithChords()
-    const id = s.sections[0].measures[0].chords[0].id
-    s = moveChord(s, id, 'left')
-    expect(s.sections[0].measures[0].chords[0].symbol).toBe('Cmaj7')
-  })
-
-  it('no-op at right boundary', () => {
-    let s = songWithChords()
-    const chords = s.sections[0].measures[0].chords
-    const id = chords[chords.length - 1].id
-    s = moveChord(s, id, 'right')
-    expect(s.sections[0].measures[0].chords[chords.length - 1].symbol).toBe('F')
   })
 })
 

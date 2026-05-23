@@ -1,7 +1,7 @@
 import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
 import { initAudioOnGesture, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playMidiNotes, playNoteNames, playChord as audioPlayChord, GM_INSTRUMENT_GROUPS, setAudioStatusCallback } from './audio'
-import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
+import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
 import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyChordDetected, renderHistory } from './history'
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
 import type { AppState, HistoryEntry, SongChord } from './types'
@@ -100,7 +100,6 @@ function init() {
 
   document.addEventListener('click', initAudioOnGesture, { once: true })
 
-  loadGuitarDB()
   buildLayout()
   wireKeyboard()
   renderZone1Diagrams([], null)
@@ -160,12 +159,6 @@ function init() {
       fill.style.background = ''
       fill.style.transition = 'none'
       fill.style.width = '0%'
-    }
-  })
-
-  window.addEventListener('history-capture-requested', () => {
-    if (state.detection?.kind === 'chord') {
-      addEntry(state.detection.candidates[0], state.detection.notes)
     }
   })
 
@@ -412,15 +405,11 @@ function wireLayoutEvents() {
   })
 
   const reRenderNeck = () => {
-    const notes = state.detection?.kind !== 'note' && (state.detection as any)?.notes
-      ? (state.detection as any).notes.map((n: number) => {
-          const FLAT = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
-          return FLAT[n % 12] + (Math.floor(n / 12) - 1)
-        })
-      : []
-    const sym = state.detection?.kind === 'chord'
-      ? state.detection.candidates[state.detection.selectedIndex]
-      : null
+    const d = state.detection
+    const notes = d?.kind === 'chord' ? d.notes
+      : d?.kind === 'note' ? [d.noteName]
+      : (d as any)?.notes ?? []
+    const sym = d?.kind === 'chord' ? d.candidates[d.selectedIndex] : null
     const chordRoot = sym ? (sym.match(/^([A-G][b#]?)/) ?? [,''])[1] || null : null
     renderNeck($('neck-container'), notes, chordRoot)
   }
