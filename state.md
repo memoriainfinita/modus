@@ -125,6 +125,7 @@ modus/
 
 ## Patterns
 
+- [language] Everything in English: code, comments, documentation (spec, README, state.md), commit messages. This is a public GitHub project. Confirmed 2026-05.
 - [typescript] esbuild watch mode, same toolchain as UMT and notae. Confirmed 2026-05.
 - [naming] Project name: Modus (Latin — mode, measure). Confirmed 2026-05.
 - [umt] detectChords takes Note[] not strings — always convert with parseNote first.

@@ -37,6 +37,8 @@ GPL-3.0. Built for the music community, not for profit. No analytics, no account
 
 **User-configurable.** Every panel is togglable. Font sizes, diagram sizes, visible analysis fields — all adjustable and persisted to localStorage. Direction: modular layout where the user controls panel positions (VSCode-style), color themes for background and diagrams.
 
+**English throughout.** Code, comments, documentation, and commit messages are all in English. This is a public open source project.
+
 **Serverless.** No backend, no database, no account system. Pure HTML + JS served from any static host. A local file server (`http-server`) is needed for development because some Chromium versions block Web MIDI API on `file://` URLs — but no application server is ever required.
 
 ---
