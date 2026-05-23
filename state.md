@@ -3,7 +3,7 @@
 ## System
 
 - **Location:** `C:\Users\mykl\OneDrive\Scriptorium\DOCS\CODING GIT\MODUS\`
-- **Status:** Active development — session 17 complete (app.ts refactor)
+- **Status:** Active development — session 18 complete (docs audit + spec rewrite)
 - **Dev command:** `npm run dev` (watch) · `npm run build` (one-shot) · `npx http-server . -p 8080`
 - **Build workflow:** Claude lanza `npm run dev` en background con `run_in_background: true` al inicio de sesión — usa `--watch=forever` para que no pare al cerrarse stdin. No usar `!` en el chat para esto (bloquea). Claude usa `npm run build` solo para verificar errores puntuales.
 - **Browser:** Chrome or Edge (Web MIDI API required)
@@ -12,14 +12,14 @@
 
 ## Project
 
-**Modus** — real-time MIDI harmonic analysis tool and song structure builder.
+**Modus** — real-time harmonic analysis tool for musicians.
 
-A single-page TypeScript app used alongside MuseScore during song transcription. Connect a MIDI controller, play notes, see chord detection + full harmonic analysis in real time. Build and annotate song structures with Roman numeral degree display.
+Connect a MIDI controller, play notes, get instant chord detection and full harmonic analysis. A chord history and song structure builder extend the core. Serverless — pure HTML + JS, no backend.
 
-**Spec:** `docs/spec.md`
-**Plan:** `docs/plan.md`
+Part of the **memoriainfinita** ecosystem alongside UMT and notae. GPL-3.0.
 
-The plan has **11 tasks**. All code is written out step by step. Start from Task 1.
+**Spec:** `docs/spec.md`  
+**Plan:** `docs/plan.md` (11 tasks — completed, session 21-May-2026)
 
 ---
 
@@ -32,20 +32,18 @@ The plan has **11 tasks**. All code is written out step by step. Start from Task
 | Diagrams | notae via jsDelivr CDN (`Notae.*` global) |
 | Staff | abcjs 6.4.0 via CDN (`ABCJS.*` global) |
 | MIDI | Web MIDI API (Chrome/Edge only) |
-| Guitar voicings | @tombatossals/chords-db 1.4.5 via jsDelivr (JSON fetch) |
-| Audio | WebAudioFont 2.1.0 via jsDelivr CDN (GM piano) |
+| Guitar voicings | `UMT.getFretboardVoicings(chord, UMT.GUITAR_STANDARD)` — no fetch |
+| Audio | soundfont-player 0.12.0 + FluidR3_GM (npm) |
+| Styles | Tailwind CSS |
 | Persistence | localStorage |
 
-### Exact CDN URLs (for index.html)
+### CDN script tags (index.html)
 
 ```html
 <script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/memoriainfinita/notae@master/dist/notae.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.0/dist/abcjs-basic-min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/webaudiofont@2.1.0/npm/dist/WebAudioFontPlayer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/webaudiofont@2.1.0/npm/dist/sf2staccato/_tone_0000_GeneralUserGS_sf2_file.js"></script>
 ```
-Guitar DB (fetch): `https://cdn.jsdelivr.net/npm/@tombatossals/chords-db@1.4.5/src/data/guitar.json`
 
 ---
 
@@ -71,7 +69,6 @@ UMT.Harmony.analyzeProgression(chords: Chord[], key: string): {
 // ChordAnalysis has: roman, degree, function ('T'|'S'|'D'|'unknown'),
 // isDiatonic, isBorrowed, borrowedFrom, isSecondary, secondaryTarget, cadenceWithNext
 
-// Figured bass FROM a chord (not parsing — generating)
 UMT.FiguredBass.fromChord(chord: Chord, bassNote: Note): string
 
 // Key detection (Krumhansl-Schmuckler)
@@ -100,17 +97,27 @@ const umtNote = UMT.parseNote(noteName)
 
 ---
 
-## File Structure (target)
+## File Structure
 
 ```
 modus/
   src/
-    app.ts         types.ts       globals.d.ts
-    midi.ts        analyzer.ts    audio.ts
-    diagrams.ts    history.ts     song.ts
+    app.ts              — entry point, wires all modules
+    types.ts            — shared types
+    globals.d.ts        — CDN global declarations
+    midi.ts             — Web MIDI setup, modes, callbacks
+    analyzer.ts         — chord/interval detection via UMT
+    diagrams.ts         — staff, piano, fretboard, CoF rendering
+    history.ts          — chord history log
+    song.ts             — song structure state and rendering
+    audio.ts            — soundfont-player, instrument selector, playback
+    shortcuts.ts        — SHORTCUTS data, help popup
+    analysis-panel.ts   — analysis fields rendering (renderZone1Analysis)
   tests/
-    analyzer.test.ts   song.test.ts
-  index.html   build.js   package.json   tsconfig.json   vitest.config.ts
+    analyzer.test.ts
+    song.test.ts
+  index.html   package.json   tsconfig.json   vitest.config.ts
+  styles.css   (to be migrated to Tailwind)
   dist/app.js  (generated)
 ```
 
@@ -127,6 +134,16 @@ modus/
 ---
 
 ## History
+
+### 2026-05-23 — Docs audit + spec rewrite — session 18
+
+Sin cambios de código. Sesión completa de revisión y limpieza de documentación.
+
+`docs/spec.md` reescrito desde rev 5 a rev 6: nombre corregido (Modus, no "Harmony Companion"), MuseScore eliminado del objetivo, ecosistema y filosofía añadidos (GPL3, memoriainfinita, not for profit), stack actualizado (soundfont-player, UMT.getFretboardVoicings, Tailwind, sin tombatossals ni WebAudioFont), jerarquía de zonas establecida explícitamente (Detector como núcleo, History y Song como módulos de soporte), layout diagram corregido (Instruments panel separado de Notation, toolbar completo), chord summary documentado, sección Instruments panel añadida, UMT API notes movidas a sección propia. Eliminados: duplicados (device selector, key selector), relleno y marketing, términos inventados ("manual chord analysis", "at actual octave"), detalle de implementación del piano post-processing movido a referencia a state.md.
+
+`README.md` actualizado: sin MuseScore, ecosistema + filosofía, stack correcto (Tailwind, soundfont-player), comandos npm correctos (sin node build.js), project structure con shortcuts.ts y analysis-panel.ts, sección "Who it's for" añadida, Instruments panel documentado como sección separada de Notation. Eliminados: marketing puffery, términos vagos.
+
+`state.md` corregido: descripción del proyecto sin MuseScore, stack actualizado (WebAudioFont y tombatossals eliminados, soundfont-player y Tailwind añadidos), file structure actualizado (build.js eliminado, shortcuts.ts y analysis-panel.ts añadidos), plan marcado como completado.
 
 ### 2026-05-23 — app.ts refactor — session 17
 
