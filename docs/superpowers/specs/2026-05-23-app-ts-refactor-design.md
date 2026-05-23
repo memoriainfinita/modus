@@ -34,17 +34,15 @@ The keyboard/help block (~80 lines) is self-contained and easy to move.
 ```ts
 // analysis-panel.ts exports:
 
-export const ANALYSIS_FIELD_KEYS: readonly AnalysisFieldKey[]
+export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','diatonic','scales','cadence','secondary','coltrane','negharm','subs'] as const
+export type AnalysisFieldKey = (typeof ANALYSIS_FIELD_KEYS)[number]  // derived — single source of truth
 export const ANALYSIS_FIELD_LABELS: Record<AnalysisFieldKey, string>
 export const ANALYSIS_FIELD_TOOLTIPS: Record<AnalysisFieldKey, string>
-export type AnalysisFieldKey = 'roman'|'function'|'figbass'|'diatonic'|'scales'|'cadence'|'secondary'|'coltrane'|'negharm'|'subs'
 
 export function getChordQuality(chordSymbol: string): string
 
-export function renderChordSummary(
-  detection: DetectionResult,
-  onAltSelect: (index: number) => void
-): void
+// renderChordSummary is NOT exported — internal to analysis-panel.ts, called only by renderZone1Analysis
+function renderChordSummary(detection: DetectionResult, onAltSelect: (index: number) => void): void
 
 export function renderZone1Analysis(
   detection: DetectionResult,
@@ -92,14 +90,27 @@ const onAltSelect = (idx: number) => {
 ```ts
 // shortcuts.ts exports:
 export function toggleHelp(): void
-export function closeHelp(): void
+export function closeHelp(): boolean  // returns true if popup was open and got closed
 ```
 
-**`app.ts` changes:** imports `toggleHelp` and `closeHelp` from `./shortcuts`. Two call sites:
-- `$('btn-help').addEventListener('click', toggleHelp)`
-- `wireKeyboard`: Escape handler calls `closeHelp()` before clearing cursors; `?` key calls `toggleHelp()`
+**`closeHelp` returns `boolean`** to preserve the Escape key behavior. Current logic in `wireKeyboard`:
+```ts
+case 'Escape':
+  if (helpVisible) { closeHelp(); break }  // closes help, stops — does NOT clear cursors
+  state.activeCursorId = null              // only runs if help was already closed
+```
+After extraction, `helpVisible` is private to `shortcuts.ts`. The return value replaces the direct read:
+```ts
+case 'Escape':
+  if (closeHelp()) break  // if help was open, closeHelp closed it and returns true → stop
+  state.activeCursorId = null  // only runs if help wasn't open
+```
 
-No state access. No circular deps. `SHORTCUTS` stays private inside `shortcuts.ts`.
+**`app.ts` changes:** imports `toggleHelp` and `closeHelp` from `./shortcuts`. Call sites:
+- `$('btn-help').addEventListener('click', toggleHelp)`
+- `wireKeyboard`: Escape handler uses `if (closeHelp()) break`; `?` key calls `toggleHelp()`
+
+No state access. No circular deps. `SHORTCUTS` and `helpVisible` stay private inside `shortcuts.ts`.
 
 ---
 
