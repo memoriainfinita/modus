@@ -108,8 +108,9 @@ export interface AppState {
   captureTargetId: string | null       // SongChord.id waiting for MIDI capture
   panels: {
     notation: boolean
-    piano: boolean
-    neck: boolean
+    instruments: boolean
+    colPiano: boolean
+    colNeck: boolean
     history: boolean
     song: boolean
     cofControls: boolean

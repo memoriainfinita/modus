@@ -5,6 +5,7 @@ import { loadGuitarDB, renderStaff, renderPiano, renderGuitar, renderNeck, rende
 import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyChordDetected, renderHistory } from './history'
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
 import type { AppState, HistoryEntry, SongChord } from './types'
+import { toggleHelp, closeHelp } from './shortcuts'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -39,20 +40,6 @@ let analysisFieldsVisible: Record<AnalysisFieldKey, boolean> = {
   subs:      JSON.parse(localStorage.getItem('analysis-field-subs')      ?? 'true'),
 }
 let analysisScale = parseInt(localStorage.getItem('analysis-scale') ?? '11')
-
-// ─── Keyboard shortcuts registry ─────────────────────────────────────────────
-
-const SHORTCUTS: { key: string; action: string }[] = [
-  { key: 'Space', action: 'Play current chord (or last if none active)' },
-  { key: 'H',     action: 'Toggle Hold mode' },
-  { key: 'A',     action: 'Toggle Arpeggio mode' },
-  { key: 'S',     action: 'Send history chip → Song' },
-  { key: 'C',     action: 'Clear history' },
-  { key: 'Esc',   action: 'Clear cursor / capture' },
-  { key: '1–9',   action: 'Select chord candidate' },
-  { key: 'P',     action: 'Play current chord' },
-  { key: '?',     action: 'Show / hide this panel' },
-]
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -106,42 +93,6 @@ function showModal(title: string, message: string, onConfirm: () => void, onCanc
   backdrop.querySelector('.modal-btn-cancel')!.addEventListener('click', () => { close(); onCancel?.() })
   backdrop.querySelector('.modal-btn-confirm')!.addEventListener('click', () => { close(); onConfirm() })
   backdrop.addEventListener('mousedown', e => { if (e.target === backdrop) { close(); onCancel?.() } })
-}
-
-// ─── Help popup ──────────────────────────────────────────────────────────────
-
-let helpVisible = false
-
-function closeHelp() {
-  helpVisible = false
-  document.getElementById('shortcut-help')?.remove()
-  document.removeEventListener('mousedown', closeHelpOnOutsideClick)
-}
-
-function toggleHelp() {
-  if (helpVisible) { closeHelp(); return }
-  helpVisible = true
-  const popup = document.createElement('div')
-  popup.id = 'shortcut-help'
-  popup.className = 'shortcut-help-popup'
-  popup.innerHTML = `
-    <div class="shortcut-help-header">
-      <span>Keyboard shortcuts</span>
-      <button class="shortcut-help-close">×</button>
-    </div>
-    ${SHORTCUTS.map(s => `
-      <div class="shortcut-row">
-        <kbd class="shortcut-key">${s.key}</kbd>
-        <span class="shortcut-action">${s.action}</span>
-      </div>`).join('')}`
-  document.body.appendChild(popup)
-  popup.querySelector('.shortcut-help-close')!.addEventListener('click', closeHelp)
-  document.addEventListener('mousedown', closeHelpOnOutsideClick)
-}
-
-function closeHelpOnOutsideClick(e: MouseEvent) {
-  const popup = document.getElementById('shortcut-help')
-  if (popup && !popup.contains(e.target as Node)) closeHelp()
 }
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
@@ -939,7 +890,7 @@ function wireKeyboard() {
         e.preventDefault()
         toggleHelp(); break
       case 'Escape':
-        if (helpVisible) { closeHelp(); break }
+        if (closeHelp()) break
         state.activeCursorId = null
         state.captureTargetId = null
         renderZone3(); break
