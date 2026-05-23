@@ -136,6 +136,10 @@ modus/
 
 ## History
 
+### 2026-05-23 — dist/ fix + language convention — session 18 (cont.)
+
+dist/app.js no estaba sincronizado con el refactor de sesión 17 — commiteado. Confirmado que dist/ debe estar trackeado en git (igual que notae y UMT — jsDelivr lo sirve directamente desde el repo). El .gitignore solo tiene node_modules/, correcto. Añadida convención de idioma inglés a spec y state.md Patterns.
+
 ### 2026-05-23 — Docs audit + spec rewrite — session 18
 
 Sin cambios de código. Sesión completa de revisión y limpieza de documentación.
