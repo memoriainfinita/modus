@@ -28,7 +28,7 @@ const mockUMT = {
 }
 ;(globalThis as any).UMT = mockUMT
 
-import { analyzeNotes, getAutoKey } from '../src/analyzer'
+import { analyzeNotes, getAutoKey, buildHarmonicAnalysis } from '../src/analyzer'
 
 describe('analyzeNotes', () => {
   it('returns null for empty notes', () => {
@@ -50,6 +50,116 @@ describe('analyzeNotes', () => {
     if (r?.kind === 'chord') {
       expect(r.candidates[0]).toBe('Cmaj7')
     }
+  })
+})
+
+describe('analyzeNotes — 2 notes (interval)', () => {
+  it('returns kind interval', () => {
+    const r = analyzeNotes([60, 67], null, null)
+    expect(r?.kind).toBe('interval')
+  })
+
+  it('identifies Perfect 5th (C4–G4, 7 semitones)', () => {
+    const r = analyzeNotes([60, 67], null, null)
+    if (r?.kind === 'interval') {
+      expect(r.intervalName).toBe('Perfect 5th')
+      expect(r.semitones).toBe(7)
+      expect(r.inversionName).toBe('Perfect 4th')
+    }
+  })
+
+  it('identifies Tritone (C4–F#4, 6 semitones)', () => {
+    const r = analyzeNotes([60, 66], null, null)
+    if (r?.kind === 'interval') {
+      expect(r.intervalName).toBe('Tritone')
+      expect(r.semitones).toBe(6)
+      expect(r.inversionName).toBe('Tritone')
+    }
+  })
+
+  it('identifies Major 3rd (C4–E4, 4 semitones)', () => {
+    const r = analyzeNotes([60, 64], null, null)
+    if (r?.kind === 'interval') {
+      expect(r.intervalName).toBe('Major 3rd')
+      expect(r.semitones).toBe(4)
+      expect(r.inversionName).toBe('Minor 6th')
+    }
+  })
+
+  it('uses absolute distance so note order does not matter', () => {
+    const asc = analyzeNotes([60, 67], null, null)
+    const desc = analyzeNotes([67, 60], null, null)
+    if (asc?.kind === 'interval' && desc?.kind === 'interval') {
+      expect(asc.semitones).toBe(desc.semitones)
+    }
+  })
+
+  it('stores both note names', () => {
+    const r = analyzeNotes([60, 64], null, null)
+    if (r?.kind === 'interval') {
+      expect(r.notes).toHaveLength(2)
+    }
+  })
+})
+
+describe('buildHarmonicAnalysis', () => {
+  it('returns object with correct chordName', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', null, null)
+    expect(r.chordName).toBe('Cmaj7')
+  })
+
+  it('without key: roman is ? and function is unknown', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', null, null)
+    expect(r.roman).toBe('?')
+    expect(r.function).toBe('unknown')
+  })
+
+  it('with key: returns roman and function from UMT', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
+    expect(r.roman).toBe('I△7')
+    expect(r.function).toBe('T')
+    expect(r.isDiatonic).toBe(true)
+    expect(r.isBorrowed).toBe(false)
+  })
+
+  it('with prevChord: returns cadence', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', 'G7')
+    expect(r.cadence).toBe('Authentic (V7->I)')
+  })
+
+  it('without prevChord: cadence is null', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
+    expect(r.cadence).toBeNull()
+  })
+
+  it('returns suggestedScales', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
+    expect(r.suggestedScales).toContain('C major')
+  })
+
+  it('returns figuredBass', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
+    expect(r.figuredBass).toBe('5/3')
+  })
+
+  it('with key: returns coltraneAxis', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
+    expect(r.coltraneAxis).toEqual(['E', 'Ab', 'C'])
+  })
+
+  it('without key: coltraneAxis is null', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', null, null)
+    expect(r.coltraneAxis).toBeNull()
+  })
+
+  it('with key: returns negativeHarmony', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
+    expect(r.negativeHarmony).toBe('Fm')
+  })
+
+  it('detectedKey is always null (filled externally)', () => {
+    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
+    expect(r.detectedKey).toBeNull()
   })
 })
 
