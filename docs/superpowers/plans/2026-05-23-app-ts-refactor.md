@@ -8,6 +8,8 @@
 
 **Tech Stack:** TypeScript, esbuild (`npm run build` / `npm run dev`), browser manual test.
 
+> **Important:** `npm run build` is esbuild only — it does NOT run TypeScript. Type errors are caught by `npx tsc --noEmit`. Each verification step runs both.
+
 > **Note on TDD:** this is a pure refactor — no new behavior. The "test" is TypeScript compilation (`npm run build` must produce zero errors after each task) plus a manual smoke test at the end. Do not add unit tests during this refactor.
 
 ---
@@ -136,10 +138,11 @@ Replace with:
 - [ ] **Step 5: Verify build**
 
 ```
+npx tsc --noEmit
 npm run build
 ```
 
-Expected: zero TypeScript errors, `dist/app.js` generated. If there are errors, they will name the exact line — fix before continuing.
+Expected: `tsc` exits with zero errors. `npm run build` generates `dist/app.js`. If `tsc` reports errors, they name the exact file and line — fix before continuing.
 
 - [ ] **Step 6: Commit**
 
@@ -346,7 +349,7 @@ function onAltSelect(idx: number) {
 
 - [ ] **Step 5: Update all `renderZone1Analysis()` call sites in `src/app.ts`**
 
-There are **10 call sites**. Each bare `renderZone1Analysis()` call becomes `renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)`.
+There are **11 call sites**. Each bare `renderZone1Analysis()` call becomes `renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)`.
 
 > Note: `activeKey` is NOT a parameter — it is not used inside the function. 5 params only.
 
@@ -478,7 +481,7 @@ state.analysis = buildHarmonicAnalysis(sym, auto, getLastHistorySymbol())
 renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
 ```
 
-**Call site 11 — wait:** the `wireKeyboard` 1–9 key handler also calls `renderZone1Analysis`. Find this block inside `wireKeyboard`:
+**Call site 11** — `wireKeyboard` — numeric keys 1–9 (candidate selection). Find this block inside `wireKeyboard`:
 ```ts
 // before
         if (e.key >= '1' && e.key <= '9') {
@@ -507,10 +510,11 @@ renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, anal
 - [ ] **Step 6: Verify build**
 
 ```
+npx tsc --noEmit
 npm run build
 ```
 
-Expected: zero TypeScript errors. If errors appear, they name the exact symbol and file — fix them before continuing. Common issues: forgotten call site, missing import, wrong param count.
+Expected: `tsc` exits with zero errors. `npm run build` generates `dist/app.js`. If `tsc` reports errors, they name the exact file and line — fix before continuing. Common issues: forgotten call site, missing import, wrong param count.
 
 - [ ] **Step 7: Commit**
 
@@ -863,10 +867,11 @@ function buildLayout() {
 - [ ] **Step 7: Verify build**
 
 ```
+npx tsc --noEmit
 npm run build
 ```
 
-Expected: zero TypeScript errors.
+Expected: `tsc` exits with zero errors. `npm run build` generates `dist/app.js`.
 
 - [ ] **Step 8: Commit**
 
@@ -936,3 +941,5 @@ If status is clean (all committed), the refactor is complete. Update `state.md` 
 - [x] `wireLayoutEvents` (Task 3) contains updated call sites matching Task 2 signatures
 - [x] `tsconfig.json` includes `src/**/*` — new files picked up automatically
 - [x] `globals.d.ts` is ambient — `UMT` available in `analysis-panel.ts` without import
+- [x] `npm run build` is esbuild-only — verification steps use `npx tsc --noEmit` first, then `npm run build`
+- [x] Call site count consistent: 11 throughout
