@@ -229,7 +229,6 @@ export function renderZone1Analysis(
   analysis: HarmonicAnalysis | null,
   fieldsVisible: Record<AnalysisFieldKey, boolean>,
   scale: number,
-  activeKey: string | null,
   onAltSelect: (index: number) => void
 ) {
   renderChordSummary(detection, onAltSelect)
@@ -340,24 +339,36 @@ function onAltSelect(idx: number) {
   state.detection.selectedIndex = idx
   const sym = state.detection.candidates[idx]
   state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
-  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
   renderZone1Diagrams(state.detection.notes, sym)
 }
 ```
 
 - [ ] **Step 5: Update all `renderZone1Analysis()` call sites in `src/app.ts`**
 
-There are 8 call sites. Each bare `renderZone1Analysis()` call becomes `renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)`.
+There are **10 call sites**. Each bare `renderZone1Analysis()` call becomes `renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)`.
 
-**Call site 1** — `makeSongHandlers` → `onChordClick`:
+> Note: `activeKey` is NOT a parameter — it is not used inside the function. 5 params only.
+
+**Call site 1** — `init()` — initial render on load:
+```ts
+// before
+renderZone1Diagrams([], null)
+renderZone1Analysis()
+// after
+renderZone1Diagrams([], null)
+renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+```
+
+**Call site 2** — `makeSongHandlers` → `onChordClick`:
 ```ts
 // before
 renderZone1Analysis()
 // after
-renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
 ```
 
-**Call site 2** — `btn-analysis-minus` handler in `buildLayout`:
+**Call site 3** — `btn-analysis-minus` handler in `buildLayout`:
 ```ts
 // before
 $('btn-analysis-minus').addEventListener('click', () => {
@@ -369,11 +380,11 @@ $('btn-analysis-minus').addEventListener('click', () => {
 $('btn-analysis-minus').addEventListener('click', () => {
   analysisScale = Math.max(8, analysisScale - 1)
   localStorage.setItem('analysis-scale', String(analysisScale))
-  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
 })
 ```
 
-**Call site 3** — `btn-analysis-plus` handler in `buildLayout`:
+**Call site 4** — `btn-analysis-plus` handler in `buildLayout`:
 ```ts
 // before
 $('btn-analysis-plus').addEventListener('click', () => {
@@ -385,11 +396,11 @@ $('btn-analysis-plus').addEventListener('click', () => {
 $('btn-analysis-plus').addEventListener('click', () => {
   analysisScale = Math.min(20, analysisScale + 1)
   localStorage.setItem('analysis-scale', String(analysisScale))
-  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
 })
 ```
 
-**Call site 4** — `ANALYSIS_FIELD_KEYS.forEach` handler in `buildLayout`:
+**Call site 5** — `ANALYSIS_FIELD_KEYS.forEach` handler in `buildLayout`:
 ```ts
 // before
 ANALYSIS_FIELD_KEYS.forEach(f => {
@@ -406,48 +417,92 @@ ANALYSIS_FIELD_KEYS.forEach(f => {
     analysisFieldsVisible[f] = !analysisFieldsVisible[f]
     localStorage.setItem(`analysis-field-${f}`, String(analysisFieldsVisible[f]))
     updateAnalysisFieldButtons()
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
   })
 })
 ```
 
-**Call site 5** — `onNoteChange`:
+**Call site 6** — `onNoteChange`:
 ```ts
 // before (near end of onNoteChange)
 renderZone1Analysis()
 // after
-renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
 ```
 
-**Call site 6** — `renderZone2` → `onChipClick` callback:
+**Call site 7** — `renderZone2` → `onChipClick` callback:
 ```ts
 // before
 renderZone1Analysis()
 renderZone1Diagrams(entry.notes, entry.symbol)
 // after
-renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
 renderZone1Diagrams(entry.notes, entry.symbol)
 ```
 
-**Call site 7** — `refreshAutoKey`:
+**Call site 8** — `refreshAll`:
 ```ts
 // before
-state.analysis = buildHarmonicAnalysis(sym, auto, getLastHistorySymbol())
-renderZone1Analysis()
+function refreshAll() {
+  reRenderDiagrams()
+  renderZone1Analysis()
+  renderZone2()
+  renderZone3()
+}
 // after
-state.analysis = buildHarmonicAnalysis(sym, auto, getLastHistorySymbol())
-renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+function refreshAll() {
+  reRenderDiagrams()
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+  renderZone2()
+  renderZone3()
+}
 ```
 
-**Call site 8** — `triggerChordAnalysis`:
+**Call site 9** — `triggerChordAnalysis`:
 ```ts
 // before
 state.detection = { kind: 'chord', notes: [], candidates: [symbol], selectedIndex: 0 }
 renderZone1Analysis()
 // after
 state.detection = { kind: 'chord', notes: [], candidates: [symbol], selectedIndex: 0 }
-renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
 ```
+
+**Call site 10** — `refreshAutoKey`:
+```ts
+// before
+state.analysis = buildHarmonicAnalysis(sym, auto, getLastHistorySymbol())
+renderZone1Analysis()
+// after
+state.analysis = buildHarmonicAnalysis(sym, auto, getLastHistorySymbol())
+renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+```
+
+**Call site 11 — wait:** the `wireKeyboard` 1–9 key handler also calls `renderZone1Analysis`. Find this block inside `wireKeyboard`:
+```ts
+// before
+        if (e.key >= '1' && e.key <= '9') {
+          const idx = parseInt(e.key) - 1
+          if (state.detection?.kind === 'chord' && idx < state.detection.candidates.length) {
+            state.detection.selectedIndex = idx
+            const sym = state.detection.candidates[idx]
+            state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
+            renderZone1Analysis()
+          }
+        }
+// after
+        if (e.key >= '1' && e.key <= '9') {
+          const idx = parseInt(e.key) - 1
+          if (state.detection?.kind === 'chord' && idx < state.detection.candidates.length) {
+            state.detection.selectedIndex = idx
+            const sym = state.detection.candidates[idx]
+            state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
+            renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+          }
+        }
+```
+
+> Total: 11 external call sites. TypeScript strict mode will catch any missed ones at build time — the error will name the exact line.
 
 - [ ] **Step 6: Verify build**
 
@@ -693,12 +748,12 @@ function wireLayoutEvents() {
   $('btn-analysis-minus').addEventListener('click', () => {
     analysisScale = Math.max(8, analysisScale - 1)
     localStorage.setItem('analysis-scale', String(analysisScale))
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
   })
   $('btn-analysis-plus').addEventListener('click', () => {
     analysisScale = Math.min(20, analysisScale + 1)
     localStorage.setItem('analysis-scale', String(analysisScale))
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
   })
 
   const reRenderNeck = () => {
@@ -722,7 +777,7 @@ function wireLayoutEvents() {
       analysisFieldsVisible[f] = !analysisFieldsVisible[f]
       localStorage.setItem(`analysis-field-${f}`, String(analysisFieldsVisible[f]))
       updateAnalysisFieldButtons()
-      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, state.activeKey, onAltSelect)
+      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
     })
   })
 
@@ -875,6 +930,9 @@ If status is clean (all committed), the refactor is complete. Update `state.md` 
 
 - [x] Spec coverage: shortcuts.ts ✓, analysis-panel.ts ✓, buildLayout internal split ✓, onAltSelect callback ✓, closeHelp returns boolean ✓, getChordQuality exported ✓
 - [x] No placeholders — all steps contain exact code
-- [x] Type consistency — `AnalysisFieldKey` defined once in analysis-panel.ts, imported everywhere; `onAltSelect` signature consistent across all 8 call sites
-- [x] All 8 `renderZone1Analysis` call sites enumerated and updated
-- [x] `wireLayoutEvents` contains updated call sites for analysis-minus/plus/field-buttons matching Task 2 Step 5
+- [x] `activeKey` removed from `renderZone1Analysis` signature — confirmed unused in function body
+- [x] Type consistency — `AnalysisFieldKey` defined once in analysis-panel.ts, imported everywhere; `onAltSelect` signature consistent across all 11 call sites
+- [x] All 11 `renderZone1Analysis` call sites enumerated: init(), makeSongHandlers, btn-minus, btn-plus, field-forEach, onNoteChange, renderZone2/onChipClick, refreshAll, triggerChordAnalysis, refreshAutoKey, wireKeyboard 1–9
+- [x] `wireLayoutEvents` (Task 3) contains updated call sites matching Task 2 signatures
+- [x] `tsconfig.json` includes `src/**/*` — new files picked up automatically
+- [x] `globals.d.ts` is ambient — `UMT` available in `analysis-panel.ts` without import
