@@ -397,6 +397,15 @@ describe('transposeSong', () => {
     s = transposeSong(s, 1, 'D Major')
     expect(s.sections[0].measures[0].chords[0].symbol).toBe('C#maj7')
   })
+
+  it('transposes slash chord bass note too', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    const sId = s.sections[0].id
+    const mId = s.sections[0].measures[0].id
+    s = addChord(s, sId, mId, 'C/G')
+    s = transposeSong(s, 2)
+    expect(s.sections[0].measures[0].chords[0].symbol).toBe('D/A')
+  })
 })
 
 // ─── computeDegree ────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harmony Companion</title>
+  <title>Modus</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,19 +18,22 @@
     <div id="zone3"></div>
   </div>
 
+  <!-- Resource load errors do not reach window.onerror — capture phase listener required -->
+  <script>
+    window.addEventListener('error', function (e) {
+      var el = e.target
+      if (el && el.tagName === 'SCRIPT' && el.src && el.src.indexOf('jsdelivr') !== -1) {
+        document.getElementById('cdn-error-banner').classList.add('visible')
+      }
+    }, true)
+  </script>
+
   <!-- CDN dependencies -->
   <script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/memoriainfinita/notae@master/dist/notae.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.0/dist/abcjs-basic-min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
 
-  <script>
-    window.onerror = function(msg, src) {
-      if (src && (src.includes('jsdelivr') || src.includes('surikov'))) {
-        document.getElementById('cdn-error-banner').classList.add('visible')
-      }
-    }
-  </script>
   <script src="dist/app.js"></script>
 </body>
 </html>

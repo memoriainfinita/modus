@@ -38,7 +38,7 @@ export function clearHistory() {
 export function notifyChordDetected(symbol: string, notes: string[]) {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    if (symbol !== lastAutoAppended && symbol !== 'Unknown') {
+    if (symbol !== lastAutoAppended && symbol !== '?') {
       addEntry(symbol, notes)
       lastAutoAppended = symbol
     }
