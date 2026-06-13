@@ -139,8 +139,8 @@ describe('notifyChordDetected', () => {
     expect(getEntries()[0].symbol).toBe('Am7')
   })
 
-  it('does not add Unknown chord', () => {
-    notifyChordDetected('Unknown', [])
+  it('does not add unknown chord sentinel (?)', () => {
+    notifyChordDetected('?', [])
     vi.advanceTimersByTime(800)
     expect(getEntries()).toHaveLength(0)
   })

@@ -1,5 +1,6 @@
 import type { Song, Section, Measure, SongChord, SectionColor } from './types'
 import { playChord, playNoteNames, initAudioOnGesture } from './audio'
+import { PITCH_NAMES_FLAT } from './midi'
 
 export function createSong(): Song {
   return { schemaVersion: 1, title: 'Untitled', sections: [] }
@@ -244,35 +245,35 @@ function isValidChordSymbol(symbol: string): boolean {
 }
 
 const SEMITONE_NAMES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
-const SEMITONE_NAMES_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
 const SHARP_KEYS = ['G','D','A','E','B','F#','C#']
 
 function transposeRoot(root: string, semitones: number, preferSharps: boolean): string {
-  const names = preferSharps ? SEMITONE_NAMES_SHARP : SEMITONE_NAMES_FLAT
-  const all = [...SEMITONE_NAMES_SHARP, ...SEMITONE_NAMES_FLAT]
+  const names = preferSharps ? SEMITONE_NAMES_SHARP : PITCH_NAMES_FLAT
+  const all = [...SEMITONE_NAMES_SHARP, ...PITCH_NAMES_FLAT]
   const idx = all.indexOf(root)
   if (idx === -1) return root
-  const pc = all.indexOf(root) % 12
-  return names[((pc + semitones) % 12 + 12) % 12]
+  return names[((idx % 12 + semitones) % 12 + 12) % 12]
 }
 
 export function transposeSong(song: Song, semitones: number, targetKey?: string): Song {
   const preferSharps = targetKey ? SHARP_KEYS.includes(targetKey.split(' ')[0]) : false
-  const transposeSymbol = (symbol: string): string => {
-    try {
-      const chord = UMT.parseChordSymbol(symbol)
-      const root = (chord.root?.name ?? chord.root ?? '') as string
-      const newRoot = transposeRoot(root, semitones, preferSharps)
-      return symbol.replace(root, newRoot)
-    } catch { return symbol }
+  const transposePart = (part: string): string => {
+    const m = part.match(/^([A-G][b#]?)/)
+    if (!m) return part
+    return transposeRoot(m[1], semitones, preferSharps) + part.slice(m[1].length)
   }
+  const transposeSymbol = (symbol: string): string =>
+    symbol.split('/').map(transposePart).join('/')
   return {
     ...song,
     sections: song.sections.map(s => ({
       ...s,
       measures: s.measures.map(m => ({
         ...m,
-        chords: m.chords.map(c => ({ ...c, symbol: transposeSymbol(c.symbol), valid: true }))
+        chords: m.chords.map(c => {
+          const symbol = transposeSymbol(c.symbol)
+          return { ...c, symbol, valid: isValidChordSymbol(symbol) }
+        })
       }))
     }))
   }
@@ -491,14 +492,9 @@ function newPasteMeasure(symbols: string[]): Measure {
     chords: symbols.map(sym => ({
       id: crypto.randomUUID(),
       symbol: sym,
-      valid: isValidChordSymbolPublic(sym)
+      valid: isValidChordSymbol(sym)
     }))
   }
-}
-
-function isValidChordSymbolPublic(symbol: string): boolean {
-  if (!symbol) return false
-  try { UMT.parseChordSymbol(symbol); return true } catch { return false }
 }
 
 function buildSectionDOM(
@@ -983,9 +979,10 @@ function detectForm(sectionNames: string[]): string {
     return map.get(key)!
   })
   const pattern = letters.join('')
-  if (/^(AB)+$/.test(pattern) || pattern === 'ABAB') return `Verse-Chorus (${pattern})`
+  if (/^(AB)+$/.test(pattern)) return `Verse-Chorus (${pattern})`
   if (/^AABA/.test(pattern)) return `AABA (${pattern})`
   if (/^(A+B+A+)$/.test(pattern)) return `Ternary (${pattern})`
-  if (/^A+$/.test(pattern)) return `Through-composed — single section (${pattern})`
+  if (pattern === 'A') return 'Single section (A)'
+  if (/^A+$/.test(pattern)) return `Strophic (${pattern})`
   return `${pattern}`
 }

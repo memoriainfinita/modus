@@ -1,4 +1,6 @@
 import { playNoteByName, playChord, initAudioOnGesture } from './audio'
+import { PITCH_NAMES_FLAT, NOTE_SEMITONE, noteNameToMidi } from './midi'
+import { CHORD_QUALITY_COLORS } from './analysis-panel'
 
 export let guitarControlsVisible = JSON.parse(localStorage.getItem('panel-guitarControls') ?? 'true')
 export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v }
@@ -39,16 +41,7 @@ export function renderStaff(container: HTMLElement, noteNames: string[], width =
 // ─── Full-neck horizontal fretboard ──────────────────────────────────────────
 
 const OPEN_MIDI = [40, 45, 50, 55, 59, 64]  // E2 A2 D3 G3 B3 E4
-const PITCH_FLAT_FB = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
 const NECK_FRETS = 12
-
-function noteToMidi(note: string): number | null {
-  const m = note.match(/^([A-G][b]?)(-?\d+)$/)
-  if (!m) return null
-  const idx = PITCH_FLAT_FB.indexOf(m[1])
-  if (idx === -1) return null
-  return (parseInt(m[2]) + 1) * 12 + idx
-}
 
 let neckSpacing = parseInt(localStorage.getItem('neck-spacing') ?? '16')
 export function adjustNeckSpacing(delta: number) {
@@ -57,7 +50,7 @@ export function adjustNeckSpacing(delta: number) {
 }
 
 export function renderNeck(container: HTMLElement, noteNames: string[], root: string | null = null) {
-  const midi = noteNames.map(noteToMidi).filter((n): n is number => n !== null)
+  const midi = noteNames.map(noteNameToMidi).filter((n): n is number => n !== null)
 
   const frets = OPEN_MIDI.map(open => {
     const pos = midi.map(n => n - open).filter(f => f >= 0 && f <= NECK_FRETS)
@@ -91,28 +84,20 @@ export function renderNeck(container: HTMLElement, noteNames: string[], root: st
 
 // ─── Piano ────────────────────────────────────────────────────────────────────
 
-const QUALITY_COLORS: Record<string, string> = {
-  major: '#f59e0b', minor: '#3b82f6', 'dominant seventh': '#ef4444',
-  'major seventh': '#f59e0b', 'minor seventh': '#3b82f6',
-  diminished: '#7c3aed', 'diminished seventh': '#7c3aed',
-  'half-diminished seventh': '#7c3aed', augmented: '#0d9488',
-}
-
 // Notae renderPiano renders: all white keys left→right, then all black keys left→right.
 // Range C2-B5: 4 octaves × 7 white = 28 white keys, 4 × 5 black = 20 black keys.
 const PIANO_WHITE_NOTES: string[] = []
 const PIANO_BLACK_NOTES: string[] = []
 const WHITE_SEMITONES_P = [0, 2, 4, 5, 7, 9, 11]
 const BLACK_SEMITONES_P = [1, 3, 6, 8, 10]
-const NOTE_FLAT_P = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
 for (let oct = 2; oct <= 5; oct++) {
-  WHITE_SEMITONES_P.forEach(s => PIANO_WHITE_NOTES.push(NOTE_FLAT_P[s] + oct))
-  BLACK_SEMITONES_P.forEach(s => PIANO_BLACK_NOTES.push(NOTE_FLAT_P[s] + oct))
+  WHITE_SEMITONES_P.forEach(s => PIANO_WHITE_NOTES.push(PITCH_NAMES_FLAT[s] + oct))
+  BLACK_SEMITONES_P.forEach(s => PIANO_BLACK_NOTES.push(PITCH_NAMES_FLAT[s] + oct))
 }
 const PIANO_KEY_ORDER = [...PIANO_WHITE_NOTES, ...PIANO_BLACK_NOTES]
 
 export function renderPiano(container: HTMLElement, noteNames: string[], quality: string) {
-  const color = QUALITY_COLORS[quality?.toLowerCase()] ?? '#6b7280'
+  const color = CHORD_QUALITY_COLORS[quality?.toLowerCase()] ?? '#6b7280'
   const colors = noteNames.map(() => color)
 
   container.innerHTML = Notae.renderPiano({
@@ -141,10 +126,6 @@ const DARK_FRETBOARD_STYLE = {
 }
 
 const EMPTY_FRETBOARD = { name: '', frets: [null, null, null, null, null, null], tuning: ['E','A','D','G','B','E'] }
-
-const NOTE_SEMITONE: Record<string, number> = {
-  C:0,'C#':1,Db:1,D:2,'D#':3,Eb:3,E:4,F:5,'F#':6,Gb:6,G:7,'G#':8,Ab:8,A:9,'A#':10,Bb:10,B:11
-}
 
 function deriveVoicingFromNotes(noteNames: string[], tuning: string[]): { frets: (number|null)[], baseFret: number } {
   const activeClasses = new Set(
