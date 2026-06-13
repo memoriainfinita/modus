@@ -144,6 +144,31 @@ modus/
 
 ## History
 
+### 2026-06-13 — Slop audit: docs lies, dead code, small bugs — session 20
+
+Full project audit for AI slop, dead code and unimplemented claims. TSC clean, 97/97 tests, 3 commits.
+
+**Docs (commit `docs:`):**
+- LICENSE created (GPL-3.0) — README badge pointed to a missing file
+- Tailwind claims removed from README/spec/state — styles are plain CSS, Tailwind was never installed
+- README: Space shortcut corrected (plays chord, not capture), transpose claim corrected (semitones only), test files added to structure listings
+
+**Dead code removed (commit `refactor:`):**
+- `audio.ts`: `pendingNotes` queue (written but always discarded since session 15), `getAudioStatus` (never imported), local `noteNameToMidi`/`PC_MAP` moved to `midi.ts`
+- `types.ts`/`app.ts`: `AppState.midi` (duplicate of midi.ts module state, never read), `detectedKey` (written, never read), `HarmonicAnalysis.detectedKey` (always null)
+- `analyzer.ts`: `analyzeNotes` dropped unused `activeKey`/`prevChordSymbol` params
+- Pitch tables centralized in `midi.ts` (`PITCH_NAMES_FLAT`, `NOTE_SEMITONE`, `noteNameToMidi`); quality color map shared from `analysis-panel.ts`
+
+**Bugs fixed (commit `fix:`):**
+- CDN error banner never fired — `window.onerror` does not catch resource load errors; replaced with capture-phase listener before the CDN tags. Removed `'surikov'` leftover
+- `index.html` title was still "Harmony Companion"
+- `renderNeck` dropped sharp-spelled notes (regex only accepted flats)
+- `transposeSong`: now transposes slash bass (`C/G` → `D/A`), re-validates instead of forcing `valid: true`
+- `history.ts`: dead `'Unknown'` guard → real sentinel `'?'`
+- `song.ts`: duplicate `isValidChordSymbolPublic` removed; `detectForm` redundant ABAB check removed and "through-composed" mislabel → strophic
+
+**Deliberately not touched:** the three coexisting confirmation patterns (modal / double-click / confirmOnce) — that is a UX decision for the pending UX audit TODO.
+
 ### 2026-05-23 — Dead code cleanup + bug fix — session 19 (part 2)
 
 Eliminated confirmed dead code and fixed one real bug. TSC clean, 97/97 tests.
