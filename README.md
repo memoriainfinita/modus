@@ -77,7 +77,7 @@ A scratchpad and structure builder.
 - Each chord shows its Roman numeral — borrowed chords highlighted in amber
 - Drag to reorder sections and chords; drag history chips directly onto measures
 - MIDI fill: arm any chord slot (⊙) and play to fill it from the controller
-- Transpose entire song (semitone steps or target key)
+- Transpose entire song in semitone steps
 - Paste a progression as text (`Cmaj7 Am7 F G`)
 - Export as printable chord chart
 
@@ -105,7 +105,7 @@ All three projects are independent, GPL-3.0, and built for the music community �
 | Staff | abcjs 6.4.0 via CDN |
 | MIDI | Web MIDI API (Chrome/Edge only) |
 | Audio | soundfont-player 0.12.0 + FluidR3_GM |
-| Styles | Tailwind CSS |
+| Styles | Plain CSS (`styles.css`) |
 | Persistence | localStorage |
 
 ---
@@ -157,6 +157,9 @@ src/
 tests/
   analyzer.test.ts
   song.test.ts
+  history.test.ts
+  midi.test.ts
+  analysis-panel.test.ts
 ```
 
 ---
@@ -165,7 +168,7 @@ tests/
 
 | Key | Action |
 |---|---|
-| `Space` | Capture current chord to history |
+| `Space` | Play current chord (or last detected if none active) |
 | `H` | Toggle hold mode |
 | `A` | Toggle arpeggio mode |
 | `S` | Send active history chip to song cursor |

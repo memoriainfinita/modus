@@ -1,3 +1,8 @@
+---
+created: 2026-05-20
+last_updated: 2026-05-23
+---
+
 # Modus — State
 
 ## System
@@ -34,7 +39,7 @@ Part of the **memoriainfinita** ecosystem alongside UMT and notae. GPL-3.0.
 | MIDI | Web MIDI API (Chrome/Edge only) |
 | Guitar voicings | `UMT.getFretboardVoicings(chord, UMT.GUITAR_STANDARD)` — no fetch |
 | Audio | soundfont-player 0.12.0 + FluidR3_GM (npm) |
-| Styles | Tailwind CSS |
+| Styles | Plain CSS (`styles.css`) |
 | Persistence | localStorage |
 
 ### CDN script tags (index.html)
@@ -116,8 +121,11 @@ modus/
   tests/
     analyzer.test.ts
     song.test.ts
+    history.test.ts
+    midi.test.ts
+    analysis-panel.test.ts
   index.html   package.json   tsconfig.json   vitest.config.ts
-  styles.css   (to be migrated to Tailwind)
+  styles.css   LICENSE
   dist/app.js  (generated)
 ```
 
