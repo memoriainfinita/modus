@@ -45,7 +45,6 @@ export interface HarmonicAnalysis {
   cadence: string | null    // null = no standard cadence vs prev chord
   coltraneAxis: [string, string, string] | null
   negativeHarmony: string | null
-  detectedKey: string | null  // from running K-S pool
 }
 
 // ─── History ─────────────────────────────────────────────────────────────────
@@ -90,15 +89,7 @@ export interface Song {
 // ─── App state ───────────────────────────────────────────────────────────────
 
 export interface AppState {
-  midi: {
-    deviceId: string | null
-    mode: MidiMode
-    activeNotes: Set<number>   // MIDI note numbers currently held
-    lastArpeggioNotes: number[]
-    arpeggioTimer: ReturnType<typeof setTimeout> | null
-  }
   activeKey: string | null     // e.g. "C Major", null = auto
-  detectedKey: string | null   // from K-S on history
   detection: DetectionResult
   analysis: HarmonicAnalysis | null
   history: HistoryEntry[]

@@ -2,7 +2,7 @@ import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, g
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
 import { initAudioOnGesture, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playMidiNotes, playNoteNames, playChord as audioPlayChord, GM_INSTRUMENT_GROUPS, setAudioStatusCallback } from './audio'
 import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
-import { setHistoryChangeCallback, getEntries, addEntry, clearHistory, notifyChordDetected, renderHistory } from './history'
+import { setHistoryChangeCallback, clearHistory, notifyChordDetected, renderHistory } from './history'
 import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
 import type { AppState, HistoryEntry, SongChord } from './types'
 import { toggleHelp, closeHelp } from './shortcuts'
@@ -14,7 +14,7 @@ import type { AnalysisFieldKey } from './analysis-panel'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
-let staffWidth = 380
+const staffWidth = 380
 let cofSize = parseInt(localStorage.getItem('cof-size') ?? '160')
 let cofAccidental = (localStorage.getItem('cof-accidental') ?? 'flat') as 'sharp' | 'flat'
 let cofShowMinor   = JSON.parse(localStorage.getItem('cof-show-minor')   ?? 'true')
@@ -41,9 +41,7 @@ let lastChordSymbol: string | null = null
 let lastChordMidi: number[] = []
 
 const state: AppState = {
-  midi: { deviceId: null, mode: 'normal', activeNotes: new Set(), lastArpeggioNotes: [], arpeggioTimer: null },
   activeKey: localStorage.getItem('active-key') || null,
-  detectedKey: null,
   detection: null,
   analysis: null,
   history: [],
@@ -527,7 +525,7 @@ function applyPanelVisibility() {
 function onNoteChange(notes: number[]) {
   // MIDI capture-to-fill flow
   if (state.captureTargetId && notes.length >= 1) {
-    const result = analyzeNotes(notes, state.activeKey, getLastHistorySymbol())
+    const result = analyzeNotes(notes)
     if (result?.kind === 'chord') {
       const sym = result.candidates[0]
       state.song = updateChord(state.song, state.captureTargetId, sym, result.notes)
@@ -540,7 +538,7 @@ function onNoteChange(notes: number[]) {
     }
   }
 
-  const result = analyzeNotes(notes, state.activeKey, getLastHistorySymbol())
+  const result = analyzeNotes(notes)
   state.detection = result
 
   if (result?.kind === 'chord') {
@@ -698,7 +696,6 @@ function onHistoryChange(entries: HistoryEntry[]) {
 
 function refreshAutoKey() {
   const auto = getAutoKey(state.history)
-  state.detectedKey = auto
   const label = $('auto-key-label')
   if (label) label.textContent = state.activeKey ? '' : (auto ? `auto: ${auto}` : '')
   if (!state.activeKey && auto && state.analysis) {

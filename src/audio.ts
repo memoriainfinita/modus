@@ -1,7 +1,8 @@
+import { noteNameToMidi } from './midi'
+
 let audioCtx: AudioContext | null = null
 let instrument: any = null
 let loadingInstrument = false
-let pendingNotes: { midi: number; duration: number }[] = []
 
 let volume = parseFloat(localStorage.getItem('audio-volume') ?? '0.8')
 let currentInstrumentName = localStorage.getItem('audio-instrument') ?? 'acoustic_grand_piano'
@@ -11,7 +12,6 @@ let audioStatus: AudioStatus = 'idle'
 let onStatusChange: ((s: AudioStatus) => void) | null = null
 
 export function setAudioStatusCallback(cb: (s: AudioStatus) => void) { onStatusChange = cb }
-export function getAudioStatus(): AudioStatus { return audioStatus }
 
 function setStatus(s: AudioStatus) { audioStatus = s; onStatusChange?.(s) }
 
@@ -47,7 +47,6 @@ function loadCurrentInstrument() {
     .then((inst: any) => {
       instrument = inst
       loadingInstrument = false
-      pendingNotes = []
       setStatus(audioCtx!.state === 'suspended' ? 'suspended' : 'ready')
     })
     .catch((err: any) => { loadingInstrument = false; setStatus('error'); console.error('[audio] load failed:', err) })
@@ -80,8 +79,7 @@ export function getVolume() { return volume }
 export function playNote(midiNumber: number, duration = 1.5) {
   ensureContext()
   if (!loadingInstrument && !instrument) loadCurrentInstrument()
-  if (!audioCtx) return
-  if (!instrument) { pendingNotes = [{ midi: midiNumber, duration }]; return }
+  if (!audioCtx || !instrument) return
   audioCtx.resume().then(() => {
     instrument.play(midiNumber, audioCtx!.currentTime, { duration, gain: volume })
   })
@@ -156,11 +154,7 @@ export function playChord(chordSymbol: string) {
       for (const interval of intervals) midiNotes.push(rootMidi + interval)
     }
 
-    if (!midiNotes.length) return
-    if (!instrument) {
-      pendingNotes = midiNotes.map(midi => ({ midi, duration: 2 }))
-      return
-    }
+    if (!midiNotes.length || !instrument) return
     audioCtx.resume().then(() => {
       for (const midi of midiNotes) {
         instrument!.play(midi, audioCtx!.currentTime, { duration: 2, gain: volume })
@@ -169,18 +163,3 @@ export function playChord(chordSymbol: string) {
   } catch { }
 }
 
-// ─── Note name → MIDI ────────────────────────────────────────────────────────
-
-const PC_MAP: Record<string, number> = {
-  'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
-  'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
-  'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
-}
-
-function noteNameToMidi(name: string): number | null {
-  const m = name.match(/^([A-G][b#]?)(-?\d+)$/)
-  if (!m) return null
-  const pc = PC_MAP[m[1]]
-  if (pc === undefined) return null
-  return (parseInt(m[2]) + 1) * 12 + pc
-}
