@@ -33,7 +33,7 @@ GPL-3.0. Built for the music community, not for profit. No analytics, no account
 
 **Information density over decoration.** The app exposes everything UMT can compute. Fields are configurable — users choose what to show. Adding theory depth to UMT means Modus gains it automatically.
 
-**Neutral functional dark — neobrutalista.** Colors carry meaning only: chord quality (major → amber, minor → blue, dominant → red-orange, diminished → purple), harmonic function, borrowed chords. UI chrome is monochrome — borders, not buttons; structure, not decoration. No decorative color, no rounded pill buttons, no gradients. Implemented with Tailwind CSS.
+**Neutral functional dark — neobrutalista.** Colors carry meaning only: chord quality (major → amber, minor → blue, dominant → red-orange, diminished → purple), harmonic function, borrowed chords. UI chrome is monochrome — borders, not buttons; structure, not decoration. No decorative color, no rounded pill buttons, no gradients. Implemented with plain CSS (`styles.css`).
 
 **User-configurable.** Every panel is togglable. Font sizes, diagram sizes, visible analysis fields — all adjustable and persisted to localStorage. Direction: modular layout where the user controls panel positions (VSCode-style), color themes for background and diagrams.
 
@@ -61,7 +61,7 @@ On unsupported browsers: full-page warning — "Modus requires Chrome or Edge fo
 | Staff | abcjs 6.4.0 via CDN (`ABCJS.*` global) |
 | MIDI | Web MIDI API (Chrome/Edge only) |
 | Audio | soundfont-player 0.12.0 + FluidR3_GM (npm) |
-| Styles | Tailwind CSS |
+| Styles | Plain CSS (`styles.css`) |
 | Persistence | localStorage |
 
 ### CDN script tags
@@ -103,12 +103,15 @@ modus/
   tests/
     analyzer.test.ts
     song.test.ts
+    history.test.ts
+    midi.test.ts
+    analysis-panel.test.ts
   index.html
   package.json
   tsconfig.json
   vitest.config.ts
   dist/app.js           (generated)
-  styles.css            (to be migrated to Tailwind)
+  styles.css
 ```
 
 ---
