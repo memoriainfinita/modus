@@ -18,7 +18,7 @@ export const ANALYSIS_FIELD_TOOLTIPS: Record<AnalysisFieldKey, string> = {
 
 // ─── Chord quality ────────────────────────────────────────────────────────────
 
-const CHORD_QUALITY_COLORS: Record<string, string> = {
+export const CHORD_QUALITY_COLORS: Record<string, string> = {
   major: '#f59e0b', minor: '#3b82f6', 'dominant seventh': '#ef4444',
   'major seventh': '#f59e0b', 'minor seventh': '#3b82f6',
   diminished: '#7c3aed', 'diminished seventh': '#7c3aed',

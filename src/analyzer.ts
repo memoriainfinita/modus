@@ -12,15 +12,7 @@ function semitonesToInterval(semitones: number): { name: string; inversionName: 
   return { name: INTERVAL_NAMES[n], inversionName: INTERVAL_NAMES[inv] }
 }
 
-function noteNameToUMT(name: string): any {
-  return UMT.parseNote(name)
-}
-
-export function analyzeNotes(
-  midiNotes: number[],
-  activeKey: string | null,
-  prevChordSymbol: string | null
-): DetectionResult {
+export function analyzeNotes(midiNotes: number[]): DetectionResult {
   if (midiNotes.length === 0) return null
 
   const noteNames = midiNotes.map(midiToNoteName)
@@ -51,7 +43,7 @@ export function analyzeNotes(
   // ≥3 notes: chord detection (UMT may throw on unusual combinations)
   let candidates: string[] = []
   try {
-    const umtNotes = noteNames.map(noteNameToUMT)
+    const umtNotes = noteNames.map(n => UMT.parseNote(n))
     candidates = UMT.Harmony.detectChords(umtNotes) ?? []
   } catch { }
   const result: ChordResult = {
@@ -156,7 +148,6 @@ export function buildHarmonicAnalysis(
     cadence,
     coltraneAxis,
     negativeHarmony,
-    detectedKey: null, // filled by getAutoKey separately
   }
 }
 

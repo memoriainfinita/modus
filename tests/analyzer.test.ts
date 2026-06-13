@@ -32,11 +32,11 @@ import { analyzeNotes, getAutoKey, buildHarmonicAnalysis } from '../src/analyzer
 
 describe('analyzeNotes', () => {
   it('returns null for empty notes', () => {
-    expect(analyzeNotes([], null, null)).toBeNull()
+    expect(analyzeNotes([])).toBeNull()
   })
 
   it('returns SingleNoteResult for 1 note', () => {
-    const r = analyzeNotes([60], null, null)
+    const r = analyzeNotes([60])
     expect(r?.kind).toBe('note')
     if (r?.kind === 'note') {
       expect(r.noteName).toBe('C4')
@@ -45,7 +45,7 @@ describe('analyzeNotes', () => {
   })
 
   it('returns ChordResult for 3+ notes', () => {
-    const r = analyzeNotes([60, 64, 67, 71], 'C Major', null)
+    const r = analyzeNotes([60, 64, 67, 71])
     expect(r?.kind).toBe('chord')
     if (r?.kind === 'chord') {
       expect(r.candidates[0]).toBe('Cmaj7')
@@ -55,12 +55,12 @@ describe('analyzeNotes', () => {
 
 describe('analyzeNotes — 2 notes (interval)', () => {
   it('returns kind interval', () => {
-    const r = analyzeNotes([60, 67], null, null)
+    const r = analyzeNotes([60, 67])
     expect(r?.kind).toBe('interval')
   })
 
   it('identifies Perfect 5th (C4–G4, 7 semitones)', () => {
-    const r = analyzeNotes([60, 67], null, null)
+    const r = analyzeNotes([60, 67])
     if (r?.kind === 'interval') {
       expect(r.intervalName).toBe('Perfect 5th')
       expect(r.semitones).toBe(7)
@@ -69,7 +69,7 @@ describe('analyzeNotes — 2 notes (interval)', () => {
   })
 
   it('identifies Tritone (C4–F#4, 6 semitones)', () => {
-    const r = analyzeNotes([60, 66], null, null)
+    const r = analyzeNotes([60, 66])
     if (r?.kind === 'interval') {
       expect(r.intervalName).toBe('Tritone')
       expect(r.semitones).toBe(6)
@@ -78,7 +78,7 @@ describe('analyzeNotes — 2 notes (interval)', () => {
   })
 
   it('identifies Major 3rd (C4–E4, 4 semitones)', () => {
-    const r = analyzeNotes([60, 64], null, null)
+    const r = analyzeNotes([60, 64])
     if (r?.kind === 'interval') {
       expect(r.intervalName).toBe('Major 3rd')
       expect(r.semitones).toBe(4)
@@ -87,15 +87,15 @@ describe('analyzeNotes — 2 notes (interval)', () => {
   })
 
   it('uses absolute distance so note order does not matter', () => {
-    const asc = analyzeNotes([60, 67], null, null)
-    const desc = analyzeNotes([67, 60], null, null)
+    const asc = analyzeNotes([60, 67])
+    const desc = analyzeNotes([67, 60])
     if (asc?.kind === 'interval' && desc?.kind === 'interval') {
       expect(asc.semitones).toBe(desc.semitones)
     }
   })
 
   it('stores both note names', () => {
-    const r = analyzeNotes([60, 64], null, null)
+    const r = analyzeNotes([60, 64])
     if (r?.kind === 'interval') {
       expect(r.notes).toHaveLength(2)
     }
@@ -155,11 +155,6 @@ describe('buildHarmonicAnalysis', () => {
   it('with key: returns negativeHarmony', () => {
     const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
     expect(r.negativeHarmony).toBe('Fm')
-  })
-
-  it('detectedKey is always null (filled externally)', () => {
-    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
-    expect(r.detectedKey).toBeNull()
   })
 })
 
