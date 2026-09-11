@@ -1,14 +1,13 @@
 ---
 created: 2026-05-20
-last_updated: 2026-05-23
+last_updated: 2026-06-13
 ---
 
 # Modus — State
 
 ## System
 
-- **Location:** `C:\Users\mykl\OneDrive\Scriptorium\DOCS\CODING GIT\MODUS\`
-- **Status:** Active development — session 18 complete (docs audit + spec rewrite)
+- **Status:** Active development — session 20 complete (slop audit)
 - **Dev command:** `npm run dev` (watch) · `npm run build` (one-shot) · `npx http-server . -p 8080`
 - **Build workflow:** Claude lanza `npm run dev` en background con `run_in_background: true` al inicio de sesión — usa `--watch=forever` para que no pare al cerrarse stdin. No usar `!` en el chat para esto (bloquea). Claude usa `npm run build` solo para verificar errores puntuales.
 - **Browser:** Chrome or Edge (Web MIDI API required)
@@ -133,12 +132,9 @@ modus/
 
 ## Patterns
 
-- [language] Everything in English: code, comments, documentation (spec, README, state.md), commit messages. This is a public GitHub project. Confirmed 2026-05.
+- [language] Everything in English: code, comments, documentation (spec, README, state.md), commit messages. Confirmed 2026-05.
 - [typescript] esbuild watch mode, same toolchain as UMT and notae. Confirmed 2026-05.
 - [naming] Project name: Modus (Latin — mode, measure). Confirmed 2026-05.
-- [umt] detectChords takes Note[] not strings — always convert with parseNote first.
-- [umt] analyzeProgression returns .analysis (array), not .analyses.
-- [umt] getSubstitutions is top-level, not Harmony.getSubstitutions.
 
 ---
 
