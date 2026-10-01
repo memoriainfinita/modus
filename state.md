@@ -13,7 +13,7 @@ What is true now. What already happened lives in `state-history.md`.
 
 Part of the **memoriainfinita** ecosystem alongside UMT and notae. GPL-3.0.
 
-**Spec:** `docs/spec.md` · **Plan:** `docs/plan.md` (11 tasks, completed 2026-05-21)
+**Spec:** `docs/spec.md` · Executed plans in `docs/archive/`
 
 ## Status
 
@@ -28,8 +28,8 @@ Part of the **memoriainfinita** ecosystem alongside UMT and notae. GPL-3.0.
 | Layer | Technology |
 |---|---|
 | App | TypeScript → esbuild → `dist/app.js` |
-| Theory | UMT via jsDelivr CDN (`UMT.*` global) |
-| Diagrams | notae via jsDelivr CDN (`Notae.*` global) |
+| Theory | UMT via jsDelivr CDN, pinned to commit `82d575f` (`UMT.*` global) |
+| Diagrams | notae via jsDelivr CDN, pinned to commit `610ddd9` (`Notae.*` global) |
 | Staff | abcjs 6.4.0 via CDN (`ABCJS.*` global) |
 | MIDI | Web MIDI API (Chrome/Edge only) |
 | Guitar voicings | `UMT.getFretboardVoicings(chord, UMT.GUITAR_STANDARD)` — no fetch |
@@ -37,17 +37,11 @@ Part of the **memoriainfinita** ecosystem alongside UMT and notae. GPL-3.0.
 | Styles | Plain CSS (`styles.css`) |
 | Persistence | localStorage |
 
-- **Dev:** `npm run dev` (watch) · `npm run build` (one-shot) · `npm test` · `npx http-server . -p 8080`
+- **Package manager:** pnpm 11. `pnpm-workspace.yaml` holds `allowBuilds: esbuild: true` (pnpm 11 blocks install scripts by default)
+- **Dev:** `pnpm dev` (watch) · `pnpm build` (one-shot) · `pnpm test` · `pnpm exec tsc --noEmit` · `pnpm dlx http-server . -p 8080`
+- **Toolchain:** esbuild 0.28 · vitest 5 + vite 8 · jsdom 30 · TypeScript 5.9 (held on 5.x on purpose)
 - **Browser:** Chrome or Edge (Web MIDI API required)
-
-### CDN script tags (index.html)
-
-```html
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/notae@master/dist/notae.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.0/dist/abcjs-basic-min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-```
+- **CDN script tags:** in `index.html`. UMT/notae pinned by commit hash; abcjs 6.4.0 and soundfont-player 0.12.0 by npm version
 
 ## UMT API — verified directly from source
 
@@ -101,13 +95,15 @@ const umtNote = UMT.parseNote(noteName)
 
 - [language] Everything in English: code, comments, documentation (spec, README, state.md), commit messages. Confirmed 2026-05.
 - [typescript] esbuild watch mode, same toolchain as UMT and notae. Confirmed 2026-05.
-- [typescript] `npm run build` does not typecheck (esbuild). Use `npx tsc --noEmit`. Confirmed 2026-05.
+- [typescript] `pnpm build` does not typecheck (esbuild). Use `pnpm exec tsc --noEmit`. Confirmed 2026-05.
 - [build] `dist/` is tracked in git, same as notae and UMT. Commit it in sync with `src/`. Confirmed 2026-05.
+- [build] pnpm, not npm. Confirmed 2026-10.
+- [deps] UMT and notae pinned to a commit hash in the CDN URL, never `@main`/`@master`. Bump deliberately. Confirmed 2026-10.
 - [naming] Project name: Modus (Latin — mode, measure). Confirmed 2026-05.
 
 ## Preferences
 
-- At session start Claude launches `npm run dev` in background (`run_in_background: true`); `--watch=forever` keeps it alive when stdin closes. Do not use `!` in chat for this (it blocks). `npm run build` only to check errors on demand.
+- At session start Claude launches `pnpm dev` in background (`run_in_background: true`); `--watch=forever` keeps it alive when stdin closes. Do not use `!` in chat for this (it blocks). `pnpm build` only to check errors on demand.
 
 ## TODO
 

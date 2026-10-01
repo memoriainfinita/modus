@@ -178,7 +178,6 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
 #guitar-container { min-height: 220px; }
 #instruments-content { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; overflow-x: auto; }
 #col-neck { padding-top: 50px; }
-.centered-content { display: flex; justify-content: center; }
 
 /* ─── Chord summary ───────────────────────────────────────────── */
 .chord-summary-row {

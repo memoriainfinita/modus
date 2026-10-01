@@ -28,11 +28,9 @@
   }
   function noteNameToMidi(name) {
     const m = name.match(/^([A-G][b#]?)(-?\d+)$/);
-    if (!m)
-      return null;
+    if (!m) return null;
     const pc = NOTE_SEMITONE[m[1]];
-    if (pc === void 0)
-      return null;
+    if (pc === void 0) return null;
     return (parseInt(m[2]) + 1) * 12 + pc;
   }
   function isNoteOff(status, velocity) {
@@ -63,8 +61,7 @@
       midiAccess = await navigator.requestMIDIAccess();
       midiAccess.onstatechange = () => refreshDeviceList();
       const savedMode = localStorage.getItem("midi-mode");
-      if (savedMode && ["normal", "hold", "arpeggio"].includes(savedMode))
-        mode = savedMode;
+      if (savedMode && ["normal", "hold", "arpeggio"].includes(savedMode)) mode = savedMode;
       restoreDevice();
       return { ok: true, denied: false, unsupported: false };
     } catch {
@@ -72,8 +69,7 @@
     }
   }
   function getDevices() {
-    if (!midiAccess)
-      return [];
+    if (!midiAccess) return [];
     return Array.from(midiAccess.inputs.values()).map((i) => ({ id: i.id, name: i.name ?? i.id }));
   }
   function selectDevice(id) {
@@ -85,12 +81,10 @@
     const saved = localStorage.getItem("midi-device-id");
     const devices = getDevices();
     const target = saved && devices.find((d) => d.id === saved) ? saved : devices[0]?.id ?? null;
-    if (target)
-      selectDevice(target);
+    if (target) selectDevice(target);
   }
   function attachToDevice(id) {
-    if (!midiAccess)
-      return;
+    if (!midiAccess) return;
     for (const input of midiAccess.inputs.values()) {
       input.onmidimessage = input.id === id ? handleMidiMessage : null;
     }
@@ -102,8 +96,7 @@
     }
   }
   function handleMidiMessage(e) {
-    if (!e.data || e.data.length < 3)
-      return;
+    if (!e.data || e.data.length < 3) return;
     const [status, note, velocity] = e.data;
     if (isNoteOff(status, velocity)) {
       handleNoteOff(note);
@@ -120,14 +113,12 @@
       activeNotes.add(note);
       onNoteChange(sortedNotes(activeNotes));
     } else if (mode === "hold") {
-      if (physicallyHeldNotes.size === 0)
-        activeNotes.clear();
+      if (physicallyHeldNotes.size === 0) activeNotes.clear();
       physicallyHeldNotes.add(note);
       activeNotes.add(note);
       onNoteChange(sortedNotes(activeNotes));
     } else if (mode === "arpeggio") {
-      if (arpeggioTimer)
-        clearTimeout(arpeggioTimer);
+      if (arpeggioTimer) clearTimeout(arpeggioTimer);
       arpeggioNotes.push(note);
       onNoteChange([...new Set(arpeggioNotes)].sort((a, b) => a - b));
       arpeggioTimer = setTimeout(() => {
@@ -146,8 +137,7 @@
     }
   }
   function setMode(m) {
-    if (m === mode)
-      return;
+    if (m === mode) return;
     mode = m;
     activeNotes.clear();
     physicallyHeldNotes.clear();
@@ -183,8 +173,7 @@
     return { name: INTERVAL_NAMES[n], inversionName: INTERVAL_NAMES[inv] };
   }
   function analyzeNotes(midiNotes) {
-    if (midiNotes.length === 0)
-      return null;
+    if (midiNotes.length === 0) return null;
     const noteNames = midiNotes.map(midiToNoteName);
     if (midiNotes.length === 1) {
       const result2 = {
@@ -250,8 +239,7 @@
         try {
           const prevChord = UMT.parseChordSymbol(prevChordSymbol);
           const cad = UMT.Harmony.analyzeCadence(prevChord, chord, activeKey);
-          if (cad && cad !== "No standard cadence")
-            cadence = cad;
+          if (cad && cad !== "No standard cadence") cadence = cad;
         } catch {
         }
       }
@@ -314,11 +302,9 @@
     };
   }
   function getAutoKey(history) {
-    if (history.length === 0)
-      return null;
+    if (history.length === 0) return null;
     const allNotes = history.flatMap((e) => e.notes.map((n) => UMT.parseNote(n)));
-    if (allNotes.length === 0)
-      return null;
+    if (allNotes.length === 0) return null;
     try {
       const results = UMT.KeyDetection.detect(allNotes);
       return results[0]?.key ?? null;
@@ -361,12 +347,10 @@
     { label: "Sound FX", instruments: ["guitar_fret_noise", "breath_noise", "seashore", "bird_tweet", "telephone_ring", "helicopter", "applause", "gunshot"] }
   ];
   function ensureContext() {
-    if (!audioCtx)
-      audioCtx = new AudioContext();
+    if (!audioCtx) audioCtx = new AudioContext();
   }
   function loadCurrentInstrument() {
-    if (loadingInstrument || !audioCtx)
-      return;
+    if (loadingInstrument || !audioCtx) return;
     loadingInstrument = true;
     instrument = null;
     setStatus("loading");
@@ -383,18 +367,15 @@
   function initAudioOnGesture() {
     ensureContext();
     audioCtx.resume().then(() => {
-      if (instrument && audioStatus === "suspended")
-        setStatus("ready");
+      if (instrument && audioStatus === "suspended") setStatus("ready");
     });
-    if (!instrument && !loadingInstrument)
-      loadCurrentInstrument();
+    if (!instrument && !loadingInstrument) loadCurrentInstrument();
   }
   function setInstrument(name) {
     currentInstrumentName = name;
     localStorage.setItem("audio-instrument", name);
     instrument = null;
-    if (audioCtx)
-      loadCurrentInstrument();
+    if (audioCtx) loadCurrentInstrument();
   }
   function getCurrentInstrument() {
     return currentInstrumentName;
@@ -408,22 +389,18 @@
   }
   function playNote(midiNumber, duration = 1.5) {
     ensureContext();
-    if (!loadingInstrument && !instrument)
-      loadCurrentInstrument();
-    if (!audioCtx || !instrument)
-      return;
+    if (!loadingInstrument && !instrument) loadCurrentInstrument();
+    if (!audioCtx || !instrument) return;
     audioCtx.resume().then(() => {
       instrument.play(midiNumber, audioCtx.currentTime, { duration, gain: volume });
     });
   }
   function playNoteByName(noteName, duration = 1.5) {
     const midi = noteNameToMidi(noteName);
-    if (midi !== null)
-      playNote(midi, duration);
+    if (midi !== null) playNote(midi, duration);
   }
   function playMidiNotes(midiNotes, duration = 2) {
-    if (!instrument || !audioCtx)
-      return;
+    if (!instrument || !audioCtx) return;
     audioCtx.resume().then(() => {
       for (const midi of midiNotes) {
         instrument.play(midi, audioCtx.currentTime, { duration, gain: volume });
@@ -431,11 +408,9 @@
     });
   }
   function playNoteNames(noteNames, duration = 2) {
-    if (!instrument || !audioCtx)
-      return;
+    if (!instrument || !audioCtx) return;
     const midis = noteNames.map(noteNameToMidi).filter((m) => m !== null);
-    if (!midis.length)
-      return;
+    if (!midis.length) return;
     audioCtx.resume().then(() => {
       for (const midi of midis) {
         instrument.play(midi, audioCtx.currentTime, { duration, gain: volume });
@@ -460,33 +435,26 @@
   };
   function playChord(chordSymbol) {
     ensureContext();
-    if (!loadingInstrument && !instrument)
-      loadCurrentInstrument();
-    if (!audioCtx)
-      return;
+    if (!loadingInstrument && !instrument) loadCurrentInstrument();
+    if (!audioCtx) return;
     try {
       const chord = UMT.parseChordSymbol(chordSymbol);
       const midiNotes = [];
       const umtNotes = chord.getNotes?.() ?? [];
       for (const n of umtNotes) {
         const midi = noteNameToMidi(n.name);
-        if (midi !== null)
-          midiNotes.push(midi);
+        if (midi !== null) midiNotes.push(midi);
       }
       if (!midiNotes.length) {
         const rootName = chord.root?.name ?? (typeof chord.root === "string" ? chord.root : null);
-        if (!rootName)
-          return;
+        if (!rootName) return;
         const rootMidi = noteNameToMidi(rootName + "4");
-        if (rootMidi === null)
-          return;
+        if (rootMidi === null) return;
         const quality = chord.quality ?? "major";
         const intervals = QUALITY_INTERVALS[quality] ?? [0, 4, 7];
-        for (const interval of intervals)
-          midiNotes.push(rootMidi + interval);
+        for (const interval of intervals) midiNotes.push(rootMidi + interval);
       }
-      if (!midiNotes.length || !instrument)
-        return;
+      if (!midiNotes.length || !instrument) return;
       audioCtx.resume().then(() => {
         for (const midi of midiNotes) {
           instrument.play(midi, audioCtx.currentTime, { duration: 2, gain: volume });
@@ -543,8 +511,7 @@
   }
   function renderChordSummary(detection, onAltSelect2) {
     const el = document.getElementById("chord-summary");
-    if (!el)
-      return;
+    if (!el) return;
     if (!detection || detection.kind !== "chord") {
       el.innerHTML = "";
       return;
@@ -568,8 +535,7 @@
   function renderZone1Analysis(detection, analysis, fieldsVisible, scale, onAltSelect2) {
     renderChordSummary(detection, onAltSelect2);
     const el = document.getElementById("analysis-content");
-    if (!el)
-      return;
+    if (!el) return;
     el.style.fontSize = scale + "px";
     const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => fieldsVisible[f]).length;
     el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
@@ -600,14 +566,10 @@
       diatonic = analysis.isDiatonic ? "Yes" : analysis.isBorrowed ? `Borrowed (${analysis.borrowedFrom ?? "?"})` : "Chromatic";
       scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
       cadence = analysis.cadence || "\u2014";
-      if (analysis.isSecondary)
-        secondary = `\u2192 ${analysis.secondaryTarget}`;
-      if (analysis.coltraneAxis)
-        coltrane = analysis.coltraneAxis.join(" \xB7 ");
-      if (analysis.negativeHarmony)
-        negharm = analysis.negativeHarmony;
-      if (analysis.substitutions?.length)
-        subs = analysis.substitutions.join(", ");
+      if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget}`;
+      if (analysis.coltraneAxis) coltrane = analysis.coltraneAxis.join(" \xB7 ");
+      if (analysis.negativeHarmony) negharm = analysis.negativeHarmony;
+      if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
     }
     el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("coltrane", "Coltrane", coltrane) + conditionalRow("negharm", "Neg. harm.", negharm) + conditionalRow("subs", "Subs.", subs) + extra;
   }
@@ -618,8 +580,7 @@
     guitarControlsVisible = v;
   }
   function activeKeyToAbcKey(keyStr) {
-    if (!keyStr)
-      return "none";
+    if (!keyStr) return "none";
     const [root, mode2] = keyStr.split(" ");
     return root + (mode2?.toLowerCase() === "minor" ? "m" : "");
   }
@@ -637,18 +598,14 @@ K:${abcKey}
     }
     const abcNotes = noteNames.map((n) => {
       const m = n.match(/^([A-G][b#]?)(-?\d+)$/);
-      if (!m)
-        return "C";
+      if (!m) return "C";
       const raw = m[1];
       const name = raw.endsWith("b") ? "_" + raw[0] : raw.endsWith("#") ? "^" + raw[0] : raw;
       const oct = parseInt(m[2]);
       let abc = name;
-      if (oct >= 5)
-        abc = name.toLowerCase() + "'".repeat(oct - 5);
-      else if (oct === 4)
-        abc = name;
-      else
-        abc = name + ",".repeat(4 - oct);
+      if (oct >= 5) abc = name.toLowerCase() + "'".repeat(oct - 5);
+      else if (oct === 4) abc = name;
+      else abc = name + ",".repeat(4 - oct);
       return abc;
     });
     ABCJS.renderAbc(container, header + `[${abcNotes.join("")}]1`, opts);
@@ -710,8 +667,7 @@ K:${abcKey}
     const rects = container.querySelectorAll("rect");
     rects.forEach((el, i) => {
       const note = PIANO_KEY_ORDER[i];
-      if (!note)
-        return;
+      if (!note) return;
       el.dataset.note = note;
       el.style.cursor = "pointer";
       el.addEventListener("click", () => playNoteByName(note));
@@ -729,13 +685,11 @@ K:${abcKey}
     const activeClasses = new Set(
       noteNames.map((n) => NOTE_SEMITONE[n.match(/^([A-G][b#]?)/)?.[1] ?? ""] ?? -1).filter((n) => n >= 0)
     );
-    if (!activeClasses.size)
-      return { frets: tuning.map(() => null), baseFret: 1 };
+    if (!activeClasses.size) return { frets: tuning.map(() => null), baseFret: 1 };
     const frets = tuning.map((open) => {
       const base = NOTE_SEMITONE[open] ?? 0;
       for (let f = 0; f <= 12; f++) {
-        if (activeClasses.has((base + f) % 12))
-          return f;
+        if (activeClasses.has((base + f) % 12)) return f;
       }
       return null;
     });
@@ -760,8 +714,7 @@ K:${abcKey}
       const saved = localStorage.getItem("guitar-string-tuning");
       if (saved) {
         const v = JSON.parse(saved);
-        if (Array.isArray(v) && v.length === 6)
-          return v;
+        if (Array.isArray(v) && v.length === 6) return v;
       }
     } catch {
     }
@@ -865,8 +818,7 @@ K:${abcKey}
     container.querySelectorAll(".guitar-string-input").forEach((input) => {
       input.addEventListener("change", () => {
         const val = input.value.trim();
-        if (!val)
-          return;
+        if (!val) return;
         guitarStringTuning[parseInt(input.dataset.string)] = val;
         localStorage.setItem("guitar-string-tuning", JSON.stringify(guitarStringTuning));
         guitarTuningKey = detectPreset(guitarStringTuning);
@@ -1062,8 +1014,7 @@ K:${abcKey}
     container.querySelectorAll("[data-key]").forEach((el) => {
       el.addEventListener("click", () => {
         initAudioOnGesture();
-        if (el.dataset.chord)
-          playChord(el.dataset.chord);
+        if (el.dataset.chord) playChord(el.dataset.chord);
         onKeyClick(el.dataset.key, el.dataset.chord);
       });
     });
@@ -1114,8 +1065,7 @@ K:${abcKey}
     onChange(entries);
   }
   function notifyChordDetected(symbol, notes) {
-    if (debounceTimer)
-      clearTimeout(debounceTimer);
+    if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       if (symbol !== lastAutoAppended && symbol !== "?") {
         addEntry(symbol, notes);
@@ -1142,10 +1092,8 @@ K:${abcKey}
     `;
       chip.addEventListener("click", () => onChipClick(entry));
       chip.addEventListener("dblclick", () => {
-        if (entry.notes.length > 0)
-          playNoteNames(entry.notes);
-        else
-          playChord(entry.symbol);
+        if (entry.notes.length > 0) playNoteNames(entry.notes);
+        else playChord(entry.symbol);
       });
       chip.title = `${entry.symbol} \u2014 dblclick to play, drag to song, right-click to remove`;
       chip.draggable = true;
@@ -1227,8 +1175,7 @@ K:${abcKey}
   }
   function duplicateSection(song, sectionId) {
     const src = song.sections.find((s) => s.id === sectionId);
-    if (!src)
-      return song;
+    if (!src) return song;
     const copy = {
       ...src,
       id: newId(),
@@ -1254,8 +1201,7 @@ K:${abcKey}
     return {
       ...song,
       sections: song.sections.map((s) => {
-        if (s.id !== sectionId || s.measures.length <= 1)
-          return s;
+        if (s.id !== sectionId || s.measures.length <= 1) return s;
         return { ...s, measures: s.measures.filter((m) => m.id !== measureId) };
       })
     };
@@ -1283,8 +1229,7 @@ K:${abcKey}
         ...s,
         measures: s.measures.map((m) => {
           const idx = m.chords.findIndex((c) => c.id === afterChordId);
-          if (idx === -1)
-            return m;
+          if (idx === -1) return m;
           const chords = [...m.chords];
           chords.splice(idx + 1, 0, newChord);
           return { ...m, chords };
@@ -1321,8 +1266,7 @@ K:${abcKey}
     for (const s of song.sections)
       for (const m of s.measures) {
         const c = m.chords.find((ch) => ch.id === chordId);
-        if (c)
-          return insertChordAfter(song, chordId, c.symbol, c.notes);
+        if (c) return insertChordAfter(song, chordId, c.symbol, c.notes);
       }
     return song;
   }
@@ -1334,25 +1278,21 @@ K:${abcKey}
         ...s,
         measures: s.measures.map((m) => {
           const idx = m.chords.findIndex((c) => c.id === chordId);
-          if (idx === -1)
-            return m;
+          if (idx === -1) return m;
           movedChord = m.chords[idx];
           return { ...m, chords: m.chords.filter((c) => c.id !== chordId) };
         })
       }))
     };
-    if (!movedChord)
-      return song;
+    if (!movedChord) return song;
     return {
       ...without,
       sections: without.sections.map((s) => {
-        if (s.id !== targetSectionId)
-          return s;
+        if (s.id !== targetSectionId) return s;
         return {
           ...s,
           measures: s.measures.map((m) => {
-            if (m.id !== targetMeasureId)
-              return m;
+            if (m.id !== targetMeasureId) return m;
             const chords = [...m.chords];
             const at = beforeChordId ? chords.findIndex((c) => c.id === beforeChordId) : -1;
             chords.splice(at === -1 ? chords.length : at, 0, movedChord);
@@ -1365,12 +1305,10 @@ K:${abcKey}
   function reorderSections(song, draggedId, targetId, before) {
     const sections = [...song.sections];
     const fromIdx = sections.findIndex((s) => s.id === draggedId);
-    if (fromIdx === -1)
-      return song;
+    if (fromIdx === -1) return song;
     const [moved] = sections.splice(fromIdx, 1);
     const toIdx = sections.findIndex((s) => s.id === targetId);
-    if (toIdx === -1)
-      return song;
+    if (toIdx === -1) return song;
     sections.splice(before ? toIdx : toIdx + 1, 0, moved);
     return { ...song, sections };
   }
@@ -1388,22 +1326,19 @@ K:${abcKey}
     return text.split(/[\s,\n]+/).map((t) => t.trim()).filter(Boolean);
   }
   function computeDegree(chordSymbol, activeKey) {
-    if (!activeKey || !chordSymbol)
-      return "\u2014";
+    if (!activeKey || !chordSymbol) return "\u2014";
     try {
       const chord = UMT.parseChordSymbol(chordSymbol);
       const { analysis } = UMT.Harmony.analyzeProgression([chord], activeKey);
       const a = analysis[0];
-      if (!a)
-        return "?";
+      if (!a) return "?";
       return a.roman ?? "?";
     } catch {
       return "?";
     }
   }
   function isBorrowedChord(chordSymbol, activeKey) {
-    if (!activeKey)
-      return false;
+    if (!activeKey) return false;
     try {
       const chord = UMT.parseChordSymbol(chordSymbol);
       const { analysis } = UMT.Harmony.analyzeProgression([chord], activeKey);
@@ -1413,8 +1348,7 @@ K:${abcKey}
     }
   }
   function isValidChordSymbol(symbol) {
-    if (!symbol)
-      return false;
+    if (!symbol) return false;
     try {
       UMT.parseChordSymbol(symbol);
       return true;
@@ -1428,16 +1362,14 @@ K:${abcKey}
     const names = preferSharps ? SEMITONE_NAMES_SHARP : PITCH_NAMES_FLAT;
     const all = [...SEMITONE_NAMES_SHARP, ...PITCH_NAMES_FLAT];
     const idx = all.indexOf(root);
-    if (idx === -1)
-      return root;
+    if (idx === -1) return root;
     return names[((idx % 12 + semitones) % 12 + 12) % 12];
   }
   function transposeSong(song, semitones, targetKey) {
     const preferSharps = targetKey ? SHARP_KEYS.includes(targetKey.split(" ")[0]) : false;
     const transposePart = (part) => {
       const m = part.match(/^([A-G][b#]?)/);
-      if (!m)
-        return part;
+      if (!m) return part;
       return transposeRoot(m[1], semitones, preferSharps) + part.slice(m[1].length);
     };
     const transposeSymbol = (symbol) => symbol.split("/").map(transposePart).join("/");
@@ -1461,8 +1393,7 @@ K:${abcKey}
   function loadSong() {
     try {
       const raw = localStorage.getItem("modus-song") ?? localStorage.getItem("harmony-companion-song");
-      if (!raw)
-        return createSong();
+      if (!raw) return createSong();
       const parsed = JSON.parse(raw);
       if (parsed.schemaVersion !== 1) {
         console.warn("Song schema version mismatch \u2014 resetting");
@@ -1491,8 +1422,7 @@ K:${abcKey}
   var _dropIndicator = null;
   var _insertBeforeChordId = null;
   function showNotice(msg, type = "info") {
-    if (!_container)
-      return;
+    if (!_container) return;
     document.querySelectorAll(".song-notice").forEach((el) => el.remove());
     const div = document.createElement("div");
     div.className = `song-notice${type === "warn" ? " warn" : ""}`;
@@ -1538,8 +1468,7 @@ K:${abcKey}
     rerender();
   }
   function rerender() {
-    if (!_container || !_handlers)
-      return;
+    if (!_container || !_handlers) return;
     _container.innerHTML = "";
     _container.appendChild(buildSongDOM(_song, _handlers));
   }
@@ -1572,8 +1501,7 @@ K:${abcKey}
     pasteTA.className = "paste-textarea";
     const pasteSubmit = makeBtn("Add chords", "#4f46e5", () => {
       const text = pasteTA.value.trim();
-      if (!text)
-        return;
+      if (!text) return;
       const symbols = parseProgressionText(text);
       if (!_song.sections.length) {
         _song = addSection(_song, "Section", "verse");
@@ -1581,8 +1509,7 @@ K:${abcKey}
       const section = _song.sections[_song.sections.length - 1];
       const measure = newPasteMeasure(symbols);
       _song = { ..._song, sections: _song.sections.map((s) => s.id !== section.id ? s : { ...s, measures: [...s.measures, measure] }) };
-      if (symbols.length > 8)
-        showNotice("All chords added to one measure \u2014 split as needed.");
+      if (symbols.length > 8) showNotice("All chords added to one measure \u2014 split as needed.");
       pasteTA.value = "";
       pasteArea.style.display = "none";
       saveSong(_song);
@@ -1632,8 +1559,7 @@ K:${abcKey}
     const pasteBtn = makeBtn("Paste", "#374151", () => {
       const open = pasteArea.style.display === "none";
       pasteArea.style.display = open ? "block" : "none";
-      if (open)
-        pasteTA.focus();
+      if (open) pasteTA.focus();
     });
     pasteBtn.title = "Paste a chord progression as text";
     header.append(titleInput, newBtn, templateWrap, transposeSelect, exportBtn, pasteBtn);
@@ -1751,8 +1677,7 @@ K:${abcKey}
       };
       input.addEventListener("blur", commit);
       input.addEventListener("keydown", (ke) => {
-        if (ke.key === "Enter")
-          input.blur();
+        if (ke.key === "Enter") input.blur();
         if (ke.key === "Escape") {
           input.value = String(section.repeatCount);
           input.blur();
@@ -1804,8 +1729,7 @@ K:${abcKey}
       wrap.style.borderBottom = "";
     });
     wrap.addEventListener("dragover", (e) => {
-      if (!_draggedSectionId || _draggedSectionId === section.id)
-        return;
+      if (!_draggedSectionId || _draggedSectionId === section.id) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       const rect = wrap.getBoundingClientRect();
@@ -1820,8 +1744,7 @@ K:${abcKey}
       }
     });
     wrap.addEventListener("drop", (e) => {
-      if (!_draggedSectionId || _draggedSectionId === section.id)
-        return;
+      if (!_draggedSectionId || _draggedSectionId === section.id) return;
       e.preventDefault();
       const rect = wrap.getBoundingClientRect();
       const before = e.clientY < rect.top + rect.height / 2;
@@ -1870,8 +1793,7 @@ K:${abcKey}
     chordsRow.addEventListener("dragover", (e) => {
       const hasHistory = e.dataTransfer.types.includes("application/x-history-chord");
       const hasChord = !!_draggedChordId;
-      if (!hasHistory && !hasChord)
-        return;
+      if (!hasHistory && !hasChord) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = hasHistory ? "copy" : "move";
       chordsRow.style.outline = "1px dashed #4f46e5";
@@ -1912,8 +1834,7 @@ K:${abcKey}
     delMBtn.style.color = "#f87171";
     delMBtn.style.alignSelf = "center";
     const sectionObj = _song.sections.find((s) => s.id === section.id);
-    if (!sectionObj || sectionObj.measures.length <= 1)
-      delMBtn.style.display = "none";
+    if (!sectionObj || sectionObj.measures.length <= 1) delMBtn.style.display = "none";
     wrap.appendChild(delMBtn);
     return wrap;
   }
@@ -1947,8 +1868,7 @@ K:${abcKey}
           confirmInput();
         }
         if (e.key === "Escape") {
-          if (!prevValue)
-            _song = removeChord(_song, chord.id);
+          if (!prevValue) _song = removeChord(_song, chord.id);
           saveSong(_song);
           h.onSongChange(_song);
         }
@@ -1965,13 +1885,11 @@ K:${abcKey}
     const symbolEl = document.createElement("div");
     symbolEl.textContent = chord.symbol;
     symbolEl.className = "chord-chip-symbol";
-    if (!chord.valid)
-      symbolEl.style.color = "#ef4444";
+    if (!chord.valid) symbolEl.style.color = "#ef4444";
     const degreeEl = document.createElement("div");
     degreeEl.textContent = degree;
     degreeEl.className = "chord-chip-degree";
-    if (borrowed)
-      degreeEl.style.color = "#f59e0b";
+    if (borrowed) degreeEl.style.color = "#f59e0b";
     wrap.appendChild(symbolEl);
     wrap.appendChild(degreeEl);
     const controls = document.createElement("div");
@@ -1990,10 +1908,8 @@ K:${abcKey}
         h.onSongChange(_song);
       };
       input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter")
-          commit();
-        if (e.key === "Escape")
-          h.onSongChange(_song);
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") h.onSongChange(_song);
       });
       input.addEventListener("blur", commit);
       editWrap.appendChild(input);
@@ -2046,10 +1962,8 @@ K:${abcKey}
     wrap.addEventListener("click", () => h.onChordClick(chord.id, chord.symbol, chord.notes));
     wrap.addEventListener("dblclick", () => {
       initAudioOnGesture();
-      if (chord.notes?.length)
-        playNoteNames(chord.notes);
-      else
-        playChord(chord.symbol);
+      if (chord.notes?.length) playNoteNames(chord.notes);
+      else playChord(chord.symbol);
     });
     wrap.draggable = true;
     wrap.addEventListener("dragstart", (e) => {
@@ -2070,8 +1984,7 @@ K:${abcKey}
       _insertBeforeChordId = null;
     });
     wrap.addEventListener("dragover", (e) => {
-      if (!_draggedChordId || _draggedChordId === chord.id)
-        return;
+      if (!_draggedChordId || _draggedChordId === chord.id) return;
       e.preventDefault();
       e.stopPropagation();
       e.dataTransfer.dropEffect = "move";
@@ -2094,8 +2007,7 @@ K:${abcKey}
     wrap.addEventListener("drop", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!_draggedChordId || _draggedChordId === chord.id)
-        return;
+      if (!_draggedChordId || _draggedChordId === chord.id) return;
       _dropIndicator?.remove();
       _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, _insertBeforeChordId ?? void 0);
       _draggedChordId = null;
@@ -2150,27 +2062,20 @@ K:${abcKey}
     return html;
   }
   function detectForm(sectionNames) {
-    if (sectionNames.length === 0)
-      return "Empty";
+    if (sectionNames.length === 0) return "Empty";
     const map = /* @__PURE__ */ new Map();
     let letter = 65;
     const letters = sectionNames.map((name) => {
       const key = name.trim().toLowerCase();
-      if (!map.has(key))
-        map.set(key, String.fromCharCode(letter++));
+      if (!map.has(key)) map.set(key, String.fromCharCode(letter++));
       return map.get(key);
     });
     const pattern = letters.join("");
-    if (/^(AB)+$/.test(pattern))
-      return `Verse-Chorus (${pattern})`;
-    if (/^AABA/.test(pattern))
-      return `AABA (${pattern})`;
-    if (/^(A+B+A+)$/.test(pattern))
-      return `Ternary (${pattern})`;
-    if (pattern === "A")
-      return "Single section (A)";
-    if (/^A+$/.test(pattern))
-      return `Strophic (${pattern})`;
+    if (/^(AB)+$/.test(pattern)) return `Verse-Chorus (${pattern})`;
+    if (/^AABA/.test(pattern)) return `AABA (${pattern})`;
+    if (/^(A+B+A+)$/.test(pattern)) return `Ternary (${pattern})`;
+    if (pattern === "A") return "Single section (A)";
+    if (/^A+$/.test(pattern)) return `Strophic (${pattern})`;
     return `${pattern}`;
   }
 
@@ -2188,8 +2093,7 @@ K:${abcKey}
   ];
   var helpVisible = false;
   function closeHelp() {
-    if (!helpVisible)
-      return false;
+    if (!helpVisible) return false;
     helpVisible = false;
     document.getElementById("shortcut-help")?.remove();
     document.removeEventListener("mousedown", closeHelpOnOutsideClick);
@@ -2220,8 +2124,7 @@ K:${abcKey}
   }
   function closeHelpOnOutsideClick(e) {
     const popup = document.getElementById("shortcut-help");
-    if (popup && !popup.contains(e.target))
-      closeHelp();
+    if (popup && !popup.contains(e.target)) closeHelp();
   }
 
   // src/app.ts
@@ -2330,8 +2233,7 @@ K:${abcKey}
     setAudioStatusCallback((status) => {
       const el = document.getElementById("audio-status");
       const fill = document.getElementById("audio-progress-fill");
-      if (!el || !fill)
-        return;
+      if (!el || !fill) return;
       const labels = { idle: "\u266A idle", loading: "\u266A loading\u2026", suspended: "\u266A click to activate", ready: "\u266A ready", error: "\u266A error" };
       el.textContent = labels[status] ?? status;
       if (progressTimer) {
@@ -2372,8 +2274,7 @@ K:${abcKey}
     return {
       onChordClick: (id, symbol, notes) => {
         state.activeCursorId = id;
-        if (!symbol)
-          return;
+        if (!symbol) return;
         if (notes?.length) {
           state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol());
           state.detection = { kind: "chord", notes, candidates: [symbol], selectedIndex: 0 };
@@ -2588,8 +2489,7 @@ K:${abcKey}
     const updateAnalysisFieldButtons = () => {
       ANALYSIS_FIELD_KEYS.forEach((f) => {
         const btn = document.getElementById(`btn-field-${f}`);
-        if (btn)
-          btn.classList.toggle("active", analysisFieldsVisible[f]);
+        if (btn) btn.classList.toggle("active", analysisFieldsVisible[f]);
       });
     };
     $("btn-analysis-minus").addEventListener("click", () => {
@@ -2639,8 +2539,7 @@ K:${abcKey}
     document.querySelectorAll(".mode-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const m = btn.dataset.mode;
-        if (getMode() === m)
-          return;
+        if (getMode() === m) return;
         setMode(m);
         document.querySelectorAll(".mode-btn").forEach((b) => b.classList.remove("active-mode"));
         btn.classList.add("active-mode");
@@ -2685,54 +2584,39 @@ K:${abcKey}
   }
   function applyPanelVisibility() {
     const nc = $("notation-content");
-    if (nc)
-      nc.style.display = state.panels.notation ? "flex" : "none";
+    if (nc) nc.style.display = state.panels.notation ? "flex" : "none";
     const ic = $("instruments-content");
-    if (ic)
-      ic.style.display = state.panels.instruments ? "" : "none";
+    if (ic) ic.style.display = state.panels.instruments ? "" : "none";
     const cp = $("col-piano");
-    if (cp)
-      cp.style.display = state.panels.colPiano ? "" : "none";
+    if (cp) cp.style.display = state.panels.colPiano ? "" : "none";
     const cn = $("col-neck");
-    if (cn)
-      cn.style.display = state.panels.colNeck ? "" : "none";
+    if (cn) cn.style.display = state.panels.colNeck ? "" : "none";
     const z2 = $("zone2-content");
-    if (z2)
-      z2.style.display = state.panels.history ? "" : "none";
+    if (z2) z2.style.display = state.panels.history ? "" : "none";
     const z3 = $("zone3-content");
-    if (z3)
-      z3.style.display = state.panels.song ? "" : "none";
+    if (z3) z3.style.display = state.panels.song ? "" : "none";
     const cc = $("cof-controls");
-    if (cc)
-      cc.style.display = state.panels.cofControls ? "" : "none";
+    if (cc) cc.style.display = state.panels.cofControls ? "" : "none";
     setGuitarControlsVisible(state.panels.guitarControls);
     const gcw = document.getElementById("guitar-ctrl-wrap");
-    if (gcw)
-      gcw.style.display = state.panels.guitarControls ? "" : "none";
+    if (gcw) gcw.style.display = state.panels.guitarControls ? "" : "none";
     const ac = $("analysis-controls");
-    if (ac)
-      ac.style.display = state.panels.analysisControls ? "" : "none";
+    if (ac) ac.style.display = state.panels.analysisControls ? "" : "none";
     const cs = $("col-staff");
-    if (cs)
-      cs.style.display = state.panels.colStaff ? "" : "none";
+    if (cs) cs.style.display = state.panels.colStaff ? "" : "none";
     const ca = $("col-analysis");
-    if (ca)
-      ca.style.display = state.panels.colAnalysis ? "" : "none";
+    if (ca) ca.style.display = state.panels.colAnalysis ? "" : "none";
     const ccof = $("col-cof");
-    if (ccof)
-      ccof.style.display = state.panels.colCoF ? "" : "none";
+    if (ccof) ccof.style.display = state.panels.colCoF ? "" : "none";
     const cg = $("col-guitar");
-    if (cg)
-      cg.style.display = state.panels.colGuitar ? "" : "none";
+    if (cg) cg.style.display = state.panels.colGuitar ? "" : "none";
     document.querySelectorAll(".col-vis-btn").forEach((btn) => {
       const col = btn.dataset.col;
-      if (col)
-        btn.classList.toggle("active", !!state.panels[col]);
+      if (col) btn.classList.toggle("active", !!state.panels[col]);
     });
     ["notation", "instruments", "history", "song", "cofControls", "guitarControls", "analysisControls"].forEach((key) => {
       const btn = document.querySelector(`.toggle-btn[data-panel="${key}"]`);
-      if (btn)
-        btn.textContent = state.panels[key] ? "\u25B2" : "\u25BC";
+      if (btn) btn.textContent = state.panels[key] ? "\u25B2" : "\u25BC";
     });
   }
   function onNoteChange2(notes) {
@@ -2784,8 +2668,7 @@ K:${abcKey}
     return state.history[0]?.symbol ?? null;
   }
   function onAltSelect(idx) {
-    if (state.detection?.kind !== "chord")
-      return;
+    if (state.detection?.kind !== "chord") return;
     state.detection.selectedIndex = idx;
     const sym = state.detection.candidates[idx];
     state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol());
@@ -2820,12 +2703,9 @@ K:${abcKey}
       renderZone1Diagrams([], null);
       return;
     }
-    if (d.kind === "chord")
-      renderZone1Diagrams(d.notes, d.candidates[d.selectedIndex]);
-    else if (d.kind === "note")
-      renderZone1Diagrams([d.noteName], null);
-    else
-      renderZone1Diagrams(d.notes ?? [], null);
+    if (d.kind === "chord") renderZone1Diagrams(d.notes, d.candidates[d.selectedIndex]);
+    else if (d.kind === "note") renderZone1Diagrams([d.noteName], null);
+    else renderZone1Diagrams(d.notes ?? [], null);
   }
   function renderZone2() {
     renderHistory(
@@ -2863,8 +2743,7 @@ K:${abcKey}
     try {
       const chord = UMT.parseChordSymbol(symbol);
       chord.getNotes?.().forEach((n) => {
-        if (n.name)
-          dummyNotes.push(n.name);
+        if (n.name) dummyNotes.push(n.name);
       });
     } catch {
     }
@@ -2905,8 +2784,7 @@ K:${abcKey}
   function refreshAutoKey() {
     const auto = getAutoKey(state.history);
     const label = $("auto-key-label");
-    if (label)
-      label.textContent = state.activeKey ? "" : auto ? `auto: ${auto}` : "";
+    if (label) label.textContent = state.activeKey ? "" : auto ? `auto: ${auto}` : "";
     if (!state.activeKey && auto && state.analysis) {
       const sym = state.detection?.kind === "chord" ? state.detection.candidates[0] : null;
       if (sym) {
@@ -2921,8 +2799,7 @@ K:${abcKey}
     const devices = getDevices();
     sel.innerHTML = devices.length ? devices.map((d) => `<option value="${d.id}">${d.name}</option>`).join("") : "<option>No MIDI devices</option>";
     sel.onchange = () => selectDevice(sel.value);
-    if (devices[0])
-      selectDevice(devices[0].id);
+    if (devices[0]) selectDevice(devices[0].id);
     $("midi-status").textContent = devices.length ? "MIDI: connected" : "MIDI: no devices";
     $("midi-status").style.color = devices.length ? "#4ade80" : "#6b7280";
     if (!deviceListenersAttached) {
@@ -2941,8 +2818,7 @@ K:${abcKey}
   }
   function wireKeyboard() {
     document.addEventListener("keydown", (e) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
-        return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       switch (e.key) {
         case "h":
         case "H":
@@ -2966,8 +2842,7 @@ K:${abcKey}
         case "s":
         case "S": {
           const activeEntry = state.historyActiveCursorId ? state.history.find((e2) => e2.id === state.historyActiveCursorId) : state.history[0];
-          if (activeEntry)
-            sendToSong(activeEntry);
+          if (activeEntry) sendToSong(activeEntry);
           break;
         }
         case "p":
@@ -2987,8 +2862,7 @@ K:${abcKey}
           toggleHelp();
           break;
         case "Escape":
-          if (closeHelp())
-            break;
+          if (closeHelp()) break;
           state.activeCursorId = null;
           state.captureTargetId = null;
           renderZone3();
