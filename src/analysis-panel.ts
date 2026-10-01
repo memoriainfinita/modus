@@ -1,4 +1,5 @@
 import type { DetectionResult, HarmonicAnalysis } from './types'
+import { chordColor } from './chord'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 
@@ -16,20 +17,6 @@ export const ANALYSIS_FIELD_TOOLTIPS: Record<AnalysisFieldKey, string> = {
   secondary: 'Secondary dominant', coltrane: 'Coltrane axis', negharm: 'Negative harmony', subs: 'Substitutions'
 }
 
-// ─── Chord quality ────────────────────────────────────────────────────────────
-
-export const CHORD_QUALITY_COLORS: Record<string, string> = {
-  major: '#f59e0b', minor: '#3b82f6', 'dominant seventh': '#ef4444',
-  'major seventh': '#f59e0b', 'minor seventh': '#3b82f6',
-  diminished: '#7c3aed', 'diminished seventh': '#7c3aed',
-  'half-diminished seventh': '#7c3aed', augmented: '#0d9488',
-  sus: '#6b7280',
-}
-
-export function getChordQuality(chordSymbol: string): string {
-  try { return UMT.parseChordSymbol(chordSymbol).quality?.toLowerCase() ?? '' } catch { return '' }
-}
-
 // ─── Chord summary (private — called only by renderZone1Analysis) ─────────────
 
 function renderChordSummary(
@@ -41,7 +28,7 @@ function renderChordSummary(
   if (!detection || detection.kind !== 'chord') { el.innerHTML = ''; return }
 
   const chordName = detection.candidates[detection.selectedIndex]
-  const color = CHORD_QUALITY_COLORS[getChordQuality(chordName)] ?? '#6b7280'
+  const color = chordColor(chordName)
   const notes = detection.notes.map(n => n.replace(/(-?\d+)$/, '')).join(' · ')
   const alts = detection.candidates.slice(1, 7)
 

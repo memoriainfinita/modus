@@ -8,9 +8,10 @@ import type { AppState, HistoryEntry, SongChord } from './types'
 import { toggleHelp, closeHelp } from './shortcuts'
 import {
   ANALYSIS_FIELD_KEYS, ANALYSIS_FIELD_LABELS, ANALYSIS_FIELD_TOOLTIPS,
-  getChordQuality, renderZone1Analysis
+  renderZone1Analysis
 } from './analysis-panel'
 import type { AnalysisFieldKey } from './analysis-panel'
+import { chordNoteNames } from './chord'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -583,8 +584,7 @@ function onAltSelect(idx: number) {
 
 function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderStaff($('staff-container'), noteNames, staffWidth, state.activeKey)
-  const quality = chordSymbol ? getChordQuality(chordSymbol) : ''
-  renderPiano($('piano-container'), noteNames, quality)
+  renderPiano($('piano-container'), noteNames, chordSymbol)
   const chordRoot = chordSymbol ? (chordSymbol.match(/^([A-G][b#]?)/) ?? [, ''])[1] || null : null
   renderNeck($('neck-container'), noteNames, chordRoot)
   renderGuitar($('guitar-container'), chordSymbol, noteNames)
@@ -647,12 +647,7 @@ function triggerChordAnalysis(symbol: string) {
   state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol())
   state.detection = { kind: 'chord', notes: [], candidates: [symbol], selectedIndex: 0 }
   renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
-  const dummyNotes: string[] = []
-  try {
-    const chord = UMT.parseChordSymbol(symbol)
-    chord.getNotes?.().forEach((n: any) => { if (n.name) dummyNotes.push(n.name) })
-  } catch {}
-  renderZone1Diagrams(dummyNotes, symbol)
+  renderZone1Diagrams(chordNoteNames(symbol), symbol)
 }
 
 function sendToSong(entry: HistoryEntry) {

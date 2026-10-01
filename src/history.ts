@@ -3,7 +3,8 @@ import { buildHarmonicAnalysis } from './analyzer'
 import { playChord, playNoteNames } from './audio'
 
 const MAX_ENTRIES = 200
-const QUALITY_COLORS: Record<string, string> = {
+// Chip accent by harmonic function (T/S/D), not by chord quality
+const FUNCTION_COLORS: Record<string, string> = {
   'T': '#f59e0b', 'S': '#3b82f6', 'D': '#ef4444', 'unknown': '#6b7280'
 }
 
@@ -60,7 +61,7 @@ export function renderHistory(
     const analysis = activeKey ? buildHarmonicAnalysis(entry.symbol, activeKey, null) : null
     const roman = analysis?.roman ?? '—'
     const fn = analysis?.function ?? 'unknown'
-    const color = QUALITY_COLORS[fn] ?? '#6b7280'
+    const color = FUNCTION_COLORS[fn] ?? '#6b7280'
 
     const chip = document.createElement('div')
     chip.className = 'history-chip'

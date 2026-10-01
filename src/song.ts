@@ -1,6 +1,7 @@
 import type { Song, Section, Measure, SongChord, SectionColor } from './types'
 import { playChord, playNoteNames, initAudioOnGesture } from './audio'
 import { PITCH_NAMES_FLAT } from './midi'
+import { isKnownChord } from './chord'
 
 export function createSong(): Song {
   return { schemaVersion: 1, title: 'Untitled', sections: [] }
@@ -239,10 +240,7 @@ export function isBorrowedChord(chordSymbol: string, activeKey: string | null): 
   } catch { return false }
 }
 
-function isValidChordSymbol(symbol: string): boolean {
-  if (!symbol) return false
-  try { UMT.parseChordSymbol(symbol); return true } catch { return false }
-}
+const isValidChordSymbol = isKnownChord
 
 const SEMITONE_NAMES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
 const SHARP_KEYS = ['G','D','A','E','B','F#','C#']
