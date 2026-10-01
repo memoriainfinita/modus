@@ -1,9 +1,9 @@
-import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice } from './midi'
+import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice, getSelectedDeviceId } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
 import { initAudioOnGesture, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playMidiNotes, playNoteNames, playChord as audioPlayChord, GM_INSTRUMENT_GROUPS, setAudioStatusCallback } from './audio'
 import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
-import { setHistoryChangeCallback, clearHistory, notifyChordDetected, renderHistory } from './history'
-import { loadSong, saveSong, mountSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
+import { setHistoryChangeCallback, clearHistory, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history'
+import { loadSong, saveSong, mountSong, markActiveChord, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
 import type { AppState, HistoryEntry, SongChord } from './types'
 import { toggleHelp, closeHelp } from './shortcuts'
 import {
@@ -170,6 +170,7 @@ function makeSongHandlers() {
   return {
     onChordClick: (id: string, symbol: string, notes?: string[]) => {
       state.activeCursorId = id
+      markActiveChord(id)
       if (!symbol) return
       if (notes?.length) {
         state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol())
@@ -523,24 +524,39 @@ function applyPanelVisibility() {
 
 // ─── MIDI callbacks ───────────────────────────────────────────────────────────
 
-function onNoteChange(notes: number[]) {
-  // MIDI capture-to-fill flow
-  if (state.captureTargetId && notes.length >= 1) {
-    const result = analyzeNotes(notes)
-    if (result?.kind === 'chord') {
-      const sym = result.candidates[0]
-      state.song = updateChord(state.song, state.captureTargetId, sym, result.notes)
-      saveSong(state.song)
-      const next = findChordAfter(state.song, state.captureTargetId)
-      state.activeCursorId = next?.id ?? null
-      state.captureTargetId = null
-      renderZone3()
-      return
-    }
-  }
+// MIDI capture-to-fill: notes of a chord arrive one by one, so the slot is filled only
+// once the chord has been stable for CAPTURE_SETTLE_MS (otherwise a 4-note chord is
+// captured as the triad formed by its first three notes).
+const CAPTURE_SETTLE_MS = 250
+let captureTimer: ReturnType<typeof setTimeout> | null = null
 
+function scheduleCapture(symbol: string, notes: string[]) {
+  if (captureTimer) clearTimeout(captureTimer)
+  captureTimer = setTimeout(() => {
+    captureTimer = null
+    const targetId = state.captureTargetId
+    if (!targetId) return
+    state.song = updateChord(state.song, targetId, symbol, notes)
+    saveSong(state.song)
+    state.activeCursorId = findChordAfter(state.song, targetId)?.id ?? null
+    state.captureTargetId = null
+    renderZone3()
+  }, CAPTURE_SETTLE_MS)
+}
+
+function cancelCapture() {
+  if (captureTimer) { clearTimeout(captureTimer); captureTimer = null }
+}
+
+function onNoteChange(notes: number[]) {
   const result = analyzeNotes(notes)
   state.detection = result
+
+  if (state.captureTargetId) {
+    const sym = result?.kind === 'chord' ? result.candidates[0] : null
+    if (result?.kind === 'chord' && sym && sym !== '?') scheduleCapture(sym, result.notes)
+    else cancelCapture()
+  }
 
   if (result?.kind === 'chord') {
     const sym = result.candidates[result.selectedIndex]
@@ -626,7 +642,7 @@ function renderZone2() {
       } else {
         triggerChordAnalysis(entry.symbol)
       }
-      renderZone2()
+      markActiveHistoryEntry($('zone2-content'), entry.id)
     },
     state.historyActiveCursorId
   )
@@ -657,14 +673,14 @@ function sendToSong(entry: HistoryEntry) {
 
   if (state.activeCursorId) {
     // Insert after active song slot cursor
-    state.song = insertChordAfter(state.song, state.activeCursorId, entry.symbol)
+    state.song = insertChordAfter(state.song, state.activeCursorId, entry.symbol, entry.notes)
     const next = findChordAfter(state.song, state.activeCursorId)
     state.activeCursorId = next?.id ?? state.activeCursorId
   } else {
     // Append to end of last measure of last section
     const lastSection = state.song.sections[state.song.sections.length - 1]
     const lastMeasure = lastSection.measures[lastSection.measures.length - 1]
-    state.song = songAddChord(state.song, lastSection.id, lastMeasure.id, entry.symbol)
+    state.song = songAddChord(state.song, lastSection.id, lastMeasure.id, entry.symbol, entry.notes)
   }
 
   saveSong(state.song)
@@ -713,7 +729,11 @@ function refreshDeviceDropdown() {
     ? devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('')
     : '<option>No MIDI devices</option>'
   sel.onchange = () => selectDevice(sel.value)
-  if (devices[0]) selectDevice(devices[0].id)
+  // Keep the chosen device (restored from localStorage in initMidi) across hot-plug events;
+  // re-select it so a reconnected port gets its message handler back.
+  const current = getSelectedDeviceId()
+  const target = devices.find(d => d.id === current)?.id ?? devices[0]?.id
+  if (target) { selectDevice(target); sel.value = target }
 
   $('midi-status').textContent = devices.length ? 'MIDI: connected' : 'MIDI: no devices'
   $('midi-status').style.color = devices.length ? '#4ade80' : '#6b7280'
@@ -738,7 +758,11 @@ function showMidiBanner(msg: string) {
 
 function wireKeyboard() {
   document.addEventListener('keydown', (e) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+    // Leave browser/OS shortcuts (Ctrl+C, Cmd+S…) and form controls alone.
+    if (e.ctrlKey || e.metaKey || e.altKey) return
+    const t = e.target
+    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return
+    if (t instanceof HTMLElement && t.isContentEditable) return
 
     switch (e.key) {
       case 'h': case 'H':
@@ -784,12 +808,7 @@ function wireKeyboard() {
       default:
         if (e.key >= '1' && e.key <= '9') {
           const idx = parseInt(e.key) - 1
-          if (state.detection?.kind === 'chord' && idx < state.detection.candidates.length) {
-            state.detection.selectedIndex = idx
-            const sym = state.detection.candidates[idx]
-            state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
-            renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
-          }
+          if (state.detection?.kind === 'chord' && idx < state.detection.candidates.length) onAltSelect(idx)
         }
     }
   })

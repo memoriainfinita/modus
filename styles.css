@@ -309,6 +309,7 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   padding: 4px 8px;
   border-radius: 6px;
   background: #252540;
+  border: 1.5px solid #3a3a5c;
   cursor: pointer;
   min-width: 50px;
   user-select: none;
@@ -440,6 +441,9 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   cursor: pointer;
   border: 1.5px solid #3a3a5c;
 }
+.chord-chip.invalid { border-color: #ef4444; }
+.chord-chip.active-cursor,
+.history-chip.active-cursor { border-color: #fff; }
 .chord-chip-symbol { font-size: 12px; font-weight: 600; color: #e0e0e0; }
 .chord-chip-degree { font-size: 9px; color: #6b7280; margin-top: 2px; }
 .chord-chip-controls {

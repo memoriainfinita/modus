@@ -5,7 +5,7 @@ import {
   parseProgressionText, computeMeasureNumbers, duplicateSection,
   insertChordAfter, updateChord, duplicateChord,
   moveChordToPosition, reorderSections, reorderChordInMeasure,
-  computeDegree, isBorrowedChord,
+  computeDegree, isBorrowedChord, transposeKey,
 } from '../src/song'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
@@ -391,6 +391,64 @@ describe('transposeSong', () => {
     s = addChord(s, sId, mId, 'C/G')
     s = transposeSong(s, 2)
     expect(s.sections[0].measures[0].chords[0].symbol).toBe('D/A')
+  })
+})
+
+describe('transposeSong — stored voicings', () => {
+  it('moves stored notes with the symbol, keeping octaves', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    s = addChord(s, s.sections[0].id, s.sections[0].measures[0].id, 'C', ['C3', 'G3', 'E4'])
+    s = transposeSong(s, 2)
+    const c = s.sections[0].measures[0].chords[0]
+    expect(c.symbol).toBe('D')
+    expect(c.notes).toEqual(['D3', 'A3', 'Gb4'])
+  })
+
+  it('spells stored notes with sharps in a sharp target key', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    s = addChord(s, s.sections[0].id, s.sections[0].measures[0].id, 'C', ['C3', 'E3', 'G3'])
+    s = transposeSong(s, 2, 'D Major')
+    expect(s.sections[0].measures[0].chords[0].notes).toEqual(['D3', 'F#3', 'A3'])
+  })
+
+  it('crosses the octave boundary (B3 + 1 → C4)', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    s = addChord(s, s.sections[0].id, s.sections[0].measures[0].id, 'B', ['B3'])
+    expect(transposeSong(s, 1).sections[0].measures[0].chords[0].notes).toEqual(['C4'])
+  })
+
+  it('leaves chords without stored notes without a notes field', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    s = addChord(s, s.sections[0].id, s.sections[0].measures[0].id, 'C')
+    expect(transposeSong(s, 2).sections[0].measures[0].chords[0].notes).toBeUndefined()
+  })
+})
+
+describe('transposeKey', () => {
+  it('keeps the mode and picks sharps/flats by target root', () => {
+    expect(transposeKey('C Major', 2)).toBe('D Major')
+    expect(transposeKey('A Minor', 1)).toBe('Bb Minor')
+  })
+})
+
+describe('addChord — position', () => {
+  it('inserts before the given chord', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    const sId = s.sections[0].id, mId = s.sections[0].measures[0].id
+    s = addChord(s, sId, mId, 'C')
+    s = addChord(s, sId, mId, 'G')
+    const gId = s.sections[0].measures[0].chords[1].id
+    s = addChord(s, sId, mId, 'Am', ['A3', 'C4', 'E4'], gId)
+    expect(s.sections[0].measures[0].chords.map(c => c.symbol)).toEqual(['C', 'Am', 'G'])
+    expect(s.sections[0].measures[0].chords[1].notes).toEqual(['A3', 'C4', 'E4'])
+  })
+
+  it('appends when the reference chord is not found', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    const sId = s.sections[0].id, mId = s.sections[0].measures[0].id
+    s = addChord(s, sId, mId, 'C')
+    s = addChord(s, sId, mId, 'G', undefined, 'missing')
+    expect(s.sections[0].measures[0].chords.map(c => c.symbol)).toEqual(['C', 'G'])
   })
 })
 
