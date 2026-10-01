@@ -1,6 +1,6 @@
 import { playNoteByName, playChord, initAudioOnGesture } from './audio'
 import { PITCH_NAMES_FLAT, NOTE_SEMITONE, noteNameToMidi } from './midi'
-import { CHORD_QUALITY_COLORS } from './analysis-panel'
+import { chordColor, NEUTRAL_COLOR } from './chord'
 
 export let guitarControlsVisible = JSON.parse(localStorage.getItem('panel-guitarControls') ?? 'true')
 export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v }
@@ -96,8 +96,8 @@ for (let oct = 2; oct <= 5; oct++) {
 }
 const PIANO_KEY_ORDER = [...PIANO_WHITE_NOTES, ...PIANO_BLACK_NOTES]
 
-export function renderPiano(container: HTMLElement, noteNames: string[], quality: string) {
-  const color = CHORD_QUALITY_COLORS[quality?.toLowerCase()] ?? '#6b7280'
+export function renderPiano(container: HTMLElement, noteNames: string[], chordSymbol: string | null) {
+  const color = chordSymbol ? chordColor(chordSymbol) : NEUTRAL_COLOR
   const colors = noteNames.map(() => color)
 
   container.innerHTML = Notae.renderPiano({

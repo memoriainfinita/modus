@@ -152,6 +152,60 @@
     return mode;
   }
 
+  // src/chord.ts
+  var CHORD_FAMILY_COLORS = {
+    major: "#f59e0b",
+    minor: "#3b82f6",
+    dominant: "#ef4444",
+    diminished: "#7c3aed",
+    "half-diminished": "#7c3aed",
+    augmented: "#0d9488",
+    sus: "#6b7280"
+  };
+  var NEUTRAL_COLOR = "#6b7280";
+  function tryParseChord(symbol) {
+    if (!symbol) return null;
+    try {
+      return UMT.parseChordSymbol(symbol);
+    } catch {
+      return null;
+    }
+  }
+  function isKnownChord(symbol) {
+    return tryParseChord(symbol) !== null;
+  }
+  function normalizeChordName(name) {
+    return name.replace(/^([A-G][b#]?)M(?=\/|$)/, "$1");
+  }
+  function chordFamily(symbol) {
+    const chord = tryParseChord(symbol);
+    if (!chord) return null;
+    const pcs = new Set((chord.intervalsInSteps ?? []).map((s) => (s % 12 + 12) % 12));
+    if (pcs.has(4)) {
+      if (pcs.has(8) && !pcs.has(7)) return "augmented";
+      return pcs.has(10) ? "dominant" : "major";
+    }
+    if (pcs.has(3)) {
+      if (pcs.has(6) && !pcs.has(7)) return pcs.has(10) ? "half-diminished" : "diminished";
+      return "minor";
+    }
+    if (pcs.has(5) || pcs.has(2)) return "sus";
+    return null;
+  }
+  function chordColor(symbol) {
+    const family = chordFamily(symbol);
+    return family ? CHORD_FAMILY_COLORS[family] : NEUTRAL_COLOR;
+  }
+  function chordNoteNames(symbol) {
+    const chord = tryParseChord(symbol);
+    if (!chord) return [];
+    try {
+      return (chord.getNotes?.() ?? []).map((n) => n.name).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
   // src/analyzer.ts
   var INTERVAL_NAMES = [
     "Unison",
@@ -169,8 +223,8 @@
   ];
   function semitonesToInterval(semitones) {
     const n = (semitones % 12 + 12) % 12;
-    const inv = n === 0 ? 0 : 12 - n;
-    return { name: INTERVAL_NAMES[n], inversionName: INTERVAL_NAMES[inv] };
+    if (n === 0) return semitones === 0 ? { name: "Unison", inversionName: "Octave" } : { name: "Octave", inversionName: "Unison" };
+    return { name: INTERVAL_NAMES[n], inversionName: INTERVAL_NAMES[12 - n] };
   }
   function analyzeNotes(midiNotes) {
     if (midiNotes.length === 0) return null;
@@ -199,7 +253,8 @@
     let candidates = [];
     try {
       const umtNotes = noteNames.map((n) => UMT.parseNote(n));
-      candidates = UMT.Harmony.detectChords(umtNotes) ?? [];
+      candidates = (UMT.Harmony.detectChords(umtNotes) ?? []).map(normalizeChordName).filter(isKnownChord);
+      candidates = [...new Set(candidates)];
     } catch {
     }
     const result = {
@@ -211,7 +266,8 @@
     return result;
   }
   function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol) {
-    const chord = UMT.parseChordSymbol(chordSymbol);
+    const chord = tryParseChord(chordSymbol);
+    if (!chord) return emptyAnalysis(chordSymbol);
     const notes = chord.getNotes ? chord.getNotes() : [];
     const bassNote = notes[0] ?? null;
     let roman = "?";
@@ -301,6 +357,22 @@
       negativeHarmony
     };
   }
+  function emptyAnalysis(chordName) {
+    return {
+      chordName,
+      roman: "?",
+      function: "unknown",
+      isDiatonic: false,
+      isBorrowed: false,
+      isSecondary: false,
+      figuredBass: "",
+      suggestedScales: [],
+      substitutions: [],
+      cadence: null,
+      coltraneAxis: null,
+      negativeHarmony: null
+    };
+  }
   function getAutoKey(history) {
     if (history.length === 0) return null;
     const allNotes = history.flatMap((e) => e.notes.map((n) => UMT.parseNote(n)));
@@ -349,16 +421,20 @@
   function ensureContext() {
     if (!audioCtx) audioCtx = new AudioContext();
   }
+  var loadToken = 0;
   function loadCurrentInstrument() {
-    if (loadingInstrument || !audioCtx) return;
+    if (!audioCtx) return;
+    const token = ++loadToken;
     loadingInstrument = true;
     instrument = null;
     setStatus("loading");
     Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: "FluidR3_GM" }).then((inst) => {
+      if (token !== loadToken) return;
       instrument = inst;
       loadingInstrument = false;
       setStatus(audioCtx.state === "suspended" ? "suspended" : "ready");
     }).catch((err) => {
+      if (token !== loadToken) return;
       loadingInstrument = false;
       setStatus("error");
       console.error("[audio] load failed:", err);
@@ -387,191 +463,29 @@
   function getVolume() {
     return volume;
   }
-  function playNote(midiNumber, duration = 1.5) {
-    ensureContext();
-    if (!loadingInstrument && !instrument) loadCurrentInstrument();
-    if (!audioCtx || !instrument) return;
+  function playMidi(midis, duration) {
+    initAudioOnGesture();
+    const inst = instrument;
+    if (!inst || !midis.length) return;
     audioCtx.resume().then(() => {
-      instrument.play(midiNumber, audioCtx.currentTime, { duration, gain: volume });
+      for (const midi of midis) inst.play(midi, audioCtx.currentTime, { duration, gain: volume });
     });
+  }
+  function playNote(midiNumber, duration = 1.5) {
+    playMidi([midiNumber], duration);
   }
   function playNoteByName(noteName, duration = 1.5) {
     const midi = noteNameToMidi(noteName);
-    if (midi !== null) playNote(midi, duration);
+    if (midi !== null) playMidi([midi], duration);
   }
   function playMidiNotes(midiNotes, duration = 2) {
-    if (!instrument || !audioCtx) return;
-    audioCtx.resume().then(() => {
-      for (const midi of midiNotes) {
-        instrument.play(midi, audioCtx.currentTime, { duration, gain: volume });
-      }
-    });
+    playMidi(midiNotes, duration);
   }
   function playNoteNames(noteNames, duration = 2) {
-    if (!instrument || !audioCtx) return;
-    const midis = noteNames.map(noteNameToMidi).filter((m) => m !== null);
-    if (!midis.length) return;
-    audioCtx.resume().then(() => {
-      for (const midi of midis) {
-        instrument.play(midi, audioCtx.currentTime, { duration, gain: volume });
-      }
-    });
+    playMidi(noteNames.map(noteNameToMidi).filter((m) => m !== null), duration);
   }
-  var QUALITY_INTERVALS = {
-    "major": [0, 4, 7],
-    "minor": [0, 3, 7],
-    "diminished": [0, 3, 6],
-    "augmented": [0, 4, 8],
-    "major seventh": [0, 4, 7, 11],
-    "minor seventh": [0, 3, 7, 10],
-    "dominant seventh": [0, 4, 7, 10],
-    "diminished seventh": [0, 3, 6, 9],
-    "half-diminished seventh": [0, 3, 6, 10],
-    "sus2": [0, 2, 7],
-    "sus4": [0, 5, 7],
-    "major ninth": [0, 4, 7, 11, 14],
-    "minor ninth": [0, 3, 7, 10, 14],
-    "dominant ninth": [0, 4, 7, 10, 14]
-  };
   function playChord(chordSymbol) {
-    ensureContext();
-    if (!loadingInstrument && !instrument) loadCurrentInstrument();
-    if (!audioCtx) return;
-    try {
-      const chord = UMT.parseChordSymbol(chordSymbol);
-      const midiNotes = [];
-      const umtNotes = chord.getNotes?.() ?? [];
-      for (const n of umtNotes) {
-        const midi = noteNameToMidi(n.name);
-        if (midi !== null) midiNotes.push(midi);
-      }
-      if (!midiNotes.length) {
-        const rootName = chord.root?.name ?? (typeof chord.root === "string" ? chord.root : null);
-        if (!rootName) return;
-        const rootMidi = noteNameToMidi(rootName + "4");
-        if (rootMidi === null) return;
-        const quality = chord.quality ?? "major";
-        const intervals = QUALITY_INTERVALS[quality] ?? [0, 4, 7];
-        for (const interval of intervals) midiNotes.push(rootMidi + interval);
-      }
-      if (!midiNotes.length || !instrument) return;
-      audioCtx.resume().then(() => {
-        for (const midi of midiNotes) {
-          instrument.play(midi, audioCtx.currentTime, { duration: 2, gain: volume });
-        }
-      });
-    } catch {
-    }
-  }
-
-  // src/analysis-panel.ts
-  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "diatonic", "scales", "cadence", "secondary", "coltrane", "negharm", "subs"];
-  var ANALYSIS_FIELD_LABELS = {
-    roman: "Roman",
-    function: "Func",
-    figbass: "Fig",
-    diatonic: "Diat",
-    scales: "Scl",
-    cadence: "Cad",
-    secondary: "Sec",
-    coltrane: "Colt",
-    negharm: "Neg",
-    subs: "Subs"
-  };
-  var ANALYSIS_FIELD_TOOLTIPS = {
-    roman: "Roman numeral",
-    function: "Harmonic function",
-    figbass: "Figured bass",
-    diatonic: "Diatonic / borrowed",
-    scales: "Suggested scales",
-    cadence: "Cadence",
-    secondary: "Secondary dominant",
-    coltrane: "Coltrane axis",
-    negharm: "Negative harmony",
-    subs: "Substitutions"
-  };
-  var CHORD_QUALITY_COLORS = {
-    major: "#f59e0b",
-    minor: "#3b82f6",
-    "dominant seventh": "#ef4444",
-    "major seventh": "#f59e0b",
-    "minor seventh": "#3b82f6",
-    diminished: "#7c3aed",
-    "diminished seventh": "#7c3aed",
-    "half-diminished seventh": "#7c3aed",
-    augmented: "#0d9488",
-    sus: "#6b7280"
-  };
-  function getChordQuality(chordSymbol) {
-    try {
-      return UMT.parseChordSymbol(chordSymbol).quality?.toLowerCase() ?? "";
-    } catch {
-      return "";
-    }
-  }
-  function renderChordSummary(detection, onAltSelect2) {
-    const el = document.getElementById("chord-summary");
-    if (!el) return;
-    if (!detection || detection.kind !== "chord") {
-      el.innerHTML = "";
-      return;
-    }
-    const chordName = detection.candidates[detection.selectedIndex];
-    const color = CHORD_QUALITY_COLORS[getChordQuality(chordName)] ?? "#6b7280";
-    const notes = detection.notes.map((n) => n.replace(/(-?\d+)$/, "")).join(" \xB7 ");
-    const alts = detection.candidates.slice(1, 7);
-    el.innerHTML = `
-    <div class="chord-summary-row">
-      <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
-      <span class="chord-notes">${notes}</span>
-      ${alts.map(
-      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${c}</button>`
-    ).join("")}
-    </div>`;
-    el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
-      btn.addEventListener("click", () => onAltSelect2(parseInt(btn.dataset.idx)));
-    });
-  }
-  function renderZone1Analysis(detection, analysis, fieldsVisible, scale, onAltSelect2) {
-    renderChordSummary(detection, onAltSelect2);
-    const el = document.getElementById("analysis-content");
-    if (!el) return;
-    el.style.fontSize = scale + "px";
-    const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => fieldsVisible[f]).length;
-    el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
-    const colEl = document.getElementById("col-analysis");
-    if (colEl) {
-      const w = Math.round(scale * 19) + "px";
-      colEl.style.width = w;
-      colEl.style.flex = `0 0 ${w}`;
-    }
-    const row = (label, val) => `<div class="analysis-row">
-      <span class="analysis-label">${label}</span>
-      <span class="analysis-value">${val}</span>
-    </div>`;
-    const maybeRow = (f, label, val) => fieldsVisible[f] ? row(label, val) : "";
-    const conditionalRow = (f, label, val) => fieldsVisible[f] ? row(label, val ?? "\u2014") : "";
-    let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
-    let secondary = null, coltrane = null;
-    let negharm = null, subs = null;
-    let extra = "";
-    if (detection?.kind === "note") {
-      extra = row("Note", `${detection.noteName} \xB7 MIDI ${detection.midiNumber}`);
-    } else if (detection?.kind === "interval") {
-      extra = row("Interval", `${detection.intervalName} \xB7 ${detection.semitones} st`) + row("Inversion", detection.inversionName);
-    } else if (detection?.kind === "chord" && analysis) {
-      roman = analysis.roman;
-      func_ = { T: "Tonic", S: "Subdominant", D: "Dominant", unknown: "Unknown" }[analysis.function];
-      figuredBass = analysis.figuredBass || "\u2014";
-      diatonic = analysis.isDiatonic ? "Yes" : analysis.isBorrowed ? `Borrowed (${analysis.borrowedFrom ?? "?"})` : "Chromatic";
-      scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
-      cadence = analysis.cadence || "\u2014";
-      if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget}`;
-      if (analysis.coltraneAxis) coltrane = analysis.coltraneAxis.join(" \xB7 ");
-      if (analysis.negativeHarmony) negharm = analysis.negativeHarmony;
-      if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
-    }
-    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("coltrane", "Coltrane", coltrane) + conditionalRow("negharm", "Neg. harm.", negharm) + conditionalRow("subs", "Subs.", subs) + extra;
+    playNoteNames(chordNoteNames(chordSymbol));
   }
 
   // src/diagrams.ts
@@ -655,8 +569,8 @@ K:${abcKey}
     BLACK_SEMITONES_P.forEach((s) => PIANO_BLACK_NOTES.push(PITCH_NAMES_FLAT[s] + oct));
   }
   var PIANO_KEY_ORDER = [...PIANO_WHITE_NOTES, ...PIANO_BLACK_NOTES];
-  function renderPiano(container, noteNames, quality) {
-    const color = CHORD_QUALITY_COLORS[quality?.toLowerCase()] ?? "#6b7280";
+  function renderPiano(container, noteNames, chordSymbol) {
+    const color = chordSymbol ? chordColor(chordSymbol) : NEUTRAL_COLOR;
     const colors = noteNames.map(() => color);
     container.innerHTML = Notae.renderPiano({
       name: "",
@@ -1036,7 +950,7 @@ K:${abcKey}
 
   // src/history.ts
   var MAX_ENTRIES = 200;
-  var QUALITY_COLORS = {
+  var FUNCTION_COLORS = {
     "T": "#f59e0b",
     "S": "#3b82f6",
     "D": "#ef4444",
@@ -1080,7 +994,7 @@ K:${abcKey}
       const analysis = activeKey ? buildHarmonicAnalysis(entry.symbol, activeKey, null) : null;
       const roman = analysis?.roman ?? "\u2014";
       const fn = analysis?.function ?? "unknown";
-      const color = QUALITY_COLORS[fn] ?? "#6b7280";
+      const color = FUNCTION_COLORS[fn] ?? "#6b7280";
       const chip = document.createElement("div");
       chip.className = "history-chip";
       chip.dataset.id = entry.id;
@@ -1347,15 +1261,7 @@ K:${abcKey}
       return false;
     }
   }
-  function isValidChordSymbol(symbol) {
-    if (!symbol) return false;
-    try {
-      UMT.parseChordSymbol(symbol);
-      return true;
-    } catch {
-      return false;
-    }
-  }
+  var isValidChordSymbol = isKnownChord;
   var SEMITONE_NAMES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   var SHARP_KEYS = ["G", "D", "A", "E", "B", "F#", "C#"];
   function transposeRoot(root, semitones, preferSharps) {
@@ -2127,6 +2033,97 @@ K:${abcKey}
     if (popup && !popup.contains(e.target)) closeHelp();
   }
 
+  // src/analysis-panel.ts
+  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "diatonic", "scales", "cadence", "secondary", "coltrane", "negharm", "subs"];
+  var ANALYSIS_FIELD_LABELS = {
+    roman: "Roman",
+    function: "Func",
+    figbass: "Fig",
+    diatonic: "Diat",
+    scales: "Scl",
+    cadence: "Cad",
+    secondary: "Sec",
+    coltrane: "Colt",
+    negharm: "Neg",
+    subs: "Subs"
+  };
+  var ANALYSIS_FIELD_TOOLTIPS = {
+    roman: "Roman numeral",
+    function: "Harmonic function",
+    figbass: "Figured bass",
+    diatonic: "Diatonic / borrowed",
+    scales: "Suggested scales",
+    cadence: "Cadence",
+    secondary: "Secondary dominant",
+    coltrane: "Coltrane axis",
+    negharm: "Negative harmony",
+    subs: "Substitutions"
+  };
+  function renderChordSummary(detection, onAltSelect2) {
+    const el = document.getElementById("chord-summary");
+    if (!el) return;
+    if (!detection || detection.kind !== "chord") {
+      el.innerHTML = "";
+      return;
+    }
+    const chordName = detection.candidates[detection.selectedIndex];
+    const color = chordColor(chordName);
+    const notes = detection.notes.map((n) => n.replace(/(-?\d+)$/, "")).join(" \xB7 ");
+    const alts = detection.candidates.slice(1, 7);
+    el.innerHTML = `
+    <div class="chord-summary-row">
+      <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
+      <span class="chord-notes">${notes}</span>
+      ${alts.map(
+      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${c}</button>`
+    ).join("")}
+    </div>`;
+    el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
+      btn.addEventListener("click", () => onAltSelect2(parseInt(btn.dataset.idx)));
+    });
+  }
+  function renderZone1Analysis(detection, analysis, fieldsVisible, scale, onAltSelect2) {
+    renderChordSummary(detection, onAltSelect2);
+    const el = document.getElementById("analysis-content");
+    if (!el) return;
+    el.style.fontSize = scale + "px";
+    const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => fieldsVisible[f]).length;
+    el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
+    const colEl = document.getElementById("col-analysis");
+    if (colEl) {
+      const w = Math.round(scale * 19) + "px";
+      colEl.style.width = w;
+      colEl.style.flex = `0 0 ${w}`;
+    }
+    const row = (label, val) => `<div class="analysis-row">
+      <span class="analysis-label">${label}</span>
+      <span class="analysis-value">${val}</span>
+    </div>`;
+    const maybeRow = (f, label, val) => fieldsVisible[f] ? row(label, val) : "";
+    const conditionalRow = (f, label, val) => fieldsVisible[f] ? row(label, val ?? "\u2014") : "";
+    let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
+    let secondary = null, coltrane = null;
+    let negharm = null, subs = null;
+    let extra = "";
+    if (detection?.kind === "note") {
+      extra = row("Note", `${detection.noteName} \xB7 MIDI ${detection.midiNumber}`);
+    } else if (detection?.kind === "interval") {
+      extra = row("Interval", `${detection.intervalName} \xB7 ${detection.semitones} st`) + row("Inversion", detection.inversionName);
+    } else if (detection?.kind === "chord" && analysis) {
+      roman = analysis.roman;
+      func_ = { T: "Tonic", S: "Subdominant", D: "Dominant", unknown: "Unknown" }[analysis.function];
+      figuredBass = analysis.figuredBass || "\u2014";
+      diatonic = analysis.isDiatonic ? "Yes" : analysis.isBorrowed ? `Borrowed (${analysis.borrowedFrom ?? "?"})` : "Chromatic";
+      scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
+      cadence = analysis.cadence || "\u2014";
+      if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget}`;
+      if (analysis.coltraneAxis) coltrane = analysis.coltraneAxis.join(" \xB7 ");
+      if (analysis.negativeHarmony) negharm = analysis.negativeHarmony;
+      if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
+    }
+    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("coltrane", "Coltrane", coltrane) + conditionalRow("negharm", "Neg. harm.", negharm) + conditionalRow("subs", "Subs.", subs) + extra;
+  }
+
   // src/app.ts
   var staffWidth = 380;
   var cofSize = parseInt(localStorage.getItem("cof-size") ?? "160");
@@ -2677,8 +2674,7 @@ K:${abcKey}
   }
   function renderZone1Diagrams(noteNames, chordSymbol) {
     renderStaff($("staff-container"), noteNames, staffWidth, state.activeKey);
-    const quality = chordSymbol ? getChordQuality(chordSymbol) : "";
-    renderPiano($("piano-container"), noteNames, quality);
+    renderPiano($("piano-container"), noteNames, chordSymbol);
     const chordRoot = chordSymbol ? (chordSymbol.match(/^([A-G][b#]?)/) ?? [, ""])[1] || null : null;
     renderNeck($("neck-container"), noteNames, chordRoot);
     renderGuitar($("guitar-container"), chordSymbol, noteNames);
@@ -2739,15 +2735,7 @@ K:${abcKey}
     state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol());
     state.detection = { kind: "chord", notes: [], candidates: [symbol], selectedIndex: 0 };
     renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
-    const dummyNotes = [];
-    try {
-      const chord = UMT.parseChordSymbol(symbol);
-      chord.getNotes?.().forEach((n) => {
-        if (n.name) dummyNotes.push(n.name);
-      });
-    } catch {
-    }
-    renderZone1Diagrams(dummyNotes, symbol);
+    renderZone1Diagrams(chordNoteNames(symbol), symbol);
   }
   function sendToSong(entry) {
     if (!state.song.sections.length) {

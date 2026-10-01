@@ -1,4 +1,5 @@
 import { noteNameToMidi } from './midi'
+import { chordNoteNames } from './chord'
 
 let audioCtx: AudioContext | null = null
 let instrument: any = null
@@ -38,18 +39,29 @@ function ensureContext() {
   if (!audioCtx) audioCtx = new AudioContext()
 }
 
+// Each load gets a token; a load that finishes after a newer one started is discarded,
+// so switching instrument mid-load never leaves the previous instrument active.
+let loadToken = 0
+
 function loadCurrentInstrument() {
-  if (loadingInstrument || !audioCtx) return
+  if (!audioCtx) return
+  const token = ++loadToken
   loadingInstrument = true
   instrument = null
   setStatus('loading')
   Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: 'FluidR3_GM' })
     .then((inst: any) => {
+      if (token !== loadToken) return
       instrument = inst
       loadingInstrument = false
       setStatus(audioCtx!.state === 'suspended' ? 'suspended' : 'ready')
     })
-    .catch((err: any) => { loadingInstrument = false; setStatus('error'); console.error('[audio] load failed:', err) })
+    .catch((err: any) => {
+      if (token !== loadToken) return
+      loadingInstrument = false
+      setStatus('error')
+      console.error('[audio] load failed:', err)
+    })
 }
 
 export function initAudioOnGesture() {
@@ -76,90 +88,35 @@ export function setVolume(v: number) {
 
 export function getVolume() { return volume }
 
-export function playNote(midiNumber: number, duration = 1.5) {
-  ensureContext()
-  if (!loadingInstrument && !instrument) loadCurrentInstrument()
-  if (!audioCtx || !instrument) return
-  audioCtx.resume().then(() => {
-    instrument.play(midiNumber, audioCtx!.currentTime, { duration, gain: volume })
+// Single playback path: every play* call starts the context and the instrument load
+// if needed. Notes requested before the instrument is ready are dropped, not queued.
+function playMidi(midis: number[], duration: number) {
+  initAudioOnGesture()
+  const inst = instrument
+  if (!inst || !midis.length) return
+  audioCtx!.resume().then(() => {
+    for (const midi of midis) inst.play(midi, audioCtx!.currentTime, { duration, gain: volume })
   })
+}
+
+export function playNote(midiNumber: number, duration = 1.5) {
+  playMidi([midiNumber], duration)
 }
 
 export function playNoteByName(noteName: string, duration = 1.5) {
   const midi = noteNameToMidi(noteName)
-  if (midi !== null) playNote(midi, duration)
+  if (midi !== null) playMidi([midi], duration)
 }
 
 export function playMidiNotes(midiNotes: number[], duration = 2) {
-  if (!instrument || !audioCtx) return
-  audioCtx.resume().then(() => {
-    for (const midi of midiNotes) {
-      instrument.play(midi, audioCtx!.currentTime, { duration, gain: volume })
-    }
-  })
+  playMidi(midiNotes, duration)
 }
 
 export function playNoteNames(noteNames: string[], duration = 2) {
-  if (!instrument || !audioCtx) return
-  const midis = noteNames.map(noteNameToMidi).filter((m): m is number => m !== null)
-  if (!midis.length) return
-  audioCtx.resume().then(() => {
-    for (const midi of midis) {
-      instrument!.play(midi, audioCtx!.currentTime, { duration, gain: volume })
-    }
-  })
+  playMidi(noteNames.map(noteNameToMidi).filter((m): m is number => m !== null), duration)
 }
 
-// Interval maps for common chord qualities (no UMT dependency)
-const QUALITY_INTERVALS: Record<string, number[]> = {
-  'major':           [0, 4, 7],
-  'minor':           [0, 3, 7],
-  'diminished':      [0, 3, 6],
-  'augmented':       [0, 4, 8],
-  'major seventh':           [0, 4, 7, 11],
-  'minor seventh':           [0, 3, 7, 10],
-  'dominant seventh':        [0, 4, 7, 10],
-  'diminished seventh':      [0, 3, 6, 9],
-  'half-diminished seventh': [0, 3, 6, 10],
-  'sus2':                    [0, 2, 7],
-  'sus4':                    [0, 5, 7],
-  'major ninth':             [0, 4, 7, 11, 14],
-  'minor ninth':             [0, 3, 7, 10, 14],
-  'dominant ninth':          [0, 4, 7, 10, 14],
-}
-
+/** Plays the chord as UMT spells it (same notes the staff and piano show). */
 export function playChord(chordSymbol: string) {
-  ensureContext()
-  if (!loadingInstrument && !instrument) loadCurrentInstrument()
-  if (!audioCtx) return
-  try {
-    const chord = UMT.parseChordSymbol(chordSymbol)
-    const midiNotes: number[] = []
-
-    // Use UMT's own note list (same source as staff/piano rendering)
-    const umtNotes: any[] = chord.getNotes?.() ?? []
-    for (const n of umtNotes) {
-      const midi = noteNameToMidi(n.name)
-      if (midi !== null) midiNotes.push(midi)
-    }
-
-    // Fallback: derive from root + quality intervals
-    if (!midiNotes.length) {
-      const rootName = chord.root?.name ?? (typeof chord.root === 'string' ? chord.root : null)
-      if (!rootName) return
-      const rootMidi = noteNameToMidi(rootName + '4')
-      if (rootMidi === null) return
-      const quality = chord.quality ?? 'major'
-      const intervals = QUALITY_INTERVALS[quality] ?? [0, 4, 7]
-      for (const interval of intervals) midiNotes.push(rootMidi + interval)
-    }
-
-    if (!midiNotes.length || !instrument) return
-    audioCtx.resume().then(() => {
-      for (const midi of midiNotes) {
-        instrument!.play(midi, audioCtx!.currentTime, { duration: 2, gain: volume })
-      }
-    })
-  } catch { }
+  playNoteNames(chordNoteNames(chordSymbol))
 }
-

@@ -1,15 +1,19 @@
 import type { DetectionResult, HarmonicAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult } from './types'
 import { midiToNoteName, PITCH_NAMES_FLAT } from './midi'
+import { tryParseChord, isKnownChord, normalizeChordName } from './chord'
 
 const INTERVAL_NAMES = [
   'Unison','Minor 2nd','Major 2nd','Minor 3rd','Major 3rd','Perfect 4th',
   'Tritone','Perfect 5th','Minor 6th','Major 6th','Minor 7th','Major 7th'
 ]
 
+// Compound intervals are reduced to their simple form; whole octaves are named as such.
 function semitonesToInterval(semitones: number): { name: string; inversionName: string } {
   const n = ((semitones % 12) + 12) % 12
-  const inv = n === 0 ? 0 : 12 - n
-  return { name: INTERVAL_NAMES[n], inversionName: INTERVAL_NAMES[inv] }
+  if (n === 0) return semitones === 0
+    ? { name: 'Unison', inversionName: 'Octave' }
+    : { name: 'Octave', inversionName: 'Unison' }
+  return { name: INTERVAL_NAMES[n], inversionName: INTERVAL_NAMES[12 - n] }
 }
 
 export function analyzeNotes(midiNotes: number[]): DetectionResult {
@@ -40,11 +44,13 @@ export function analyzeNotes(midiNotes: number[]): DetectionResult {
     return result
   }
 
-  // ≥3 notes: chord detection (UMT may throw on unusual combinations)
+  // ≥3 notes: chord detection. UMT may throw, and returns "Unknown Chord" when nothing
+  // matches — keep only names UMT can parse back, so '?' is the single unknown sentinel.
   let candidates: string[] = []
   try {
     const umtNotes = noteNames.map(n => UMT.parseNote(n))
-    candidates = UMT.Harmony.detectChords(umtNotes) ?? []
+    candidates = (UMT.Harmony.detectChords(umtNotes) ?? []).map(normalizeChordName).filter(isKnownChord)
+    candidates = [...new Set(candidates)]
   } catch { }
   const result: ChordResult = {
     kind: 'chord',
@@ -60,7 +66,8 @@ export function buildHarmonicAnalysis(
   activeKey: string | null,
   prevChordSymbol: string | null
 ): HarmonicAnalysis {
-  const chord = UMT.parseChordSymbol(chordSymbol)
+  const chord = tryParseChord(chordSymbol)
+  if (!chord) return emptyAnalysis(chordSymbol)
   const notes = chord.getNotes ? chord.getNotes() : []
   const bassNote = notes[0] ?? null
 
@@ -148,6 +155,15 @@ export function buildHarmonicAnalysis(
     cadence,
     coltraneAxis,
     negativeHarmony,
+  }
+}
+
+function emptyAnalysis(chordName: string): HarmonicAnalysis {
+  return {
+    chordName, roman: '?', function: 'unknown',
+    isDiatonic: false, isBorrowed: false, isSecondary: false,
+    figuredBass: '', suggestedScales: [], substitutions: [],
+    cadence: null, coltraneAxis: null, negativeHarmony: null,
   }
 }
 

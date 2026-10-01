@@ -8,21 +8,7 @@ import {
   computeDegree, isBorrowedChord,
 } from '../src/song'
 
-// Minimal UMT mock for transpose
-;(globalThis as any).UMT = {
-  parseChordSymbol: (s: string) => ({
-    root: { name: s[0] },
-    quality: 'major',
-    name: s,
-    getNotes: () => [],
-  }),
-  parseNote: (s: string) => ({ name: s }),
-  Harmony: { analyzeProgression: () => ({ analysis: [{ roman: 'I△7', function: 'T', isDiatonic: true, isBorrowed: false, isSecondary: false }], modulations: [], harmonicRhythm: 0 }) },
-  FiguredBass: { fromChord: () => '' },
-  KeyDetection: { detect: () => [] },
-  getSubstitutions: () => [],
-  CircleOfFifths: class {},
-}
+// Runs against the real UMT bundle (tests/setup-umt.ts).
 
 describe('createSong', () => {
   it('creates empty song with schemaVersion 1', () => {
@@ -416,7 +402,11 @@ describe('computeDegree', () => {
   })
 
   it('returns roman from UMT when key provided', () => {
-    expect(computeDegree('Cmaj7', 'C Major')).toBe('I△7')
+    expect(computeDegree('Cmaj7', 'C Major')).toBe('Imaj7')
+  })
+
+  it('returns ? for symbols UMT rejects', () => {
+    expect(computeDegree('Hxyz', 'C Major')).toBe('?')
   })
 })
 
@@ -429,5 +419,9 @@ describe('isBorrowedChord', () => {
 
   it('returns false for diatonic chord', () => {
     expect(isBorrowedChord('Cmaj7', 'C Major')).toBe(false)
+  })
+
+  it('returns true for modal interchange (bVI in major)', () => {
+    expect(isBorrowedChord('Ab', 'C Major')).toBe(true)
   })
 })
