@@ -114,7 +114,7 @@ All three projects are independent, GPL-3.0, and built for the music community �
 
 - Chrome or Edge (Web MIDI API required)
 - A MIDI controller (optional — song builder and CoF interaction work without one)
-- A local server: `npx http-server . -p 8080` (`file://` + Web MIDI may be blocked by some Chromium versions)
+- A local server: `pnpm dlx http-server . -p 8080` (`file://` + Web MIDI may be blocked by some Chromium versions)
 
 ---
 
@@ -122,20 +122,22 @@ All three projects are independent, GPL-3.0, and built for the music community �
 
 ```bash
 # Serve the built app — no build step needed
-npx http-server . -p 8080
+pnpm dlx http-server . -p 8080
 ```
 
 Open `http://localhost:8080` in Chrome. Connect your MIDI controller when prompted.
 
-**Rebuild from source:**
+**Rebuild from source** (pnpm):
 
 ```bash
-npm install           # dev dependencies only
-npm run dev           # watch mode — rebuilds on save
-npm run build         # one-shot build
-npx tsc --noEmit      # type check (esbuild does not typecheck)
-npx vitest run        # run tests
+pnpm install          # dev dependencies only
+pnpm dev              # watch mode — rebuilds on save
+pnpm build            # one-shot build
+pnpm exec tsc --noEmit  # type check (esbuild does not typecheck)
+pnpm test             # run tests
 ```
+
+UMT and notae are loaded from jsDelivr pinned to a commit hash in `index.html`. Bump the hash deliberately after a release of either library.
 
 ---
 

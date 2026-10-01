@@ -60,15 +60,15 @@ On unsupported browsers: full-page warning — "Modus requires Chrome or Edge fo
 | Diagrams | notae via jsDelivr CDN (`Notae.*` global) |
 | Staff | abcjs 6.4.0 via CDN (`ABCJS.*` global) |
 | MIDI | Web MIDI API (Chrome/Edge only) |
-| Audio | soundfont-player 0.12.0 + FluidR3_GM (npm) |
+| Audio | soundfont-player 0.12.0 + FluidR3_GM (CDN) |
 | Styles | Plain CSS (`styles.css`) |
 | Persistence | localStorage |
 
 ### CDN script tags
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@main/dist/umt.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/notae@master/dist/notae.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@<commit>/dist/umt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/memoriainfinita/notae@<commit>/dist/notae.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.0/dist/abcjs-basic-min.js"></script>
 ```
 
@@ -411,15 +411,15 @@ Disabled when `<input>` or `<textarea>` has focus.
 ## Build
 
 ```bash
-npm run build   # one-shot: esbuild src/app.ts → dist/app.js
-npm run dev     # watch mode (--watch=forever, survives stdin close)
+pnpm build      # one-shot: esbuild src/app.ts → dist/app.js
+pnpm dev        # watch mode (--watch=forever, survives stdin close)
 ```
 
-Dev server: `npx http-server . -p 8080` (required — `file://` + Web MIDI may be blocked).
+Dev server: `pnpm dlx http-server . -p 8080` (required — `file://` + Web MIDI may be blocked).
 
-TypeScript check (esbuild does not typecheck): `npx tsc --noEmit`
+TypeScript check (esbuild does not typecheck): `pnpm exec tsc --noEmit`
 
-Tests: `npx vitest run`
+Tests: `pnpm test`
 
 ---
 
