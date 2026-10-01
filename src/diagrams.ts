@@ -1,41 +1,34 @@
 import { playNoteByName, playChord, initAudioOnGesture } from './audio'
 import { PITCH_NAMES_FLAT, NOTE_SEMITONE, noteNameToMidi } from './midi'
 import { chordColor, NEUTRAL_COLOR } from './chord'
+import { keySignature } from './keys'
 
 export let guitarControlsVisible = JSON.parse(localStorage.getItem('panel-guitarControls') ?? 'true')
 export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v }
 
 // ─── Staff ────────────────────────────────────────────────────────────────────
 
-function activeKeyToAbcKey(keyStr: string | null): string {
-  if (!keyStr) return 'none'
-  const [root, mode] = keyStr.split(' ')
-  return root + (mode?.toLowerCase() === 'minor' ? 'm' : '')
+/** ABC source for a block chord. Accidentals are written only where they differ from the key signature. */
+export function buildStaffAbc(noteNames: string[], keyStr: string | null): string {
+  const { abcKey, accidentals } = keySignature(keyStr)
+  const header = `X:1\nM:none\nL:1\nK:${abcKey}\n`
+  const abcNotes = noteNames.flatMap(n => {
+    const m = n.match(/^([A-G])([b#]?)(-?\d+)$/)
+    if (!m) return []
+    const [, letter, acc, octStr] = m
+    const keyAcc = accidentals[letter] ?? ''
+    const mark = acc === keyAcc ? '' : acc === 'b' ? '_' : acc === '#' ? '^' : '='
+    const oct = parseInt(octStr)
+    const pitch = oct >= 5 ? letter.toLowerCase() + "'".repeat(oct - 5)
+      : oct === 4 ? letter
+      : letter + ','.repeat(4 - oct)
+    return [mark + pitch]
+  })
+  return header + (abcNotes.length ? `[${abcNotes.join('')}]1` : 'z')
 }
 
 export function renderStaff(container: HTMLElement, noteNames: string[], width = 380, keyStr: string | null = null) {
-  const abcKey = activeKeyToAbcKey(keyStr)
-  const header = `X:1\nM:none\nL:1\nK:${abcKey}\n`
-  const opts = { staffwidth: width - 20, scale: 2 }
-  if (!noteNames.length) {
-    ABCJS.renderAbc(container, header + 'z', opts)
-    return
-  }
-  const abcNotes = noteNames.map(n => {
-    const m = n.match(/^([A-G][b#]?)(-?\d+)$/)
-    if (!m) return 'C'
-    const raw = m[1]
-    const name = raw.endsWith('b') ? '_' + raw[0]
-      : raw.endsWith('#') ? '^' + raw[0]
-      : raw
-    const oct = parseInt(m[2])
-    let abc = name
-    if (oct >= 5) abc = name.toLowerCase() + "'".repeat(oct - 5)
-    else if (oct === 4) abc = name
-    else abc = name + ','.repeat(4 - oct)
-    return abc
-  })
-  ABCJS.renderAbc(container, header + `[${abcNotes.join('')}]1`, opts)
+  ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr), { staffwidth: width - 20, scale: 2 })
 }
 
 // ─── Full-neck horizontal fretboard ──────────────────────────────────────────

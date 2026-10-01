@@ -1,7 +1,8 @@
 import type { Song, Section, Measure, SongChord, SectionColor } from './types'
 import { playChord, playNoteNames, initAudioOnGesture } from './audio'
-import { PITCH_NAMES_FLAT } from './midi'
+import { PITCH_NAMES_FLAT, NOTE_SEMITONE, noteNameToMidi } from './midi'
 import { isKnownChord } from './chord'
+import { KEY_ROOTS, keyPrefersSharps } from './keys'
 
 export function createSong(): Song {
   return { schemaVersion: 1, title: 'Untitled', sections: [] }
@@ -68,15 +69,20 @@ export function removeMeasure(song: Song, sectionId: string, measureId: string):
   }
 }
 
-export function addChord(song: Song, sectionId: string, measureId: string, symbol: string, notes?: string[]): Song {
+/** Adds a chord to a measure — at the end, or before `beforeChordId` when given and found. */
+export function addChord(song: Song, sectionId: string, measureId: string, symbol: string, notes?: string[], beforeChordId?: string): Song {
   const valid = isValidChordSymbol(symbol)
   const chord: SongChord = { id: newId(), symbol, valid, ...(notes?.length ? { notes } : {}) }
   return {
     ...song,
     sections: song.sections.map(s => s.id !== sectionId ? s : {
       ...s,
-      measures: s.measures.map(m => m.id !== measureId ? m : {
-        ...m, chords: [...m.chords, chord]
+      measures: s.measures.map(m => {
+        if (m.id !== measureId) return m
+        const chords = [...m.chords]
+        const at = beforeChordId ? chords.findIndex(c => c.id === beforeChordId) : -1
+        chords.splice(at === -1 ? chords.length : at, 0, chord)
+        return { ...m, chords }
       })
     })
   }
@@ -243,7 +249,6 @@ export function isBorrowedChord(chordSymbol: string, activeKey: string | null): 
 const isValidChordSymbol = isKnownChord
 
 const SEMITONE_NAMES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
-const SHARP_KEYS = ['G','D','A','E','B','F#','C#']
 
 function transposeRoot(root: string, semitones: number, preferSharps: boolean): string {
   const names = preferSharps ? SEMITONE_NAMES_SHARP : PITCH_NAMES_FLAT
@@ -253,8 +258,17 @@ function transposeRoot(root: string, semitones: number, preferSharps: boolean): 
   return names[((idx % 12 + semitones) % 12 + 12) % 12]
 }
 
+/** Transposes a key like "C Major", spelling the new root as the key selector does. */
+export function transposeKey(key: string, semitones: number): string {
+  const [root, mode] = key.split(' ')
+  const pc = NOTE_SEMITONE[root]
+  if (pc === undefined) return key
+  return [KEY_ROOTS[(((pc + semitones) % 12) + 12) % 12], mode].filter(Boolean).join(' ')
+}
+
 export function transposeSong(song: Song, semitones: number, targetKey?: string): Song {
-  const preferSharps = targetKey ? SHARP_KEYS.includes(targetKey.split(' ')[0]) : false
+  const preferSharps = keyPrefersSharps(targetKey)
+  const names = preferSharps ? SEMITONE_NAMES_SHARP : PITCH_NAMES_FLAT
   const transposePart = (part: string): string => {
     const m = part.match(/^([A-G][b#]?)/)
     if (!m) return part
@@ -262,6 +276,13 @@ export function transposeSong(song: Song, semitones: number, targetKey?: string)
   }
   const transposeSymbol = (symbol: string): string =>
     symbol.split('/').map(transposePart).join('/')
+  // Stored voicings move with the symbol, keeping their octave layout.
+  const transposeNote = (note: string): string => {
+    const midi = noteNameToMidi(note)
+    if (midi === null) return note
+    const t = midi + semitones
+    return names[((t % 12) + 12) % 12] + (Math.floor(t / 12) - 1)
+  }
   return {
     ...song,
     sections: song.sections.map(s => ({
@@ -270,7 +291,10 @@ export function transposeSong(song: Song, semitones: number, targetKey?: string)
         ...m,
         chords: m.chords.map(c => {
           const symbol = transposeSymbol(c.symbol)
-          return { ...c, symbol, valid: isValidChordSymbol(symbol) }
+          return {
+            ...c, symbol, valid: isValidChordSymbol(symbol),
+            ...(c.notes ? { notes: c.notes.map(transposeNote) } : {}),
+          }
         })
       }))
     }))
@@ -369,6 +393,13 @@ export function mountSong(container: HTMLElement, song: Song, handlers: SongEven
   rerender()
 }
 
+/** Moves the cursor highlight without rebuilding the DOM (a rebuild between clicks breaks dblclick). */
+export function markActiveChord(chordId: string | null) {
+  _container?.querySelectorAll<HTMLElement>('.chord-chip').forEach(el => {
+    el.classList.toggle('active-cursor', el.dataset.chordId === chordId)
+  })
+}
+
 function rerender() {
   if (!_container || !_handlers) return
   _container.innerHTML = ''
@@ -444,7 +475,10 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
     Array.from({length:11},(_,i)=>`<option value="${i+1}">+${i+1} st</option>`).join('')
   transposeSelect.addEventListener('change', () => {
     const n = parseInt(transposeSelect.value)
-    if (n) { _song = transposeSong(_song, n); saveSong(_song); h.onSongChange(_song) }
+    if (n) {
+      const targetKey = h.activeKey ? transposeKey(h.activeKey, n) : undefined
+      _song = transposeSong(_song, n, targetKey); saveSong(_song); h.onSongChange(_song)
+    }
     transposeSelect.value = ''
   })
 
@@ -718,7 +752,8 @@ function buildMeasureDOM(
     if (histData) {
       e.preventDefault()
       const { symbol, notes } = JSON.parse(histData)
-      _song = addChord(_song, section.id, measure.id, symbol, notes)
+      _song = addChord(_song, section.id, measure.id, symbol, notes, _insertBeforeChordId ?? undefined)
+      _insertBeforeChordId = null
       saveSong(_song); h.onSongChange(_song)
     } else if (_draggedChordId) {
       e.preventDefault()
@@ -751,8 +786,11 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   const borrowed = chord.valid && chord.symbol ? isBorrowedChord(chord.symbol, h.activeKey) : false
 
   const wrap = document.createElement('div')
-  wrap.className = `chord-chip${isCapture ? ' capture-target' : ''}`
-  wrap.style.borderColor = isActive ? '#fff' : chord.valid === false ? '#ef4444' : '#3a3a5c'
+  wrap.className = 'chord-chip'
+  wrap.dataset.chordId = chord.id
+  wrap.classList.toggle('capture-target', isCapture)
+  wrap.classList.toggle('active-cursor', isActive)
+  wrap.classList.toggle('invalid', chord.valid === false)
 
   const isEditing = !chord.symbol
   if (isEditing) {
@@ -815,7 +853,9 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
     input.value = chord.symbol
 
     const commit = () => {
-      _song = updateChord(_song, chord.id, input.value.trim() || prevVal, notesState)
+      const symbol = input.value.trim() || prevVal
+      // A stored voicing belongs to the old symbol — drop it when the symbol changes.
+      _song = updateChord(_song, chord.id, symbol, symbol === prevVal ? notesState : undefined)
       saveSong(_song); h.onSongChange(_song)
     }
     input.addEventListener('keydown', e => {
@@ -889,10 +929,11 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
     _insertBeforeChordId = null
   })
   wrap.addEventListener('dragover', e => {
-    if (!_draggedChordId || _draggedChordId === chord.id) return
+    const isHistory = e.dataTransfer!.types.includes('application/x-history-chord')
+    if (!isHistory && (!_draggedChordId || _draggedChordId === chord.id)) return
     e.preventDefault()
     e.stopPropagation()
-    e.dataTransfer!.dropEffect = 'move'
+    e.dataTransfer!.dropEffect = isHistory ? 'copy' : 'move'
     if (!_dropIndicator) {
       _dropIndicator = document.createElement('div')
       _dropIndicator.className = 'chord-drop-indicator'
@@ -910,9 +951,11 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
     }
   })
   wrap.addEventListener('drop', e => {
+    // History chips are not song-chord drags: let the drop bubble to the measure row.
+    if (!_draggedChordId) return
     e.preventDefault()
     e.stopPropagation()
-    if (!_draggedChordId || _draggedChordId === chord.id) return
+    if (_draggedChordId === chord.id) return
     _dropIndicator?.remove()
     _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, _insertBeforeChordId ?? undefined)
     _draggedChordId = null

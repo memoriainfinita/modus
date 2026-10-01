@@ -42,6 +42,9 @@ export function toggleHelp() {
 }
 
 function closeHelpOnOutsideClick(e: MouseEvent) {
+  const target = e.target as Element
+  // The ? button toggles on click; closing here too would reopen it immediately.
+  if (target.closest?.('#btn-help')) return
   const popup = document.getElementById('shortcut-help')
-  if (popup && !popup.contains(e.target as Node)) closeHelp()
+  if (popup && !popup.contains(target)) closeHelp()
 }

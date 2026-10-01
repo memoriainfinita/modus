@@ -72,6 +72,9 @@
     if (!midiAccess) return [];
     return Array.from(midiAccess.inputs.values()).map((i) => ({ id: i.id, name: i.name ?? i.id }));
   }
+  function getSelectedDeviceId() {
+    return selectedDeviceId;
+  }
   function selectDevice(id) {
     selectedDeviceId = id;
     localStorage.setItem("midi-device-id", id);
@@ -488,41 +491,97 @@
     playNoteNames(chordNoteNames(chordSymbol));
   }
 
+  // src/keys.ts
+  var KEY_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+  var MAJOR_KEY_SIG = {
+    C: 0,
+    G: 1,
+    D: 2,
+    A: 3,
+    E: 4,
+    B: 5,
+    "F#": 6,
+    "C#": 7,
+    F: -1,
+    Bb: -2,
+    Eb: -3,
+    Ab: -4,
+    Db: -5,
+    Gb: -6,
+    Cb: -7
+  };
+  var MINOR_KEY_SIG = {
+    A: 0,
+    E: 1,
+    B: 2,
+    "F#": 3,
+    "C#": 4,
+    "G#": 5,
+    "D#": 6,
+    "A#": 7,
+    D: -1,
+    G: -2,
+    C: -3,
+    F: -4,
+    Bb: -5,
+    Eb: -6,
+    Ab: -7
+  };
+  var MINOR_ENHARMONIC = { Db: "C#", Gb: "F#" };
+  var SHARP_ORDER = ["F", "C", "G", "D", "A", "E", "B"];
+  var FLAT_ORDER = ["B", "E", "A", "D", "G", "C", "F"];
+  function parseKey(key) {
+    const [root, mode2] = key.split(" ");
+    return { root, minor: mode2?.toLowerCase() === "minor" };
+  }
+  function signatureOf(key) {
+    let { root, minor } = parseKey(key);
+    if (minor && MINOR_ENHARMONIC[root]) root = MINOR_ENHARMONIC[root];
+    const count = (minor ? MINOR_KEY_SIG : MAJOR_KEY_SIG)[root];
+    return count === void 0 ? null : { root, minor, count };
+  }
+  function keyPrefersSharps(key) {
+    return key ? (signatureOf(key)?.count ?? 0) > 0 : false;
+  }
+  function keySignature(key) {
+    const sig = key ? signatureOf(key) : null;
+    if (!sig) return { abcKey: "none", accidentals: {} };
+    const accidentals = {};
+    if (sig.count > 0) SHARP_ORDER.slice(0, sig.count).forEach((l) => {
+      accidentals[l] = "#";
+    });
+    else FLAT_ORDER.slice(0, -sig.count).forEach((l) => {
+      accidentals[l] = "b";
+    });
+    return { abcKey: sig.root + (sig.minor ? "m" : ""), accidentals };
+  }
+
   // src/diagrams.ts
   var guitarControlsVisible = JSON.parse(localStorage.getItem("panel-guitarControls") ?? "true");
   function setGuitarControlsVisible(v) {
     guitarControlsVisible = v;
   }
-  function activeKeyToAbcKey(keyStr) {
-    if (!keyStr) return "none";
-    const [root, mode2] = keyStr.split(" ");
-    return root + (mode2?.toLowerCase() === "minor" ? "m" : "");
-  }
-  function renderStaff(container, noteNames, width = 380, keyStr = null) {
-    const abcKey = activeKeyToAbcKey(keyStr);
+  function buildStaffAbc(noteNames, keyStr) {
+    const { abcKey, accidentals } = keySignature(keyStr);
     const header = `X:1
 M:none
 L:1
 K:${abcKey}
 `;
-    const opts = { staffwidth: width - 20, scale: 2 };
-    if (!noteNames.length) {
-      ABCJS.renderAbc(container, header + "z", opts);
-      return;
-    }
-    const abcNotes = noteNames.map((n) => {
-      const m = n.match(/^([A-G][b#]?)(-?\d+)$/);
-      if (!m) return "C";
-      const raw = m[1];
-      const name = raw.endsWith("b") ? "_" + raw[0] : raw.endsWith("#") ? "^" + raw[0] : raw;
-      const oct = parseInt(m[2]);
-      let abc = name;
-      if (oct >= 5) abc = name.toLowerCase() + "'".repeat(oct - 5);
-      else if (oct === 4) abc = name;
-      else abc = name + ",".repeat(4 - oct);
-      return abc;
+    const abcNotes = noteNames.flatMap((n) => {
+      const m = n.match(/^([A-G])([b#]?)(-?\d+)$/);
+      if (!m) return [];
+      const [, letter, acc, octStr] = m;
+      const keyAcc = accidentals[letter] ?? "";
+      const mark = acc === keyAcc ? "" : acc === "b" ? "_" : acc === "#" ? "^" : "=";
+      const oct = parseInt(octStr);
+      const pitch = oct >= 5 ? letter.toLowerCase() + "'".repeat(oct - 5) : oct === 4 ? letter : letter + ",".repeat(4 - oct);
+      return [mark + pitch];
     });
-    ABCJS.renderAbc(container, header + `[${abcNotes.join("")}]1`, opts);
+    return header + (abcNotes.length ? `[${abcNotes.join("")}]1` : "z");
+  }
+  function renderStaff(container, noteNames, width = 380, keyStr = null) {
+    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr), { staffwidth: width - 20, scale: 2 });
   }
   var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
   var NECK_FRETS = 12;
@@ -987,6 +1046,11 @@ K:${abcKey}
       }
     }, 800);
   }
+  function markActiveHistoryEntry(container, entryId) {
+    container.querySelectorAll(".history-chip").forEach((el) => {
+      el.classList.toggle("active-cursor", el.dataset.id === entryId);
+    });
+  }
   function renderHistory(container, activeKey, onChipClick, activeCursorEntryId) {
     const strip = document.createElement("div");
     strip.className = "history-strip";
@@ -998,7 +1062,7 @@ K:${abcKey}
       const chip = document.createElement("div");
       chip.className = "history-chip";
       chip.dataset.id = entry.id;
-      chip.style.border = `1.5px solid ${activeCursorEntryId === entry.id ? "#fff" : "#3a3a5c"}`;
+      chip.classList.toggle("active-cursor", activeCursorEntryId === entry.id);
       chip.style.borderLeft = `3px solid ${color}`;
       chip.innerHTML = `
       <span class="history-chip-symbol">${entry.symbol}</span>
@@ -1120,16 +1184,19 @@ K:${abcKey}
       })
     };
   }
-  function addChord(song, sectionId, measureId, symbol, notes) {
+  function addChord(song, sectionId, measureId, symbol, notes, beforeChordId) {
     const valid = isValidChordSymbol(symbol);
     const chord = { id: newId(), symbol, valid, ...notes?.length ? { notes } : {} };
     return {
       ...song,
       sections: song.sections.map((s) => s.id !== sectionId ? s : {
         ...s,
-        measures: s.measures.map((m) => m.id !== measureId ? m : {
-          ...m,
-          chords: [...m.chords, chord]
+        measures: s.measures.map((m) => {
+          if (m.id !== measureId) return m;
+          const chords = [...m.chords];
+          const at = beforeChordId ? chords.findIndex((c) => c.id === beforeChordId) : -1;
+          chords.splice(at === -1 ? chords.length : at, 0, chord);
+          return { ...m, chords };
         })
       })
     };
@@ -1263,7 +1330,6 @@ K:${abcKey}
   }
   var isValidChordSymbol = isKnownChord;
   var SEMITONE_NAMES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  var SHARP_KEYS = ["G", "D", "A", "E", "B", "F#", "C#"];
   function transposeRoot(root, semitones, preferSharps) {
     const names = preferSharps ? SEMITONE_NAMES_SHARP : PITCH_NAMES_FLAT;
     const all = [...SEMITONE_NAMES_SHARP, ...PITCH_NAMES_FLAT];
@@ -1271,14 +1337,27 @@ K:${abcKey}
     if (idx === -1) return root;
     return names[((idx % 12 + semitones) % 12 + 12) % 12];
   }
+  function transposeKey(key, semitones) {
+    const [root, mode2] = key.split(" ");
+    const pc = NOTE_SEMITONE[root];
+    if (pc === void 0) return key;
+    return [KEY_ROOTS[((pc + semitones) % 12 + 12) % 12], mode2].filter(Boolean).join(" ");
+  }
   function transposeSong(song, semitones, targetKey) {
-    const preferSharps = targetKey ? SHARP_KEYS.includes(targetKey.split(" ")[0]) : false;
+    const preferSharps = keyPrefersSharps(targetKey);
+    const names = preferSharps ? SEMITONE_NAMES_SHARP : PITCH_NAMES_FLAT;
     const transposePart = (part) => {
       const m = part.match(/^([A-G][b#]?)/);
       if (!m) return part;
       return transposeRoot(m[1], semitones, preferSharps) + part.slice(m[1].length);
     };
     const transposeSymbol = (symbol) => symbol.split("/").map(transposePart).join("/");
+    const transposeNote = (note) => {
+      const midi = noteNameToMidi(note);
+      if (midi === null) return note;
+      const t = midi + semitones;
+      return names[(t % 12 + 12) % 12] + (Math.floor(t / 12) - 1);
+    };
     return {
       ...song,
       sections: song.sections.map((s) => ({
@@ -1287,7 +1366,12 @@ K:${abcKey}
           ...m,
           chords: m.chords.map((c) => {
             const symbol = transposeSymbol(c.symbol);
-            return { ...c, symbol, valid: isValidChordSymbol(symbol) };
+            return {
+              ...c,
+              symbol,
+              valid: isValidChordSymbol(symbol),
+              ...c.notes ? { notes: c.notes.map(transposeNote) } : {}
+            };
           })
         }))
       }))
@@ -1373,6 +1457,11 @@ K:${abcKey}
     _container = container;
     rerender();
   }
+  function markActiveChord(chordId) {
+    _container?.querySelectorAll(".chord-chip").forEach((el) => {
+      el.classList.toggle("active-cursor", el.dataset.chordId === chordId);
+    });
+  }
   function rerender() {
     if (!_container || !_handlers) return;
     _container.innerHTML = "";
@@ -1449,7 +1538,8 @@ K:${abcKey}
     transposeSelect.addEventListener("change", () => {
       const n = parseInt(transposeSelect.value);
       if (n) {
-        _song = transposeSong(_song, n);
+        const targetKey = h.activeKey ? transposeKey(h.activeKey, n) : void 0;
+        _song = transposeSong(_song, n, targetKey);
         saveSong(_song);
         h.onSongChange(_song);
       }
@@ -1718,7 +1808,8 @@ K:${abcKey}
       if (histData) {
         e.preventDefault();
         const { symbol, notes } = JSON.parse(histData);
-        _song = addChord(_song, section.id, measure.id, symbol, notes);
+        _song = addChord(_song, section.id, measure.id, symbol, notes, _insertBeforeChordId ?? void 0);
+        _insertBeforeChordId = null;
         saveSong(_song);
         h.onSongChange(_song);
       } else if (_draggedChordId) {
@@ -1750,8 +1841,11 @@ K:${abcKey}
     const degree = chord.valid && chord.symbol ? computeDegree(chord.symbol, h.activeKey) : "\u2014";
     const borrowed = chord.valid && chord.symbol ? isBorrowedChord(chord.symbol, h.activeKey) : false;
     const wrap = document.createElement("div");
-    wrap.className = `chord-chip${isCapture ? " capture-target" : ""}`;
-    wrap.style.borderColor = isActive ? "#fff" : chord.valid === false ? "#ef4444" : "#3a3a5c";
+    wrap.className = "chord-chip";
+    wrap.dataset.chordId = chord.id;
+    wrap.classList.toggle("capture-target", isCapture);
+    wrap.classList.toggle("active-cursor", isActive);
+    wrap.classList.toggle("invalid", chord.valid === false);
     const isEditing = !chord.symbol;
     if (isEditing) {
       const input = document.createElement("input");
@@ -1809,7 +1903,8 @@ K:${abcKey}
       input.className = "chord-input";
       input.value = chord.symbol;
       const commit = () => {
-        _song = updateChord(_song, chord.id, input.value.trim() || prevVal, notesState);
+        const symbol = input.value.trim() || prevVal;
+        _song = updateChord(_song, chord.id, symbol, symbol === prevVal ? notesState : void 0);
         saveSong(_song);
         h.onSongChange(_song);
       };
@@ -1890,10 +1985,11 @@ K:${abcKey}
       _insertBeforeChordId = null;
     });
     wrap.addEventListener("dragover", (e) => {
-      if (!_draggedChordId || _draggedChordId === chord.id) return;
+      const isHistory = e.dataTransfer.types.includes("application/x-history-chord");
+      if (!isHistory && (!_draggedChordId || _draggedChordId === chord.id)) return;
       e.preventDefault();
       e.stopPropagation();
-      e.dataTransfer.dropEffect = "move";
+      e.dataTransfer.dropEffect = isHistory ? "copy" : "move";
       if (!_dropIndicator) {
         _dropIndicator = document.createElement("div");
         _dropIndicator.className = "chord-drop-indicator";
@@ -1911,9 +2007,10 @@ K:${abcKey}
       }
     });
     wrap.addEventListener("drop", (e) => {
+      if (!_draggedChordId) return;
       e.preventDefault();
       e.stopPropagation();
-      if (!_draggedChordId || _draggedChordId === chord.id) return;
+      if (_draggedChordId === chord.id) return;
       _dropIndicator?.remove();
       _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, _insertBeforeChordId ?? void 0);
       _draggedChordId = null;
@@ -2029,8 +2126,10 @@ K:${abcKey}
     document.addEventListener("mousedown", closeHelpOnOutsideClick);
   }
   function closeHelpOnOutsideClick(e) {
+    const target = e.target;
+    if (target.closest?.("#btn-help")) return;
     const popup = document.getElementById("shortcut-help");
-    if (popup && !popup.contains(e.target)) closeHelp();
+    if (popup && !popup.contains(target)) closeHelp();
   }
 
   // src/analysis-panel.ts
@@ -2271,6 +2370,7 @@ K:${abcKey}
     return {
       onChordClick: (id, symbol, notes) => {
         state.activeCursorId = id;
+        markActiveChord(id);
         if (!symbol) return;
         if (notes?.length) {
           state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol());
@@ -2616,22 +2716,35 @@ K:${abcKey}
       if (btn) btn.textContent = state.panels[key] ? "\u25B2" : "\u25BC";
     });
   }
-  function onNoteChange2(notes) {
-    if (state.captureTargetId && notes.length >= 1) {
-      const result2 = analyzeNotes(notes);
-      if (result2?.kind === "chord") {
-        const sym = result2.candidates[0];
-        state.song = updateChord(state.song, state.captureTargetId, sym, result2.notes);
-        saveSong(state.song);
-        const next = findChordAfter(state.song, state.captureTargetId);
-        state.activeCursorId = next?.id ?? null;
-        state.captureTargetId = null;
-        renderZone3();
-        return;
-      }
+  var CAPTURE_SETTLE_MS = 250;
+  var captureTimer = null;
+  function scheduleCapture(symbol, notes) {
+    if (captureTimer) clearTimeout(captureTimer);
+    captureTimer = setTimeout(() => {
+      captureTimer = null;
+      const targetId = state.captureTargetId;
+      if (!targetId) return;
+      state.song = updateChord(state.song, targetId, symbol, notes);
+      saveSong(state.song);
+      state.activeCursorId = findChordAfter(state.song, targetId)?.id ?? null;
+      state.captureTargetId = null;
+      renderZone3();
+    }, CAPTURE_SETTLE_MS);
+  }
+  function cancelCapture() {
+    if (captureTimer) {
+      clearTimeout(captureTimer);
+      captureTimer = null;
     }
+  }
+  function onNoteChange2(notes) {
     const result = analyzeNotes(notes);
     state.detection = result;
+    if (state.captureTargetId) {
+      const sym = result?.kind === "chord" ? result.candidates[0] : null;
+      if (result?.kind === "chord" && sym && sym !== "?") scheduleCapture(sym, result.notes);
+      else cancelCapture();
+    }
     if (result?.kind === "chord") {
       const sym = result.candidates[result.selectedIndex];
       if (sym && sym !== "?") {
@@ -2717,7 +2830,7 @@ K:${abcKey}
         } else {
           triggerChordAnalysis(entry.symbol);
         }
-        renderZone2();
+        markActiveHistoryEntry($("zone2-content"), entry.id);
       },
       state.historyActiveCursorId
     );
@@ -2742,13 +2855,13 @@ K:${abcKey}
       state.song = addSection(state.song, "Verse", "verse");
     }
     if (state.activeCursorId) {
-      state.song = insertChordAfter(state.song, state.activeCursorId, entry.symbol);
+      state.song = insertChordAfter(state.song, state.activeCursorId, entry.symbol, entry.notes);
       const next = findChordAfter(state.song, state.activeCursorId);
       state.activeCursorId = next?.id ?? state.activeCursorId;
     } else {
       const lastSection = state.song.sections[state.song.sections.length - 1];
       const lastMeasure = lastSection.measures[lastSection.measures.length - 1];
-      state.song = addChord(state.song, lastSection.id, lastMeasure.id, entry.symbol);
+      state.song = addChord(state.song, lastSection.id, lastMeasure.id, entry.symbol, entry.notes);
     }
     saveSong(state.song);
     renderZone3();
@@ -2787,7 +2900,12 @@ K:${abcKey}
     const devices = getDevices();
     sel.innerHTML = devices.length ? devices.map((d) => `<option value="${d.id}">${d.name}</option>`).join("") : "<option>No MIDI devices</option>";
     sel.onchange = () => selectDevice(sel.value);
-    if (devices[0]) selectDevice(devices[0].id);
+    const current = getSelectedDeviceId();
+    const target = devices.find((d) => d.id === current)?.id ?? devices[0]?.id;
+    if (target) {
+      selectDevice(target);
+      sel.value = target;
+    }
     $("midi-status").textContent = devices.length ? "MIDI: connected" : "MIDI: no devices";
     $("midi-status").style.color = devices.length ? "#4ade80" : "#6b7280";
     if (!deviceListenersAttached) {
@@ -2806,7 +2924,10 @@ K:${abcKey}
   }
   function wireKeyboard() {
     document.addEventListener("keydown", (e) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return;
+      if (t instanceof HTMLElement && t.isContentEditable) return;
       switch (e.key) {
         case "h":
         case "H":
@@ -2858,12 +2979,7 @@ K:${abcKey}
         default:
           if (e.key >= "1" && e.key <= "9") {
             const idx = parseInt(e.key) - 1;
-            if (state.detection?.kind === "chord" && idx < state.detection.candidates.length) {
-              state.detection.selectedIndex = idx;
-              const sym = state.detection.candidates[idx];
-              state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol());
-              renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
-            }
+            if (state.detection?.kind === "chord" && idx < state.detection.candidates.length) onAltSelect(idx);
           }
       }
     });

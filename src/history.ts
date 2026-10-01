@@ -48,6 +48,13 @@ export function notifyChordDetected(symbol: string, notes: string[]) {
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
+/** Moves the cursor highlight without rebuilding the strip (a rebuild between clicks breaks dblclick). */
+export function markActiveHistoryEntry(container: HTMLElement, entryId: string | null) {
+  container.querySelectorAll<HTMLElement>('.history-chip').forEach(el => {
+    el.classList.toggle('active-cursor', el.dataset.id === entryId)
+  })
+}
+
 export function renderHistory(
   container: HTMLElement,
   activeKey: string | null,
@@ -66,7 +73,7 @@ export function renderHistory(
     const chip = document.createElement('div')
     chip.className = 'history-chip'
     chip.dataset.id = entry.id
-    chip.style.border = `1.5px solid ${activeCursorEntryId === entry.id ? '#fff' : '#3a3a5c'}`
+    chip.classList.toggle('active-cursor', activeCursorEntryId === entry.id)
     chip.style.borderLeft = `3px solid ${color}`
     chip.innerHTML = `
       <span class="history-chip-symbol">${entry.symbol}</span>

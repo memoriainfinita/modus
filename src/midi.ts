@@ -68,6 +68,8 @@ export function getDevices(): { id: string; name: string }[] {
   return Array.from(midiAccess.inputs.values()).map(i => ({ id: i.id, name: i.name ?? i.id }))
 }
 
+export function getSelectedDeviceId(): string | null { return selectedDeviceId }
+
 export function selectDevice(id: string) {
   selectedDeviceId = id
   localStorage.setItem('midi-device-id', id)
