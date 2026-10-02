@@ -385,6 +385,11 @@
   function setAudioStatusCallback(cb) {
     onStatusChange = cb;
   }
+  var onMissed = () => {
+  };
+  function setAudioMissedCallback(cb) {
+    onMissed = cb;
+  }
   function setStatus(s) {
     audioStatus = s;
     onStatusChange?.(s);
@@ -429,6 +434,10 @@
       console.error("[audio] load failed:", err);
     });
   }
+  function preloadAudio() {
+    ensureContext();
+    if (!instrument && !loadingInstrument) loadCurrentInstrument();
+  }
   function initAudioOnGesture() {
     ensureContext();
     audioCtx.resume().then(() => {
@@ -455,7 +464,16 @@
   function playMidi(midis, duration) {
     initAudioOnGesture();
     const inst = instrument;
-    if (!inst || !midis.length) return;
+    if (!midis.length) return;
+    if (!inst) {
+      onMissed();
+      return;
+    }
+    const activation = navigator.userActivation;
+    if (audioCtx.state === "suspended" && activation && !activation.isActive) {
+      onMissed();
+      return;
+    }
     audioCtx.resume().then(() => {
       for (const midi of midis) inst.play(midi, audioCtx.currentTime, { duration, gain: volume });
     });
@@ -948,6 +966,28 @@ K:${abcKey}
     return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   }
 
+  // src/undo.ts
+  var UNDO_MS = 5e3;
+  var current = null;
+  function dismiss() {
+    if (!current) return;
+    clearTimeout(current.timer);
+    current.el.remove();
+    current = null;
+  }
+  function showUndo(message, undo) {
+    dismiss();
+    const el = document.createElement("div");
+    el.className = "undo-toast";
+    el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">Undo</button>`;
+    el.querySelector("button").addEventListener("click", () => {
+      dismiss();
+      undo();
+    });
+    document.body.appendChild(el);
+    current = { el, timer: window.setTimeout(dismiss, UNDO_MS) };
+  }
+
   // src/history.ts
   var MAX_ENTRIES = 200;
   var FUNCTION_COLORS = {
@@ -973,6 +1013,17 @@ K:${abcKey}
     entries = entries.filter((e) => e.id !== id);
     lastAutoAppended = entries[0]?.symbol ?? null;
     onChange(entries);
+  }
+  function restoreEntries(list) {
+    entries = list.slice(0, MAX_ENTRIES);
+    lastAutoAppended = entries[0]?.symbol ?? null;
+    onChange(entries);
+  }
+  function clearHistoryWithUndo() {
+    if (!entries.length) return;
+    const before = entries;
+    clearHistory();
+    showUndo(`History cleared (${before.length})`, () => restoreEntries(before));
   }
   function clearHistory() {
     entries = [];
@@ -1010,12 +1061,12 @@ K:${abcKey}
       <span class="history-chip-symbol">${escapeHtml(entry.symbol)}</span>
       <span class="history-chip-roman">${escapeHtml(roman)}</span>
     `;
-      chip.addEventListener("click", () => onChipClick(entry));
-      chip.addEventListener("dblclick", () => {
+      chip.addEventListener("click", () => {
+        onChipClick(entry);
         if (entry.notes.length > 0) playNoteNames(entry.notes);
         else playChord(entry.symbol);
       });
-      chip.title = `${entry.symbol} \u2014 dblclick to play, drag to song, right-click to remove`;
+      chip.title = `${entry.symbol} \u2014 click to play, drag to song, right-click to remove`;
       chip.draggable = true;
       chip.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol, notes: entry.notes }));
@@ -1027,34 +1078,17 @@ K:${abcKey}
       });
       chip.addEventListener("contextmenu", (e) => {
         e.preventDefault();
+        const before = entries;
         removeEntry(entry.id);
+        showUndo(`Removed ${entry.symbol}`, () => restoreEntries(before));
       });
       strip.appendChild(chip);
     });
-    let _clearPending = false;
-    let _clearTimer = 0;
     const clearBtn = document.createElement("button");
     clearBtn.textContent = "Clear";
-    clearBtn.title = "Clear history \u2014 click twice to confirm";
+    clearBtn.title = "Clear history (C) \u2014 can be undone";
     clearBtn.className = "history-clear-btn";
-    clearBtn.addEventListener("click", () => {
-      if (_clearPending) {
-        clearTimeout(_clearTimer);
-        _clearPending = false;
-        clearBtn.textContent = "Clear";
-        clearBtn.style.background = "#374151";
-        clearHistory();
-      } else {
-        _clearPending = true;
-        clearBtn.textContent = "?";
-        clearBtn.style.background = "#991b1b";
-        _clearTimer = window.setTimeout(() => {
-          _clearPending = false;
-          clearBtn.textContent = "Clear";
-          clearBtn.style.background = "#374151";
-        }, 3e3);
-      }
-    });
+    clearBtn.addEventListener("click", clearHistoryWithUndo);
     const wrap = document.createElement("div");
     wrap.className = "history-wrap";
     wrap.appendChild(strip);
@@ -1246,7 +1280,28 @@ K:${abcKey}
     return map;
   }
   function parseProgressionText(text) {
-    return text.split(/[\s,\n]+/).map((t) => t.trim()).filter(Boolean);
+    return text.split(/[\s,\n|]+/).map((t) => t.trim()).filter(Boolean);
+  }
+  function parseProgressionMeasures(text) {
+    if (!text.includes("|")) return parseProgressionText(text).map((sym) => [sym]);
+    return text.split("|").map(parseProgressionText).filter((m) => m.length > 0);
+  }
+  function appendProgression(song, sectionId, measures) {
+    return {
+      ...song,
+      sections: song.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+        const kept = [...s.measures];
+        const last = kept[kept.length - 1];
+        const reuse = last && last.chords.length === 0;
+        if (reuse) kept.pop();
+        const added = measures.map((syms, i) => ({
+          id: i === 0 && reuse ? last.id : newId(),
+          chords: syms.map((symbol) => ({ id: newId(), symbol, valid: isValidChordSymbol(symbol) }))
+        }));
+        return { ...s, measures: [...kept, ...added] };
+      })
+    };
   }
   function computeDegree(chordSymbol, activeKey) {
     if (!activeKey || !chordSymbol) return "\u2014";
@@ -1357,7 +1412,6 @@ K:${abcKey}
   var _container = null;
   var _draggedSectionId = null;
   var _draggedChordId = null;
-  var _pendingConfirmEl = null;
   var _dropIndicator = null;
   var _insertBeforeChordId = null;
   function showNotice(msg, type = "info") {
@@ -1375,30 +1429,20 @@ K:${abcKey}
     _container.insertBefore(div, _container.firstChild);
     window.setTimeout(() => div.remove(), 5e3);
   }
-  function confirmOnce(btn, action) {
-    if (_pendingConfirmEl?.el === btn) {
-      clearTimeout(_pendingConfirmEl.timer);
-      _pendingConfirmEl = null;
-      btn.textContent = btn.dataset.orig;
-      btn.style.background = "#374151";
-      action();
-      return;
-    }
-    if (_pendingConfirmEl) {
-      clearTimeout(_pendingConfirmEl.timer);
-      _pendingConfirmEl.el.textContent = _pendingConfirmEl.el.dataset.orig;
-      _pendingConfirmEl.el.style.background = "#374151";
-      _pendingConfirmEl = null;
-    }
-    btn.dataset.orig = btn.textContent;
-    btn.textContent = "?";
-    btn.style.background = "#991b1b";
-    const timer = window.setTimeout(() => {
-      btn.textContent = btn.dataset.orig;
-      btn.style.background = "#374151";
-      _pendingConfirmEl = null;
-    }, 3e3);
-    _pendingConfirmEl = { el: btn, timer };
+  function applyWithUndo(next, message) {
+    const before = _song;
+    _song = next;
+    saveSong(_song);
+    _handlers?.onSongChange(_song);
+    showUndo(message, () => {
+      _song = before;
+      saveSong(before);
+      _handlers?.onSongChange(before);
+    });
+  }
+  function removeChordWithUndo(chordId) {
+    const chord = _song.sections.flatMap((s) => s.measures.flatMap((m) => m.chords)).find((c) => c.id === chordId);
+    if (chord) applyWithUndo(removeChord(_song, chordId), `Removed ${chord.symbol || "chord"}`);
   }
   function mountSong(container, song, handlers) {
     _song = song;
@@ -1429,31 +1473,27 @@ K:${abcKey}
       h.onSongChange(_song);
     });
     const newBtn = makeBtn("New", "#374151", () => {
-      confirmOnce(newBtn, () => {
-        _song = createSong();
-        saveSong(_song);
-        h.onSongChange(_song);
-      });
+      if (!_song.sections.length && _song.title === "Untitled") return;
+      applyWithUndo(createSong(), `New song \u2014 "${_song.title}" closed`);
     });
-    newBtn.title = "Start new song \u2014 click twice to confirm";
+    newBtn.title = "Start a new song \u2014 can be undone";
     const pasteArea = document.createElement("div");
     pasteArea.className = "paste-area";
     pasteArea.style.display = "none";
     const pasteTA = document.createElement("textarea");
-    pasteTA.placeholder = "Am G C F  (space, comma or newline separated)";
+    pasteTA.placeholder = "Am G | C F  (| separates measures; without bars, one chord per measure)";
     pasteTA.rows = 2;
     pasteTA.className = "paste-textarea";
     const pasteSubmit = makeBtn("Add chords", "#4f46e5", () => {
       const text = pasteTA.value.trim();
       if (!text) return;
-      const symbols = parseProgressionText(text);
+      const measures = parseProgressionMeasures(text);
+      if (!measures.length) return;
       if (!_song.sections.length) {
         _song = addSection(_song, "Section", "verse");
       }
       const section = _song.sections[_song.sections.length - 1];
-      const measure = newPasteMeasure(symbols);
-      _song = { ..._song, sections: _song.sections.map((s) => s.id !== section.id ? s : { ...s, measures: [...s.measures, measure] }) };
-      if (symbols.length > 8) showNotice("All chords added to one measure \u2014 split as needed.");
+      _song = appendProgression(_song, section.id, measures);
       pasteTA.value = "";
       pasteArea.style.display = "none";
       saveSong(_song);
@@ -1525,16 +1565,6 @@ K:${abcKey}
       root.appendChild(buildSectionDOM(section, h, measureNums));
     });
     return root;
-  }
-  function newPasteMeasure(symbols) {
-    return {
-      id: crypto.randomUUID(),
-      chords: symbols.map((sym) => ({
-        id: crypto.randomUUID(),
-        symbol: sym,
-        valid: isValidChordSymbol(sym)
-      }))
-    };
   }
   function buildSectionDOM(section, h, measureNums) {
     const color = SECTION_COLORS[section.color];
@@ -1644,14 +1674,10 @@ K:${abcKey}
     });
     dupBtn.title = "Duplicate section";
     const delBtn = makeSmallBtn("\xD7", () => {
-      confirmOnce(delBtn, () => {
-        _song = removeSection(_song, section.id);
-        saveSong(_song);
-        h.onSongChange(_song);
-      });
+      applyWithUndo(removeSection(_song, section.id), `Deleted section ${section.name}`);
     });
     delBtn.style.color = "#f87171";
-    delBtn.title = "Delete section \u2014 click twice to confirm";
+    delBtn.title = "Delete section \u2014 can be undone";
     secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn);
     const addMeasureBtn = makeSmallBtn("+ Bar", () => {
       _song = addMeasure(_song, section.id);
@@ -1777,10 +1803,9 @@ K:${abcKey}
     });
     wrap.appendChild(chordsRow);
     const delMBtn = makeSmallBtn("\xD7", () => {
-      _song = removeMeasure(_song, section.id, measure.id);
-      saveSong(_song);
-      h.onSongChange(_song);
+      applyWithUndo(removeMeasure(_song, section.id, measure.id), `Deleted measure ${measureNum}`);
     });
+    delMBtn.title = "Delete measure \u2014 can be undone";
     delMBtn.style.color = "#f87171";
     delMBtn.style.alignSelf = "center";
     const sectionObj = _song.sections.find((s) => s.id === section.id);
@@ -1897,12 +1922,8 @@ K:${abcKey}
       h.onSongChange(_song);
     });
     dupBtn.title = "Duplicate chord";
-    const delBtn = makeSmallBtn("\xD7", () => {
-      _song = removeChord(_song, chord.id);
-      saveSong(_song);
-      h.onSongChange(_song);
-    });
-    delBtn.title = "Remove chord";
+    const delBtn = makeSmallBtn("\xD7", () => removeChordWithUndo(chord.id));
+    delBtn.title = "Remove chord (Del) \u2014 can be undone";
     const captureBtn = makeSmallBtn("\u2299", () => h.onChordCapture(chord.id));
     captureBtn.title = "MIDI fill: next chord played on MIDI keyboard replaces this slot";
     if (isCapture) {
@@ -1913,8 +1934,8 @@ K:${abcKey}
     wrap.appendChild(controls);
     wrap.addEventListener("mouseenter", () => controls.style.display = "flex");
     wrap.addEventListener("mouseleave", () => controls.style.display = "none");
-    wrap.addEventListener("click", () => h.onChordClick(chord.id, chord.symbol, chord.notes));
-    wrap.addEventListener("dblclick", () => {
+    wrap.addEventListener("click", () => {
+      h.onChordClick(chord.id, chord.symbol, chord.notes);
       if (chord.notes?.length) playNoteNames(chord.notes);
       else playChord(chord.symbol);
     });
@@ -2195,41 +2216,13 @@ K:${abcKey}
       colGuitar: loadBool("panel-colGuitar", true)
     }
   };
-  function showModal(title, message, onConfirm, onCancel) {
-    const backdrop = document.createElement("div");
-    backdrop.className = "modal-backdrop";
-    backdrop.innerHTML = `
-    <div class="modal-popup">
-      <div class="modal-title">${escapeHtml(title)}</div>
-      <div class="modal-message">${escapeHtml(message)}</div>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-cancel">Cancel</button>
-        <button class="modal-btn modal-btn-confirm">Confirm</button>
-      </div>
-    </div>`;
-    document.body.appendChild(backdrop);
-    const close = () => backdrop.remove();
-    backdrop.querySelector(".modal-btn-cancel").addEventListener("click", () => {
-      close();
-      onCancel?.();
-    });
-    backdrop.querySelector(".modal-btn-confirm").addEventListener("click", () => {
-      close();
-      onConfirm();
-    });
-    backdrop.addEventListener("mousedown", (e) => {
-      if (e.target === backdrop) {
-        close();
-        onCancel?.();
-      }
-    });
-  }
   var $ = (id) => document.getElementById(id);
   function init() {
     if (!navigator.requestMIDIAccess) {
       $("browser-warning").style.display = "block";
     }
     document.addEventListener("click", initAudioOnGesture, { once: true });
+    preloadAudio();
     buildLayout();
     wireKeyboard();
     setModeBtn(getMode());
@@ -2246,6 +2239,13 @@ K:${abcKey}
     setNoteChangeCallback(onNoteChange2);
     setNoteOnCallback((note) => playNote(note, 1.5));
     setHistoryChangeCallback(onHistoryChange);
+    setAudioMissedCallback(() => {
+      const el = document.getElementById("audio-progress");
+      if (!el) return;
+      el.classList.remove("missed");
+      void el.offsetWidth;
+      el.classList.add("missed");
+    });
     let progressTimer = null;
     let progressValue = 0;
     setAudioStatusCallback((status) => {
@@ -2669,8 +2669,9 @@ K:${abcKey}
       if (!targetId) return;
       state.song = updateChord(state.song, targetId, symbol, notes);
       saveSong(state.song);
-      state.activeCursorId = findChordAfter(state.song, targetId)?.id ?? null;
-      state.captureTargetId = null;
+      const next = findChordAfter(state.song, targetId)?.id ?? null;
+      state.activeCursorId = next;
+      state.captureTargetId = next;
       renderZone3();
     }, CAPTURE_SETTLE_MS);
   }
@@ -2756,16 +2757,13 @@ K:${abcKey}
     saveSong(state.song);
     renderZone3();
   }
+  function songChords(song) {
+    return song.sections.flatMap((s) => s.measures.flatMap((m) => m.chords));
+  }
   function findChordAfter(song, afterId) {
-    for (const section of song.sections) {
-      for (const measure of section.measures) {
-        const idx = measure.chords.findIndex((c) => c.id === afterId);
-        if (idx !== -1 && idx + 1 < measure.chords.length) {
-          return measure.chords[idx + 1];
-        }
-      }
-    }
-    return null;
+    const chords = songChords(song);
+    const i = chords.findIndex((c) => c.id === afterId);
+    return i !== -1 ? chords[i + 1] ?? null : null;
   }
   var deviceListenersAttached = false;
   function refreshDeviceDropdown() {
@@ -2773,8 +2771,8 @@ K:${abcKey}
     const devices = getDevices();
     sel.innerHTML = devices.length ? devices.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join("") : "<option>No MIDI devices</option>";
     sel.onchange = () => selectDevice(sel.value);
-    const current = getSelectedDeviceId();
-    const target = devices.find((d) => d.id === current)?.id ?? devices[0]?.id;
+    const current2 = getSelectedDeviceId();
+    const target = devices.find((d) => d.id === current2)?.id ?? devices[0]?.id;
     if (target) {
       selectDevice(target);
       sel.value = target;
@@ -2826,7 +2824,7 @@ K:${abcKey}
           break;
         case "c":
         case "C":
-          showModal("Clear history", "Remove all history entries?", clearHistory);
+          clearHistoryWithUndo();
           break;
         case "?":
           e.preventDefault();

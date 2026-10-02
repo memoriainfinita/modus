@@ -1,8 +1,8 @@
 import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice, getSelectedDeviceId } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
-import { initAudioOnGesture, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playNoteNames, GM_INSTRUMENT_GROUPS, setAudioStatusCallback } from './audio'
+import { initAudioOnGesture, preloadAudio, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playNoteNames, GM_INSTRUMENT_GROUPS, setAudioStatusCallback, setAudioMissedCallback } from './audio'
 import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
-import { setHistoryChangeCallback, clearHistory, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history'
+import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history'
 import { loadSong, saveSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song-model'
 import { mountSong, markActiveChord } from './song-view'
 import type { AppState, DetectionResult, HistoryEntry, MidiMode, Song, SongChord } from './types'
@@ -59,27 +59,6 @@ const state: AppState = {
   }
 }
 
-// ─── Modal ───────────────────────────────────────────────────────────────────
-
-function showModal(title: string, message: string, onConfirm: () => void, onCancel?: () => void) {
-  const backdrop = document.createElement('div')
-  backdrop.className = 'modal-backdrop'
-  backdrop.innerHTML = `
-    <div class="modal-popup">
-      <div class="modal-title">${escapeHtml(title)}</div>
-      <div class="modal-message">${escapeHtml(message)}</div>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-cancel">Cancel</button>
-        <button class="modal-btn modal-btn-confirm">Confirm</button>
-      </div>
-    </div>`
-  document.body.appendChild(backdrop)
-  const close = () => backdrop.remove()
-  backdrop.querySelector('.modal-btn-cancel')!.addEventListener('click', () => { close(); onCancel?.() })
-  backdrop.querySelector('.modal-btn-confirm')!.addEventListener('click', () => { close(); onConfirm() })
-  backdrop.addEventListener('mousedown', e => { if (e.target === backdrop) { close(); onCancel?.() } })
-}
-
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
 const $ = (id: string) => document.getElementById(id)!
@@ -90,6 +69,7 @@ function init() {
   }
 
   document.addEventListener('click', initAudioOnGesture, { once: true })
+  preloadAudio()
 
   buildLayout()
   wireKeyboard()
@@ -110,6 +90,14 @@ function init() {
   setNoteChangeCallback(onNoteChange)
   setNoteOnCallback(note => playNote(note, 1.5))
   setHistoryChangeCallback(onHistoryChange)
+
+  setAudioMissedCallback(() => {
+    const el = document.getElementById('audio-progress')
+    if (!el) return
+    el.classList.remove('missed')
+    void el.offsetWidth  // restart the animation
+    el.classList.add('missed')
+  })
 
   let progressTimer: ReturnType<typeof setInterval> | null = null
   let progressValue = 0
@@ -551,8 +539,10 @@ function scheduleCapture(symbol: string, notes: string[]) {
     if (!targetId) return
     state.song = updateChord(state.song, targetId, symbol, notes)
     saveSong(state.song)
-    state.activeCursorId = findChordAfter(state.song, targetId)?.id ?? null
-    state.captureTargetId = null
+    // Fill keeps going: the next slot (across measures and sections) waits for the next chord.
+    const next = findChordAfter(state.song, targetId)?.id ?? null
+    state.activeCursorId = next
+    state.captureTargetId = next
     renderZone3()
   }, CAPTURE_SETTLE_MS)
 }
@@ -647,16 +637,15 @@ function sendToSong(entry: HistoryEntry) {
   renderZone3()
 }
 
+/** All song chords in playing order, across measures and sections. */
+function songChords(song: Song): SongChord[] {
+  return song.sections.flatMap(s => s.measures.flatMap(m => m.chords))
+}
+
 function findChordAfter(song: Song, afterId: string): SongChord | null {
-  for (const section of song.sections) {
-    for (const measure of section.measures) {
-      const idx = measure.chords.findIndex(c => c.id === afterId)
-      if (idx !== -1 && idx + 1 < measure.chords.length) {
-        return measure.chords[idx + 1]
-      }
-    }
-  }
-  return null
+  const chords = songChords(song)
+  const i = chords.findIndex(c => c.id === afterId)
+  return i !== -1 ? chords[i + 1] ?? null : null
 }
 
 // ─── Device dropdown ─────────────────────────────────────────────────────────
@@ -726,7 +715,7 @@ function wireKeyboard() {
       case 'p': case 'P':
         playCurrent(); break
       case 'c': case 'C':
-        showModal('Clear history', 'Remove all history entries?', clearHistory); break
+        clearHistoryWithUndo(); break
       case '?':
         e.preventDefault()
         toggleHelp(); break

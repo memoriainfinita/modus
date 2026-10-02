@@ -10,7 +10,7 @@ vi.mock('../src/analyzer', () => ({
 
 import {
   getEntries, addEntry, removeEntry, clearHistory,
-  notifyChordDetected, setHistoryChangeCallback
+  notifyChordDetected, setHistoryChangeCallback, clearHistoryWithUndo, restoreEntries
 } from '../src/history'
 
 beforeEach(() => {
@@ -188,5 +188,26 @@ describe('notifyChordDetected', () => {
     notifyChordDetected('Cmaj7', [])
     vi.advanceTimersByTime(800)
     expect(getEntries()).toHaveLength(1)
+  })
+})
+
+describe('clear with undo', () => {
+  it('clears at once and Undo puts the entries back', () => {
+    addEntry('C', [])
+    addEntry('G', [])
+    clearHistoryWithUndo()
+    expect(getEntries()).toHaveLength(0)
+    ;(document.querySelector('.undo-btn') as HTMLButtonElement).click()
+    expect(getEntries().map(e => e.symbol)).toEqual(['G', 'C'])
+    expect(document.querySelector('.undo-toast')).toBeNull()
+  })
+
+  it('restoreEntries re-arms dedup against the newest restored entry', () => {
+    vi.useFakeTimers()
+    restoreEntries([{ id: '1', symbol: 'Am', notes: [] }])
+    notifyChordDetected('Am', [])
+    vi.advanceTimersByTime(800)
+    expect(getEntries()).toHaveLength(1)
+    vi.useRealTimers()
   })
 })

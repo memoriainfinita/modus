@@ -5,7 +5,7 @@ import {
   parseProgressionText, computeMeasureNumbers, duplicateSection,
   insertChordAfter, updateChord, duplicateChord,
   moveChordToPosition, reorderSections, reorderChordInMeasure,
-  computeDegree, isBorrowedChord, transposeKey, withoutEmptyChords, saveSong, loadSong,
+  computeDegree, isBorrowedChord, transposeKey, withoutEmptyChords, saveSong, loadSong, parseProgressionMeasures, appendProgression,
 } from '../src/song-model'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
@@ -499,5 +499,40 @@ describe('empty chord slots', () => {
     s = addChord(s, s.sections[0].id, s.sections[0].measures[0].id, '')
     saveSong(s)
     expect(loadSong().sections[0].measures[0].chords).toHaveLength(0)
+  })
+})
+
+describe('parseProgressionMeasures', () => {
+  it('bar lines split measures', () => {
+    expect(parseProgressionMeasures('Am G | C F')).toEqual([['Am', 'G'], ['C', 'F']])
+  })
+
+  it('without bars, one chord per measure', () => {
+    expect(parseProgressionMeasures('Am, G C\nF')).toEqual([['Am'], ['G'], ['C'], ['F']])
+  })
+
+  it('empty bars and edge bars are ignored', () => {
+    expect(parseProgressionMeasures('| Am || G |')).toEqual([['Am'], ['G']])
+  })
+})
+
+describe('appendProgression', () => {
+  it('fills the empty last measure first, then adds measures', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    const firstMeasure = s.sections[0].measures[0].id
+    s = appendProgression(s, s.sections[0].id, [['Am', 'G'], ['C']])
+    const ms = s.sections[0].measures
+    expect(ms).toHaveLength(2)
+    expect(ms[0].id).toBe(firstMeasure)
+    expect(ms[0].chords.map(c => c.symbol)).toEqual(['Am', 'G'])
+    expect(ms[1].chords.map(c => c.symbol)).toEqual(['C'])
+  })
+
+  it('keeps a non-empty last measure and flags invalid symbols', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    s = addChord(s, s.sections[0].id, s.sections[0].measures[0].id, 'D')
+    s = appendProgression(s, s.sections[0].id, [['xyz']])
+    expect(s.sections[0].measures).toHaveLength(2)
+    expect(s.sections[0].measures[1].chords[0].valid).toBe(false)
   })
 })

@@ -15,6 +15,10 @@ let onStatusChange: ((s: AudioStatus) => void) | null = null
 
 export function setAudioStatusCallback(cb: (s: AudioStatus) => void) { onStatusChange = cb }
 
+let onMissed: () => void = () => {}
+/** Called when notes are dropped because the instrument cannot sound yet. */
+export function setAudioMissedCallback(cb: () => void) { onMissed = cb }
+
 function setStatus(s: AudioStatus) { audioStatus = s; onStatusChange?.(s) }
 
 export const GM_INSTRUMENT_GROUPS: { label: string; instruments: string[] }[] = [
@@ -65,6 +69,16 @@ function loadCurrentInstrument() {
     })
 }
 
+/**
+ * Starts loading the instrument at page load. The context starts suspended (browsers
+ * need a gesture to let it sound) but the samples download meanwhile, so the first
+ * click finds the instrument ready.
+ */
+export function preloadAudio() {
+  ensureContext()
+  if (!instrument && !loadingInstrument) loadCurrentInstrument()
+}
+
 export function initAudioOnGesture() {
   ensureContext()
   audioCtx!.resume().then(() => {
@@ -90,11 +104,17 @@ export function setVolume(v: number) {
 export function getVolume() { return volume }
 
 // Single playback path: every play* call starts the context and the instrument load
-// if needed. Notes requested before the instrument is ready are dropped, not queued.
+// if needed. Notes requested before the instrument is ready are dropped, not queued
+// (a late note would sound out of time); the missed callback lets the UI say so.
 function playMidi(midis: number[], duration: number) {
   initAudioOnGesture()
   const inst = instrument
-  if (!inst || !midis.length) return
+  if (!midis.length) return
+  if (!inst) { onMissed(); return }
+  // A suspended context only resumes on a user gesture. Without one (a MIDI note before
+  // the first click) the resume would wait and fire every queued note at the next click.
+  const activation = (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation
+  if (audioCtx!.state === 'suspended' && activation && !activation.isActive) { onMissed(); return }
   audioCtx!.resume().then(() => {
     for (const midi of midis) inst.play(midi, audioCtx!.currentTime, { duration, gain: volume })
   })
