@@ -6,6 +6,7 @@ import {
   moveChordToPosition, reorderSections, computeMeasureNumbers, parseProgressionText,
   computeDegree, isBorrowedChord, isValidChordSymbol, transposeSong, transposeKey, detectForm,
 } from './song-model'
+import { escapeHtml } from './html'
 
 // ─── Song UI ─────────────────────────────────────────────────────────────────
 
@@ -670,10 +671,6 @@ function makeSmallBtn(label: string, onClick: () => void): HTMLButtonElement {
   btn.className = 'song-btn-small'
   btn.addEventListener('click', e => { e.stopPropagation(); onClick() })
   return btn
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
 }
 
 function buildPrintHTML(song: Song, activeKey: string | null): string {

@@ -151,11 +151,15 @@ function handleNoteOff(note: number) {
 export function setMode(m: MidiMode) {
   if (m === mode) return
   mode = m
+  const hadNotes = activeNotes.size > 0 || arpeggioNotes.length > 0
   activeNotes.clear()
   physicallyHeldNotes.clear()
   arpeggioNotes = []
   if (arpeggioTimer) { clearTimeout(arpeggioTimer); arpeggioTimer = null }
   localStorage.setItem('midi-mode', m)
+  // The notes were dropped: the detector must not keep showing the old chord.
+  // A chord picked from history or song (no MIDI notes) stays.
+  if (hadNotes) onNoteChange([])
 }
 
 export function getMode(): MidiMode { return mode }

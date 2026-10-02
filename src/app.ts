@@ -14,6 +14,7 @@ import {
 import type { AnalysisFieldKey } from './analysis-panel'
 import { chordNoteNames, chordRoot } from './chord'
 import { loadBool, loadChoice, loadNumber, loadString, save } from './storage'
+import { escapeHtml } from './html'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -64,8 +65,8 @@ function showModal(title: string, message: string, onConfirm: () => void, onCanc
   backdrop.className = 'modal-backdrop'
   backdrop.innerHTML = `
     <div class="modal-popup">
-      <div class="modal-title">${title}</div>
-      <div class="modal-message">${message}</div>
+      <div class="modal-title">${escapeHtml(title)}</div>
+      <div class="modal-message">${escapeHtml(message)}</div>
       <div class="modal-actions">
         <button class="modal-btn modal-btn-cancel">Cancel</button>
         <button class="modal-btn modal-btn-confirm">Confirm</button>
@@ -667,7 +668,7 @@ function refreshDeviceDropdown() {
   const sel = $('midi-device') as HTMLSelectElement
   const devices = getDevices()
   sel.innerHTML = devices.length
-    ? devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('')
+    ? devices.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('')
     : '<option>No MIDI devices</option>'
   sel.onchange = () => selectDevice(sel.value)
   // Keep the chosen device (restored from localStorage in initMidi) across hot-plug events;

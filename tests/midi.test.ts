@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { midiToNoteName, isNoteOff } from '../src/midi'
+import { describe, it, expect, vi } from 'vitest'
+import { midiToNoteName, isNoteOff, setMode, setNoteChangeCallback } from '../src/midi'
 
 describe('midiToNoteName', () => {
   it('converts middle C (MIDI 60) to C4', () => {
@@ -28,5 +28,15 @@ describe('isNoteOff', () => {
   })
   it('handles all MIDI channels for note-off (0x8F)', () => {
     expect(isNoteOff(0x8F, 64)).toBe(true)
+  })
+})
+
+describe('setMode', () => {
+  it('does not touch the detector when no MIDI notes were active', () => {
+    const cb = vi.fn()
+    setNoteChangeCallback(cb)
+    setMode('hold')
+    setMode('normal')
+    expect(cb).not.toHaveBeenCalled()
   })
 })

@@ -1,6 +1,7 @@
 import type { HistoryEntry } from './types'
 import { buildHarmonicAnalysis } from './analyzer'
 import { playChord, playNoteNames } from './audio'
+import { escapeHtml } from './html'
 
 const MAX_ENTRIES = 200
 // Chip accent by harmonic function (T/S/D), not by chord quality
@@ -27,6 +28,8 @@ export function addEntry(symbol: string, notes: string[]) {
 
 export function removeEntry(id: string) {
   entries = entries.filter(e => e.id !== id)
+  // Dedup compares against the newest entry still in the strip, not a removed one.
+  lastAutoAppended = entries[0]?.symbol ?? null
   onChange(entries)
 }
 
@@ -76,8 +79,8 @@ export function renderHistory(
     chip.classList.toggle('active-cursor', activeCursorEntryId === entry.id)
     chip.style.borderLeft = `3px solid ${color}`
     chip.innerHTML = `
-      <span class="history-chip-symbol">${entry.symbol}</span>
-      <span class="history-chip-roman">${roman}</span>
+      <span class="history-chip-symbol">${escapeHtml(entry.symbol)}</span>
+      <span class="history-chip-roman">${escapeHtml(roman)}</span>
     `
 
     chip.addEventListener('click', () => onChipClick(entry))

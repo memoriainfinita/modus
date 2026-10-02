@@ -161,6 +161,26 @@ describe('notifyChordDetected', () => {
     expect(getEntries()).toHaveLength(2)
   })
 
+  it('after removing the newest entry, the same chord can be logged again', () => {
+    notifyChordDetected('Cmaj7', [])
+    vi.advanceTimersByTime(800)
+    removeEntry(getEntries()[0].id)
+    notifyChordDetected('Cmaj7', [])
+    vi.advanceTimersByTime(800)
+    expect(getEntries().map(e => e.symbol)).toEqual(['Cmaj7'])
+  })
+
+  it('after removing an entry, dedup compares against the newest remaining one', () => {
+    notifyChordDetected('Am7', [])
+    vi.advanceTimersByTime(800)
+    notifyChordDetected('Cmaj7', [])
+    vi.advanceTimersByTime(800)
+    removeEntry(getEntries()[0].id)   // removes Cmaj7, newest is now Am7
+    notifyChordDetected('Am7', [])
+    vi.advanceTimersByTime(800)
+    expect(getEntries().map(e => e.symbol)).toEqual(['Am7'])
+  })
+
   it('after clearHistory, same chord can be appended again', () => {
     notifyChordDetected('Cmaj7', [])
     vi.advanceTimersByTime(800)
