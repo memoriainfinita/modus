@@ -235,6 +235,34 @@ await check('staff +/- changes its size', async () => {
   assert(smaller < before && Math.abs(await w() - before) < 1, `widths ${before} ${smaller}`)
 })
 
+await check('arrow keys walk the song and play each chord', async () => {
+  await page.locator('.chord-chip', { hasText: 'Dm7' }).click()
+  await page.keyboard.press('ArrowRight')
+  assert((await text('.chord-name-badge')) === 'Dm', 'right arrow')
+  await page.keyboard.press('ArrowRight')
+  assert((await text('.chord-name-badge')) === 'Em', 'crosses into the next measure')
+  await page.keyboard.press('ArrowLeft')
+  assert((await text('.chord-name-badge')) === 'Dm', 'left arrow')
+})
+
+await check('Del removes the selected song chord, Undo restores it', async () => {
+  await page.keyboard.press('Delete')
+  let chips = await page.locator('.chord-chip-symbol').allInnerTexts()
+  assert(chips.join(' ') === 'Dm7 Em', `after Del: ${chips.join(' ')}`)
+  await page.locator('.undo-btn').click()
+  chips = await page.locator('.chord-chip-symbol').allInnerTexts()
+  assert(chips.join(' ') === 'Dm7 Dm Em', `after undo: ${chips.join(' ')}`)
+  await page.keyboard.press('Escape')
+})
+
+await check('help panel lists the mouse gestures, no P shortcut', async () => {
+  await page.click('#btn-help')
+  const help = await text('#shortcut-help')
+  assert(help.includes('Double-click a major or minor circle segment'), 'gestures missing')
+  assert(!/\nP\n/.test(help), 'P still listed')
+  await page.keyboard.press('Escape')
+})
+
 await check('staff renders a key signature for F# Major', async () => {
   await setKey('F# Major')
   await play([66, 70, 73])

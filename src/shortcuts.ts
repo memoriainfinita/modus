@@ -1,13 +1,24 @@
 const SHORTCUTS: { key: string; action: string }[] = [
   { key: 'Space', action: 'Play current chord (or last if none active)' },
+  { key: '← →',   action: 'Previous / next chord in the song (or history) — plays it' },
+  { key: 'Del',   action: 'Remove the selected song chord (undo in the toast)' },
   { key: 'H',     action: 'Toggle Hold mode' },
   { key: 'A',     action: 'Toggle Arpeggio mode' },
   { key: 'S',     action: 'Send history chip → Song' },
-  { key: 'C',     action: 'Clear history' },
-  { key: 'Esc',   action: 'Clear cursor / capture' },
+  { key: 'C',     action: 'Clear history (undo in the toast)' },
+  { key: 'Esc',   action: 'Clear cursor / stop MIDI fill' },
   { key: '1–9',   action: 'Select chord candidate' },
-  { key: 'P',     action: 'Play current chord' },
   { key: '?',     action: 'Show / hide this panel' },
+]
+
+// What the mouse does that no label says.
+const GESTURES: string[] = [
+  'Click a history chip, song chord or circle segment to play it and show it in the detector.',
+  'Double-click a major or minor circle segment to make it the key.',
+  'A chord is logged to history once held steady for 0.8 s, and not twice in a row.',
+  'Drag a history chip onto a song measure to insert it; drag song chords and section headers to reorder.',
+  '⊙ on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.',
+  'Right-click a history chip to remove it. Removals and Clear can be undone from the toast.',
 ]
 
 let helpVisible = false
@@ -28,14 +39,16 @@ export function toggleHelp() {
   popup.className = 'shortcut-help-popup'
   popup.innerHTML = `
     <div class="shortcut-help-header">
-      <span>Keyboard shortcuts</span>
+      <span>Shortcuts and gestures</span>
       <button class="shortcut-help-close">×</button>
     </div>
     ${SHORTCUTS.map(s => `
       <div class="shortcut-row">
         <kbd class="shortcut-key">${s.key}</kbd>
         <span class="shortcut-action">${s.action}</span>
-      </div>`).join('')}`
+      </div>`).join('')}
+    <div class="shortcut-section">Mouse</div>
+    ${GESTURES.map(g => `<div class="gesture-row">${g}</div>`).join('')}`
   document.body.appendChild(popup)
   popup.querySelector('.shortcut-help-close')!.addEventListener('click', closeHelp)
   document.addEventListener('mousedown', closeHelpOnOutsideClick)

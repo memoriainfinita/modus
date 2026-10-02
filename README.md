@@ -176,14 +176,15 @@ tests/
 | Key | Action |
 |---|---|
 | `Space` | Play current chord (or last detected if none active) |
+| `←` `→` | Previous / next chord: through the song when a song chord is selected (across measures and sections), otherwise through history. Plays each one |
+| `Del` | Remove the selected song chord (can be undone) |
 | `H` | Toggle hold mode |
 | `A` | Toggle arpeggio mode |
 | `S` | Send active history chip to song cursor |
 | `C` | Clear history (can be undone) |
-| `P` | Same as `Space` |
 | `1`–`9` | Select alternative chord interpretation |
 | `Esc` | Cancel MIDI fill / close help / deselect |
-| `?` | Show / hide keyboard shortcuts |
+| `?` | Show / hide shortcuts and mouse gestures |
 
 Shortcuts are disabled while typing in input fields or with a dropdown focused, and never fire with Ctrl/Cmd/Alt held.
 
