@@ -2,6 +2,18 @@
 
 What left `state.md`. Most recent first.
 
+### 2026-10-02 — Base review: pnpm, UMT contract, bug batch, detector refactor
+
+Full read of `src/`, tests and docs, plus probing the pinned UMT bundle in Node. 5 commits.
+
+**Why the session-20 audit missed the worst bugs:** tests mocked UMT with the shape Modus assumed, not the real one. The mocks had a `quality` field UMT never had and never returned `"Unknown Chord"`. Tests now load the real bundle via a git devDependency pinned to the same commit as the CDN tag.
+
+- `build:` npm → pnpm 11; esbuild 0.28, vitest 5 + vite 8, jsdom 30, TS held on 5.9; audit clean. UMT/notae CDN pinned by commit hash (was `@main`/`@master`). May plans moved to `docs/archive/`
+- `fix:` UMT contract — chord colours were always grey (no `quality` on UMT chords; family now derived from `intervalsInSteps`); `"Unknown Chord"` got logged to history and broke its rendering with a key set; `"CM"` normalized to `"C"`; octave reported as Unison; instrument switch mid-load kept the old instrument; double-click on history chips did not start audio
+- `fix:` staff showed B natural as Bb in F major (no `=`, key signature applied); MIDI fill captured the first three notes of a four-note chord; history chip dropped on a song chip was swallowed; song/history cursor invisible on click; transpose left stored voicings untransposed and spelled minor keys by the major list; `S` dropped the voicing; Ctrl+C opened the clear-history modal; `?` button could not close help; saved MIDI device overridden by the first device on every hot-plug
+- `refactor:` single detector path in `app.ts` (`showDetection`), which fixed: key change not recomputing analysis, Space/▶ playing the last MIDI chord instead of the shown one, cadence computed against `history[0]` (often the chord itself). `song.ts` → `song-model.ts` + `song-view.ts`. `storage.ts` for preferences (corrupt values no longer break startup). `tryUMT` replaces empty catches around UMT calls
+- Verified: 152 unit tests, plus 25/25 headless-Chrome checks driven by a fake Web MIDI input (harness kept in the session scratchpad, not committed)
+
 ### 2026-09-28 — state.md split into state + history
 
 **What changed:** History moved here verbatim. File Structure section dropped (the repo shows it). Completed TODOs dropped. Stack table corrected: soundfont-player is loaded via CDN in `index.html`, not npm.

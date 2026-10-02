@@ -86,33 +86,7 @@ declare const ABCJS: any
 
 ## File structure
 
-```
-modus/
-  src/
-    app.ts              — entry point, wires all modules
-    types.ts            — shared types
-    globals.d.ts        — CDN global type declarations
-    midi.ts             — Web MIDI setup, device selection, note on/off, modes
-    analyzer.ts         — chord detection and harmonic analysis via UMT
-    diagrams.ts         — staff (abcjs), piano/fretboard (notae), circle of fifths SVG
-    history.ts          — chord history log
-    song.ts             — song structure state and rendering
-    audio.ts            — soundfont-player init, instrument selector, playback
-    shortcuts.ts        — keyboard shortcuts data and help popup
-    analysis-panel.ts   — analysis fields rendering (renderZone1Analysis)
-  tests/
-    analyzer.test.ts
-    song.test.ts
-    history.test.ts
-    midi.test.ts
-    analysis-panel.test.ts
-  index.html
-  package.json
-  tsconfig.json
-  vitest.config.ts
-  dist/app.js           (generated)
-  styles.css
-```
+See *Project structure* in `README.md`.
 
 ---
 
@@ -365,7 +339,7 @@ soundfont-player 0.12.0 + FluidR3_GM. 128 GM instruments selectable. Volume cont
 
 `initAudioOnGesture()` resumes AudioContext on first real user gesture (click or MIDI note-on).
 
-**Playback triggers:** MIDI note-on (individual notes), piano key click, CoF segment click, chord chip double-click, Space/P shortcut (last detected chord).
+**Playback triggers:** MIDI note-on (individual notes), piano key click, CoF segment click, chord chip double-click, Space/P shortcut (the chord currently shown, or the last one after the keys are released).
 
 `pendingNotes` queue: notes received before instrument is ready are discarded on load to avoid burst on first gesture.
 

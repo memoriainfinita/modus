@@ -36,8 +36,8 @@ For each detected chord:
 | Figured bass | e.g. `6/4`, `7` |
 | Borrowed chord | Modal interchange — source mode shown |
 | Suggested scales | Ordered by fit |
-| Substitutions | Tritone sub, diatonic, sus4 |
-| Cadence | vs. last chord in history |
+| Substitutions | As UMT proposes them — e.g. tritone, sus4, deceptive |
+| Cadence | vs. the previous chord: last different chord played, previous history chip, or previous song chord |
 | Coltrane axis | Three major-third substitution chords |
 | Negative harmony | Mirror chord in the active key |
 | Key detection | Krumhansl-Schmuckler running on history note pool |
@@ -66,7 +66,7 @@ Any note played on the MIDI controller sounds through the selected soundfont. Cl
 
 ### History
 
-Every chord is logged automatically after 0.8s of stability. Each chip shows chord name and Roman numeral (updates live when the key changes). Click to reload in the detector, double-click to play, drag onto a song measure to insert, right-click to remove.
+Every chord is logged automatically after 0.8s of stability. Each chip shows chord name and Roman numeral in the selected key (updates live when the key changes; not shown while the key is on Auto). Click to reload in the detector, double-click to play, drag onto a song measure to insert, right-click to remove.
 
 ### Song
 
@@ -77,7 +77,7 @@ A scratchpad and structure builder.
 - Each chord shows its Roman numeral — borrowed chords highlighted in amber
 - Drag to reorder sections and chords; drag history chips directly onto measures
 - MIDI fill: arm any chord slot (⊙) and play to fill it from the controller
-- Transpose entire song in semitone steps
+- Transpose entire song in semitone steps (stored voicings move with it)
 - Paste a progression as text (`Cmaj7 Am7 F G`)
 - Export as printable chord chart
 
@@ -145,23 +145,25 @@ UMT and notae are loaded from jsDelivr pinned to a commit hash in `index.html`. 
 
 ```
 src/
-  app.ts              entry point — wires all modules
+  app.ts              entry point — layout, detector flow, zones, shortcuts
   midi.ts             Web MIDI: device selection, note on/off, modes
   analyzer.ts         chord/interval detection and harmonic analysis
+  chord.ts            adapters over UMT chords: family/colour, name normalization, notes
+  keys.ts             key names and key signatures
   diagrams.ts         staff, piano, guitar, fretboard, CoF rendering
   history.ts          chord history log
-  song.ts             song structure state and rendering
+  song-model.ts       song structure: pure operations, transpose, persistence
+  song-view.ts        song structure rendering and interaction
   audio.ts            soundfont-player playback, instrument selector
   analysis-panel.ts   harmonic analysis fields rendering
   shortcuts.ts        keyboard shortcuts data and help popup
+  storage.ts          localStorage preferences with safe fallbacks
   types.ts            shared TypeScript types
   globals.d.ts        CDN global declarations
 tests/
-  analyzer.test.ts
-  song.test.ts
-  history.test.ts
-  midi.test.ts
-  analysis-panel.test.ts
+  setup-umt.ts        loads the real UMT bundle (pinned devDependency) as the UMT global
+  analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts,
+  history.test.ts, midi.test.ts, analysis-panel.test.ts
 ```
 
 ---
@@ -175,12 +177,12 @@ tests/
 | `A` | Toggle arpeggio mode |
 | `S` | Send active history chip to song cursor |
 | `C` | Clear history (with confirmation) |
-| `P` | Play last detected chord |
+| `P` | Same as `Space` |
 | `1`–`9` | Select alternative chord interpretation |
 | `Esc` | Cancel MIDI fill / close help / deselect |
 | `?` | Show / hide keyboard shortcuts |
 
-Shortcuts are disabled while typing in input fields.
+Shortcuts are disabled while typing in input fields or with a dropdown focused, and never fire with Ctrl/Cmd/Alt held.
 
 ---
 
