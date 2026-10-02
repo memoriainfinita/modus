@@ -165,11 +165,15 @@ await check('deleting a section can be undone', async () => {
 })
 
 await check('history Clear can be undone', async () => {
+  // The last chord played logs 0.8 s after it settles; wait for it so Clear has something to clear.
+  await page.waitForSelector('.history-chip', { timeout: 3000 })
+  await page.waitForTimeout(900)
   const before = await page.locator('.history-chip').count()
   await page.locator('.history-clear-btn').click()
   assert(await page.locator('.history-chip').count() === 0, 'not cleared')
   await page.locator('.undo-btn').click()
-  assert(await page.locator('.history-chip').count() === before, 'undo did not restore')
+  const after = await page.locator('.history-chip').count()
+  assert(after === before, `undo did not restore: ${before} -> ${after}`)
 })
 
 await check('clicking a history chip loads it in the detector', async () => {
@@ -261,6 +265,21 @@ await check('help panel lists the mouse gestures, no P shortcut', async () => {
   assert(help.includes('Double-click a major or minor circle segment'), 'gestures missing')
   assert(!/\nP\n/.test(help), 'P still listed')
   await page.keyboard.press('Escape')
+})
+
+await check('a note that keeps the chord does not rebuild the circle or guitar', async () => {
+  await play([60, 64, 67])
+  await page.evaluate(() => {
+    document.querySelector('#cof-container svg').dataset.mark = '1'
+    document.querySelector('#guitar-container svg').dataset.mark = '1'
+  })
+  await play([72])                                  // doubled C: still a C chord
+  const kept = await page.evaluate(() => ['#cof-container svg', '#guitar-container svg']
+    .map(s => document.querySelector(s)?.dataset.mark === '1'))
+  assert(kept.every(Boolean), `kept: ${kept}`)
+  await play([69])                                  // A added: chord changes
+  const rebuilt = await page.evaluate(() => document.querySelector('#cof-container svg')?.dataset.mark !== '1')
+  assert(rebuilt, 'circle not rebuilt on chord change')
 })
 
 await check('staff renders a key signature for F# Major', async () => {

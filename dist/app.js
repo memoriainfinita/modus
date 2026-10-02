@@ -2631,8 +2631,12 @@ K:${abcKey}
     if (!d) return [];
     return d.kind === "note" ? [d.noteName] : d.notes;
   }
+  var lastAnalysisSig = "";
   function refreshAnalysis() {
     const sym = selectedSymbol();
+    const sig = `${sym}|${analysisKey()}|${cadencePrev}`;
+    if (sig === lastAnalysisSig) return;
+    lastAnalysisSig = sig;
     state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev) : null;
   }
   function renderAnalysisPanel() {
@@ -2737,19 +2741,21 @@ K:${abcKey}
   function updateAutoKeyLabel() {
     $("auto-key-label").textContent = !state.activeKey && autoKey ? `auto: ${autoKey}` : "";
   }
+  var lastRenderSig = {};
+  function renderIfChanged(name, sig, render) {
+    if (lastRenderSig[name] === sig) return;
+    lastRenderSig[name] = sig;
+    render();
+  }
   function renderZone1Diagrams(noteNames, chordSymbol) {
-    renderStaff($("staff-container"), noteNames, staffWidth, analysisKey(), staffScale);
-    renderPiano($("piano-container"), noteNames, chordSymbol);
-    renderNeck($("neck-container"), noteNames, !keyPrefersSharps(analysisKey()));
-    renderGuitar($("guitar-container"), chordSymbol, noteNames);
-    renderCircleOfFifths(
-      $("cof-container"),
-      analysisKey(),
-      chordSymbol,
-      onCofClick,
-      cofSize,
-      { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths }
-    );
+    const key = analysisKey();
+    const notes = noteNames.join(" ");
+    const cofOpts = { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
+    renderIfChanged("staff", `${notes}|${key}|${staffScale}`, () => renderStaff($("staff-container"), noteNames, staffWidth, key, staffScale));
+    renderIfChanged("piano", `${notes}|${chordSymbol}`, () => renderPiano($("piano-container"), noteNames, chordSymbol));
+    renderIfChanged("neck", `${notes}|${keyPrefersSharps(key)}`, () => renderNeck($("neck-container"), noteNames, !keyPrefersSharps(key)));
+    renderIfChanged("guitar", `${chordSymbol}`, () => renderGuitar($("guitar-container"), chordSymbol, noteNames));
+    renderIfChanged("cof", `${key}|${chordSymbol}|${cofSize}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($("cof-container"), key, chordSymbol, onCofClick, cofSize, cofOpts));
   }
   var COF_DOUBLE_MS = 400;
   var lastCofClick = { key: null, at: 0 };
