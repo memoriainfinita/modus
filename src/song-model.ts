@@ -300,8 +300,19 @@ export function transposeSong(song: Song, semitones: number, targetKey?: string)
   }
 }
 
+/** Drops chord slots still being typed (empty symbol): they live only in the open editor. */
+export function withoutEmptyChords(song: Song): Song {
+  return {
+    ...song,
+    sections: song.sections.map(s => ({
+      ...s,
+      measures: s.measures.map(m => ({ ...m, chords: m.chords.filter(c => c.symbol) }))
+    }))
+  }
+}
+
 export function saveSong(song: Song) {
-  localStorage.setItem('modus-song', JSON.stringify(song))
+  localStorage.setItem('modus-song', JSON.stringify(withoutEmptyChords(song)))
 }
 
 export function loadSong(): Song {
@@ -313,7 +324,7 @@ export function loadSong(): Song {
       console.warn('Song schema version mismatch — resetting')
       return createSong()
     }
-    return parsed as Song
+    return withoutEmptyChords(parsed as Song)
   } catch { return createSong() }
 }
 

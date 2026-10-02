@@ -142,6 +142,7 @@
   function setMode(m) {
     if (m === mode) return;
     mode = m;
+    const hadNotes = activeNotes.size > 0 || arpeggioNotes.length > 0;
     activeNotes.clear();
     physicallyHeldNotes.clear();
     arpeggioNotes = [];
@@ -150,6 +151,7 @@
       arpeggioTimer = null;
     }
     localStorage.setItem("midi-mode", m);
+    if (hadNotes) onNoteChange([]);
   }
   function getMode() {
     return mode;
@@ -967,6 +969,11 @@ K:${abcKey}
     });
   }
 
+  // src/html.ts
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+
   // src/history.ts
   var MAX_ENTRIES = 200;
   var FUNCTION_COLORS = {
@@ -990,6 +997,7 @@ K:${abcKey}
   }
   function removeEntry(id) {
     entries = entries.filter((e) => e.id !== id);
+    lastAutoAppended = entries[0]?.symbol ?? null;
     onChange(entries);
   }
   function clearHistory() {
@@ -1025,8 +1033,8 @@ K:${abcKey}
       chip.classList.toggle("active-cursor", activeCursorEntryId === entry.id);
       chip.style.borderLeft = `3px solid ${color}`;
       chip.innerHTML = `
-      <span class="history-chip-symbol">${entry.symbol}</span>
-      <span class="history-chip-roman">${roman}</span>
+      <span class="history-chip-symbol">${escapeHtml(entry.symbol)}</span>
+      <span class="history-chip-roman">${escapeHtml(roman)}</span>
     `;
       chip.addEventListener("click", () => onChipClick(entry));
       chip.addEventListener("dblclick", () => {
@@ -1337,8 +1345,17 @@ K:${abcKey}
       }))
     };
   }
+  function withoutEmptyChords(song) {
+    return {
+      ...song,
+      sections: song.sections.map((s) => ({
+        ...s,
+        measures: s.measures.map((m) => ({ ...m, chords: m.chords.filter((c) => c.symbol) }))
+      }))
+    };
+  }
   function saveSong(song) {
-    localStorage.setItem("modus-song", JSON.stringify(song));
+    localStorage.setItem("modus-song", JSON.stringify(withoutEmptyChords(song)));
   }
   function loadSong() {
     try {
@@ -1349,7 +1366,7 @@ K:${abcKey}
         console.warn("Song schema version mismatch \u2014 resetting");
         return createSong();
       }
-      return parsed;
+      return withoutEmptyChords(parsed);
     } catch {
       return createSong();
     }
@@ -2020,9 +2037,6 @@ K:${abcKey}
     });
     return btn;
   }
-  function escapeHtml(text) {
-    return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-  }
   function buildPrintHTML(song, activeKey) {
     const measureNums = computeMeasureNumbers(song);
     let html = `<html><head><style>
@@ -2133,7 +2147,7 @@ K:${abcKey}
       el.innerHTML = "";
       return;
     }
-    const chordName = detection.candidates[detection.selectedIndex];
+    const chordName = escapeHtml(detection.candidates[detection.selectedIndex]);
     const color = chordColor(chordName);
     const notes = detection.notes.map((n) => n.replace(/(-?\d+)$/, "")).join(" \xB7 ");
     const alts = detection.candidates.slice(1, 7);
@@ -2142,7 +2156,7 @@ K:${abcKey}
       <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
       <span class="chord-notes">${notes}</span>
       ${alts.map(
-      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${c}</button>`
+      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(c)}</button>`
     ).join("")}
     </div>`;
     el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
@@ -2164,7 +2178,7 @@ K:${abcKey}
     }
     const row = (label, val) => `<div class="analysis-row">
       <span class="analysis-label">${label}</span>
-      <span class="analysis-value">${val}</span>
+      <span class="analysis-value">${escapeHtml(val)}</span>
     </div>`;
     const maybeRow = (f, label, val) => fieldsVisible[f] ? row(label, val) : "";
     const conditionalRow = (f, label, val) => fieldsVisible[f] ? row(label, val ?? "\u2014") : "";
@@ -2233,8 +2247,8 @@ K:${abcKey}
     backdrop.className = "modal-backdrop";
     backdrop.innerHTML = `
     <div class="modal-popup">
-      <div class="modal-title">${title}</div>
-      <div class="modal-message">${message}</div>
+      <div class="modal-title">${escapeHtml(title)}</div>
+      <div class="modal-message">${escapeHtml(message)}</div>
       <div class="modal-actions">
         <button class="modal-btn modal-btn-cancel">Cancel</button>
         <button class="modal-btn modal-btn-confirm">Confirm</button>
@@ -2806,7 +2820,7 @@ K:${abcKey}
   function refreshDeviceDropdown() {
     const sel = $("midi-device");
     const devices = getDevices();
-    sel.innerHTML = devices.length ? devices.map((d) => `<option value="${d.id}">${d.name}</option>`).join("") : "<option>No MIDI devices</option>";
+    sel.innerHTML = devices.length ? devices.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join("") : "<option>No MIDI devices</option>";
     sel.onchange = () => selectDevice(sel.value);
     const current = getSelectedDeviceId();
     const target = devices.find((d) => d.id === current)?.id ?? devices[0]?.id;

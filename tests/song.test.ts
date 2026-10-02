@@ -5,7 +5,7 @@ import {
   parseProgressionText, computeMeasureNumbers, duplicateSection,
   insertChordAfter, updateChord, duplicateChord,
   moveChordToPosition, reorderSections, reorderChordInMeasure,
-  computeDegree, isBorrowedChord, transposeKey,
+  computeDegree, isBorrowedChord, transposeKey, withoutEmptyChords, saveSong, loadSong,
 } from '../src/song-model'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
@@ -481,5 +481,23 @@ describe('isBorrowedChord', () => {
 
   it('returns true for modal interchange (bVI in major)', () => {
     expect(isBorrowedChord('Ab', 'C Major')).toBe(true)
+  })
+})
+
+describe('empty chord slots', () => {
+  it('withoutEmptyChords drops slots still being typed', () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    const mid = s.sections[0].measures[0].id
+    s = addChord(s, s.sections[0].id, mid, 'C')
+    s = addChord(s, s.sections[0].id, mid, '')
+    expect(withoutEmptyChords(s).sections[0].measures[0].chords.map(c => c.symbol)).toEqual(['C'])
+  })
+
+  it('an empty slot is not persisted, so a reload leaves no orphan input', () => {
+    localStorage.clear()
+    let s = addSection(createSong(), 'Verse', 'verse')
+    s = addChord(s, s.sections[0].id, s.sections[0].measures[0].id, '')
+    saveSong(s)
+    expect(loadSong().sections[0].measures[0].chords).toHaveLength(0)
   })
 })

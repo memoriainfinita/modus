@@ -1,5 +1,6 @@
 import type { DetectionResult, HarmonicAnalysis } from './types'
 import { chordColor } from './chord'
+import { escapeHtml } from './html'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 
@@ -27,7 +28,7 @@ function renderChordSummary(
   if (!el) return
   if (!detection || detection.kind !== 'chord') { el.innerHTML = ''; return }
 
-  const chordName = detection.candidates[detection.selectedIndex]
+  const chordName = escapeHtml(detection.candidates[detection.selectedIndex])
   const color = chordColor(chordName)
   const notes = detection.notes.map(n => n.replace(/(-?\d+)$/, '')).join(' · ')
   const alts = detection.candidates.slice(1, 7)
@@ -37,7 +38,7 @@ function renderChordSummary(
       <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
       <span class="chord-notes">${notes}</span>
       ${alts.map((c, i) =>
-        `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${c}</button>`
+        `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(c)}</button>`
       ).join('')}
     </div>`
 
@@ -69,7 +70,7 @@ export function renderZone1Analysis(
   const row = (label: string, val: string) =>
     `<div class="analysis-row">
       <span class="analysis-label">${label}</span>
-      <span class="analysis-value">${val}</span>
+      <span class="analysis-value">${escapeHtml(val)}</span>
     </div>`
   const maybeRow = (f: AnalysisFieldKey, label: string, val: string) =>
     fieldsVisible[f] ? row(label, val) : ''
