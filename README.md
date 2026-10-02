@@ -137,7 +137,8 @@ pnpm install          # dev dependencies only
 pnpm dev              # watch mode — rebuilds on save
 pnpm build            # one-shot build
 pnpm exec tsc --noEmit  # type check (esbuild does not typecheck)
-pnpm test             # run tests
+pnpm test             # unit tests (vitest, against the real UMT bundle)
+pnpm test:e2e         # browser walk-through: installed Chrome + fake MIDI input (needs network)
 ```
 
 UMT and notae are loaded from jsDelivr pinned to a commit hash in `index.html`. Bump the hash deliberately after a release of either library.
@@ -148,25 +149,30 @@ UMT and notae are loaded from jsDelivr pinned to a commit hash in `index.html`. 
 
 ```
 src/
-  app.ts              entry point — layout, detector flow, zones, shortcuts
+  app.ts              entry point — state, detector flow, zones, keyboard actions
+  layout.ts           page structure and panel visibility
   midi.ts             Web MIDI: device selection, note on/off, modes
   analyzer.ts         chord/interval detection and harmonic analysis
   chord.ts            adapters over UMT chords: family/colour, name normalization, notes
-  keys.ts             key names and key signatures
+  keys.ts             key names, normalization and key signatures (from UMT spelling)
   diagrams.ts         staff, piano, guitar, fretboard, CoF rendering
+  voicings.ts         playable guitar voicings, tuning names → MIDI
   history.ts          chord history log
   song-model.ts       song structure: pure operations, transpose, persistence
   song-view.ts        song structure rendering and interaction
-  audio.ts            soundfont-player playback, instrument selector
+  audio.ts            soundfont-player playback, preload, instrument selector
+  undo.ts             Undo toast for destructive actions
+  html.ts             HTML escaping
   analysis-panel.ts   harmonic analysis fields rendering
-  shortcuts.ts        keyboard shortcuts data and help popup
+  shortcuts.ts        keyboard handling, shortcuts and gestures help popup
   storage.ts          localStorage preferences with safe fallbacks
   types.ts            shared TypeScript types
   globals.d.ts        CDN global declarations
 tests/
   setup-umt.ts        loads the real UMT bundle (pinned devDependency) as the UMT global
-  analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts,
-  history.test.ts, midi.test.ts, analysis-panel.test.ts
+  analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
+  midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts
+  e2e/smoke.mjs       pnpm test:e2e
 ```
 
 ---

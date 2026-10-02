@@ -1,21 +1,19 @@
 import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice, getSelectedDeviceId } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
-import { initAudioOnGesture, preloadAudio, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playNoteNames, playChord, GM_INSTRUMENT_GROUPS, setAudioStatusCallback, setAudioMissedCallback } from './audio'
-import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
+import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, playNote, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback } from './audio'
+import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, adjustNeckSpacing } from './diagrams'
 import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history'
 import { loadSong, saveSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song-model'
 import { mountSong, markActiveChord, removeChordWithUndo } from './song-view'
 import type { AppState, DetectionResult, HistoryEntry, MidiMode, Song, SongChord } from './types'
-import { toggleHelp, closeHelp } from './shortcuts'
-import {
-  ANALYSIS_FIELD_KEYS, ANALYSIS_FIELD_LABELS, ANALYSIS_FIELD_TOOLTIPS,
-  renderZone1Analysis
-} from './analysis-panel'
+import { toggleHelp, wireKeyboard } from './shortcuts'
+import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './analysis-panel'
 import type { AnalysisFieldKey } from './analysis-panel'
 import { chordNoteNames } from './chord'
 import { loadBool, loadChoice, loadNumber, loadString, save } from './storage'
 import { escapeHtml } from './html'
-import { ALL_KEYS, normalizeKey, keyPrefersSharps } from './keys'
+import { normalizeKey, keyPrefersSharps } from './keys'
+import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles } from './layout'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -43,21 +41,7 @@ const state: AppState = {
   activeCursorId: null,
   historyActiveCursorId: null,
   captureTargetId: null,
-  panels: {
-    notation: true,  // always open on load (not persisted)
-    instruments:      loadBool('panel-instruments', true),
-    colPiano:         loadBool('panel-colPiano', true),
-    colNeck:          loadBool('panel-colNeck', true),
-    history:          loadBool('panel-history', true),
-    song:             loadBool('panel-song', true),
-    cofControls:      loadBool('panel-cofControls', true),
-    guitarControls:   loadBool('panel-guitarControls', true),
-    analysisControls: loadBool('panel-analysisControls', true),
-    colStaff:         loadBool('panel-colStaff', true),
-    colAnalysis:      loadBool('panel-colAnalysis', true),
-    colCoF:           loadBool('panel-colCoF', true),
-    colGuitar:        loadBool('panel-colGuitar', true),
-  }
+  panels: loadPanels(),
 }
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
@@ -73,7 +57,7 @@ function init() {
   preloadAudio()
 
   buildLayout()
-  wireKeyboard()
+  wireShortcuts()
   setModeBtn(getMode())
   renderDetector()
 
@@ -170,151 +154,7 @@ function makeSongHandlers() {
   }
 }
 
-// ─── Layout ──────────────────────────────────────────────────────────────────
-
-function buildToolbar(): string {
-  return `
-    <div id="z1-toolbar" class="toolbar">
-      <span id="midi-status" class="midi-status">MIDI: —</span>
-      <select id="midi-device" class="ctrl-select"></select>
-      <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
-      <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
-      <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
-      <select id="key-select" class="ctrl-select">
-        <option value="">Key: Auto</option>
-        ${ALL_KEYS.map(k => `<option value="${k}">${k}</option>`).join('')}
-      </select>
-      <span id="auto-key-label" class="auto-key-label"></span>
-      <span class="toolbar-sep"></span>
-      <div id="audio-progress" class="audio-progress" title="Soundfont status">
-        <div id="audio-progress-fill" class="audio-progress-fill"></div>
-        <span id="audio-status" class="audio-status">♪ idle</span>
-      </div>
-      <button id="btn-play-chord" class="ctrl-btn" title="Play current chord (Space)">▶</button>
-      <select id="audio-instrument" class="ctrl-select" title="Soundfont instrument">
-        ${GM_INSTRUMENT_GROUPS.map(g =>
-          `<optgroup label="${g.label}">${g.instruments.map(i =>
-            `<option value="${i}"${i === getCurrentInstrument() ? ' selected' : ''}>${i.replace(/_/g,' ')}</option>`
-          ).join('')}</optgroup>`
-        ).join('')}
-      </select>
-      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
-      <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
-    </div>`
-}
-
-function buildNotationPanel(): string {
-  return `
-    <div id="notation-panel" class="zone-panel">
-      <div class="panel-header">
-        <span>Notation</span>
-        <div class="col-vis-row">
-          <button class="col-vis-btn${state.panels.colStaff ? ' active' : ''}" data-col="colStaff" title="Staff">St</button>
-          <button class="col-vis-btn${state.panels.colAnalysis ? ' active' : ''}" data-col="colAnalysis" title="Analysis">An</button>
-          <button class="col-vis-btn${state.panels.colCoF ? ' active' : ''}" data-col="colCoF" title="Circle of Fifths">CoF</button>
-          <button class="col-vis-btn${state.panels.colGuitar ? ' active' : ''}" data-col="colGuitar" title="Guitar">Git</button>
-        </div>
-        <button class="toggle-btn" data-panel="notation">▼</button>
-      </div>
-      <div id="notation-content">
-        <div class="col-auto" id="col-staff">
-          <div class="col-label">Staff</div>
-          <div id="chord-summary"></div>
-          <div id="staff-container"></div>
-          <div class="ctrl-row" style="justify-content:center">
-            <button id="btn-staff-minus" class="size-ctrl-btn" title="Smaller staff">−</button>
-            <button id="btn-staff-plus"  class="size-ctrl-btn" title="Larger staff">+</button>
-          </div>
-        </div>
-        <div class="col-analysis" id="col-analysis">
-          <div class="col-header">
-            <div class="col-label">Analysis</div>
-            <button class="toggle-btn small" data-panel="analysisControls">▼</button>
-          </div>
-          <div id="analysis-content"></div>
-          <div id="analysis-controls">
-            <div class="ctrl-row">
-              <button id="btn-analysis-minus" class="size-ctrl-btn" title="Smaller">−</button>
-              <button id="btn-analysis-plus"  class="size-ctrl-btn" title="Larger">+</button>
-            </div>
-            <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">
-              ${ANALYSIS_FIELD_KEYS.map(f =>
-                `<button id="btn-field-${f}" class="size-ctrl-btn${analysisFieldsVisible[f] ? ' active' : ''}"
-                  title="${ANALYSIS_FIELD_TOOLTIPS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
-              ).join('')}
-            </div>
-          </div>
-        </div>
-        <div class="col-auto" id="col-cof">
-          <div class="col-header">
-            <div class="col-label">CoF</div>
-            <button class="toggle-btn small" data-panel="cofControls">▼</button>
-          </div>
-          <div id="cof-container"></div>
-          <div id="cof-controls">
-            <div class="ctrl-row">
-              <button id="btn-cof-minus" class="size-ctrl-btn" title="Smaller">−</button>
-              <button id="btn-cof-plus"  class="size-ctrl-btn" title="Larger">+</button>
-            </div>
-            <div class="ctrl-row">
-              <button id="btn-cof-flat"   class="size-ctrl-btn" title="Show flat enharmonics (Gb, Db…)">b</button>
-              <button id="btn-cof-sharp"  class="size-ctrl-btn" title="Show sharp enharmonics (F#, C#…)">#</button>
-              <button id="btn-cof-minor"  class="size-ctrl-btn" title="Show/hide minor and diminished rings">m</button>
-              <button id="btn-cof-deg"    class="size-ctrl-btn" title="Show scale degrees (I, IV, V…)">°</button>
-              <button id="btn-cof-7"      class="size-ctrl-btn" title="Show 7th chords (maj7, m7, ø7)">7</button>
-            </div>
-          </div>
-        </div>
-        <div class="col-auto" id="col-guitar">
-          <div class="col-header">
-            <div class="col-label">Guitar</div>
-            <button class="toggle-btn small" data-panel="guitarControls">▼</button>
-          </div>
-          <div id="guitar-container"></div>
-        </div>
-      </div>
-    </div>`
-}
-
-function buildInstrumentsPanel(): string {
-  return `
-    <div id="instruments-panel" class="zone-panel">
-      <div class="panel-header">
-        <span>Instruments</span>
-        <div class="col-vis-row">
-          <button class="col-vis-btn${state.panels.colPiano ? ' active' : ''}" data-col="colPiano" title="Piano">Pi</button>
-          <button class="col-vis-btn${state.panels.colNeck  ? ' active' : ''}" data-col="colNeck"  title="Fretboard">Fr</button>
-        </div>
-        <button class="toggle-btn" data-panel="instruments">▼</button>
-      </div>
-      <div id="instruments-content">
-        <div id="col-piano"><div id="piano-container"></div></div>
-        <div id="col-neck">
-          <div id="neck-container"></div>
-          <div class="ctrl-row" style="justify-content:center;margin-top:4px">
-            <button id="btn-neck-minus" class="size-ctrl-btn" title="Smaller">−</button>
-            <button id="btn-neck-plus"  class="size-ctrl-btn" title="Larger">+</button>
-          </div>
-        </div>
-      </div>
-    </div>`
-}
-
-function buildZoneHeaders() {
-  $('zone2').innerHTML = `
-    <div class="zone-header">
-      <span class="zone-title">History</span>
-      <button class="toggle-btn" data-panel="history">▼</button>
-    </div>
-    <div id="zone2-content"></div>`
-
-  $('zone3').innerHTML = `
-    <div class="zone-header">
-      <span class="zone-title">Song Structure</span>
-      <button class="toggle-btn" data-panel="song">▼</button>
-    </div>
-    <div id="zone3-content"></div>`
-}
+// ─── Layout events ───────────────────────────────────────────────────────────
 
 function wireLayoutEvents() {
   const updateCofButtons = () => {
@@ -369,14 +209,7 @@ function wireLayoutEvents() {
     })
   })
 
-  document.querySelectorAll<HTMLButtonElement>('.col-vis-btn, .toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const panel = (btn.dataset.col ?? btn.dataset.panel) as keyof typeof state.panels
-      state.panels[panel] = !state.panels[panel]
-      if (panel !== 'notation') save(`panel-${panel}`, state.panels[panel])
-      applyPanelVisibility()
-    })
-  })
+  wirePanelToggles(state.panels)
 
   if (state.activeKey) {
     ($('key-select') as HTMLSelectElement).value = state.activeKey
@@ -403,40 +236,9 @@ function wireLayoutEvents() {
 }
 
 function buildLayout() {
-  $('zone1').innerHTML =
-    buildToolbar() +
-    buildNotationPanel() +
-    buildInstrumentsPanel() +
-    '<div id="midi-banner"></div>'
-
-  buildZoneHeaders()
+  renderLayout(state.panels, analysisFieldsVisible)
   wireLayoutEvents()
-  applyPanelVisibility()
-}
-
-function applyPanelVisibility() {
-  const nc = $('notation-content'); if (nc) nc.style.display = state.panels.notation ? 'flex' : 'none'
-  const ic = $('instruments-content'); if (ic) ic.style.display = state.panels.instruments ? '' : 'none'
-  const cp = $('col-piano'); if (cp) cp.style.display = state.panels.colPiano ? '' : 'none'
-  const cn = $('col-neck');  if (cn) cn.style.display = state.panels.colNeck  ? '' : 'none'
-  const z2 = $('zone2-content'); if (z2) z2.style.display = state.panels.history ? '' : 'none'
-  const z3 = $('zone3-content'); if (z3) z3.style.display = state.panels.song ? '' : 'none'
-  const cc = $('cof-controls'); if (cc) cc.style.display = state.panels.cofControls ? '' : 'none'
-  setGuitarControlsVisible(state.panels.guitarControls)
-  const gcw = document.getElementById('guitar-ctrl-wrap'); if (gcw) gcw.style.display = state.panels.guitarControls ? '' : 'none'
-  const ac = $('analysis-controls'); if (ac) ac.style.display = state.panels.analysisControls ? '' : 'none'
-  const cs = $('col-staff');    if (cs) cs.style.display = state.panels.colStaff ? '' : 'none'
-  const ca = $('col-analysis'); if (ca) ca.style.display = state.panels.colAnalysis ? '' : 'none'
-  const ccof = $('col-cof');    if (ccof) ccof.style.display = state.panels.colCoF ? '' : 'none'
-  const cg = $('col-guitar');   if (cg) cg.style.display = state.panels.colGuitar ? '' : 'none'
-  document.querySelectorAll<HTMLButtonElement>('.col-vis-btn').forEach(btn => {
-    const col = btn.dataset.col as keyof typeof state.panels
-    if (col) btn.classList.toggle('active', !!state.panels[col])
-  })
-  ;(['notation', 'instruments', 'history', 'song', 'cofControls', 'guitarControls', 'analysisControls'] as const).forEach(key => {
-    const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-panel="${key}"]`)
-    if (btn) btn.textContent = state.panels[key] ? '▲' : '▼'
-  })
+  applyPanelVisibility(state.panels)
 }
 
 // ─── Detector ─────────────────────────────────────────────────────────────────
@@ -735,58 +537,38 @@ function showMidiBanner(msg: string) {
 }
 
 
-// ─── Keyboard shortcuts ───────────────────────────────────────────────────────
+// ─── Keyboard actions ─────────────────────────────────────────────────────────
 
-function wireKeyboard() {
-  document.addEventListener('keydown', (e) => {
-    // Leave browser/OS shortcuts (Ctrl+C, Cmd+S…) and form controls alone.
-    if (e.ctrlKey || e.metaKey || e.altKey) return
-    const t = e.target
-    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return
-    if (t instanceof HTMLElement && t.isContentEditable) return
-
-    switch (e.key) {
-      case 'h': case 'H':
-        setModeBtn(getMode() === 'hold' ? 'normal' : 'hold'); break
-      case 'a': case 'A':
-        setModeBtn(getMode() === 'arpeggio' ? 'normal' : 'arpeggio'); break
-      case ' ':
-        e.preventDefault()
-        playCurrent()
-        break
-      case 's': case 'S': {
-        // Send active history chip (or most recent if none selected)
-        const activeEntry = state.historyActiveCursorId
-          ? state.history.find(e => e.id === state.historyActiveCursorId)
-          : state.history[0]
-        if (activeEntry) sendToSong(activeEntry)
-        break
-      }
-      case 'c': case 'C':
-        clearHistoryWithUndo(); break
-      case '?':
-        e.preventDefault()
-        toggleHelp(); break
-      case 'ArrowLeft': case 'ArrowRight':
-        e.preventDefault()
-        stepCursor(e.key === 'ArrowRight' ? 1 : -1); break
-      case 'Delete': case 'Backspace':
-        if (state.activeCursorId) { e.preventDefault(); deleteChordAtCursor() }
-        break
-      case 'Escape':
-        if (closeHelp()) break
-        cancelCapture()
-        state.activeCursorId = null
-        state.captureTargetId = null
-        state.historyActiveCursorId = null
-        markActiveHistoryEntry($('zone2-content'), null)
-        renderZone3(); break
-      default:
-        if (e.key >= '1' && e.key <= '9') {
-          const idx = parseInt(e.key) - 1
-          if (state.detection?.kind === 'chord' && idx < state.detection.candidates.length) onAltSelect(idx)
-        }
-    }
+function wireShortcuts() {
+  wireKeyboard({
+    toggleHold: () => setModeBtn(getMode() === 'hold' ? 'normal' : 'hold'),
+    toggleArpeggio: () => setModeBtn(getMode() === 'arpeggio' ? 'normal' : 'arpeggio'),
+    play: playCurrent,
+    sendToSong: () => {
+      // Active history chip, or the most recent one if none is selected
+      const entry = state.historyActiveCursorId
+        ? state.history.find(e => e.id === state.historyActiveCursorId)
+        : state.history[0]
+      if (entry) sendToSong(entry)
+    },
+    clearHistory: clearHistoryWithUndo,
+    step: stepCursor,
+    deleteAtCursor: () => {
+      if (!state.activeCursorId) return false
+      deleteChordAtCursor()
+      return true
+    },
+    escape: () => {
+      cancelCapture()
+      state.activeCursorId = null
+      state.captureTargetId = null
+      state.historyActiveCursorId = null
+      markActiveHistoryEntry($('zone2-content'), null)
+      renderZone3()
+    },
+    selectCandidate: idx => {
+      if (state.detection?.kind === 'chord' && idx < state.detection.candidates.length) onAltSelect(idx)
+    },
   })
 }
 

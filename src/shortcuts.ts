@@ -61,3 +61,46 @@ function closeHelpOnOutsideClick(e: MouseEvent) {
   const popup = document.getElementById('shortcut-help')
   if (popup && !popup.contains(target)) closeHelp()
 }
+
+export interface KeyActions {
+  toggleHold: () => void
+  toggleArpeggio: () => void
+  play: () => void
+  sendToSong: () => void
+  clearHistory: () => void
+  step: (dir: 1 | -1) => void
+  /** Returns false when nothing was selected, so the key keeps its default. */
+  deleteAtCursor: () => boolean
+  escape: () => void
+  selectCandidate: (index: number) => void
+}
+
+export function wireKeyboard(actions: KeyActions) {
+  document.addEventListener('keydown', (e) => {
+    // Leave browser/OS shortcuts (Ctrl+C, Cmd+S…) and form controls alone.
+    if (e.ctrlKey || e.metaKey || e.altKey) return
+    const t = e.target
+    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return
+    if (t instanceof HTMLElement && t.isContentEditable) return
+
+    switch (e.key) {
+      case 'h': case 'H': actions.toggleHold(); break
+      case 'a': case 'A': actions.toggleArpeggio(); break
+      case ' ': e.preventDefault(); actions.play(); break
+      case 's': case 'S': actions.sendToSong(); break
+      case 'c': case 'C': actions.clearHistory(); break
+      case '?': e.preventDefault(); toggleHelp(); break
+      case 'ArrowLeft': case 'ArrowRight':
+        e.preventDefault()
+        actions.step(e.key === 'ArrowRight' ? 1 : -1); break
+      case 'Delete': case 'Backspace':
+        if (actions.deleteAtCursor()) e.preventDefault()
+        break
+      case 'Escape':
+        if (!closeHelp()) actions.escape()
+        break
+      default:
+        if (e.key >= '1' && e.key <= '9') actions.selectCandidate(parseInt(e.key) - 1)
+    }
+  })
+}
