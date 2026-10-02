@@ -1,48 +1,38 @@
 import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice, getSelectedDeviceId } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
-import { initAudioOnGesture, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playMidiNotes, playNoteNames, playChord as audioPlayChord, GM_INSTRUMENT_GROUPS, setAudioStatusCallback } from './audio'
+import { initAudioOnGesture, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playNoteNames, GM_INSTRUMENT_GROUPS, setAudioStatusCallback } from './audio'
 import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
 import { setHistoryChangeCallback, clearHistory, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history'
-import { loadSong, saveSong, mountSong, markActiveChord, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song'
-import type { AppState, HistoryEntry, SongChord } from './types'
+import { loadSong, saveSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song-model'
+import { mountSong, markActiveChord } from './song-view'
+import type { AppState, DetectionResult, HistoryEntry, MidiMode, Song, SongChord } from './types'
 import { toggleHelp, closeHelp } from './shortcuts'
 import {
   ANALYSIS_FIELD_KEYS, ANALYSIS_FIELD_LABELS, ANALYSIS_FIELD_TOOLTIPS,
   renderZone1Analysis
 } from './analysis-panel'
 import type { AnalysisFieldKey } from './analysis-panel'
-import { chordNoteNames } from './chord'
+import { chordNoteNames, chordRoot } from './chord'
+import { loadBool, loadChoice, loadNumber, loadString, save } from './storage'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
 const staffWidth = 380
-let cofSize = parseInt(localStorage.getItem('cof-size') ?? '160')
-let cofAccidental = (localStorage.getItem('cof-accidental') ?? 'flat') as 'sharp' | 'flat'
-let cofShowMinor   = JSON.parse(localStorage.getItem('cof-show-minor')   ?? 'true')
-let cofShowDegrees = JSON.parse(localStorage.getItem('cof-show-degrees') ?? 'false')
-let cofShow7ths    = JSON.parse(localStorage.getItem('cof-show-7ths')    ?? 'false')
+let cofSize = loadNumber('cof-size', 160, 100, 400)
+let cofAccidental = loadChoice('cof-accidental', ['flat', 'sharp'] as const, 'flat')
+let cofShowMinor   = loadBool('cof-show-minor', true)
+let cofShowDegrees = loadBool('cof-show-degrees', false)
+let cofShow7ths    = loadBool('cof-show-7ths', false)
 
-let analysisFieldsVisible: Record<AnalysisFieldKey, boolean> = {
-  roman:     JSON.parse(localStorage.getItem('analysis-field-roman')     ?? 'true'),
-  function:  JSON.parse(localStorage.getItem('analysis-field-function')  ?? 'true'),
-  figbass:   JSON.parse(localStorage.getItem('analysis-field-figbass')   ?? 'true'),
-  diatonic:  JSON.parse(localStorage.getItem('analysis-field-diatonic')  ?? 'true'),
-  scales:    JSON.parse(localStorage.getItem('analysis-field-scales')    ?? 'true'),
-  cadence:   JSON.parse(localStorage.getItem('analysis-field-cadence')   ?? 'true'),
-  secondary: JSON.parse(localStorage.getItem('analysis-field-secondary') ?? 'true'),
-  coltrane:  JSON.parse(localStorage.getItem('analysis-field-coltrane')  ?? 'true'),
-  negharm:   JSON.parse(localStorage.getItem('analysis-field-negharm')   ?? 'true'),
-  subs:      JSON.parse(localStorage.getItem('analysis-field-subs')      ?? 'true'),
-}
-let analysisScale = parseInt(localStorage.getItem('analysis-scale') ?? '11')
+const analysisFieldsVisible = Object.fromEntries(
+  ANALYSIS_FIELD_KEYS.map(f => [f, loadBool(`analysis-field-${f}`, true)])
+) as Record<AnalysisFieldKey, boolean>
+let analysisScale = loadNumber('analysis-scale', 11, 8, 20)
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
-let lastChordSymbol: string | null = null
-let lastChordMidi: number[] = []
-
 const state: AppState = {
-  activeKey: localStorage.getItem('active-key') || null,
+  activeKey: loadString('active-key', '') || null,
   detection: null,
   analysis: null,
   history: [],
@@ -51,19 +41,19 @@ const state: AppState = {
   historyActiveCursorId: null,
   captureTargetId: null,
   panels: {
-    notation: true,
-    instruments: JSON.parse(localStorage.getItem('panel-instruments') ?? 'true'),
-    colPiano: JSON.parse(localStorage.getItem('panel-colPiano') ?? 'true'),
-    colNeck:  JSON.parse(localStorage.getItem('panel-colNeck')  ?? 'true'),
-    history: JSON.parse(localStorage.getItem('panel-history') ?? 'true'),
-    song: JSON.parse(localStorage.getItem('panel-song') ?? 'true'),
-    cofControls: JSON.parse(localStorage.getItem('panel-cofControls') ?? 'true'),
-    guitarControls: JSON.parse(localStorage.getItem('panel-guitarControls') ?? 'true'),
-    analysisControls: JSON.parse(localStorage.getItem('panel-analysisControls') ?? 'true'),
-    colStaff:    JSON.parse(localStorage.getItem('panel-colStaff')    ?? 'true'),
-    colAnalysis: JSON.parse(localStorage.getItem('panel-colAnalysis') ?? 'true'),
-    colCoF:      JSON.parse(localStorage.getItem('panel-colCoF')      ?? 'true'),
-    colGuitar:   JSON.parse(localStorage.getItem('panel-colGuitar')   ?? 'true'),
+    notation: true,  // always open on load (not persisted)
+    instruments:      loadBool('panel-instruments', true),
+    colPiano:         loadBool('panel-colPiano', true),
+    colNeck:          loadBool('panel-colNeck', true),
+    history:          loadBool('panel-history', true),
+    song:             loadBool('panel-song', true),
+    cofControls:      loadBool('panel-cofControls', true),
+    guitarControls:   loadBool('panel-guitarControls', true),
+    analysisControls: loadBool('panel-analysisControls', true),
+    colStaff:         loadBool('panel-colStaff', true),
+    colAnalysis:      loadBool('panel-colAnalysis', true),
+    colCoF:           loadBool('panel-colCoF', true),
+    colGuitar:        loadBool('panel-colGuitar', true),
   }
 }
 
@@ -101,8 +91,8 @@ function init() {
 
   buildLayout()
   wireKeyboard()
-  renderZone1Diagrams([], null)
-  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+  setModeBtn(getMode())
+  renderDetector()
 
   initMidi().then(result => {
     if (result.denied) {
@@ -116,7 +106,7 @@ function init() {
   })
 
   setNoteChangeCallback(onNoteChange)
-  setNoteOnCallback(note => { initAudioOnGesture(); playNote(note, 1.5) })
+  setNoteOnCallback(note => playNote(note, 1.5))
   setHistoryChangeCallback(onHistoryChange)
 
   let progressTimer: ReturnType<typeof setInterval> | null = null
@@ -171,15 +161,7 @@ function makeSongHandlers() {
     onChordClick: (id: string, symbol: string, notes?: string[]) => {
       state.activeCursorId = id
       markActiveChord(id)
-      if (!symbol) return
-      if (notes?.length) {
-        state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol())
-        state.detection = { kind: 'chord', notes, candidates: [symbol], selectedIndex: 0 }
-        renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
-        renderZone1Diagrams(notes, symbol)
-      } else {
-        triggerChordAnalysis(symbol)
-      }
+      if (symbol) showChord(symbol, notes, previousSongSymbol(id))
     },
     onChordCapture: (id: string) => {
       state.captureTargetId = id
@@ -189,7 +171,7 @@ function makeSongHandlers() {
     activeCursorId: state.activeCursorId,
     captureTargetId: state.captureTargetId,
     activeKey: state.activeKey,
-    onSongChange: (song: typeof state.song) => {
+    onSongChange: (song: Song) => {
       state.song = song
       saveSong(song)
       renderZone3()
@@ -343,93 +325,54 @@ function buildZoneHeaders() {
 
 function wireLayoutEvents() {
   const updateCofButtons = () => {
-    ;($('btn-cof-flat')  as HTMLButtonElement).classList.toggle('active', cofAccidental === 'flat')
-    ;($('btn-cof-sharp') as HTMLButtonElement).classList.toggle('active', cofAccidental === 'sharp')
-    ;($('btn-cof-minor') as HTMLButtonElement).style.opacity = cofShowMinor   ? '1' : '0.4'
-    ;($('btn-cof-deg')   as HTMLButtonElement).style.opacity = cofShowDegrees ? '1' : '0.4'
-    ;($('btn-cof-7')     as HTMLButtonElement).style.opacity = cofShow7ths    ? '1' : '0.4'
+    $('btn-cof-flat').classList.toggle('active', cofAccidental === 'flat')
+    $('btn-cof-sharp').classList.toggle('active', cofAccidental === 'sharp')
+    $('btn-cof-minor').style.opacity = cofShowMinor   ? '1' : '0.4'
+    $('btn-cof-deg').style.opacity   = cofShowDegrees ? '1' : '0.4'
+    $('btn-cof-7').style.opacity     = cofShow7ths    ? '1' : '0.4'
   }
   updateCofButtons()
 
-  $('btn-cof-minus').addEventListener('click', () => {
-    cofSize = Math.max(100, cofSize - 20)
-    localStorage.setItem('cof-size', String(cofSize))
-    reRenderDiagrams()
-  })
-  $('btn-cof-plus').addEventListener('click', () => {
-    cofSize = Math.min(400, cofSize + 20)
-    localStorage.setItem('cof-size', String(cofSize))
-    reRenderDiagrams()
-  })
-  $('btn-cof-flat').addEventListener('click', () => {
-    cofAccidental = 'flat'
-    localStorage.setItem('cof-accidental', cofAccidental)
-    updateCofButtons(); reRenderDiagrams()
-  })
-  $('btn-cof-sharp').addEventListener('click', () => {
-    cofAccidental = 'sharp'
-    localStorage.setItem('cof-accidental', cofAccidental)
-    updateCofButtons(); reRenderDiagrams()
-  })
-  $('btn-cof-minor').addEventListener('click', () => {
-    cofShowMinor = !cofShowMinor
-    localStorage.setItem('cof-show-minor', String(cofShowMinor))
-    updateCofButtons(); reRenderDiagrams()
-  })
-  $('btn-cof-deg').addEventListener('click', () => {
-    cofShowDegrees = !cofShowDegrees
-    localStorage.setItem('cof-show-degrees', String(cofShowDegrees))
-    updateCofButtons(); reRenderDiagrams()
-  })
-  $('btn-cof-7').addEventListener('click', () => {
-    cofShow7ths = !cofShow7ths
-    localStorage.setItem('cof-show-7ths', String(cofShow7ths))
-    updateCofButtons(); reRenderDiagrams()
-  })
-
-  const updateAnalysisFieldButtons = () => {
-    ANALYSIS_FIELD_KEYS.forEach(f => {
-      const btn = document.getElementById(`btn-field-${f}`) as HTMLButtonElement | null
-      if (btn) btn.classList.toggle('active', analysisFieldsVisible[f])
-    })
+  const onCofControl = (id: string, apply: () => void) => {
+    $(id).addEventListener('click', () => { apply(); updateCofButtons(); renderDiagrams() })
   }
+  onCofControl('btn-cof-minus', () => { cofSize = Math.max(100, cofSize - 20); save('cof-size', cofSize) })
+  onCofControl('btn-cof-plus',  () => { cofSize = Math.min(400, cofSize + 20); save('cof-size', cofSize) })
+  onCofControl('btn-cof-flat',  () => { cofAccidental = 'flat';  save('cof-accidental', cofAccidental) })
+  onCofControl('btn-cof-sharp', () => { cofAccidental = 'sharp'; save('cof-accidental', cofAccidental) })
+  onCofControl('btn-cof-minor', () => { cofShowMinor = !cofShowMinor;     save('cof-show-minor', cofShowMinor) })
+  onCofControl('btn-cof-deg',   () => { cofShowDegrees = !cofShowDegrees; save('cof-show-degrees', cofShowDegrees) })
+  onCofControl('btn-cof-7',     () => { cofShow7ths = !cofShow7ths;       save('cof-show-7ths', cofShow7ths) })
+
   $('btn-analysis-minus').addEventListener('click', () => {
     analysisScale = Math.max(8, analysisScale - 1)
-    localStorage.setItem('analysis-scale', String(analysisScale))
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+    save('analysis-scale', analysisScale)
+    renderAnalysisPanel()
   })
   $('btn-analysis-plus').addEventListener('click', () => {
     analysisScale = Math.min(20, analysisScale + 1)
-    localStorage.setItem('analysis-scale', String(analysisScale))
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+    save('analysis-scale', analysisScale)
+    renderAnalysisPanel()
   })
 
-  const reRenderNeck = () => {
-    const d = state.detection
-    const notes = d?.kind === 'chord' ? d.notes
-      : d?.kind === 'note' ? [d.noteName]
-      : (d as any)?.notes ?? []
-    const sym = d?.kind === 'chord' ? d.candidates[d.selectedIndex] : null
-    const chordRoot = sym ? (sym.match(/^([A-G][b#]?)/) ?? [,''])[1] || null : null
-    renderNeck($('neck-container'), notes, chordRoot)
-  }
+  const reRenderNeck = () => renderNeck($('neck-container'), displayedNotes(), chordRoot(selectedSymbol()))
   $('btn-neck-minus').addEventListener('click', () => { adjustNeckSpacing(-2); reRenderNeck() })
   $('btn-neck-plus').addEventListener('click',  () => { adjustNeckSpacing(2);  reRenderNeck() })
 
   ANALYSIS_FIELD_KEYS.forEach(f => {
     $(`btn-field-${f}`).addEventListener('click', () => {
       analysisFieldsVisible[f] = !analysisFieldsVisible[f]
-      localStorage.setItem(`analysis-field-${f}`, String(analysisFieldsVisible[f]))
-      updateAnalysisFieldButtons()
-      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+      save(`analysis-field-${f}`, analysisFieldsVisible[f])
+      $(`btn-field-${f}`).classList.toggle('active', analysisFieldsVisible[f])
+      renderAnalysisPanel()
     })
   })
 
-  document.querySelectorAll<HTMLButtonElement>('.col-vis-btn').forEach(btn => {
+  document.querySelectorAll<HTMLButtonElement>('.col-vis-btn, .toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const col = btn.dataset.col as keyof typeof state.panels
-      state.panels[col] = !state.panels[col]
-      localStorage.setItem(`panel-${col}`, JSON.stringify(state.panels[col]))
+      const panel = (btn.dataset.col ?? btn.dataset.panel) as keyof typeof state.panels
+      state.panels[panel] = !state.panels[panel]
+      if (panel !== 'notation') save(`panel-${panel}`, state.panels[panel])
       applyPanelVisibility()
     })
   })
@@ -439,42 +382,15 @@ function wireLayoutEvents() {
   }
 
   document.querySelectorAll<HTMLButtonElement>('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const m = btn.dataset.mode as any
-      if (getMode() === m) return
-      setMode(m)
-      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active-mode'))
-      btn.classList.add('active-mode')
-    })
+    btn.addEventListener('click', () => setModeBtn(btn.dataset.mode as MidiMode))
   })
 
   $('key-select').addEventListener('change', (e) => {
-    state.activeKey = (e.target as HTMLSelectElement).value || null
-    localStorage.setItem('active-key', state.activeKey ?? '')
-    refreshAll()
-  })
-
-  document.querySelectorAll<HTMLButtonElement>('.toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const panel = btn.dataset.panel as keyof typeof state.panels
-      state.panels[panel] = !state.panels[panel]
-      if (panel === 'history' || panel === 'song' || panel === 'instruments' || panel === 'cofControls' || panel === 'guitarControls' || panel === 'analysisControls') {
-        localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]))
-      }
-      applyPanelVisibility()
-    })
+    setActiveKey((e.target as HTMLSelectElement).value || null)
   })
 
   $('btn-help').addEventListener('click', toggleHelp)
-
-  $('btn-play-chord').addEventListener('click', () => {
-    initAudioOnGesture()
-    if (lastChordMidi.length > 0) {
-      playMidiNotes(lastChordMidi)
-    } else if (lastChordSymbol) {
-      audioPlayChord(lastChordSymbol)
-    }
-  })
+  $('btn-play-chord').addEventListener('click', playCurrent)
 
   $('audio-instrument').addEventListener('change', (e) => {
     setInstrument((e.target as HTMLSelectElement).value)
@@ -522,6 +438,103 @@ function applyPanelVisibility() {
   })
 }
 
+// ─── Detector ─────────────────────────────────────────────────────────────────
+// Every source (MIDI, history, song, CoF) goes through showDetection. The analysis
+// panel and the diagrams are always derived from state.detection, the analysis key
+// and the chord the cadence is measured against — never patched per handler.
+
+let autoKey: string | null = null       // Krumhansl-Schmuckler on history; recomputed when history changes
+let cadencePrev: string | null = null   // chord the cadence field compares against, chosen by the source
+let lastChordNotes: string[] = []       // last known chord shown — what Space plays after the keys are released
+
+function analysisKey(): string | null {
+  return state.activeKey ?? autoKey
+}
+
+function selectedSymbol(): string | null {
+  const d = state.detection
+  if (d?.kind !== 'chord') return null
+  const sym = d.candidates[d.selectedIndex]
+  return sym && sym !== '?' ? sym : null
+}
+
+function displayedNotes(): string[] {
+  const d = state.detection
+  if (!d) return []
+  return d.kind === 'note' ? [d.noteName] : d.notes
+}
+
+function refreshAnalysis() {
+  const sym = selectedSymbol()
+  state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev) : null
+}
+
+function renderAnalysisPanel() {
+  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+}
+
+function renderDiagrams() {
+  renderZone1Diagrams(displayedNotes(), selectedSymbol())
+}
+
+function renderDetector() {
+  renderAnalysisPanel()
+  renderDiagrams()
+}
+
+function showDetection(detection: DetectionResult, prev: string | null) {
+  state.detection = detection
+  cadencePrev = prev
+  if (selectedSymbol()) lastChordNotes = displayedNotes()
+  refreshAnalysis()
+  renderDetector()
+}
+
+/** Shows a chord picked from history, song or CoF. Without a stored voicing, UMT's spelling is shown and played. */
+function showChord(symbol: string, notes: string[] | undefined, prev: string | null) {
+  showDetection({
+    kind: 'chord',
+    notes: notes?.length ? notes : chordNoteNames(symbol),
+    candidates: [symbol],
+    selectedIndex: 0,
+  }, prev)
+}
+
+function onAltSelect(idx: number) {
+  if (state.detection?.kind !== 'chord') return
+  state.detection.selectedIndex = idx
+  refreshAnalysis()
+  renderDetector()
+}
+
+function setActiveKey(key: string | null) {
+  state.activeKey = key
+  save('active-key', key ?? '')
+  ;($('key-select') as HTMLSelectElement).value = key ?? ''
+  updateAutoKeyLabel()
+  refreshAnalysis()
+  renderDetector()
+  renderZone2()
+  renderZone3()
+}
+
+function playCurrent() {
+  const notes = selectedSymbol() ? displayedNotes() : lastChordNotes
+  if (notes.length) playNoteNames(notes)
+}
+
+// Cadence references: live play compares with the last different chord logged;
+// a history chip with the chip logged before it; a song chord with the one before it.
+function previousHistorySymbol(symbol: string): string | null {
+  return state.history.find(e => e.symbol !== symbol)?.symbol ?? null
+}
+
+function previousSongSymbol(chordId: string): string | null {
+  const chords = state.song.sections.flatMap(s => s.measures.flatMap(m => m.chords)).filter(c => c.symbol)
+  const i = chords.findIndex(c => c.id === chordId)
+  return i > 0 ? chords[i - 1].symbol : null
+}
+
 // ─── MIDI callbacks ───────────────────────────────────────────────────────────
 
 // MIDI capture-to-fill: notes of a chord arrive one by one, so the slot is filled only
@@ -550,50 +563,33 @@ function cancelCapture() {
 
 function onNoteChange(notes: number[]) {
   const result = analyzeNotes(notes)
-  state.detection = result
+  const top = result?.kind === 'chord' ? result.candidates[0] : null
+  const known = top && top !== '?' ? top : null
 
   if (state.captureTargetId) {
-    const sym = result?.kind === 'chord' ? result.candidates[0] : null
-    if (result?.kind === 'chord' && sym && sym !== '?') scheduleCapture(sym, result.notes)
+    if (known && result?.kind === 'chord') scheduleCapture(known, result.notes)
     else cancelCapture()
   }
 
-  if (result?.kind === 'chord') {
-    const sym = result.candidates[result.selectedIndex]
-    if (sym && sym !== '?') { lastChordSymbol = sym; lastChordMidi = [...notes] }
-    const isKnown = sym !== '?'
-    state.analysis = null
-    if (isKnown) {
-      try { state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol()) } catch { }
-      notifyChordDetected(sym, result.notes)
-    }
-    renderZone1Diagrams(result.notes, isKnown ? sym : null)
-  } else if (result?.kind === 'note') {
-    state.analysis = null
-    renderZone1Diagrams([result.noteName], null)
-  } else if (result?.kind === 'interval') {
-    state.analysis = null
-    renderZone1Diagrams(result.notes, null)
-  } else {
-    state.analysis = null
-    renderZone1Diagrams([], null)
+  showDetection(result, known ? previousHistorySymbol(known) : null)
+  if (known && result?.kind === 'chord') notifyChordDetected(known, result.notes)
+}
+
+function onHistoryChange(entries: HistoryEntry[]) {
+  state.history = entries
+  const nextAutoKey = getAutoKey(entries)
+  const autoKeyChanged = nextAutoKey !== autoKey
+  autoKey = nextAutoKey
+  updateAutoKeyLabel()
+  if (autoKeyChanged && !state.activeKey) {
+    refreshAnalysis()
+    renderAnalysisPanel()
   }
-
-  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
-  refreshAutoKey()
+  renderZone2()
 }
 
-function getLastHistorySymbol(): string | null {
-  return state.history[0]?.symbol ?? null
-}
-
-function onAltSelect(idx: number) {
-  if (state.detection?.kind !== 'chord') return
-  state.detection.selectedIndex = idx
-  const sym = state.detection.candidates[idx]
-  state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol())
-  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
-  renderZone1Diagrams(state.detection.notes, sym)
+function updateAutoKeyLabel() {
+  $('auto-key-label').textContent = !state.activeKey && autoKey ? `auto: ${autoKey}` : ''
 }
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
@@ -601,31 +597,15 @@ function onAltSelect(idx: number) {
 function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderStaff($('staff-container'), noteNames, staffWidth, state.activeKey)
   renderPiano($('piano-container'), noteNames, chordSymbol)
-  const chordRoot = chordSymbol ? (chordSymbol.match(/^([A-G][b#]?)/) ?? [, ''])[1] || null : null
-  renderNeck($('neck-container'), noteNames, chordRoot)
+  renderNeck($('neck-container'), noteNames, chordRoot(chordSymbol))
   renderGuitar($('guitar-container'), chordSymbol, noteNames)
-  renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol ?? null, (key, chord?) => {
-    if (key) {
-      state.activeKey = key
-      localStorage.setItem('active-key', key)
-      ;($('key-select') as HTMLSelectElement).value = key
-    }
-    if (chord) {
-      triggerChordAnalysis(chord)
-      renderZone2()
-      renderZone3()
-    } else {
-      refreshAll()
-    }
-  }, cofSize, { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths })
+  renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol, onCofClick, cofSize,
+    { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths })
 }
 
-function reRenderDiagrams() {
-  const d = state.detection
-  if (!d) { renderZone1Diagrams([], null); return }
-  if (d.kind === 'chord') renderZone1Diagrams(d.notes, d.candidates[d.selectedIndex])
-  else if (d.kind === 'note') renderZone1Diagrams([d.noteName], null)
-  else renderZone1Diagrams((d as any).notes ?? [], null)
+function onCofClick(key: string | null, chord?: string) {
+  if (key && key !== state.activeKey) setActiveKey(key)
+  if (chord) showChord(chord, undefined, previousHistorySymbol(chord))
 }
 
 function renderZone2() {
@@ -634,14 +614,8 @@ function renderZone2() {
     state.activeKey,
     (entry) => {
       state.historyActiveCursorId = entry.id
-      if (entry.notes.length > 0) {
-        state.analysis = buildHarmonicAnalysis(entry.symbol, state.activeKey, getLastHistorySymbol())
-        state.detection = { kind: 'chord', notes: entry.notes, candidates: [entry.symbol], selectedIndex: 0 }
-        renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
-        renderZone1Diagrams(entry.notes, entry.symbol)
-      } else {
-        triggerChordAnalysis(entry.symbol)
-      }
+      const i = state.history.findIndex(e => e.id === entry.id)
+      showChord(entry.symbol, entry.notes, state.history[i + 1]?.symbol ?? null)
       markActiveHistoryEntry($('zone2-content'), entry.id)
     },
     state.historyActiveCursorId
@@ -650,20 +624,6 @@ function renderZone2() {
 
 function renderZone3() {
   mountSong($('zone3-content'), state.song, makeSongHandlers())
-}
-
-function refreshAll() {
-  reRenderDiagrams()  // key may have changed — re-render staff with new key sig
-  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
-  renderZone2()
-  renderZone3()
-}
-
-function triggerChordAnalysis(symbol: string) {
-  state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol())
-  state.detection = { kind: 'chord', notes: [], candidates: [symbol], selectedIndex: 0 }
-  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
-  renderZone1Diagrams(chordNoteNames(symbol), symbol)
 }
 
 function sendToSong(entry: HistoryEntry) {
@@ -687,7 +647,7 @@ function sendToSong(entry: HistoryEntry) {
   renderZone3()
 }
 
-function findChordAfter(song: typeof state.song, afterId: string): SongChord | null {
+function findChordAfter(song: Song, afterId: string): SongChord | null {
   for (const section of song.sections) {
     for (const measure of section.measures) {
       const idx = measure.chords.findIndex(c => c.id === afterId)
@@ -697,25 +657,6 @@ function findChordAfter(song: typeof state.song, afterId: string): SongChord | n
     }
   }
   return null
-}
-
-function onHistoryChange(entries: HistoryEntry[]) {
-  state.history = entries
-  renderZone2()
-  refreshAutoKey()
-}
-
-function refreshAutoKey() {
-  const auto = getAutoKey(state.history)
-  const label = $('auto-key-label')
-  if (label) label.textContent = state.activeKey ? '' : (auto ? `auto: ${auto}` : '')
-  if (!state.activeKey && auto && state.analysis) {
-    const sym = state.detection?.kind === 'chord' ? state.detection.candidates[0] : null
-    if (sym) {
-      state.analysis = buildHarmonicAnalysis(sym, auto, getLastHistorySymbol())
-      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
-    }
-  }
 }
 
 // ─── Device dropdown ─────────────────────────────────────────────────────────
@@ -754,6 +695,7 @@ function showMidiBanner(msg: string) {
   el.style.display = 'block'
 }
 
+
 // ─── Keyboard shortcuts ───────────────────────────────────────────────────────
 
 function wireKeyboard() {
@@ -771,14 +713,7 @@ function wireKeyboard() {
         setModeBtn(getMode() === 'arpeggio' ? 'normal' : 'arpeggio'); break
       case ' ':
         e.preventDefault()
-        initAudioOnGesture()
-        if (state.detection?.kind === 'chord' && state.detection.notes.length > 0) {
-          playNoteNames(state.detection.notes)
-        } else if (lastChordMidi.length > 0) {
-          playMidiNotes(lastChordMidi)
-        } else if (lastChordSymbol) {
-          audioPlayChord(lastChordSymbol)
-        }
+        playCurrent()
         break
       case 's': case 'S': {
         // Send active history chip (or most recent if none selected)
@@ -789,12 +724,7 @@ function wireKeyboard() {
         break
       }
       case 'p': case 'P':
-        if (lastChordMidi.length > 0) {
-          playMidiNotes(lastChordMidi)
-        } else if (lastChordSymbol) {
-          audioPlayChord(lastChordSymbol)
-        }
-        break
+        playCurrent(); break
       case 'c': case 'C':
         showModal('Clear history', 'Remove all history entries?', clearHistory); break
       case '?':
@@ -802,6 +732,7 @@ function wireKeyboard() {
         toggleHelp(); break
       case 'Escape':
         if (closeHelp()) break
+        cancelCapture()
         state.activeCursorId = null
         state.captureTargetId = null
         renderZone3(); break
@@ -814,10 +745,10 @@ function wireKeyboard() {
   })
 }
 
-function setModeBtn(mode: string) {
-  setMode(mode as any)
-  document.querySelectorAll('.mode-btn').forEach(b => {
-    b.classList.toggle('active-mode', (b as HTMLElement).dataset.mode === mode)
+function setModeBtn(mode: MidiMode) {
+  setMode(mode)
+  document.querySelectorAll<HTMLElement>('.mode-btn').forEach(b => {
+    b.classList.toggle('active-mode', b.dataset.mode === mode)
   })
 }
 

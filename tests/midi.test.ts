@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { midiToNoteName, isNoteOff, PITCH_NAMES_FLAT } from '../src/midi'
+import { midiToNoteName, isNoteOff } from '../src/midi'
 
 describe('midiToNoteName', () => {
   it('converts middle C (MIDI 60) to C4', () => {
