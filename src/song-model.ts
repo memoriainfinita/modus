@@ -1,7 +1,9 @@
 import type { Song, Section, Measure, SongChord, SectionColor } from './types'
-import { PITCH_NAMES_FLAT, NOTE_SEMITONE, noteNameToMidi } from './midi'
+import { PITCH_NAMES_FLAT, noteNameToMidi } from './midi'
 import { isKnownChord } from './chord'
-import { KEY_ROOTS, keyPrefersSharps } from './keys'
+import { romanInKey } from './analyzer'
+import { keyPrefersSharps } from './keys'
+export { transposeKey } from './keys'
 
 export function createSong(): Song {
   return { schemaVersion: 1, title: 'Untitled', sections: [] }
@@ -227,22 +229,11 @@ export function parseProgressionText(text: string): string[] {
 
 export function computeDegree(chordSymbol: string, activeKey: string | null): string {
   if (!activeKey || !chordSymbol) return '—'
-  try {
-    const chord = UMT.parseChordSymbol(chordSymbol)
-    const { analysis } = UMT.Harmony.analyzeProgression([chord], activeKey)
-    const a = analysis[0]
-    if (!a) return '?'
-    return a.roman ?? '?'
-  } catch { return '?' }
+  return romanInKey(chordSymbol, activeKey)?.roman ?? '?'
 }
 
 export function isBorrowedChord(chordSymbol: string, activeKey: string | null): boolean {
-  if (!activeKey) return false
-  try {
-    const chord = UMT.parseChordSymbol(chordSymbol)
-    const { analysis } = UMT.Harmony.analyzeProgression([chord], activeKey)
-    return analysis[0]?.isBorrowed ?? false
-  } catch { return false }
+  return romanInKey(chordSymbol, activeKey)?.isBorrowed ?? false
 }
 
 export const isValidChordSymbol = isKnownChord
@@ -255,14 +246,6 @@ function transposeRoot(root: string, semitones: number, preferSharps: boolean): 
   const idx = all.indexOf(root)
   if (idx === -1) return root
   return names[((idx % 12 + semitones) % 12 + 12) % 12]
-}
-
-/** Transposes a key like "C Major", spelling the new root as the key selector does. */
-export function transposeKey(key: string, semitones: number): string {
-  const [root, mode] = key.split(' ')
-  const pc = NOTE_SEMITONE[root]
-  if (pc === undefined) return key
-  return [KEY_ROOTS[(((pc + semitones) % 12) + 12) % 12], mode].filter(Boolean).join(' ')
 }
 
 export function transposeSong(song: Song, semitones: number, targetKey?: string): Song {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildStaffAbc } from '../src/diagrams'
-import { keySignature, keyPrefersSharps } from '../src/keys'
+import { keySignature, keyPrefersSharps, normalizeKey } from '../src/keys'
 
 const body = (abc: string) => abc.split('\n').pop()
 
@@ -23,6 +23,29 @@ describe('keySignature', () => {
 
   it('Db Minor is written as C# minor (four sharps)', () => {
     expect(keySignature('Db Minor')).toEqual({ abcKey: 'C#m', accidentals: { F: '#', C: '#', G: '#', D: '#' } })
+  })
+})
+
+describe('keySignature from UMT letter spelling', () => {
+  it('F# Major has six sharps including E#', () => {
+    expect(keySignature('F# Major')).toEqual({ abcKey: 'F#', accidentals: { F: '#', C: '#', G: '#', D: '#', A: '#', E: '#' } })
+  })
+
+  it('Eb Minor has six flats including Cb', () => {
+    expect(keySignature('Eb Minor')).toEqual({ abcKey: 'Ebm', accidentals: { B: 'b', E: 'b', A: 'b', D: 'b', G: 'b', C: 'b' } })
+  })
+
+  it('unknown keys have no signature', () => {
+    expect(keySignature('H Major')).toEqual({ abcKey: 'none', accidentals: {} })
+  })
+})
+
+describe('normalizeKey', () => {
+  it('respells minor keys to the selector root', () => {
+    expect(normalizeKey('Db Minor')).toBe('C# Minor')
+    expect(normalizeKey('A# Minor')).toBe('Bb Minor')
+    expect(normalizeKey('Gb Major')).toBe('F# Major')
+    expect(normalizeKey('')).toBeNull()
   })
 })
 

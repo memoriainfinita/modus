@@ -31,7 +31,8 @@ For each detected chord:
 | Field | Detail |
 |---|---|
 | Chord name | Top candidate + alternatives (clickable, keys 1–9) |
-| Roman numeral | Scale degree in the active key — `I△7`, `ii7`, `V7/ii`, `bVII` |
+| Roman numeral | Scale degree in the active key — `Imaj7`, `ii7`, `V7/ii`, `bVII`. Secondary dominants are written `V7/x` |
+| Secondary | Degree a secondary dominant tonicizes — `→ ii` |
 | Harmonic function | Tonic / Subdominant / Dominant |
 | Figured bass | e.g. `6/4`, `7` |
 | Borrowed chord | Modal interchange — source mode shown |
@@ -58,7 +59,7 @@ Four columns, each togglable independently ([St][An][CoF][Git]):
 ### Instruments panel
 
 - **Piano** (notae) — 4 octaves C2–B5, click any key to play
-- **Horizontal fretboard** (notae) — all note positions across 12 frets, spacing adjustable
+- **Horizontal fretboard** (notae) — all note positions across 12 frets, each dot labelled with its note (flats or sharps by key), spacing adjustable
 
 ### Audio
 

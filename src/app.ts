@@ -12,9 +12,10 @@ import {
   renderZone1Analysis
 } from './analysis-panel'
 import type { AnalysisFieldKey } from './analysis-panel'
-import { chordNoteNames, chordRoot } from './chord'
+import { chordNoteNames } from './chord'
 import { loadBool, loadChoice, loadNumber, loadString, save } from './storage'
 import { escapeHtml } from './html'
+import { ALL_KEYS, normalizeKey, keyPrefersSharps } from './keys'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ let analysisScale = loadNumber('analysis-scale', 11, 8, 20)
 // ─── State ───────────────────────────────────────────────────────────────────
 
 const state: AppState = {
-  activeKey: loadString('active-key', '') || null,
+  activeKey: normalizeKey(loadString('active-key', '')),
   detection: null,
   analysis: null,
   history: [],
@@ -192,9 +193,7 @@ function buildToolbar(): string {
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
       <select id="key-select" class="ctrl-select">
         <option value="">Key: Auto</option>
-        ${['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'].flatMap(r =>
-          [`<option value="${r} Major">${r} Major</option>`, `<option value="${r} Minor">${r} Minor</option>`]
-        ).join('')}
+        ${ALL_KEYS.map(k => `<option value="${k}">${k}</option>`).join('')}
       </select>
       <span id="auto-key-label" class="auto-key-label"></span>
       <span class="toolbar-sep"></span>
@@ -356,7 +355,7 @@ function wireLayoutEvents() {
     renderAnalysisPanel()
   })
 
-  const reRenderNeck = () => renderNeck($('neck-container'), displayedNotes(), chordRoot(selectedSymbol()))
+  const reRenderNeck = () => renderNeck($('neck-container'), displayedNotes(), !keyPrefersSharps(analysisKey()))
   $('btn-neck-minus').addEventListener('click', () => { adjustNeckSpacing(-2); reRenderNeck() })
   $('btn-neck-plus').addEventListener('click',  () => { adjustNeckSpacing(2);  reRenderNeck() })
 
@@ -598,7 +597,7 @@ function updateAutoKeyLabel() {
 function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderStaff($('staff-container'), noteNames, staffWidth, state.activeKey)
   renderPiano($('piano-container'), noteNames, chordSymbol)
-  renderNeck($('neck-container'), noteNames, chordRoot(chordSymbol))
+  renderNeck($('neck-container'), noteNames, !keyPrefersSharps(analysisKey()))
   renderGuitar($('guitar-container'), chordSymbol, noteNames)
   renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol, onCofClick, cofSize,
     { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths })
