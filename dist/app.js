@@ -2047,14 +2047,23 @@ K:${abcKey}
   // src/shortcuts.ts
   var SHORTCUTS = [
     { key: "Space", action: "Play current chord (or last if none active)" },
+    { key: "\u2190 \u2192", action: "Previous / next chord in the song (or history) \u2014 plays it" },
+    { key: "Del", action: "Remove the selected song chord (undo in the toast)" },
     { key: "H", action: "Toggle Hold mode" },
     { key: "A", action: "Toggle Arpeggio mode" },
     { key: "S", action: "Send history chip \u2192 Song" },
-    { key: "C", action: "Clear history" },
-    { key: "Esc", action: "Clear cursor / capture" },
+    { key: "C", action: "Clear history (undo in the toast)" },
+    { key: "Esc", action: "Clear cursor / stop MIDI fill" },
     { key: "1\u20139", action: "Select chord candidate" },
-    { key: "P", action: "Play current chord" },
     { key: "?", action: "Show / hide this panel" }
+  ];
+  var GESTURES = [
+    "Click a history chip, song chord or circle segment to play it and show it in the detector.",
+    "Double-click a major or minor circle segment to make it the key.",
+    "A chord is logged to history once held steady for 0.8 s, and not twice in a row.",
+    "Drag a history chip onto a song measure to insert it; drag song chords and section headers to reorder.",
+    "\u2299 on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.",
+    "Right-click a history chip to remove it. Removals and Clear can be undone from the toast."
   ];
   var helpVisible = false;
   function closeHelp() {
@@ -2075,14 +2084,16 @@ K:${abcKey}
     popup.className = "shortcut-help-popup";
     popup.innerHTML = `
     <div class="shortcut-help-header">
-      <span>Keyboard shortcuts</span>
+      <span>Shortcuts and gestures</span>
       <button class="shortcut-help-close">\xD7</button>
     </div>
     ${SHORTCUTS.map((s) => `
       <div class="shortcut-row">
         <kbd class="shortcut-key">${s.key}</kbd>
         <span class="shortcut-action">${s.action}</span>
-      </div>`).join("")}`;
+      </div>`).join("")}
+    <div class="shortcut-section">Mouse</div>
+    ${GESTURES.map((g) => `<div class="gesture-row">${g}</div>`).join("")}`;
     document.body.appendChild(popup);
     popup.querySelector(".shortcut-help-close").addEventListener("click", closeHelp);
     document.addEventListener("mousedown", closeHelpOnOutsideClick);
@@ -2335,7 +2346,7 @@ K:${abcKey}
         <div id="audio-progress-fill" class="audio-progress-fill"></div>
         <span id="audio-status" class="audio-status">\u266A idle</span>
       </div>
-      <button id="btn-play-chord" class="ctrl-btn" title="Play current chord (P)">\u25B6</button>
+      <button id="btn-play-chord" class="ctrl-btn" title="Play current chord (Space)">\u25B6</button>
       <select id="audio-instrument" class="ctrl-select" title="Soundfont instrument">
         ${GM_INSTRUMENT_GROUPS.map(
       (g) => `<optgroup label="${g.label}">${g.instruments.map(
@@ -2673,7 +2684,7 @@ K:${abcKey}
     return state.history.find((e) => e.symbol !== symbol)?.symbol ?? null;
   }
   function previousSongSymbol(chordId) {
-    const chords = state.song.sections.flatMap((s) => s.measures.flatMap((m) => m.chords)).filter((c) => c.symbol);
+    const chords = songChords(state.song).filter((c) => c.symbol);
     const i = chords.findIndex((c) => c.id === chordId);
     return i > 0 ? chords[i - 1].symbol : null;
   }
@@ -2846,10 +2857,6 @@ K:${abcKey}
           if (activeEntry) sendToSong(activeEntry);
           break;
         }
-        case "p":
-        case "P":
-          playCurrent();
-          break;
         case "c":
         case "C":
           clearHistoryWithUndo();
@@ -2858,11 +2865,25 @@ K:${abcKey}
           e.preventDefault();
           toggleHelp();
           break;
+        case "ArrowLeft":
+        case "ArrowRight":
+          e.preventDefault();
+          stepCursor(e.key === "ArrowRight" ? 1 : -1);
+          break;
+        case "Delete":
+        case "Backspace":
+          if (state.activeCursorId) {
+            e.preventDefault();
+            deleteChordAtCursor();
+          }
+          break;
         case "Escape":
           if (closeHelp()) break;
           cancelCapture();
           state.activeCursorId = null;
           state.captureTargetId = null;
+          state.historyActiveCursorId = null;
+          markActiveHistoryEntry($("zone2-content"), null);
           renderZone3();
           break;
         default:
@@ -2872,6 +2893,41 @@ K:${abcKey}
           }
       }
     });
+  }
+  function stepCursor(dir) {
+    if (state.activeCursorId) {
+      const chords = songChords(state.song).filter((c) => c.symbol);
+      const i2 = chords.findIndex((c) => c.id === state.activeCursorId);
+      const next = chords[i2 + dir];
+      if (!next) return;
+      state.activeCursorId = next.id;
+      markActiveChord(next.id);
+      showChord(next.symbol, next.notes, previousSongSymbol(next.id));
+      playChordOrNotes(next.symbol, next.notes);
+      return;
+    }
+    if (!state.history.length) return;
+    const i = state.history.findIndex((e) => e.id === state.historyActiveCursorId);
+    const entry = i === -1 ? state.history[0] : state.history[i + dir];
+    if (!entry) return;
+    const at = state.history.indexOf(entry);
+    state.historyActiveCursorId = entry.id;
+    markActiveHistoryEntry($("zone2-content"), entry.id);
+    showChord(entry.symbol, entry.notes, state.history[at + 1]?.symbol ?? null);
+    playChordOrNotes(entry.symbol, entry.notes);
+  }
+  function playChordOrNotes(symbol, notes) {
+    if (notes?.length) playNoteNames(notes);
+    else playChord(symbol);
+  }
+  function deleteChordAtCursor() {
+    const id = state.activeCursorId;
+    const chords = songChords(state.song);
+    const i = chords.findIndex((c) => c.id === id);
+    if (i === -1) return;
+    state.activeCursorId = (chords[i + 1] ?? chords[i - 1])?.id ?? null;
+    if (state.captureTargetId === id) state.captureTargetId = null;
+    removeChordWithUndo(id);
   }
   function setModeBtn(mode2) {
     setMode(mode2);

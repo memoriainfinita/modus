@@ -4,7 +4,7 @@ import { initAudioOnGesture, preloadAudio, setInstrument, getCurrentInstrument, 
 import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
 import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history'
 import { loadSong, saveSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song-model'
-import { mountSong, markActiveChord } from './song-view'
+import { mountSong, markActiveChord, removeChordWithUndo } from './song-view'
 import type { AppState, DetectionResult, HistoryEntry, MidiMode, Song, SongChord } from './types'
 import { toggleHelp, closeHelp } from './shortcuts'
 import {
@@ -190,7 +190,7 @@ function buildToolbar(): string {
         <div id="audio-progress-fill" class="audio-progress-fill"></div>
         <span id="audio-status" class="audio-status">♪ idle</span>
       </div>
-      <button id="btn-play-chord" class="ctrl-btn" title="Play current chord (P)">▶</button>
+      <button id="btn-play-chord" class="ctrl-btn" title="Play current chord (Space)">▶</button>
       <select id="audio-instrument" class="ctrl-select" title="Soundfont instrument">
         ${GM_INSTRUMENT_GROUPS.map(g =>
           `<optgroup label="${g.label}">${g.instruments.map(i =>
@@ -531,7 +531,7 @@ function previousHistorySymbol(symbol: string): string | null {
 }
 
 function previousSongSymbol(chordId: string): string | null {
-  const chords = state.song.sections.flatMap(s => s.measures.flatMap(m => m.chords)).filter(c => c.symbol)
+  const chords = songChords(state.song).filter(c => c.symbol)
   const i = chords.findIndex(c => c.id === chordId)
   return i > 0 ? chords[i - 1].symbol : null
 }
@@ -740,18 +740,24 @@ function wireKeyboard() {
         if (activeEntry) sendToSong(activeEntry)
         break
       }
-      case 'p': case 'P':
-        playCurrent(); break
       case 'c': case 'C':
         clearHistoryWithUndo(); break
       case '?':
         e.preventDefault()
         toggleHelp(); break
+      case 'ArrowLeft': case 'ArrowRight':
+        e.preventDefault()
+        stepCursor(e.key === 'ArrowRight' ? 1 : -1); break
+      case 'Delete': case 'Backspace':
+        if (state.activeCursorId) { e.preventDefault(); deleteChordAtCursor() }
+        break
       case 'Escape':
         if (closeHelp()) break
         cancelCapture()
         state.activeCursorId = null
         state.captureTargetId = null
+        state.historyActiveCursorId = null
+        markActiveHistoryEntry($('zone2-content'), null)
         renderZone3(); break
       default:
         if (e.key >= '1' && e.key <= '9') {
@@ -760,6 +766,46 @@ function wireKeyboard() {
         }
     }
   })
+}
+
+/** ← →: moves through the song when a song chord is selected, otherwise through history. */
+function stepCursor(dir: 1 | -1) {
+  if (state.activeCursorId) {
+    const chords = songChords(state.song).filter(c => c.symbol)
+    const i = chords.findIndex(c => c.id === state.activeCursorId)
+    const next = chords[i + dir]
+    if (!next) return
+    state.activeCursorId = next.id
+    markActiveChord(next.id)
+    showChord(next.symbol, next.notes, previousSongSymbol(next.id))
+    playChordOrNotes(next.symbol, next.notes)
+    return
+  }
+  if (!state.history.length) return
+  const i = state.history.findIndex(e => e.id === state.historyActiveCursorId)
+  const entry = i === -1 ? state.history[0] : state.history[i + dir]
+  if (!entry) return
+  const at = state.history.indexOf(entry)
+  state.historyActiveCursorId = entry.id
+  markActiveHistoryEntry($('zone2-content'), entry.id)
+  showChord(entry.symbol, entry.notes, state.history[at + 1]?.symbol ?? null)
+  playChordOrNotes(entry.symbol, entry.notes)
+}
+
+function playChordOrNotes(symbol: string, notes?: string[]) {
+  if (notes?.length) playNoteNames(notes)
+  else playChord(symbol)
+}
+
+/** Del: removes the selected song chord (with Undo) and selects its neighbour. */
+function deleteChordAtCursor() {
+  const id = state.activeCursorId!
+  const chords = songChords(state.song)
+  const i = chords.findIndex(c => c.id === id)
+  if (i === -1) return
+  state.activeCursorId = (chords[i + 1] ?? chords[i - 1])?.id ?? null
+  if (state.captureTargetId === id) state.captureTargetId = null
+  removeChordWithUndo(id)
 }
 
 function setModeBtn(mode: MidiMode) {
