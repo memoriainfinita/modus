@@ -1,6 +1,6 @@
 import type { DetectionResult, HarmonicAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult } from './types'
 import { midiToNoteName, PITCH_NAMES_FLAT } from './midi'
-import { tryParseChord, isKnownChord, normalizeChordName } from './chord'
+import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from './chord'
 
 const INTERVAL_NAMES = [
   'Unison','Minor 2nd','Major 2nd','Minor 3rd','Major 3rd','Perfect 4th',
@@ -47,11 +47,9 @@ export function analyzeNotes(midiNotes: number[]): DetectionResult {
   // ≥3 notes: chord detection. UMT may throw, and returns "Unknown Chord" when nothing
   // matches — keep only names UMT can parse back, so '?' is the single unknown sentinel.
   let candidates: string[] = []
-  try {
-    const umtNotes = noteNames.map(n => UMT.parseNote(n))
-    candidates = (UMT.Harmony.detectChords(umtNotes) ?? []).map(normalizeChordName).filter(isKnownChord)
-    candidates = [...new Set(candidates)]
-  } catch { }
+  candidates = tryUMT('chord detection', () =>
+    (UMT.Harmony.detectChords(noteNames.map(n => UMT.parseNote(n))) ?? []).map(normalizeChordName).filter(isKnownChord), [])
+  candidates = [...new Set(candidates)]
   const result: ChordResult = {
     kind: 'chord',
     notes: noteNames,
@@ -68,94 +66,40 @@ export function buildHarmonicAnalysis(
 ): HarmonicAnalysis {
   const chord = tryParseChord(chordSymbol)
   if (!chord) return emptyAnalysis(chordSymbol)
-  const notes = chord.getNotes ? chord.getNotes() : []
-  const bassNote = notes[0] ?? null
+  const result = emptyAnalysis(chordSymbol)
 
-  let roman = '?'
-  let fn: 'T' | 'S' | 'D' | 'unknown' = 'unknown'
-  let isDiatonic = false
-  let isBorrowed = false
-  let borrowedFrom: string | undefined
-  let isSecondary = false
-  let secondaryTarget: string | undefined
-  let cadence: string | null = null
+  // Each field is optional: UMT throws for cases it does not support (e.g. non-12-TET).
+  const bassNote = tryUMT('notes', () => chord.getNotes()[0] ?? null, null)
+  if (bassNote) result.figuredBass = tryUMT('figured bass', () => UMT.FiguredBass.fromChord(chord, bassNote), '')
+  result.suggestedScales = tryUMT('scales', () => UMT.Harmony.getSuggestedScales(chord).map(s => s.scale), [])
 
-  if (activeKey) {
-    try {
-      const { analysis } = UMT.Harmony.analyzeProgression([chord], activeKey)
-      const a = analysis[0]
-      roman = a.roman ?? '?'
-      fn = a.function ?? 'unknown'
-      isDiatonic = a.isDiatonic ?? false
-      isBorrowed = a.isBorrowed ?? false
-      borrowedFrom = a.borrowedFrom
-      isSecondary = a.isSecondary ?? false
-      secondaryTarget = a.secondaryTarget
-    } catch { /* unsupported tuning or parse error */ }
+  if (!activeKey) return result
 
-    if (prevChordSymbol) {
-      try {
-        const prevChord = UMT.parseChordSymbol(prevChordSymbol)
-        const cad = UMT.Harmony.analyzeCadence(prevChord, chord, activeKey)
-        if (cad && cad !== 'No standard cadence') cadence = cad
-      } catch { /* ignore */ }
-    }
+  const a = tryUMT('progression', () => UMT.Harmony.analyzeProgression([chord], activeKey).analysis[0], null)
+  if (a) {
+    result.roman = a.roman ?? '?'
+    result.function = a.function ?? 'unknown'
+    result.isDiatonic = a.isDiatonic ?? false
+    result.isBorrowed = a.isBorrowed ?? false
+    result.borrowedFrom = a.borrowedFrom
+    result.isSecondary = a.isSecondary ?? false
+    result.secondaryTarget = a.secondaryTarget
   }
 
-  let figuredBass = ''
-  if (bassNote) {
-    try { figuredBass = UMT.FiguredBass.fromChord(chord, bassNote) } catch { }
+  const prevChord = tryParseChord(prevChordSymbol)
+  if (prevChord) {
+    const cad = tryUMT('cadence', () => UMT.Harmony.analyzeCadence(prevChord, chord, activeKey), null)
+    if (cad && cad !== 'No standard cadence') result.cadence = cad
   }
 
-  const suggestedScales: string[] = []
-  try {
-    UMT.Harmony.getSuggestedScales(chord).forEach((s: any) => suggestedScales.push(s.scale))
-  } catch { }
+  result.coltraneAxis = tryUMT('coltrane axis', () => UMT.Harmony.getColtraneAxis(activeKey).majorThirds, null)
+  result.negativeHarmony = tryUMT('negative harmony', () => UMT.Harmony.getNegativeHarmony(chord, activeKey)?.name ?? null, null)
+  result.substitutions = tryUMT('substitutions', () => UMT.getSubstitutions(chord, activeKey).map((s: any) => {
+    const name = s.chord?.name ?? s.name ?? String(s)
+    return s.type ? `${name} (${s.type})` : name
+  }), [])
 
-  let coltraneAxis: [string, string, string] | null = null
-  try {
-    if (activeKey) {
-      const ax = UMT.Harmony.getColtraneAxis(activeKey)
-      coltraneAxis = ax.majorThirds
-    }
-  } catch { }
-
-  let negativeHarmony: string | null = null
-  try {
-    if (activeKey) {
-      const neg = UMT.Harmony.getNegativeHarmony(chord, activeKey)
-      negativeHarmony = neg?.name ?? null
-    }
-  } catch { }
-
-  const substitutions: string[] = []
-  try {
-    if (activeKey) {
-      const subs = UMT.getSubstitutions(chord, activeKey)
-      subs.forEach((s: any) => {
-        const name = s.chord?.name ?? s.name ?? String(s)
-        const type = s.type ?? ''
-        substitutions.push(type ? `${name} (${type})` : name)
-      })
-    }
-  } catch { }
-
-  return {
-    chordName: chordSymbol,
-    roman,
-    function: fn,
-    isDiatonic,
-    isBorrowed,
-    borrowedFrom,
-    isSecondary,
-    secondaryTarget,
-    figuredBass,
-    suggestedScales,
-    substitutions,
-    cadence,
-    coltraneAxis,
-    negativeHarmony,
-  }
+  return result
 }
 
 function emptyAnalysis(chordName: string): HarmonicAnalysis {
@@ -168,11 +112,7 @@ function emptyAnalysis(chordName: string): HarmonicAnalysis {
 }
 
 export function getAutoKey(history: HistoryEntry[]): string | null {
-  if (history.length === 0) return null
-  const allNotes = history.flatMap(e => e.notes.map(n => UMT.parseNote(n)))
-  if (allNotes.length === 0) return null
-  try {
-    const results = UMT.KeyDetection.detect(allNotes)
-    return results[0]?.key ?? null
-  } catch { return null }
+  const noteNames = history.flatMap(e => e.notes)
+  if (noteNames.length === 0) return null
+  return tryUMT('key detection', () => UMT.KeyDetection.detect(noteNames.map(n => UMT.parseNote(n)))[0]?.key ?? null, null)
 }

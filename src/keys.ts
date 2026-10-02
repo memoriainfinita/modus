@@ -18,7 +18,7 @@ const MINOR_ENHARMONIC: Record<string, string> = { Db: 'C#', Gb: 'F#' }
 const SHARP_ORDER = ['F', 'C', 'G', 'D', 'A', 'E', 'B']
 const FLAT_ORDER  = ['B', 'E', 'A', 'D', 'G', 'C', 'F']
 
-export function parseKey(key: string): { root: string; minor: boolean } {
+function parseKey(key: string): { root: string; minor: boolean } {
   const [root, mode] = key.split(' ')
   return { root, minor: mode?.toLowerCase() === 'minor' }
 }

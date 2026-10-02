@@ -16,6 +16,17 @@ export const CHORD_FAMILY_COLORS: Record<ChordFamily, string> = {
 
 export const NEUTRAL_COLOR = '#6b7280'
 
+/**
+ * Runs an optional UMT call. UMT throws for inputs it does not support; the caller gets
+ * the fallback, and the reason is logged at debug level so API drift stays traceable.
+ */
+export function tryUMT<T>(what: string, fn: () => T, fallback: T): T {
+  try { return fn() } catch (err) {
+    console.debug(`[umt] ${what} unavailable:`, err)
+    return fallback
+  }
+}
+
 /** Parsed UMT chord, or null when UMT rejects the symbol. */
 export function tryParseChord(symbol: string | null | undefined): any | null {
   if (!symbol) return null

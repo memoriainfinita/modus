@@ -1,9 +1,10 @@
-import { playNoteByName, playChord, initAudioOnGesture } from './audio'
+import { playNoteByName, playChord } from './audio'
 import { PITCH_NAMES_FLAT, NOTE_SEMITONE, noteNameToMidi } from './midi'
-import { chordColor, NEUTRAL_COLOR } from './chord'
+import { chordColor, NEUTRAL_COLOR, tryParseChord, tryUMT } from './chord'
 import { keySignature } from './keys'
+import { loadBool, loadChoice, loadJSON, loadNumber, save } from './storage'
 
-export let guitarControlsVisible = JSON.parse(localStorage.getItem('panel-guitarControls') ?? 'true')
+let guitarControlsVisible = loadBool('panel-guitarControls', true)
 export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v }
 
 // ─── Staff ────────────────────────────────────────────────────────────────────
@@ -36,10 +37,10 @@ export function renderStaff(container: HTMLElement, noteNames: string[], width =
 const OPEN_MIDI = [40, 45, 50, 55, 59, 64]  // E2 A2 D3 G3 B3 E4
 const NECK_FRETS = 12
 
-let neckSpacing = parseInt(localStorage.getItem('neck-spacing') ?? '16')
+let neckSpacing = loadNumber('neck-spacing', 16, 10, 28)
 export function adjustNeckSpacing(delta: number) {
   neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta))
-  localStorage.setItem('neck-spacing', String(neckSpacing))
+  save('neck-spacing', neckSpacing)
 }
 
 export function renderNeck(container: HTMLElement, noteNames: string[], root: string | null = null) {
@@ -139,12 +140,11 @@ function deriveVoicingFromNotes(noteNames: string[], tuning: string[]): { frets:
 let guitarVoicingIdx = 0
 let lastGuitarSymbol: string | null = null
 let lastNoteNames: string[] = []
-let guitarLabelMode: 'none' | 'tuning' | 'notes' =
-  (localStorage.getItem('guitar-label-mode') as any) || 'none'
-let guitarTuningKey: 'standard' | 'dropD' | 'openG' | 'custom' =
-  (localStorage.getItem('guitar-tuning') as any) || 'standard'
+let guitarLabelMode = loadChoice('guitar-label-mode', ['none', 'tuning', 'notes'] as const, 'none')
+type GuitarTuningKey = 'standard' | 'dropD' | 'openG' | 'custom'
+let guitarTuningKey = loadChoice<GuitarTuningKey>('guitar-tuning', ['standard', 'dropD', 'openG', 'custom'], 'standard')
 let guitarTunerExpanded = false
-let guitarSpacing = parseInt(localStorage.getItem('guitar-spacing') ?? '19')
+let guitarSpacing = loadNumber('guitar-spacing', 19, 12, 32)
 
 const GUITAR_TUNINGS: Record<string, { umt: () => any; notae: string[]; label: string }> = {
   standard: { umt: () => UMT.GUITAR_STANDARD,  notae: ['E','A','D','G','B','E'], label: 'Standard' },
@@ -153,18 +153,16 @@ const GUITAR_TUNINGS: Record<string, { umt: () => any; notae: string[]; label: s
 }
 
 function loadStringTuning(): string[] {
-  try {
-    const saved = localStorage.getItem('guitar-string-tuning')
-    if (saved) { const v = JSON.parse(saved); if (Array.isArray(v) && v.length === 6) return v }
-  } catch {}
+  const saved = loadJSON<unknown>('guitar-string-tuning', null)
+  if (Array.isArray(saved) && saved.length === 6 && saved.every(n => typeof n === 'string')) return saved
   return [...(GUITAR_TUNINGS[guitarTuningKey]?.notae ?? ['E','A','D','G','B','E'])]
 }
 
 let guitarStringTuning: string[] = loadStringTuning()
 
-function detectPreset(notes: string[]): string {
+function detectPreset(notes: string[]): GuitarTuningKey {
   const match = Object.entries(GUITAR_TUNINGS).find(([, t]) => t.notae.every((n, i) => n === notes[i]))
-  return match ? match[0] : 'custom'
+  return match ? match[0] as GuitarTuningKey : 'custom'
 }
 
 function guitarStyle(): object {
@@ -231,16 +229,16 @@ function wireGuitarControls(container: HTMLElement) {
     btn.addEventListener('click', () => {
       const action = btn.dataset.action!
       if (action.startsWith('label-')) {
-        guitarLabelMode = action.replace('label-', '') as any
-        localStorage.setItem('guitar-label-mode', guitarLabelMode)
+        guitarLabelMode = action.replace('label-', '') as typeof guitarLabelMode
+        save('guitar-label-mode', guitarLabelMode)
       } else if (action === 'toggle-tuner') {
         guitarTunerExpanded = !guitarTunerExpanded
       } else if (action === 'size-minus') {
         guitarSpacing = Math.max(12, guitarSpacing - 3)
-        localStorage.setItem('guitar-spacing', String(guitarSpacing))
+        save('guitar-spacing', guitarSpacing)
       } else if (action === 'size-plus') {
         guitarSpacing = Math.min(32, guitarSpacing + 3)
-        localStorage.setItem('guitar-spacing', String(guitarSpacing))
+        save('guitar-spacing', guitarSpacing)
       }
       renderGuitar(container, lastGuitarSymbol, lastNoteNames)
     })
@@ -249,12 +247,12 @@ function wireGuitarControls(container: HTMLElement) {
   const sel = container.querySelector<HTMLSelectElement>('.guitar-tuning-sel')
   if (sel) {
     sel.addEventListener('change', () => {
-      const key = sel.value as any
+      const key = sel.value as GuitarTuningKey
       guitarTuningKey = key
-      localStorage.setItem('guitar-tuning', key)
+      save('guitar-tuning', key)
       if (key !== 'custom' && GUITAR_TUNINGS[key]) {
         guitarStringTuning = [...GUITAR_TUNINGS[key].notae]
-        localStorage.setItem('guitar-string-tuning', JSON.stringify(guitarStringTuning))
+        save('guitar-string-tuning', guitarStringTuning)
       }
       const sym = lastGuitarSymbol
       guitarVoicingIdx = 0
@@ -268,9 +266,9 @@ function wireGuitarControls(container: HTMLElement) {
       const val = input.value.trim()
       if (!val) return
       guitarStringTuning[parseInt(input.dataset.string!)] = val
-      localStorage.setItem('guitar-string-tuning', JSON.stringify(guitarStringTuning))
-      guitarTuningKey = detectPreset(guitarStringTuning) as any
-      localStorage.setItem('guitar-tuning', guitarTuningKey)
+      save('guitar-string-tuning', guitarStringTuning)
+      guitarTuningKey = detectPreset(guitarStringTuning)
+      save('guitar-tuning', guitarTuningKey)
       const sym = lastGuitarSymbol
       const notes = [...lastNoteNames]
       guitarVoicingIdx = 0
@@ -320,11 +318,8 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
 
   // Preset tuning: use UMT voicings
   const umtTuning = GUITAR_TUNINGS[guitarTuningKey].umt()
-  let voicings: any[] = []
-  try {
-    const chord = UMT.parseChordSymbol(chordSymbol)
-    voicings = UMT.getFretboardVoicings(chord, umtTuning) ?? []
-  } catch { }
+  const chord = tryParseChord(chordSymbol)
+  const voicings: any[] = chord ? tryUMT('fretboard voicings', () => UMT.getFretboardVoicings(chord, umtTuning) ?? [], []) : []
 
   if (!voicings.length) {
     container.innerHTML = '<div class="no-voicing">No voicings</div>' + guitarControls(0, 0)
@@ -507,21 +502,18 @@ export function renderCircleOfFifths(
 
   container.querySelectorAll<SVGPathElement>('[data-key]').forEach(el => {
     el.addEventListener('click', () => {
-      initAudioOnGesture()
       if (el.dataset.chord) playChord(el.dataset.chord)
       onKeyClick(el.dataset.key!, el.dataset.chord)
     })
   })
   container.querySelectorAll<SVGPathElement>('[data-minor-chord]').forEach(el => {
     el.addEventListener('click', () => {
-      initAudioOnGesture()
       playChord(el.dataset.minorChord!)
       onKeyClick(null, el.dataset.minorChord)
     })
   })
   container.querySelectorAll<SVGPathElement>('[data-dim-chord]').forEach(el => {
     el.addEventListener('click', () => {
-      initAudioOnGesture()
       playChord(el.dataset.dimChord!)
       onKeyClick(null, el.dataset.dimChord)
     })

@@ -166,6 +166,14 @@
     sus: "#6b7280"
   };
   var NEUTRAL_COLOR = "#6b7280";
+  function tryUMT(what, fn, fallback) {
+    try {
+      return fn();
+    } catch (err) {
+      console.debug(`[umt] ${what} unavailable:`, err);
+      return fallback;
+    }
+  }
   function tryParseChord(symbol) {
     if (!symbol) return null;
     try {
@@ -207,6 +215,9 @@
     } catch {
       return [];
     }
+  }
+  function chordRoot(symbol) {
+    return symbol?.match(/^([A-G][b#]?)/)?.[1] ?? null;
   }
 
   // src/analyzer.ts
@@ -254,12 +265,8 @@
       return result2;
     }
     let candidates = [];
-    try {
-      const umtNotes = noteNames.map((n) => UMT.parseNote(n));
-      candidates = (UMT.Harmony.detectChords(umtNotes) ?? []).map(normalizeChordName).filter(isKnownChord);
-      candidates = [...new Set(candidates)];
-    } catch {
-    }
+    candidates = tryUMT("chord detection", () => (UMT.Harmony.detectChords(noteNames.map((n) => UMT.parseNote(n))) ?? []).map(normalizeChordName).filter(isKnownChord), []);
+    candidates = [...new Set(candidates)];
     const result = {
       kind: "chord",
       notes: noteNames,
@@ -271,94 +278,33 @@
   function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol) {
     const chord = tryParseChord(chordSymbol);
     if (!chord) return emptyAnalysis(chordSymbol);
-    const notes = chord.getNotes ? chord.getNotes() : [];
-    const bassNote = notes[0] ?? null;
-    let roman = "?";
-    let fn = "unknown";
-    let isDiatonic = false;
-    let isBorrowed = false;
-    let borrowedFrom;
-    let isSecondary = false;
-    let secondaryTarget;
-    let cadence = null;
-    if (activeKey) {
-      try {
-        const { analysis } = UMT.Harmony.analyzeProgression([chord], activeKey);
-        const a = analysis[0];
-        roman = a.roman ?? "?";
-        fn = a.function ?? "unknown";
-        isDiatonic = a.isDiatonic ?? false;
-        isBorrowed = a.isBorrowed ?? false;
-        borrowedFrom = a.borrowedFrom;
-        isSecondary = a.isSecondary ?? false;
-        secondaryTarget = a.secondaryTarget;
-      } catch {
-      }
-      if (prevChordSymbol) {
-        try {
-          const prevChord = UMT.parseChordSymbol(prevChordSymbol);
-          const cad = UMT.Harmony.analyzeCadence(prevChord, chord, activeKey);
-          if (cad && cad !== "No standard cadence") cadence = cad;
-        } catch {
-        }
-      }
+    const result = emptyAnalysis(chordSymbol);
+    const bassNote = tryUMT("notes", () => chord.getNotes()[0] ?? null, null);
+    if (bassNote) result.figuredBass = tryUMT("figured bass", () => UMT.FiguredBass.fromChord(chord, bassNote), "");
+    result.suggestedScales = tryUMT("scales", () => UMT.Harmony.getSuggestedScales(chord).map((s) => s.scale), []);
+    if (!activeKey) return result;
+    const a = tryUMT("progression", () => UMT.Harmony.analyzeProgression([chord], activeKey).analysis[0], null);
+    if (a) {
+      result.roman = a.roman ?? "?";
+      result.function = a.function ?? "unknown";
+      result.isDiatonic = a.isDiatonic ?? false;
+      result.isBorrowed = a.isBorrowed ?? false;
+      result.borrowedFrom = a.borrowedFrom;
+      result.isSecondary = a.isSecondary ?? false;
+      result.secondaryTarget = a.secondaryTarget;
     }
-    let figuredBass = "";
-    if (bassNote) {
-      try {
-        figuredBass = UMT.FiguredBass.fromChord(chord, bassNote);
-      } catch {
-      }
+    const prevChord = tryParseChord(prevChordSymbol);
+    if (prevChord) {
+      const cad = tryUMT("cadence", () => UMT.Harmony.analyzeCadence(prevChord, chord, activeKey), null);
+      if (cad && cad !== "No standard cadence") result.cadence = cad;
     }
-    const suggestedScales = [];
-    try {
-      UMT.Harmony.getSuggestedScales(chord).forEach((s) => suggestedScales.push(s.scale));
-    } catch {
-    }
-    let coltraneAxis = null;
-    try {
-      if (activeKey) {
-        const ax = UMT.Harmony.getColtraneAxis(activeKey);
-        coltraneAxis = ax.majorThirds;
-      }
-    } catch {
-    }
-    let negativeHarmony = null;
-    try {
-      if (activeKey) {
-        const neg = UMT.Harmony.getNegativeHarmony(chord, activeKey);
-        negativeHarmony = neg?.name ?? null;
-      }
-    } catch {
-    }
-    const substitutions = [];
-    try {
-      if (activeKey) {
-        const subs = UMT.getSubstitutions(chord, activeKey);
-        subs.forEach((s) => {
-          const name = s.chord?.name ?? s.name ?? String(s);
-          const type = s.type ?? "";
-          substitutions.push(type ? `${name} (${type})` : name);
-        });
-      }
-    } catch {
-    }
-    return {
-      chordName: chordSymbol,
-      roman,
-      function: fn,
-      isDiatonic,
-      isBorrowed,
-      borrowedFrom,
-      isSecondary,
-      secondaryTarget,
-      figuredBass,
-      suggestedScales,
-      substitutions,
-      cadence,
-      coltraneAxis,
-      negativeHarmony
-    };
+    result.coltraneAxis = tryUMT("coltrane axis", () => UMT.Harmony.getColtraneAxis(activeKey).majorThirds, null);
+    result.negativeHarmony = tryUMT("negative harmony", () => UMT.Harmony.getNegativeHarmony(chord, activeKey)?.name ?? null, null);
+    result.substitutions = tryUMT("substitutions", () => UMT.getSubstitutions(chord, activeKey).map((s) => {
+      const name = s.chord?.name ?? s.name ?? String(s);
+      return s.type ? `${name} (${s.type})` : name;
+    }), []);
+    return result;
   }
   function emptyAnalysis(chordName) {
     return {
@@ -377,14 +323,44 @@
     };
   }
   function getAutoKey(history) {
-    if (history.length === 0) return null;
-    const allNotes = history.flatMap((e) => e.notes.map((n) => UMT.parseNote(n)));
-    if (allNotes.length === 0) return null;
+    const noteNames = history.flatMap((e) => e.notes);
+    if (noteNames.length === 0) return null;
+    return tryUMT("key detection", () => UMT.KeyDetection.detect(noteNames.map((n) => UMT.parseNote(n)))[0]?.key ?? null, null);
+  }
+
+  // src/storage.ts
+  function loadJSON(key, fallback) {
     try {
-      const results = UMT.KeyDetection.detect(allNotes);
-      return results[0]?.key ?? null;
+      const raw = localStorage.getItem(key);
+      return raw === null ? fallback : JSON.parse(raw);
     } catch {
-      return null;
+      return fallback;
+    }
+  }
+  function loadBool(key, fallback) {
+    const v = loadJSON(key, fallback);
+    return typeof v === "boolean" ? v : fallback;
+  }
+  function loadNumber(key, fallback, min = -Infinity, max = Infinity) {
+    const raw = loadString(key, "");
+    const v = Number(raw);
+    return raw !== "" && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
+  }
+  function loadString(key, fallback) {
+    try {
+      return localStorage.getItem(key) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  function loadChoice(key, choices, fallback) {
+    const v = loadString(key, fallback);
+    return choices.includes(v) ? v : fallback;
+  }
+  function save(key, value) {
+    try {
+      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+    } catch {
     }
   }
 
@@ -392,8 +368,8 @@
   var audioCtx = null;
   var instrument = null;
   var loadingInstrument = false;
-  var volume = parseFloat(localStorage.getItem("audio-volume") ?? "0.8");
-  var currentInstrumentName = localStorage.getItem("audio-instrument") ?? "acoustic_grand_piano";
+  var volume = loadNumber("audio-volume", 0.8, 0, 1);
+  var currentInstrumentName = loadString("audio-instrument", "acoustic_grand_piano");
   var audioStatus = "idle";
   var onStatusChange = null;
   function setAudioStatusCallback(cb) {
@@ -452,7 +428,7 @@
   }
   function setInstrument(name) {
     currentInstrumentName = name;
-    localStorage.setItem("audio-instrument", name);
+    save("audio-instrument", name);
     instrument = null;
     if (audioCtx) loadCurrentInstrument();
   }
@@ -461,7 +437,7 @@
   }
   function setVolume(v) {
     volume = Math.max(0, Math.min(1, v));
-    localStorage.setItem("audio-volume", String(volume));
+    save("audio-volume", volume);
   }
   function getVolume() {
     return volume;
@@ -480,9 +456,6 @@
   function playNoteByName(noteName, duration = 1.5) {
     const midi = noteNameToMidi(noteName);
     if (midi !== null) playMidi([midi], duration);
-  }
-  function playMidiNotes(midiNotes, duration = 2) {
-    playMidi(midiNotes, duration);
   }
   function playNoteNames(noteNames, duration = 2) {
     playMidi(noteNames.map(noteNameToMidi).filter((m) => m !== null), duration);
@@ -557,7 +530,7 @@
   }
 
   // src/diagrams.ts
-  var guitarControlsVisible = JSON.parse(localStorage.getItem("panel-guitarControls") ?? "true");
+  var guitarControlsVisible = loadBool("panel-guitarControls", true);
   function setGuitarControlsVisible(v) {
     guitarControlsVisible = v;
   }
@@ -585,10 +558,10 @@ K:${abcKey}
   }
   var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
   var NECK_FRETS = 12;
-  var neckSpacing = parseInt(localStorage.getItem("neck-spacing") ?? "16");
+  var neckSpacing = loadNumber("neck-spacing", 16, 10, 28);
   function adjustNeckSpacing(delta) {
     neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta));
-    localStorage.setItem("neck-spacing", String(neckSpacing));
+    save("neck-spacing", neckSpacing);
   }
   function renderNeck(container, noteNames, root = null) {
     const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
@@ -673,24 +646,18 @@ K:${abcKey}
   var guitarVoicingIdx = 0;
   var lastGuitarSymbol = null;
   var lastNoteNames = [];
-  var guitarLabelMode = localStorage.getItem("guitar-label-mode") || "none";
-  var guitarTuningKey = localStorage.getItem("guitar-tuning") || "standard";
+  var guitarLabelMode = loadChoice("guitar-label-mode", ["none", "tuning", "notes"], "none");
+  var guitarTuningKey = loadChoice("guitar-tuning", ["standard", "dropD", "openG", "custom"], "standard");
   var guitarTunerExpanded = false;
-  var guitarSpacing = parseInt(localStorage.getItem("guitar-spacing") ?? "19");
+  var guitarSpacing = loadNumber("guitar-spacing", 19, 12, 32);
   var GUITAR_TUNINGS = {
     standard: { umt: () => UMT.GUITAR_STANDARD, notae: ["E", "A", "D", "G", "B", "E"], label: "Standard" },
     dropD: { umt: () => UMT.GUITAR_DROPPED_D, notae: ["D", "A", "D", "G", "B", "E"], label: "Drop D" },
     openG: { umt: () => UMT.GUITAR_OPEN_G, notae: ["D", "G", "D", "G", "B", "D"], label: "Open G" }
   };
   function loadStringTuning() {
-    try {
-      const saved = localStorage.getItem("guitar-string-tuning");
-      if (saved) {
-        const v = JSON.parse(saved);
-        if (Array.isArray(v) && v.length === 6) return v;
-      }
-    } catch {
-    }
+    const saved = loadJSON("guitar-string-tuning", null);
+    if (Array.isArray(saved) && saved.length === 6 && saved.every((n) => typeof n === "string")) return saved;
     return [...GUITAR_TUNINGS[guitarTuningKey]?.notae ?? ["E", "A", "D", "G", "B", "E"]];
   }
   var guitarStringTuning = loadStringTuning();
@@ -759,15 +726,15 @@ K:${abcKey}
         const action = btn.dataset.action;
         if (action.startsWith("label-")) {
           guitarLabelMode = action.replace("label-", "");
-          localStorage.setItem("guitar-label-mode", guitarLabelMode);
+          save("guitar-label-mode", guitarLabelMode);
         } else if (action === "toggle-tuner") {
           guitarTunerExpanded = !guitarTunerExpanded;
         } else if (action === "size-minus") {
           guitarSpacing = Math.max(12, guitarSpacing - 3);
-          localStorage.setItem("guitar-spacing", String(guitarSpacing));
+          save("guitar-spacing", guitarSpacing);
         } else if (action === "size-plus") {
           guitarSpacing = Math.min(32, guitarSpacing + 3);
-          localStorage.setItem("guitar-spacing", String(guitarSpacing));
+          save("guitar-spacing", guitarSpacing);
         }
         renderGuitar(container, lastGuitarSymbol, lastNoteNames);
       });
@@ -777,10 +744,10 @@ K:${abcKey}
       sel.addEventListener("change", () => {
         const key = sel.value;
         guitarTuningKey = key;
-        localStorage.setItem("guitar-tuning", key);
+        save("guitar-tuning", key);
         if (key !== "custom" && GUITAR_TUNINGS[key]) {
           guitarStringTuning = [...GUITAR_TUNINGS[key].notae];
-          localStorage.setItem("guitar-string-tuning", JSON.stringify(guitarStringTuning));
+          save("guitar-string-tuning", guitarStringTuning);
         }
         const sym = lastGuitarSymbol;
         guitarVoicingIdx = 0;
@@ -793,9 +760,9 @@ K:${abcKey}
         const val = input.value.trim();
         if (!val) return;
         guitarStringTuning[parseInt(input.dataset.string)] = val;
-        localStorage.setItem("guitar-string-tuning", JSON.stringify(guitarStringTuning));
+        save("guitar-string-tuning", guitarStringTuning);
         guitarTuningKey = detectPreset(guitarStringTuning);
-        localStorage.setItem("guitar-tuning", guitarTuningKey);
+        save("guitar-tuning", guitarTuningKey);
         const sym = lastGuitarSymbol;
         const notes = [...lastNoteNames];
         guitarVoicingIdx = 0;
@@ -837,12 +804,8 @@ K:${abcKey}
       return;
     }
     const umtTuning = GUITAR_TUNINGS[guitarTuningKey].umt();
-    let voicings = [];
-    try {
-      const chord = UMT.parseChordSymbol(chordSymbol);
-      voicings = UMT.getFretboardVoicings(chord, umtTuning) ?? [];
-    } catch {
-    }
+    const chord = tryParseChord(chordSymbol);
+    const voicings = chord ? tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, umtTuning) ?? [], []) : [];
     if (!voicings.length) {
       container.innerHTML = '<div class="no-voicing">No voicings</div>' + guitarControls(0, 0);
       wireGuitarControls(container);
@@ -986,21 +949,18 @@ K:${abcKey}
     container.innerHTML = svg;
     container.querySelectorAll("[data-key]").forEach((el) => {
       el.addEventListener("click", () => {
-        initAudioOnGesture();
         if (el.dataset.chord) playChord(el.dataset.chord);
         onKeyClick(el.dataset.key, el.dataset.chord);
       });
     });
     container.querySelectorAll("[data-minor-chord]").forEach((el) => {
       el.addEventListener("click", () => {
-        initAudioOnGesture();
         playChord(el.dataset.minorChord);
         onKeyClick(null, el.dataset.minorChord);
       });
     });
     container.querySelectorAll("[data-dim-chord]").forEach((el) => {
       el.addEventListener("click", () => {
-        initAudioOnGesture();
         playChord(el.dataset.dimChord);
         onKeyClick(null, el.dataset.dimChord);
       });
@@ -1121,7 +1081,7 @@ K:${abcKey}
     container.appendChild(wrap);
   }
 
-  // src/song.ts
+  // src/song-model.ts
   function createSong() {
     return { schemaVersion: 1, title: "Untitled", sections: [] };
   }
@@ -1394,6 +1354,25 @@ K:${abcKey}
       return createSong();
     }
   }
+  function detectForm(sectionNames) {
+    if (sectionNames.length === 0) return "Empty";
+    const map = /* @__PURE__ */ new Map();
+    let letter = 65;
+    const letters = sectionNames.map((name) => {
+      const key = name.trim().toLowerCase();
+      if (!map.has(key)) map.set(key, String.fromCharCode(letter++));
+      return map.get(key);
+    });
+    const pattern = letters.join("");
+    if (/^(AB)+$/.test(pattern)) return `Verse-Chorus (${pattern})`;
+    if (/^AABA/.test(pattern)) return `AABA (${pattern})`;
+    if (/^(A+B+A+)$/.test(pattern)) return `Ternary (${pattern})`;
+    if (pattern === "A") return "Single section (A)";
+    if (/^A+$/.test(pattern)) return `Strophic (${pattern})`;
+    return `${pattern}`;
+  }
+
+  // src/song-view.ts
   var SECTION_COLORS = {
     intro: "#7c3aed",
     verse: "#2563eb",
@@ -1547,6 +1526,10 @@ K:${abcKey}
     });
     const exportBtn = makeBtn("\u2399 Export", "#374151", () => {
       const printWin = window.open("", "_blank");
+      if (!printWin) {
+        showNotice("Pop-up blocked \u2014 allow pop-ups for this page to export.", "warn");
+        return;
+      }
       printWin.document.write(buildPrintHTML(_song, h.activeKey));
       printWin.document.close();
       printWin.print();
@@ -1569,7 +1552,7 @@ K:${abcKey}
     root.appendChild(formInfo);
     const measureNums = computeMeasureNumbers(song);
     song.sections.forEach((section) => {
-      root.appendChild(buildSectionDOM(section, song, h, measureNums));
+      root.appendChild(buildSectionDOM(section, h, measureNums));
     });
     return root;
   }
@@ -1583,7 +1566,7 @@ K:${abcKey}
       }))
     };
   }
-  function buildSectionDOM(section, song, h, measureNums) {
+  function buildSectionDOM(section, h, measureNums) {
     const color = SECTION_COLORS[section.color];
     const wrap = document.createElement("div");
     wrap.className = "section-wrap";
@@ -1962,7 +1945,6 @@ K:${abcKey}
     wrap.addEventListener("mouseleave", () => controls.style.display = "none");
     wrap.addEventListener("click", () => h.onChordClick(chord.id, chord.symbol, chord.notes));
     wrap.addEventListener("dblclick", () => {
-      initAudioOnGesture();
       if (chord.notes?.length) playNoteNames(chord.notes);
       else playChord(chord.symbol);
     });
@@ -2038,6 +2020,9 @@ K:${abcKey}
     });
     return btn;
   }
+  function escapeHtml(text) {
+    return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  }
   function buildPrintHTML(song, activeKey) {
     const measureNums = computeMeasureNumbers(song);
     let html = `<html><head><style>
@@ -2046,16 +2031,16 @@ K:${abcKey}
     .measures{display:flex;flex-wrap:wrap;gap:8px} .measure{border:1px solid #ccc;border-radius:4px;padding:6px 8px;min-width:80px}
     .bar-num{font-size:10px;color:#999;margin-bottom:4px} .chord{font-size:13px;font-weight:600} .degree{font-size:10px;color:#666}
   </style></head><body>
-    <h1>${song.title}</h1>
+    <h1>${escapeHtml(song.title)}</h1>
     <div class="key">${activeKey ? "Key: " + activeKey : ""}</div>`;
     for (const section of song.sections) {
-      html += `<div class="section"><div class="section-name">${section.name}${section.repeatCount > 1 ? ` \xD7${section.repeatCount}` : ""}</div><div class="measures">`;
+      html += `<div class="section"><div class="section-name">${escapeHtml(section.name)}${section.repeatCount > 1 ? ` \xD7${section.repeatCount}` : ""}</div><div class="measures">`;
       for (const measure of section.measures) {
         const num = measureNums.get(measure.id) ?? "";
         html += `<div class="measure"><div class="bar-num">${num}</div>`;
         for (const chord of measure.chords) {
           const degree = activeKey ? computeDegree(chord.symbol, activeKey) : "\u2014";
-          html += `<div class="chord">${chord.symbol}</div><div class="degree">${degree}</div>`;
+          html += `<div class="chord">${escapeHtml(chord.symbol)}</div><div class="degree">${degree}</div>`;
         }
         html += "</div>";
       }
@@ -2063,23 +2048,6 @@ K:${abcKey}
     }
     html += "</body></html>";
     return html;
-  }
-  function detectForm(sectionNames) {
-    if (sectionNames.length === 0) return "Empty";
-    const map = /* @__PURE__ */ new Map();
-    let letter = 65;
-    const letters = sectionNames.map((name) => {
-      const key = name.trim().toLowerCase();
-      if (!map.has(key)) map.set(key, String.fromCharCode(letter++));
-      return map.get(key);
-    });
-    const pattern = letters.join("");
-    if (/^(AB)+$/.test(pattern)) return `Verse-Chorus (${pattern})`;
-    if (/^AABA/.test(pattern)) return `AABA (${pattern})`;
-    if (/^(A+B+A+)$/.test(pattern)) return `Ternary (${pattern})`;
-    if (pattern === "A") return "Single section (A)";
-    if (/^A+$/.test(pattern)) return `Strophic (${pattern})`;
-    return `${pattern}`;
   }
 
   // src/shortcuts.ts
@@ -2225,28 +2193,17 @@ K:${abcKey}
 
   // src/app.ts
   var staffWidth = 380;
-  var cofSize = parseInt(localStorage.getItem("cof-size") ?? "160");
-  var cofAccidental = localStorage.getItem("cof-accidental") ?? "flat";
-  var cofShowMinor = JSON.parse(localStorage.getItem("cof-show-minor") ?? "true");
-  var cofShowDegrees = JSON.parse(localStorage.getItem("cof-show-degrees") ?? "false");
-  var cofShow7ths = JSON.parse(localStorage.getItem("cof-show-7ths") ?? "false");
-  var analysisFieldsVisible = {
-    roman: JSON.parse(localStorage.getItem("analysis-field-roman") ?? "true"),
-    function: JSON.parse(localStorage.getItem("analysis-field-function") ?? "true"),
-    figbass: JSON.parse(localStorage.getItem("analysis-field-figbass") ?? "true"),
-    diatonic: JSON.parse(localStorage.getItem("analysis-field-diatonic") ?? "true"),
-    scales: JSON.parse(localStorage.getItem("analysis-field-scales") ?? "true"),
-    cadence: JSON.parse(localStorage.getItem("analysis-field-cadence") ?? "true"),
-    secondary: JSON.parse(localStorage.getItem("analysis-field-secondary") ?? "true"),
-    coltrane: JSON.parse(localStorage.getItem("analysis-field-coltrane") ?? "true"),
-    negharm: JSON.parse(localStorage.getItem("analysis-field-negharm") ?? "true"),
-    subs: JSON.parse(localStorage.getItem("analysis-field-subs") ?? "true")
-  };
-  var analysisScale = parseInt(localStorage.getItem("analysis-scale") ?? "11");
-  var lastChordSymbol = null;
-  var lastChordMidi = [];
+  var cofSize = loadNumber("cof-size", 160, 100, 400);
+  var cofAccidental = loadChoice("cof-accidental", ["flat", "sharp"], "flat");
+  var cofShowMinor = loadBool("cof-show-minor", true);
+  var cofShowDegrees = loadBool("cof-show-degrees", false);
+  var cofShow7ths = loadBool("cof-show-7ths", false);
+  var analysisFieldsVisible = Object.fromEntries(
+    ANALYSIS_FIELD_KEYS.map((f) => [f, loadBool(`analysis-field-${f}`, true)])
+  );
+  var analysisScale = loadNumber("analysis-scale", 11, 8, 20);
   var state = {
-    activeKey: localStorage.getItem("active-key") || null,
+    activeKey: loadString("active-key", "") || null,
     detection: null,
     analysis: null,
     history: [],
@@ -2256,18 +2213,19 @@ K:${abcKey}
     captureTargetId: null,
     panels: {
       notation: true,
-      instruments: JSON.parse(localStorage.getItem("panel-instruments") ?? "true"),
-      colPiano: JSON.parse(localStorage.getItem("panel-colPiano") ?? "true"),
-      colNeck: JSON.parse(localStorage.getItem("panel-colNeck") ?? "true"),
-      history: JSON.parse(localStorage.getItem("panel-history") ?? "true"),
-      song: JSON.parse(localStorage.getItem("panel-song") ?? "true"),
-      cofControls: JSON.parse(localStorage.getItem("panel-cofControls") ?? "true"),
-      guitarControls: JSON.parse(localStorage.getItem("panel-guitarControls") ?? "true"),
-      analysisControls: JSON.parse(localStorage.getItem("panel-analysisControls") ?? "true"),
-      colStaff: JSON.parse(localStorage.getItem("panel-colStaff") ?? "true"),
-      colAnalysis: JSON.parse(localStorage.getItem("panel-colAnalysis") ?? "true"),
-      colCoF: JSON.parse(localStorage.getItem("panel-colCoF") ?? "true"),
-      colGuitar: JSON.parse(localStorage.getItem("panel-colGuitar") ?? "true")
+      // always open on load (not persisted)
+      instruments: loadBool("panel-instruments", true),
+      colPiano: loadBool("panel-colPiano", true),
+      colNeck: loadBool("panel-colNeck", true),
+      history: loadBool("panel-history", true),
+      song: loadBool("panel-song", true),
+      cofControls: loadBool("panel-cofControls", true),
+      guitarControls: loadBool("panel-guitarControls", true),
+      analysisControls: loadBool("panel-analysisControls", true),
+      colStaff: loadBool("panel-colStaff", true),
+      colAnalysis: loadBool("panel-colAnalysis", true),
+      colCoF: loadBool("panel-colCoF", true),
+      colGuitar: loadBool("panel-colGuitar", true)
     }
   };
   function showModal(title, message, onConfirm, onCancel) {
@@ -2307,8 +2265,8 @@ K:${abcKey}
     document.addEventListener("click", initAudioOnGesture, { once: true });
     buildLayout();
     wireKeyboard();
-    renderZone1Diagrams([], null);
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
+    setModeBtn(getMode());
+    renderDetector();
     initMidi().then((result) => {
       if (result.denied) {
         showMidiBanner("MIDI access denied. Grant permission in browser settings to use a controller.");
@@ -2319,10 +2277,7 @@ K:${abcKey}
       }
     });
     setNoteChangeCallback(onNoteChange2);
-    setNoteOnCallback((note) => {
-      initAudioOnGesture();
-      playNote(note, 1.5);
-    });
+    setNoteOnCallback((note) => playNote(note, 1.5));
     setHistoryChangeCallback(onHistoryChange);
     let progressTimer = null;
     let progressValue = 0;
@@ -2371,15 +2326,7 @@ K:${abcKey}
       onChordClick: (id, symbol, notes) => {
         state.activeCursorId = id;
         markActiveChord(id);
-        if (!symbol) return;
-        if (notes?.length) {
-          state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol());
-          state.detection = { kind: "chord", notes, candidates: [symbol], selectedIndex: 0 };
-          renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
-          renderZone1Diagrams(notes, symbol);
-        } else {
-          triggerChordAnalysis(symbol);
-        }
+        if (symbol) showChord(symbol, notes, previousSongSymbol(id));
       },
       onChordCapture: (id) => {
         state.captureTargetId = id;
@@ -2535,7 +2482,6 @@ K:${abcKey}
   }
   function wireLayoutEvents() {
     const updateCofButtons = () => {
-      ;
       $("btn-cof-flat").classList.toggle("active", cofAccidental === "flat");
       $("btn-cof-sharp").classList.toggle("active", cofAccidental === "sharp");
       $("btn-cof-minor").style.opacity = cofShowMinor ? "1" : "0.4";
@@ -2543,69 +2489,52 @@ K:${abcKey}
       $("btn-cof-7").style.opacity = cofShow7ths ? "1" : "0.4";
     };
     updateCofButtons();
-    $("btn-cof-minus").addEventListener("click", () => {
-      cofSize = Math.max(100, cofSize - 20);
-      localStorage.setItem("cof-size", String(cofSize));
-      reRenderDiagrams();
-    });
-    $("btn-cof-plus").addEventListener("click", () => {
-      cofSize = Math.min(400, cofSize + 20);
-      localStorage.setItem("cof-size", String(cofSize));
-      reRenderDiagrams();
-    });
-    $("btn-cof-flat").addEventListener("click", () => {
-      cofAccidental = "flat";
-      localStorage.setItem("cof-accidental", cofAccidental);
-      updateCofButtons();
-      reRenderDiagrams();
-    });
-    $("btn-cof-sharp").addEventListener("click", () => {
-      cofAccidental = "sharp";
-      localStorage.setItem("cof-accidental", cofAccidental);
-      updateCofButtons();
-      reRenderDiagrams();
-    });
-    $("btn-cof-minor").addEventListener("click", () => {
-      cofShowMinor = !cofShowMinor;
-      localStorage.setItem("cof-show-minor", String(cofShowMinor));
-      updateCofButtons();
-      reRenderDiagrams();
-    });
-    $("btn-cof-deg").addEventListener("click", () => {
-      cofShowDegrees = !cofShowDegrees;
-      localStorage.setItem("cof-show-degrees", String(cofShowDegrees));
-      updateCofButtons();
-      reRenderDiagrams();
-    });
-    $("btn-cof-7").addEventListener("click", () => {
-      cofShow7ths = !cofShow7ths;
-      localStorage.setItem("cof-show-7ths", String(cofShow7ths));
-      updateCofButtons();
-      reRenderDiagrams();
-    });
-    const updateAnalysisFieldButtons = () => {
-      ANALYSIS_FIELD_KEYS.forEach((f) => {
-        const btn = document.getElementById(`btn-field-${f}`);
-        if (btn) btn.classList.toggle("active", analysisFieldsVisible[f]);
+    const onCofControl = (id, apply) => {
+      $(id).addEventListener("click", () => {
+        apply();
+        updateCofButtons();
+        renderDiagrams();
       });
     };
+    onCofControl("btn-cof-minus", () => {
+      cofSize = Math.max(100, cofSize - 20);
+      save("cof-size", cofSize);
+    });
+    onCofControl("btn-cof-plus", () => {
+      cofSize = Math.min(400, cofSize + 20);
+      save("cof-size", cofSize);
+    });
+    onCofControl("btn-cof-flat", () => {
+      cofAccidental = "flat";
+      save("cof-accidental", cofAccidental);
+    });
+    onCofControl("btn-cof-sharp", () => {
+      cofAccidental = "sharp";
+      save("cof-accidental", cofAccidental);
+    });
+    onCofControl("btn-cof-minor", () => {
+      cofShowMinor = !cofShowMinor;
+      save("cof-show-minor", cofShowMinor);
+    });
+    onCofControl("btn-cof-deg", () => {
+      cofShowDegrees = !cofShowDegrees;
+      save("cof-show-degrees", cofShowDegrees);
+    });
+    onCofControl("btn-cof-7", () => {
+      cofShow7ths = !cofShow7ths;
+      save("cof-show-7ths", cofShow7ths);
+    });
     $("btn-analysis-minus").addEventListener("click", () => {
       analysisScale = Math.max(8, analysisScale - 1);
-      localStorage.setItem("analysis-scale", String(analysisScale));
-      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
+      save("analysis-scale", analysisScale);
+      renderAnalysisPanel();
     });
     $("btn-analysis-plus").addEventListener("click", () => {
       analysisScale = Math.min(20, analysisScale + 1);
-      localStorage.setItem("analysis-scale", String(analysisScale));
-      renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
+      save("analysis-scale", analysisScale);
+      renderAnalysisPanel();
     });
-    const reRenderNeck = () => {
-      const d = state.detection;
-      const notes = d?.kind === "chord" ? d.notes : d?.kind === "note" ? [d.noteName] : d?.notes ?? [];
-      const sym = d?.kind === "chord" ? d.candidates[d.selectedIndex] : null;
-      const chordRoot = sym ? (sym.match(/^([A-G][b#]?)/) ?? [, ""])[1] || null : null;
-      renderNeck($("neck-container"), notes, chordRoot);
-    };
+    const reRenderNeck = () => renderNeck($("neck-container"), displayedNotes(), chordRoot(selectedSymbol()));
     $("btn-neck-minus").addEventListener("click", () => {
       adjustNeckSpacing(-2);
       reRenderNeck();
@@ -2617,16 +2546,16 @@ K:${abcKey}
     ANALYSIS_FIELD_KEYS.forEach((f) => {
       $(`btn-field-${f}`).addEventListener("click", () => {
         analysisFieldsVisible[f] = !analysisFieldsVisible[f];
-        localStorage.setItem(`analysis-field-${f}`, String(analysisFieldsVisible[f]));
-        updateAnalysisFieldButtons();
-        renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
+        save(`analysis-field-${f}`, analysisFieldsVisible[f]);
+        $(`btn-field-${f}`).classList.toggle("active", analysisFieldsVisible[f]);
+        renderAnalysisPanel();
       });
     });
-    document.querySelectorAll(".col-vis-btn").forEach((btn) => {
+    document.querySelectorAll(".col-vis-btn, .toggle-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const col = btn.dataset.col;
-        state.panels[col] = !state.panels[col];
-        localStorage.setItem(`panel-${col}`, JSON.stringify(state.panels[col]));
+        const panel = btn.dataset.col ?? btn.dataset.panel;
+        state.panels[panel] = !state.panels[panel];
+        if (panel !== "notation") save(`panel-${panel}`, state.panels[panel]);
         applyPanelVisibility();
       });
     });
@@ -2634,38 +2563,13 @@ K:${abcKey}
       $("key-select").value = state.activeKey;
     }
     document.querySelectorAll(".mode-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const m = btn.dataset.mode;
-        if (getMode() === m) return;
-        setMode(m);
-        document.querySelectorAll(".mode-btn").forEach((b) => b.classList.remove("active-mode"));
-        btn.classList.add("active-mode");
-      });
+      btn.addEventListener("click", () => setModeBtn(btn.dataset.mode));
     });
     $("key-select").addEventListener("change", (e) => {
-      state.activeKey = e.target.value || null;
-      localStorage.setItem("active-key", state.activeKey ?? "");
-      refreshAll();
-    });
-    document.querySelectorAll(".toggle-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const panel = btn.dataset.panel;
-        state.panels[panel] = !state.panels[panel];
-        if (panel === "history" || panel === "song" || panel === "instruments" || panel === "cofControls" || panel === "guitarControls" || panel === "analysisControls") {
-          localStorage.setItem(`panel-${panel}`, JSON.stringify(state.panels[panel]));
-        }
-        applyPanelVisibility();
-      });
+      setActiveKey(e.target.value || null);
     });
     $("btn-help").addEventListener("click", toggleHelp);
-    $("btn-play-chord").addEventListener("click", () => {
-      initAudioOnGesture();
-      if (lastChordMidi.length > 0) {
-        playMidiNotes(lastChordMidi);
-      } else if (lastChordSymbol) {
-        playChord(lastChordSymbol);
-      }
-    });
+    $("btn-play-chord").addEventListener("click", playCurrent);
     $("audio-instrument").addEventListener("change", (e) => {
       setInstrument(e.target.value);
     });
@@ -2716,6 +2620,80 @@ K:${abcKey}
       if (btn) btn.textContent = state.panels[key] ? "\u25B2" : "\u25BC";
     });
   }
+  var autoKey = null;
+  var cadencePrev = null;
+  var lastChordNotes = [];
+  function analysisKey() {
+    return state.activeKey ?? autoKey;
+  }
+  function selectedSymbol() {
+    const d = state.detection;
+    if (d?.kind !== "chord") return null;
+    const sym = d.candidates[d.selectedIndex];
+    return sym && sym !== "?" ? sym : null;
+  }
+  function displayedNotes() {
+    const d = state.detection;
+    if (!d) return [];
+    return d.kind === "note" ? [d.noteName] : d.notes;
+  }
+  function refreshAnalysis() {
+    const sym = selectedSymbol();
+    state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev) : null;
+  }
+  function renderAnalysisPanel() {
+    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
+  }
+  function renderDiagrams() {
+    renderZone1Diagrams(displayedNotes(), selectedSymbol());
+  }
+  function renderDetector() {
+    renderAnalysisPanel();
+    renderDiagrams();
+  }
+  function showDetection(detection, prev) {
+    state.detection = detection;
+    cadencePrev = prev;
+    if (selectedSymbol()) lastChordNotes = displayedNotes();
+    refreshAnalysis();
+    renderDetector();
+  }
+  function showChord(symbol, notes, prev) {
+    showDetection({
+      kind: "chord",
+      notes: notes?.length ? notes : chordNoteNames(symbol),
+      candidates: [symbol],
+      selectedIndex: 0
+    }, prev);
+  }
+  function onAltSelect(idx) {
+    if (state.detection?.kind !== "chord") return;
+    state.detection.selectedIndex = idx;
+    refreshAnalysis();
+    renderDetector();
+  }
+  function setActiveKey(key) {
+    state.activeKey = key;
+    save("active-key", key ?? "");
+    $("key-select").value = key ?? "";
+    updateAutoKeyLabel();
+    refreshAnalysis();
+    renderDetector();
+    renderZone2();
+    renderZone3();
+  }
+  function playCurrent() {
+    const notes = selectedSymbol() ? displayedNotes() : lastChordNotes;
+    if (notes.length) playNoteNames(notes);
+  }
+  function previousHistorySymbol(symbol) {
+    return state.history.find((e) => e.symbol !== symbol)?.symbol ?? null;
+  }
+  function previousSongSymbol(chordId) {
+    const chords = state.song.sections.flatMap((s) => s.measures.flatMap((m) => m.chords)).filter((c) => c.symbol);
+    const i = chords.findIndex((c) => c.id === chordId);
+    return i > 0 ? chords[i - 1].symbol : null;
+  }
   var CAPTURE_SETTLE_MS = 250;
   var captureTimer = null;
   function scheduleCapture(symbol, notes) {
@@ -2739,82 +2717,47 @@ K:${abcKey}
   }
   function onNoteChange2(notes) {
     const result = analyzeNotes(notes);
-    state.detection = result;
+    const top = result?.kind === "chord" ? result.candidates[0] : null;
+    const known = top && top !== "?" ? top : null;
     if (state.captureTargetId) {
-      const sym = result?.kind === "chord" ? result.candidates[0] : null;
-      if (result?.kind === "chord" && sym && sym !== "?") scheduleCapture(sym, result.notes);
+      if (known && result?.kind === "chord") scheduleCapture(known, result.notes);
       else cancelCapture();
     }
-    if (result?.kind === "chord") {
-      const sym = result.candidates[result.selectedIndex];
-      if (sym && sym !== "?") {
-        lastChordSymbol = sym;
-        lastChordMidi = [...notes];
-      }
-      const isKnown = sym !== "?";
-      state.analysis = null;
-      if (isKnown) {
-        try {
-          state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol());
-        } catch {
-        }
-        notifyChordDetected(sym, result.notes);
-      }
-      renderZone1Diagrams(result.notes, isKnown ? sym : null);
-    } else if (result?.kind === "note") {
-      state.analysis = null;
-      renderZone1Diagrams([result.noteName], null);
-    } else if (result?.kind === "interval") {
-      state.analysis = null;
-      renderZone1Diagrams(result.notes, null);
-    } else {
-      state.analysis = null;
-      renderZone1Diagrams([], null);
+    showDetection(result, known ? previousHistorySymbol(known) : null);
+    if (known && result?.kind === "chord") notifyChordDetected(known, result.notes);
+  }
+  function onHistoryChange(entries2) {
+    state.history = entries2;
+    const nextAutoKey = getAutoKey(entries2);
+    const autoKeyChanged = nextAutoKey !== autoKey;
+    autoKey = nextAutoKey;
+    updateAutoKeyLabel();
+    if (autoKeyChanged && !state.activeKey) {
+      refreshAnalysis();
+      renderAnalysisPanel();
     }
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
-    refreshAutoKey();
+    renderZone2();
   }
-  function getLastHistorySymbol() {
-    return state.history[0]?.symbol ?? null;
-  }
-  function onAltSelect(idx) {
-    if (state.detection?.kind !== "chord") return;
-    state.detection.selectedIndex = idx;
-    const sym = state.detection.candidates[idx];
-    state.analysis = buildHarmonicAnalysis(sym, state.activeKey, getLastHistorySymbol());
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
-    renderZone1Diagrams(state.detection.notes, sym);
+  function updateAutoKeyLabel() {
+    $("auto-key-label").textContent = !state.activeKey && autoKey ? `auto: ${autoKey}` : "";
   }
   function renderZone1Diagrams(noteNames, chordSymbol) {
     renderStaff($("staff-container"), noteNames, staffWidth, state.activeKey);
     renderPiano($("piano-container"), noteNames, chordSymbol);
-    const chordRoot = chordSymbol ? (chordSymbol.match(/^([A-G][b#]?)/) ?? [, ""])[1] || null : null;
-    renderNeck($("neck-container"), noteNames, chordRoot);
+    renderNeck($("neck-container"), noteNames, chordRoot(chordSymbol));
     renderGuitar($("guitar-container"), chordSymbol, noteNames);
-    renderCircleOfFifths($("cof-container"), state.activeKey, chordSymbol ?? null, (key, chord) => {
-      if (key) {
-        state.activeKey = key;
-        localStorage.setItem("active-key", key);
-        $("key-select").value = key;
-      }
-      if (chord) {
-        triggerChordAnalysis(chord);
-        renderZone2();
-        renderZone3();
-      } else {
-        refreshAll();
-      }
-    }, cofSize, { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths });
+    renderCircleOfFifths(
+      $("cof-container"),
+      state.activeKey,
+      chordSymbol,
+      onCofClick,
+      cofSize,
+      { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths }
+    );
   }
-  function reRenderDiagrams() {
-    const d = state.detection;
-    if (!d) {
-      renderZone1Diagrams([], null);
-      return;
-    }
-    if (d.kind === "chord") renderZone1Diagrams(d.notes, d.candidates[d.selectedIndex]);
-    else if (d.kind === "note") renderZone1Diagrams([d.noteName], null);
-    else renderZone1Diagrams(d.notes ?? [], null);
+  function onCofClick(key, chord) {
+    if (key && key !== state.activeKey) setActiveKey(key);
+    if (chord) showChord(chord, void 0, previousHistorySymbol(chord));
   }
   function renderZone2() {
     renderHistory(
@@ -2822,14 +2765,8 @@ K:${abcKey}
       state.activeKey,
       (entry) => {
         state.historyActiveCursorId = entry.id;
-        if (entry.notes.length > 0) {
-          state.analysis = buildHarmonicAnalysis(entry.symbol, state.activeKey, getLastHistorySymbol());
-          state.detection = { kind: "chord", notes: entry.notes, candidates: [entry.symbol], selectedIndex: 0 };
-          renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
-          renderZone1Diagrams(entry.notes, entry.symbol);
-        } else {
-          triggerChordAnalysis(entry.symbol);
-        }
+        const i = state.history.findIndex((e) => e.id === entry.id);
+        showChord(entry.symbol, entry.notes, state.history[i + 1]?.symbol ?? null);
         markActiveHistoryEntry($("zone2-content"), entry.id);
       },
       state.historyActiveCursorId
@@ -2837,18 +2774,6 @@ K:${abcKey}
   }
   function renderZone3() {
     mountSong($("zone3-content"), state.song, makeSongHandlers());
-  }
-  function refreshAll() {
-    reRenderDiagrams();
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
-    renderZone2();
-    renderZone3();
-  }
-  function triggerChordAnalysis(symbol) {
-    state.analysis = buildHarmonicAnalysis(symbol, state.activeKey, getLastHistorySymbol());
-    state.detection = { kind: "chord", notes: [], candidates: [symbol], selectedIndex: 0 };
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
-    renderZone1Diagrams(chordNoteNames(symbol), symbol);
   }
   function sendToSong(entry) {
     if (!state.song.sections.length) {
@@ -2876,23 +2801,6 @@ K:${abcKey}
       }
     }
     return null;
-  }
-  function onHistoryChange(entries2) {
-    state.history = entries2;
-    renderZone2();
-    refreshAutoKey();
-  }
-  function refreshAutoKey() {
-    const auto = getAutoKey(state.history);
-    const label = $("auto-key-label");
-    if (label) label.textContent = state.activeKey ? "" : auto ? `auto: ${auto}` : "";
-    if (!state.activeKey && auto && state.analysis) {
-      const sym = state.detection?.kind === "chord" ? state.detection.candidates[0] : null;
-      if (sym) {
-        state.analysis = buildHarmonicAnalysis(sym, auto, getLastHistorySymbol());
-        renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
-      }
-    }
   }
   var deviceListenersAttached = false;
   function refreshDeviceDropdown() {
@@ -2939,14 +2847,7 @@ K:${abcKey}
           break;
         case " ":
           e.preventDefault();
-          initAudioOnGesture();
-          if (state.detection?.kind === "chord" && state.detection.notes.length > 0) {
-            playNoteNames(state.detection.notes);
-          } else if (lastChordMidi.length > 0) {
-            playMidiNotes(lastChordMidi);
-          } else if (lastChordSymbol) {
-            playChord(lastChordSymbol);
-          }
+          playCurrent();
           break;
         case "s":
         case "S": {
@@ -2956,11 +2857,7 @@ K:${abcKey}
         }
         case "p":
         case "P":
-          if (lastChordMidi.length > 0) {
-            playMidiNotes(lastChordMidi);
-          } else if (lastChordSymbol) {
-            playChord(lastChordSymbol);
-          }
+          playCurrent();
           break;
         case "c":
         case "C":
@@ -2972,6 +2869,7 @@ K:${abcKey}
           break;
         case "Escape":
           if (closeHelp()) break;
+          cancelCapture();
           state.activeCursorId = null;
           state.captureTargetId = null;
           renderZone3();

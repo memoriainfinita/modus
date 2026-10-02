@@ -1,12 +1,13 @@
 import { noteNameToMidi } from './midi'
 import { chordNoteNames } from './chord'
+import { loadNumber, loadString, save } from './storage'
 
 let audioCtx: AudioContext | null = null
 let instrument: any = null
 let loadingInstrument = false
 
-let volume = parseFloat(localStorage.getItem('audio-volume') ?? '0.8')
-let currentInstrumentName = localStorage.getItem('audio-instrument') ?? 'acoustic_grand_piano'
+let volume = loadNumber('audio-volume', 0.8, 0, 1)
+let currentInstrumentName = loadString('audio-instrument', 'acoustic_grand_piano')
 
 export type AudioStatus = 'idle' | 'loading' | 'suspended' | 'ready' | 'error'
 let audioStatus: AudioStatus = 'idle'
@@ -74,7 +75,7 @@ export function initAudioOnGesture() {
 
 export function setInstrument(name: string) {
   currentInstrumentName = name
-  localStorage.setItem('audio-instrument', name)
+  save('audio-instrument', name)
   instrument = null
   if (audioCtx) loadCurrentInstrument()
 }
@@ -83,7 +84,7 @@ export function getCurrentInstrument() { return currentInstrumentName }
 
 export function setVolume(v: number) {
   volume = Math.max(0, Math.min(1, v))
-  localStorage.setItem('audio-volume', String(volume))
+  save('audio-volume', volume)
 }
 
 export function getVolume() { return volume }
@@ -106,10 +107,6 @@ export function playNote(midiNumber: number, duration = 1.5) {
 export function playNoteByName(noteName: string, duration = 1.5) {
   const midi = noteNameToMidi(noteName)
   if (midi !== null) playMidi([midi], duration)
-}
-
-export function playMidiNotes(midiNotes: number[], duration = 2) {
-  playMidi(midiNotes, duration)
 }
 
 export function playNoteNames(noteNames: string[], duration = 2) {
