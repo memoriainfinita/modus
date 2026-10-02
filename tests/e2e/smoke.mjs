@@ -179,6 +179,33 @@ await check('clicking a history chip loads it in the detector', async () => {
   assert(shown === first, `detector shows ${shown}, chip ${first}`)
 })
 
+await check('CoF click plays without changing the key; double click sets it', async () => {
+  await setKey('C Major')
+  const g = page.locator('#cof-container [data-key="G Major"]')
+  await g.click()
+  assert(await page.inputValue('#key-select') === 'C Major', 'single click changed the key')
+  assert((await text('.chord-name-badge')) === 'G', 'chord not shown')
+  await page.waitForTimeout(500)
+  await g.click()
+  await g.click()
+  assert(await page.inputValue('#key-select') === 'G Major', `key: ${await page.inputValue('#key-select')}`)
+})
+
+await check('CoF minor segment double click sets the minor key', async () => {
+  const em = page.locator('#cof-container [data-key="E Minor"]')
+  await em.click()
+  await em.click()
+  assert(await page.inputValue('#key-select') === 'E Minor', `key: ${await page.inputValue('#key-select')}`)
+})
+
+await check('on Auto, history chips show romans in the detected key', async () => {
+  await setKey('')
+  const label = await text('#auto-key-label')
+  assert(label.startsWith('auto:'), `auto label: ${label}`)
+  const romans = await page.locator('.history-chip-roman').allInnerTexts()
+  assert(romans.length > 0 && romans.every(r => r !== '—'), `romans: ${romans.join(',')}`)
+})
+
 await check('staff renders a key signature for F# Major', async () => {
   await setKey('F# Major')
   await play([66, 70, 73])

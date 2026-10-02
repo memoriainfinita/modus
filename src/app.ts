@@ -1,6 +1,6 @@
 import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice, getSelectedDeviceId } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
-import { initAudioOnGesture, preloadAudio, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playNoteNames, GM_INSTRUMENT_GROUPS, setAudioStatusCallback, setAudioMissedCallback } from './audio'
+import { initAudioOnGesture, preloadAudio, setInstrument, getCurrentInstrument, setVolume, getVolume, playNote, playNoteNames, playChord, GM_INSTRUMENT_GROUPS, setAudioStatusCallback, setAudioMissedCallback } from './audio'
 import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, setGuitarControlsVisible, adjustNeckSpacing } from './diagrams'
 import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history'
 import { loadSong, saveSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song-model'
@@ -160,7 +160,7 @@ function makeSongHandlers() {
     },
     activeCursorId: state.activeCursorId,
     captureTargetId: state.captureTargetId,
-    activeKey: state.activeKey,
+    activeKey: analysisKey(),
     onSongChange: (song: Song) => {
       state.song = song
       saveSong(song)
@@ -571,9 +571,11 @@ function onHistoryChange(entries: HistoryEntry[]) {
   const autoKeyChanged = nextAutoKey !== autoKey
   autoKey = nextAutoKey
   updateAutoKeyLabel()
+  // On Auto, the detected key drives every view, not only the analysis panel.
   if (autoKeyChanged && !state.activeKey) {
     refreshAnalysis()
-    renderAnalysisPanel()
+    renderDetector()
+    renderZone3()
   }
   renderZone2()
 }
@@ -585,23 +587,36 @@ function updateAutoKeyLabel() {
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
 function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
-  renderStaff($('staff-container'), noteNames, staffWidth, state.activeKey)
+  renderStaff($('staff-container'), noteNames, staffWidth, analysisKey())
   renderPiano($('piano-container'), noteNames, chordSymbol)
   renderNeck($('neck-container'), noteNames, !keyPrefersSharps(analysisKey()))
   renderGuitar($('guitar-container'), chordSymbol, noteNames)
-  renderCircleOfFifths($('cof-container'), state.activeKey, chordSymbol, onCofClick, cofSize,
+  renderCircleOfFifths($('cof-container'), analysisKey(), chordSymbol, onCofClick, cofSize,
     { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths })
 }
 
-function onCofClick(key: string | null, chord?: string) {
-  if (key && key !== state.activeKey) setActiveKey(key)
-  if (chord) showChord(chord, undefined, previousHistorySymbol(chord))
+// A click plays and shows the segment's chord; a second click on the same segment within
+// COF_DOUBLE_MS sets its key. Detected by hand: every click re-renders the circle, and a
+// rebuilt element never receives the browser's dblclick.
+const COF_DOUBLE_MS = 400
+let lastCofClick: { key: string | null; at: number } = { key: null, at: 0 }
+
+function onCofClick(chord: string, key: string | null) {
+  const now = performance.now()
+  if (key && lastCofClick.key === key && now - lastCofClick.at < COF_DOUBLE_MS) {
+    lastCofClick = { key: null, at: 0 }
+    setActiveKey(normalizeKey(key))
+    return
+  }
+  lastCofClick = { key, at: now }
+  playChord(chord)
+  showChord(chord, undefined, previousHistorySymbol(chord))
 }
 
 function renderZone2() {
   renderHistory(
     $('zone2-content'),
-    state.activeKey,
+    analysisKey(),
     (entry) => {
       state.historyActiveCursorId = entry.id
       const i = state.history.findIndex(e => e.id === entry.id)
