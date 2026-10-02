@@ -534,6 +534,59 @@
     playNoteNames(chordNoteNames(chordSymbol));
   }
 
+  // src/voicings.ts
+  var STANDARD_OPEN_MIDI = [40, 45, 50, 55, 59, 64];
+  var MAX_SPAN = 3;
+  var MIN_STRINGS = 4;
+  var MAX_FRET_WITH_OPEN = 4;
+  function tuningToMidi(names) {
+    if (names.length !== STANDARD_OPEN_MIDI.length) return null;
+    const midi = [];
+    for (let i = 0; i < names.length; i++) {
+      const pc = NOTE_SEMITONE[normalizeNoteName(names[i]) ?? ""];
+      if (pc === void 0) return null;
+      const ref = STANDARD_OPEN_MIDI[i];
+      const below = ref - ((ref - pc) % 12 + 12) % 12;
+      midi.push(ref - below <= 6 ? below : below + 12);
+    }
+    return midi;
+  }
+  function normalizeNoteName(name) {
+    const m = name.trim().match(/^([a-gA-G])([#b]?)$/);
+    return m ? m[1].toUpperCase() + m[2] : null;
+  }
+  function isPlayable(v, openMidi, bassPc) {
+    const sounding = v.frets.map((f, i) => f >= 0 ? i : -1).filter((i) => i >= 0);
+    if (sounding.length < MIN_STRINGS) return false;
+    if (sounding[sounding.length - 1] - sounding[0] + 1 !== sounding.length) return false;
+    const lowest = openMidi[sounding[0]] + v.frets[sounding[0]];
+    if (lowest % 12 !== bassPc) return false;
+    const fretted = v.frets.filter((f) => f > 0);
+    if (fretted.length === 0) return true;
+    const lo = Math.min(...fretted), hi = Math.max(...fretted);
+    if (hi - lo > MAX_SPAN) return false;
+    if (v.frets.includes(0) && hi > MAX_FRET_WITH_OPEN) return false;
+    if (fretted.length <= 4) return true;
+    return fretted.filter((f) => f === lo).length >= 2 && fretted.filter((f) => f > lo).length <= 3;
+  }
+  function position(v) {
+    const fretted = v.frets.filter((f) => f > 0);
+    return fretted.length ? Math.min(...fretted) : 0;
+  }
+  function playableVoicings(voicings, openMidi, bassPc) {
+    const seen = /* @__PURE__ */ new Set();
+    const unique = voicings.filter((v) => {
+      const k = v.frets.join(",");
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    const strings = (v) => v.frets.filter((f) => f >= 0).length;
+    const byNeck = (a, b) => position(a) - position(b) || strings(b) - strings(a);
+    const playable = unique.filter((v) => isPlayable(v, openMidi, bassPc));
+    return (playable.length ? playable : unique).sort(byNeck);
+  }
+
   // src/diagrams.ts
   var guitarControlsVisible = loadBool("panel-guitarControls", true);
   function setGuitarControlsVisible(v) {
@@ -558,8 +611,8 @@ K:${abcKey}
     });
     return header + (abcNotes.length ? `[${abcNotes.join("")}]1` : "z");
   }
-  function renderStaff(container, noteNames, width = 380, keyStr = null) {
-    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr), { staffwidth: width - 20, scale: 2 });
+  function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2) {
+    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr), { staffwidth: width - 20, scale });
   }
   var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
   var NECK_FRETS = 12;
@@ -621,22 +674,6 @@ K:${abcKey}
     stringLabelColor: "#9ca3af"
   };
   var EMPTY_FRETBOARD = { name: "", frets: [null, null, null, null, null, null], tuning: ["E", "A", "D", "G", "B", "E"] };
-  function deriveVoicingFromNotes(noteNames, tuning) {
-    const activeClasses = new Set(
-      noteNames.map((n) => NOTE_SEMITONE[n.match(/^([A-G][b#]?)/)?.[1] ?? ""] ?? -1).filter((n) => n >= 0)
-    );
-    if (!activeClasses.size) return { frets: tuning.map(() => null), baseFret: 1 };
-    const frets = tuning.map((open) => {
-      const base = NOTE_SEMITONE[open] ?? 0;
-      for (let f = 0; f <= 12; f++) {
-        if (activeClasses.has((base + f) % 12)) return f;
-      }
-      return null;
-    });
-    const nonOpen = frets.filter((f) => f !== null && f > 0);
-    const baseFret = nonOpen.length ? Math.min(...nonOpen) : 1;
-    return { frets, baseFret };
-  }
   var guitarVoicingIdx = 0;
   var lastGuitarSymbol = null;
   var lastNoteNames = [];
@@ -645,13 +682,15 @@ K:${abcKey}
   var guitarTunerExpanded = false;
   var guitarSpacing = loadNumber("guitar-spacing", 19, 12, 32);
   var GUITAR_TUNINGS = {
-    standard: { umt: () => UMT.GUITAR_STANDARD, notae: ["E", "A", "D", "G", "B", "E"], label: "Standard" },
-    dropD: { umt: () => UMT.GUITAR_DROPPED_D, notae: ["D", "A", "D", "G", "B", "E"], label: "Drop D" },
-    openG: { umt: () => UMT.GUITAR_OPEN_G, notae: ["D", "G", "D", "G", "B", "D"], label: "Open G" }
+    standard: { notae: ["E", "A", "D", "G", "B", "E"], label: "Standard" },
+    dropD: { notae: ["D", "A", "D", "G", "B", "E"], label: "Drop D" },
+    openG: { notae: ["D", "G", "D", "G", "B", "D"], label: "Open G" }
   };
   function loadStringTuning() {
     const saved = loadJSON("guitar-string-tuning", null);
-    if (Array.isArray(saved) && saved.length === 6 && saved.every((n) => typeof n === "string")) return saved;
+    if (Array.isArray(saved) && saved.length === 6 && saved.every((n) => typeof n === "string" && normalizeNoteName(n))) {
+      return saved.map((n) => normalizeNoteName(n));
+    }
     return [...GUITAR_TUNINGS[guitarTuningKey]?.notae ?? ["E", "A", "D", "G", "B", "E"]];
   }
   var guitarStringTuning = loadStringTuning();
@@ -751,9 +790,15 @@ K:${abcKey}
     }
     container.querySelectorAll(".guitar-string-input").forEach((input) => {
       input.addEventListener("change", () => {
-        const val = input.value.trim();
-        if (!val) return;
-        guitarStringTuning[parseInt(input.dataset.string)] = val;
+        const i = parseInt(input.dataset.string);
+        const val = normalizeNoteName(input.value);
+        if (!val) {
+          input.value = guitarStringTuning[i];
+          input.classList.add("invalid");
+          setTimeout(() => input.classList.remove("invalid"), 1200);
+          return;
+        }
+        guitarStringTuning[i] = val;
         save("guitar-string-tuning", guitarStringTuning);
         guitarTuningKey = detectPreset(guitarStringTuning);
         save("guitar-tuning", guitarTuningKey);
@@ -783,23 +828,11 @@ K:${abcKey}
       guitarVoicingIdx = 0;
       lastGuitarSymbol = chordSymbol;
     }
-    if (guitarTuningKey === "custom") {
-      const { frets, baseFret } = deriveVoicingFromNotes(noteNames, guitarStringTuning);
-      let svg2 = "";
-      try {
-        svg2 = Notae.renderFretboard(
-          { name: chordSymbol, frets, tuning: guitarStringTuning, baseFret },
-          guitarStyle()
-        );
-      } catch {
-      }
-      container.innerHTML = `<div>${svg2}</div>` + guitarControls(0, 0);
-      wireGuitarControls(container);
-      return;
-    }
-    const umtTuning = GUITAR_TUNINGS[guitarTuningKey].umt();
+    const openMidi = tuningToMidi(guitarStringTuning) ?? tuningToMidi(GUITAR_TUNINGS.standard.notae);
+    const umtTuning = openMidi.map((m) => m - 69);
     const chord = tryParseChord(chordSymbol);
-    const voicings = chord ? tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, umtTuning) ?? [], []) : [];
+    const bassPc = chord ? (((chord.bassStep ?? chord.rootStep) + 9) % 12 + 12) % 12 : 0;
+    const voicings = chord ? playableVoicings(tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, umtTuning) ?? [], []), openMidi, bassPc) : [];
     if (!voicings.length) {
       container.innerHTML = '<div class="no-voicing">No voicings</div>' + guitarControls(0, 0);
       wireGuitarControls(container);
@@ -2154,6 +2187,7 @@ K:${abcKey}
 
   // src/app.ts
   var staffWidth = 380;
+  var staffScale = loadNumber("staff-scale", 2, 1, 3);
   var cofSize = loadNumber("cof-size", 160, 100, 400);
   var cofAccidental = loadChoice("cof-accidental", ["flat", "sharp"], "flat");
   var cofShowMinor = loadBool("cof-show-minor", true);
@@ -2331,6 +2365,10 @@ K:${abcKey}
           <div class="col-label">Staff</div>
           <div id="chord-summary"></div>
           <div id="staff-container"></div>
+          <div class="ctrl-row" style="justify-content:center">
+            <button id="btn-staff-minus" class="size-ctrl-btn" title="Smaller staff">\u2212</button>
+            <button id="btn-staff-plus"  class="size-ctrl-btn" title="Larger staff">+</button>
+          </div>
         </div>
         <div class="col-analysis" id="col-analysis">
           <div class="col-header">
@@ -2472,6 +2510,13 @@ K:${abcKey}
       save("analysis-scale", analysisScale);
       renderAnalysisPanel();
     });
+    const resizeStaff = (delta) => {
+      staffScale = Math.min(3, Math.max(1, staffScale + delta));
+      save("staff-scale", staffScale);
+      renderStaff($("staff-container"), displayedNotes(), staffWidth, analysisKey(), staffScale);
+    };
+    $("btn-staff-minus").addEventListener("click", () => resizeStaff(-0.25));
+    $("btn-staff-plus").addEventListener("click", () => resizeStaff(0.25));
     const reRenderNeck = () => renderNeck($("neck-container"), displayedNotes(), !keyPrefersSharps(analysisKey()));
     $("btn-neck-minus").addEventListener("click", () => {
       adjustNeckSpacing(-2);
@@ -2682,7 +2727,7 @@ K:${abcKey}
     $("auto-key-label").textContent = !state.activeKey && autoKey ? `auto: ${autoKey}` : "";
   }
   function renderZone1Diagrams(noteNames, chordSymbol) {
-    renderStaff($("staff-container"), noteNames, staffWidth, analysisKey());
+    renderStaff($("staff-container"), noteNames, staffWidth, analysisKey(), staffScale);
     renderPiano($("piano-container"), noteNames, chordSymbol);
     renderNeck($("neck-container"), noteNames, !keyPrefersSharps(analysisKey()));
     renderGuitar($("guitar-container"), chordSymbol, noteNames);

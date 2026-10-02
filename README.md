@@ -51,10 +51,10 @@ Each field can be toggled individually. Font scale adjustable with +/−.
 
 Four columns, each togglable independently ([St][An][CoF][Git]):
 
-- **Staff** (abcjs) — chord summary (name, notes, alternatives) always shown above; key signature follows the active key
+- **Staff** (abcjs) — chord summary (name, notes, alternatives) always shown above; key signature follows the active key; size −/+
 - **Analysis** — all harmonic analysis fields, each field individually togglable; font scale +/−
 - **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels, size
-- **Guitar voicing** (notae) — Standard / Drop D / Open G / Custom tuning, next/prev voicing
+- **Guitar voicing** (notae) — Standard / Drop D / Open G / Custom tuning. Out of every fingering UMT finds, only playable ones are kept (chord bass lowest, no muted string in between, four-fret hand, open strings only in first position), ordered along the neck from the open shapes up; next/prev to browse. Custom tuning accepts note names per string and gets real voicings too
 
 ### Instruments panel
 

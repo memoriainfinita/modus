@@ -206,6 +206,35 @@ await check('on Auto, history chips show romans in the detected key', async () =
   assert(romans.length > 0 && romans.every(r => r !== '—'), `romans: ${romans.join(',')}`)
 })
 
+await check('guitar shows a short list of playable voicings, open shape first', async () => {
+  await page.locator('#cof-container [data-chord="C"]').click()
+  const count = await text('.guitar-voicing-count')
+  const total = Number(count.split('/')[1])
+  assert(count.startsWith('1/') && total > 3 && total < 30, `count: ${count}`)
+})
+
+await check('custom tuning rejects a non-note and keeps the string', async () => {
+  await page.locator('.guitar-ctrl[data-action="toggle-tuner"]').click()
+  const first = page.locator('.guitar-string-input').first()
+  await first.fill('H')
+  await first.press('Enter')
+  assert(await page.locator('.guitar-string-input').first().inputValue() === 'E', 'invalid value kept')
+  await page.locator('.guitar-string-input').first().fill('d')
+  await page.locator('.guitar-string-input').first().press('Enter')
+  assert(await page.locator('.guitar-string-input').first().inputValue() === 'D', 'not normalized')
+  assert(await page.inputValue('.guitar-tuning-sel') === 'dropD', 'preset not detected')
+  await page.selectOption('.guitar-tuning-sel', 'standard')
+})
+
+await check('staff +/- changes its size', async () => {
+  const w = () => page.locator('#staff-container svg').evaluate(s => s.getBoundingClientRect().width)
+  const before = await w()
+  await page.click('#btn-staff-minus')
+  const smaller = await w()
+  await page.click('#btn-staff-plus')
+  assert(smaller < before && Math.abs(await w() - before) < 1, `widths ${before} ${smaller}`)
+})
+
 await check('staff renders a key signature for F# Major', async () => {
   await setKey('F# Major')
   await play([66, 70, 73])
