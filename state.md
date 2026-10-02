@@ -18,10 +18,11 @@ Part of the **memoriainfinita** ecosystem alongside UMT and notae. GPL-3.0.
 ## Status
 
 - Core app complete: detection, analysis, history, song builder, audio, CoF, guitar voicings, piano/fretboard
-- 2026-10-02 base review done (pnpm, UMT contract, bug batch, detector refactor). TSC clean, 152 tests (against the real UMT bundle), 25/25 headless-Chrome smoke checks with a fake MIDI input. Not yet re-tested with a real MIDI controller
-- Detector flow: every source (MIDI, history, song, CoF) goes through `showDetection` in `app.ts`; analysis and diagrams are derived from it
-- Three confirmation patterns coexist on purpose (modal / double-click / `confirmOnce`): left for the UX audit TODO
-- `song-model.ts` reads localStorage `'modus-song'` and falls back to the old `'harmony-companion-song'` key
+- 2026-10-02: every TODO of the base review closed except the soundfont decision and the two manual tests (real controller, Firefox). TSC clean, 192 unit tests against the real UMT bundle, `pnpm test:e2e` 27/27 (installed Chrome + fake Web MIDI)
+- Detector flow: every source (MIDI, history, song, CoF, arrow keys) goes through `showDetection` in `app.ts`; analysis and diagrams are derived from it. Each diagram re-renders only when its inputs change
+- Interaction model: a single click plays (history, song, CoF); double-click on a CoF major/minor segment sets the key; destructive actions run at once with an Undo toast
+- With the key on Auto, the detected key drives the whole app
+- `song-model.ts` reads localStorage `'modus-song'` and falls back to the old `'harmony-companion-song'` key; empty chord slots are never persisted
 - No remote. Old project material in `.archive/` (gitignored)
 
 ## Stack
@@ -29,20 +30,20 @@ Part of the **memoriainfinita** ecosystem alongside UMT and notae. GPL-3.0.
 | Layer | Technology |
 |---|---|
 | App | TypeScript → esbuild → `dist/app.js` |
-| Theory | UMT via jsDelivr CDN, pinned to commit `82d575f` (`UMT.*` global) |
-| Diagrams | notae via jsDelivr CDN, pinned to commit `610ddd9` (`Notae.*` global) |
-| Staff | abcjs 6.4.0 via CDN (`ABCJS.*` global) |
-| MIDI | Web MIDI API (Chrome/Edge only) |
-| Guitar voicings | `UMT.getFretboardVoicings(chord, UMT.GUITAR_STANDARD)` — no fetch |
+| Theory | UMT via jsDelivr CDN, pinned to commit `870d3d8` (`UMT.*` global) |
+| Diagrams | notae via jsDelivr CDN, pinned to commit `8fb052d` (`Notae.*` global) |
+| Staff | abcjs 6.7.1 via CDN (`ABCJS.*` global) |
+| MIDI | Web MIDI API (Chrome, Edge, Firefox) |
+| Guitar voicings | `UMT.getFretboardVoicings(chord, tuning)` filtered by `voicings.ts` — no fetch |
 | Audio | soundfont-player 0.12.0 via CDN + FluidR3_GM |
 | Styles | Plain CSS (`styles.css`) |
 | Persistence | localStorage |
 
 - **Package manager:** pnpm 11. `pnpm-workspace.yaml` holds `allowBuilds: esbuild: true` (pnpm 11 blocks install scripts by default)
-- **Dev:** `pnpm dev` (watch) · `pnpm build` (one-shot) · `pnpm test` · `pnpm exec tsc --noEmit` · `pnpm dlx http-server . -p 8080`
-- **Toolchain:** esbuild 0.28 · vitest 5 + vite 8 · jsdom 30 · TypeScript 5.9 (held on 5.x on purpose)
-- **Browser:** Chrome or Edge (Web MIDI API required)
-- **CDN script tags:** in `index.html`. UMT/notae pinned by commit hash; abcjs 6.4.0 and soundfont-player 0.12.0 by npm version
+- **Dev:** `pnpm dev` (watch) · `pnpm build` (one-shot) · `pnpm test` · `pnpm test:e2e` · `pnpm exec tsc --noEmit` · `pnpm dlx http-server . -p 8080`
+- **Toolchain:** esbuild 0.28 · vitest 5 + vite 8 · jsdom 30 · TypeScript 5.9 (held on 5.x on purpose) · playwright-core (e2e, drives the installed Chrome)
+- **Browser:** Chrome, Edge or Firefox for the controller (Web MIDI); the rest runs anywhere
+- **CDN script tags:** in `index.html`. UMT/notae pinned by commit hash; abcjs 6.7.1 and soundfont-player 0.12.0 by npm version
 
 ## UMT API — verified directly from source
 
@@ -71,11 +72,17 @@ UMT.Harmony.analyzeProgression(chords: Chord[], key: string): {
 }
 // ChordAnalysis has: roman, degree, function ('T'|'S'|'D'|'unknown'),
 // isDiatonic, isBorrowed, borrowedFrom, isSecondary, secondaryTarget, cadenceWithNext
+// roman for D7 in C is "II7"; secondaryTarget is "V7/V" (lower case for minor targets: "V7/ii").
+// Modus shows secondaryTarget in the Roman field (romanInKey in analyzer.ts)
+
+// Scales: letter-correct spelling for heptatonic 12-TET scales (F# major has E#)
+UMT.parseScaleSymbol(symbol: string): Scale   // e.g. "F# Major"; .getNotes() → Note[] (8, root repeated)
 
 UMT.FiguredBass.fromChord(chord: Chord, bassNote: Note): string
 
 // Key detection (Krumhansl-Schmuckler)
 UMT.KeyDetection.detect(notes: Note[]): { key: string; confidence: number }[]
+// key like "C Major" / "Eb Minor" / "Gb Major" — Modus normalizes to the selector spelling
 
 // Substitutions — standalone function, NOT Harmony.getSubstitutions
 UMT.getSubstitutions(chord: Chord, key: string): SubstitutionResult[]
@@ -107,41 +114,17 @@ const umtNote = UMT.parseNote(noteName)
 - [build] pnpm, not npm. Confirmed 2026-10.
 - [deps] UMT and notae pinned to a commit hash in the CDN URL, never `@main`/`@master`. Bump deliberately. Confirmed 2026-10.
 - [naming] Project name: Modus (Latin — mode, measure). Confirmed 2026-05.
+- [theory] Music-theory fixes go into UMT or notae (their repo, tests, push), then Modus bumps the pin. No workarounds in Modus for library output. Confirmed 2026-10.
+- [ux] Destructive actions run at once and offer Undo (`undo.ts`), never a confirmation. Confirmed 2026-10.
+- [ux] Play on single click. A double click is detected by hand (same target within 400 ms) wherever the element is rebuilt on click: a rebuilt node never gets the browser's dblclick. Confirmed 2026-10.
+- [testing] `pnpm test:e2e` after each behaviour change: `tests/e2e/smoke.mjs` serves the repo, opens the installed Chrome (`channel: 'chrome'`) with a fake `navigator.requestMIDIAccess`, and plays notes through `window.__midi`. Each check releases all notes when it ends. Confirmed 2026-10.
 
 ## Preferences
 
-- At session start Claude launches `pnpm dev` in background (`run_in_background: true`); `--watch=forever` keeps it alive when stdin closes. Do not use `!` in chat for this (it blocks). `pnpm build` only to check errors on demand.
+- At session start Claude launches `pnpm dev` in background (`run_in_background: true`, `timeout: 7200000` — the default background limit kills it after 30 min); `--watch=forever` keeps it alive when stdin closes. Do not use `!` in chat for this (it blocks). `pnpm build` only to check errors on demand.
 
 ## TODO
 
-- [ ] Staff +/- size control — buttons were removed (did not work). Try ABCJS `scale` option or CSS transform on the container.
-- [ ] showNoteNames in Notae — add an option to the library to show note names on neck dots (currently `showDegrees` as interim)
-- [ ] CoF: click on a minor segment → select minor mode (e.g. click Am sets "A Minor" as active key, highlights the same diatonics as C Major but with Am as i — tonic colour moves to Am)
-- [ ] Song: click on chord → play (currently dblclick only; decide if enough or add a ▶ per chord)
-- [ ] Code organization review — `song.ts` split into model/view on 2026-10-02; `app.ts` (~760 lines) still holds layout, detector, zones and shortcuts. Evaluate extracting layout/panel state and keyboard shortcuts.
-- [ ] Test coverage review — pure logic, staff ABC and chord adapters are tested against real UMT; `audio.ts`, `app.ts` and the song view have no tests. The headless smoke script (scratch, CDP + fake MIDI input) could become a committed e2e check.
-- [ ] Test with a real MIDI controller after the 2026-10-02 refactor: capture (⊙) settle time of 250 ms, hold/arpeggio modes, device hot-plug
-- [ ] Auto key is half-implemented — only the analysis panel uses it; history chips, song degrees, CoF and staff key signature ignore it
-- [ ] Custom guitar tuning shows the first matching fret per string, not a playable voicing, and does not validate input. UMT accepts numeric tunings: derive them and use `getFretboardVoicings`
-- [ ] Guitar voicings: UMT returns hundreds (687 for C) navigated one by one. Filter/sort (position, span, playability)
-- [ ] Song cursor and MIDI-fill "next slot" stop at the end of a measure; decide whether they should continue into the next measure/section
-- [ ] Rendering cost: every MIDI event re-renders all diagrams including the CoF SVG
-- [ ] Firefox supports Web MIDI (site permission) — check Modus there and update the Chrome/Edge-only warning
-- [ ] Roman numeral docs: UMT returns `Imaj7` (not `I△7`) and gives secondary dominants a plain roman (`II7` for D7 in C) with `V7/V` in `secondaryTarget`, shown in the Secondary row. README promises `V7/ii` in the Roman field. Decide: fix README, or show the secondary in the Roman field
-- [ ] UMT: `secondaryTarget` uses uppercase for minor targets (`V7/II` for A7 in C, should be `V7/ii`)
-- [ ] Audio depends on soundfont-player 0.12.0 (unmaintained) and FluidR3_GM samples from `gleitz.github.io` (external host). If that host fails audio breaks and the CDN error banner does not fire (it only watches jsDelivr). Evaluate self-hosting samples or an alternative player
-- [ ] abcjs 6.4.0 — check for newer versions (not verified)
-- [ ] Piano click-to-play maps SVG `rect` order to notes, relying on notae's internal render order (whites then blacks). Re-check when bumping notae; better: notae exposing `data-note`
-- [ ] Changing MIDI mode clears active notes but the detector keeps showing the previous chord until the next note
-- [ ] History: after right-click removing an entry, the same chord is not logged again until a different one is played (`lastAutoAppended` not reset on remove)
-- [ ] First play before the soundfont loads is silent (notes dropped, not queued — deliberate since session 15); consider a visible hint
-- [ ] Song: the empty chip created by `+` is persisted while editing; a reload mid-edit leaves an orphan input chip
-- [ ] Song paste puts the whole progression in one new measure (notice shown, no split)
-- [ ] Performance: history chips run the full `buildHarmonicAnalysis` (scales, subs, negative harmony…) only to get roman/function — hundreds of UMT calls per key change with a long history. Song chips run two `analyzeProgression` per chip on every full re-render
-- [ ] MIDI device names and modal text go through `innerHTML` unescaped (low risk; print export is already escaped)
-- [ ] `song-view.ts` `newPasteMeasure` duplicates `addChord` logic from the model
-- [ ] No `.gitattributes`: every commit warns LF→CRLF
-- [ ] UMT: scale/key spelling is by pitch, not by letter (F# major gives F, not E#), so Modus keeps its own key-signature table (`src/keys.ts`). A letter-correct spelling in UMT would let Modus drop it
-- [ ] UX audit — non-obvious behaviours the user does not know about: 800ms history debounce, same chord not logged twice in a row, dblclick to play, ⊙ for MIDI capture, drag between sections, the three confirmation patterns. Walk the whole app and decide per item: behaviour change, tooltip, help popup text, or nothing. Prioritize active confusion.
-- [ ] Shortcuts review — Space and P now both call the same `playCurrent`, so P is redundant. Decide which shortcuts make sense, which are redundant, which are missing, before touching code.
-- [ ] CoF audit — current CoF behaviour has several unexpected things (beyond the minor-mode TODO). Review what it does vs. what it should, missing or wrong interactions, visual confusion. Document and prioritize before implementing. Known from the 2026-10-02 review: a minor active key highlights the parallel major's diatonics; "F# Major" is not highlighted in flat mode (and Db in sharp mode); sharp-mode minor ring shows Bbm opposite C# (should be A#m); the dim ring labels every segment "vii°" when degrees are on; major-segment click also changes the active key
+- [ ] Test with a real MIDI controller: capture (⊙) chaining with its 250 ms settle time, hold/arpeggio modes, device hot-plug, the audio flash when a note arrives before the first click
+- [ ] Test in Firefox (Web MIDI behind a per-site permission): connection, playback, layout. The README and the warning already list Firefox; this confirms it
+- [ ] Audio depends on soundfont-player 0.12.0 (unmaintained since 2020) and FluidR3_GM samples from `gleitz.github.io`. If that host fails, audio breaks and the CDN banner does not fire. Successor: smplr (same author, 1.1.0, 2026-09). Left for last on purpose: soundfont-player works today

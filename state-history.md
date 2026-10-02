@@ -2,6 +2,29 @@
 
 What left `state.md`. Most recent first.
 
+### 2026-10-02 — TODO sweep: interaction model, CoF, voicings, UMT/notae fixes
+
+All base-review TODOs closed in one batch after the user answered the open design questions. 10 Modus commits, one each in UMT (`870d3d8`) and notae (`8fb052d`), both pushed.
+
+**Decisions taken by the user (replace earlier behaviour):**
+- Chips play on a single click; double-click to play is gone. The CoF already played on click, so the whole app now matches
+- CoF click no longer sets the key (it moved you to G when exploring G in C); double-click on a major or minor segment sets it
+- The three confirmation patterns (modal for C, click-twice "?" for Clear/New/delete section, nothing for measures and chords) became one: act at once, Undo toast
+- MIDI fill chains slot to slot across measures and sections; paste splits at `|`, otherwise one chord per measure
+- Auto key drives every view; Roman field shows `V7/x`
+- Theory fixes go to UMT/notae, not Modus
+
+**Removed:**
+- `keys.ts` signature tables: UMT now spells heptatonic scales by letter, so the signature is read from `parseScaleSymbol`. Minor key list changed to standard roots (C# / G# / Eb / Bb minor); stored keys are normalized on load
+- Piano click mapping by notae's render order: notae tags keys with `data-note`
+- `deriveVoicingFromNotes` for custom tunings: custom tunings go through UMT like the presets
+- The `P` shortcut (same as Space)
+
+**Non-obvious:**
+- The e2e harness rewritten and committed (`pnpm test:e2e`). A check that failed left keys held and broke the next ones: every check now releases all notes
+- A history-Clear e2e check started failing after the render memoization only because the app got faster: the chord logs 0.8 s after it settles and the check arrived first
+- Suspended AudioContext: `resume()` without a gesture stays pending and would fire every queued note on the next click. Notes are dropped instead when `navigator.userActivation.isActive` is false
+
 ### 2026-10-02 — Base review: pnpm, UMT contract, bug batch, detector refactor
 
 Full read of `src/`, tests and docs, plus probing the pinned UMT bundle in Node. 5 commits.

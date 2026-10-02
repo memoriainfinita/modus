@@ -11,7 +11,7 @@ The core is the **Detector**: MIDI input → chord detection → harmonic analys
 
 Use cases: listening and analyzing harmony by ear, transcribing songs, composing, studying theory, teaching.
 
-No server, no account, no installation. Open in Chrome or Edge and play.
+No server, no account, no installation. Open in Chrome, Edge or Firefox and play.
 
 ---
 
@@ -45,9 +45,9 @@ GPL-3.0. Built for the music community, not for profit. No analytics, no account
 
 ## Browser compatibility
 
-Web MIDI API requires Chrome or Edge. Firefox and Safari do not support it.
+Web MIDI API: Chrome, Edge and Firefox (Firefox asks for MIDI permission per site). Safari does not support it.
 
-On unsupported browsers: full-page warning — "Modus requires Chrome or Edge for MIDI support." Song builder and CoF interaction remain functional without MIDI.
+Without Web MIDI: a dismissible warning says a controller cannot connect. Song builder, CoF and history remain functional.
 
 ---
 
@@ -59,7 +59,7 @@ On unsupported browsers: full-page warning — "Modus requires Chrome or Edge fo
 | Theory | UMT via jsDelivr CDN (`UMT.*` global) |
 | Diagrams | notae via jsDelivr CDN (`Notae.*` global) |
 | Staff | abcjs 6.4.0 via CDN (`ABCJS.*` global) |
-| MIDI | Web MIDI API (Chrome/Edge only) |
+| MIDI | Web MIDI API (Chrome, Edge, Firefox) |
 | Audio | soundfont-player 0.12.0 + FluidR3_GM (CDN) |
 | Styles | Plain CSS (`styles.css`) |
 | Persistence | localStorage |
@@ -72,7 +72,7 @@ On unsupported browsers: full-page warning — "Modus requires Chrome or Edge fo
 <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.0/dist/abcjs-basic-min.js"></script>
 ```
 
-Guitar voicings: `UMT.getFretboardVoicings(chord, UMT.GUITAR_STANDARD)` — no external fetch needed.
+Guitar voicings: `UMT.getFretboardVoicings(chord, tuning)` filtered to playable shapes in `voicings.ts` — no external fetch needed.
 
 ### CDN globals (`src/globals.d.ts`)
 
@@ -203,7 +203,7 @@ Key reference: set from the toolbar key selector (24 major/minor keys or "auto")
 
 | Field | Implementation |
 |---|---|
-| Roman numeral | Chord root mapped to scale degree + quality suffix |
+| Roman numeral | Chord root mapped to scale degree + quality suffix; secondary dominants written `V7/x` |
 | Harmonic function | Tonic / Subdominant / Dominant / Ambiguous |
 | Figured bass | `UMT.FiguredBass.fromChord(chord, bassNote)` |
 | Diatonic / borrowed | Flags chords outside the active key; source mode shown |
@@ -220,13 +220,13 @@ Analysis fields have toggle buttons (show/hide each field individually) and a fo
 
 Four columns toggled individually with [St][An][CoF][Git] buttons in the panel header.
 
-**Staff column:** Detected notes rendered as ABC notation. Treble clef. Key signature follows the active key selector. Rendered by abcjs.
+**Staff column:** Detected notes rendered as ABC notation. Treble clef. Key signature follows the active key (or the detected one on Auto), read from UMT's letter-spelled scale. Size −/+. Rendered by abcjs.
 
 **Analysis column:** All harmonic analysis fields (see table above). Toggle buttons per field, font scale +/-.
 
-**CoF column (Circle of Fifths):** Custom SVG rendered in `diagrams.ts`. Three rings: 12 major segments, inner minor ring, innermost diminished ring. Active key segment filled; active chord root outlined. Controls: +/- size, b/# enharmonic toggle, m (minor/dim visibility), ° (degree labels), 7 (seventh chord labels). Single click on major segment: select key + play chord. Single click on minor/dim segment: play chord only (no key change).
+**CoF column (Circle of Fifths):** Custom SVG rendered in `diagrams.ts`. Three rings: 12 major segments, inner minor ring, innermost diminished ring. Active key segment filled; active chord root outlined. Controls: +/- size, b/# enharmonic toggle, m (minor/dim visibility), ° (degree labels), 7 (seventh chord labels). Click on any segment: play and show its chord, key unchanged. Double-click on a major or minor segment: set that key. A minor key sits on its relative major's segment with the tonic lit on the minor ring; degree labels count from the tonic.
 
-**Guitar column:** Voicings from `UMT.getFretboardVoicings(chord, UMT.GUITAR_STANDARD)`. Navigation ‹/›. Rendered by `Notae.renderFretboard()`. Custom tuning: Standard / Drop D / Open G / custom per-string. String labels: Off / Tuning / Notes (♩). Fret spacing +/-.
+**Guitar column:** Voicings from `UMT.getFretboardVoicings(chord, tuning)`, kept only when playable (bass lowest, contiguous strings, four-fret span, open strings only in first position) and ordered along the neck. Navigation ‹/›. Rendered by `Notae.renderFretboard()`. Custom tuning: Standard / Drop D / Open G / custom per-string. String labels: Off / Tuning / Notes (♩). Fret spacing +/-.
 
 ### Instruments panel
 
@@ -256,13 +256,12 @@ Roman numeral and badge computed on render from `symbol` + current key — not s
 
 - Horizontal scrollable strip of chips
 - **Auto-append:** new distinct chord stable for ≥0.8s
-- **Capture button (⊙):** force-add immediately — also `Space` shortcut
 - Max 200 entries; oldest dropped when exceeded
-- **Click chip:** loads chord in Zone 1; marks chip active
-- **Right-click:** context menu → Delete
+- **Click chip:** loads chord in Zone 1, plays it, marks chip active
+- **Right-click:** remove (Undo in the toast)
 - **Drag to Song:** chips are draggable into Zone 3 measures
 - **→song button / S shortcut:** inserts active chip at song cursor
-- **Clear button (C shortcut):** wipe all history with confirmation
+- **Clear button (C shortcut):** wipe all history at once (Undo in the toast)
 - History note pool feeds running key detection
 
 ---
@@ -317,17 +316,17 @@ In-key: standard colour. Borrowed: amber. Invalid: red, `?`. No key: `—`.
 
 ### Interactions
 
-**Chord chips:** click → load in Zone 1 + mark cursor. Double-click → play. Edit → inline input, UMT parse on confirm. Drag within measure. Drag from history. Capture from MIDI (⊙ button arms capture mode on the slot). Duplicate (⧉).
+**Chord chips:** click → load in Zone 1, play, mark cursor. Del removes the selected chord (Undo). Edit → inline input, UMT parse on confirm. Drag within measure. Drag from history. Capture from MIDI (⊙ arms the slot; each chord played fills one and arms the next, across measures and sections). Duplicate (⧉).
 
-**Measures:** add (+ Bar), delete (× if section has >1 measure).
+**Measures:** add (+ Bar), delete (× if section has >1 measure, Undo).
 
-**Sections:** rename (click), color (swatch picker), collapse/expand, repeat count (×N), duplicate (⧉), reorder (↑/↓), delete (×).
+**Sections:** rename (click), color (swatch picker), collapse/expand, repeat count (×N), duplicate (⧉), reorder (drag header), delete (×, Undo).
 
-**Song-level:** title (inline edit), New (clear with confirmation), quick-add templates (Intro/Verse/Pre-Chorus/Chorus/Bridge/Outro), Transpose (⇄ — semitone steps or target key, enharmonic spelling follows target key), Export (⎙ — browser print), Paste (modal textarea — space/comma/newline separated symbols).
+**Song-level:** title (inline edit), New (at once, Undo), quick-add templates (Intro/Verse/Pre-Chorus/Chorus/Bridge/Outro), Transpose (⇄ — semitone steps or target key, enharmonic spelling follows target key), Export (⎙ — browser print), Paste (textarea — `|` separates measures; without bars, one chord per measure).
 
 ### Cursor
 
-Active slot = last chord that received focus. `→song` and `S` insert after cursor and advance it. No active slot → append to end of last section.
+Active slot = last chord that received focus. `→song` and `S` insert after cursor and advance it. No active slot → append to end of last section. ← → move the cursor through the whole song.
 
 ---
 
@@ -337,11 +336,11 @@ soundfont-player 0.12.0 + FluidR3_GM. 128 GM instruments selectable. Volume cont
 
 **States:** idle → loading (progress bar, asynchronous fill) → suspended (AudioContext suspended, click to activate) → ready → error.
 
-`initAudioOnGesture()` resumes AudioContext on first real user gesture (click or MIDI note-on).
+`preloadAudio()` loads the instrument at page load; `initAudioOnGesture()` resumes the AudioContext on the first click.
 
-**Playback triggers:** MIDI note-on (individual notes), piano key click, CoF segment click, chord chip double-click, Space/P shortcut (the chord currently shown, or the last one after the keys are released).
+**Playback triggers:** MIDI note-on (individual notes), piano key click, CoF segment click, history/song chip click, ← → navigation, Space (the chord currently shown, or the last one after the keys are released).
 
-`pendingNotes` queue: notes received before instrument is ready are discarded on load to avoid burst on first gesture.
+Notes requested before the instrument can sound (still loading, or suspended without a gesture) are dropped, not queued, and the audio bar flashes.
 
 ---
 
@@ -354,6 +353,7 @@ All preferences persisted to localStorage.
 - Instruments sub-panels visible/hidden individually (Piano, Fretboard)
 - Analysis fields shown/hidden individually
 - Analysis font scale (8–20px)
+- Staff size
 - CoF size and display options (enharmonics, minor/dim, degrees, sevenths)
 - Guitar fret spacing and tuning
 - Neck (fretboard) spacing
@@ -372,10 +372,11 @@ Disabled when `<input>` or `<textarea>` has focus.
 |---|---|
 | `H` | Toggle hold mode |
 | `A` | Toggle arpeggio mode |
-| `Space` | Capture current chord to history |
-| `P` | Play current / last detected chord |
+| `Space` | Play current / last detected chord |
+| `←` `→` | Previous / next chord (song when a song chord is selected, else history), plays it |
+| `Del` | Remove the selected song chord (Undo) |
 | `S` | Send active history chip to song cursor |
-| `C` | Clear history (with confirmation) |
+| `C` | Clear history (Undo) |
 | `1`–`9` | Select Nth alternative interpretation |
 | `Escape` | Cancel capture mode / close help popup |
 | `?` | Toggle help popup |
