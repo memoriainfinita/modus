@@ -127,6 +127,20 @@ const umtNote = UMT.parseNote(noteName)
 - [ ] Song cursor and MIDI-fill "next slot" stop at the end of a measure; decide whether they should continue into the next measure/section
 - [ ] Rendering cost: every MIDI event re-renders all diagrams including the CoF SVG
 - [ ] Firefox supports Web MIDI (site permission) — check Modus there and update the Chrome/Edge-only warning
+- [ ] Roman numeral docs: UMT returns `Imaj7` (not `I△7`) and gives secondary dominants a plain roman (`II7` for D7 in C) with `V7/V` in `secondaryTarget`, shown in the Secondary row. README promises `V7/ii` in the Roman field. Decide: fix README, or show the secondary in the Roman field
+- [ ] UMT: `secondaryTarget` uses uppercase for minor targets (`V7/II` for A7 in C, should be `V7/ii`)
+- [ ] Audio depends on soundfont-player 0.12.0 (unmaintained) and FluidR3_GM samples from `gleitz.github.io` (external host). If that host fails audio breaks and the CDN error banner does not fire (it only watches jsDelivr). Evaluate self-hosting samples or an alternative player
+- [ ] abcjs 6.4.0 — check for newer versions (not verified)
+- [ ] Piano click-to-play maps SVG `rect` order to notes, relying on notae's internal render order (whites then blacks). Re-check when bumping notae; better: notae exposing `data-note`
+- [ ] Changing MIDI mode clears active notes but the detector keeps showing the previous chord until the next note
+- [ ] History: after right-click removing an entry, the same chord is not logged again until a different one is played (`lastAutoAppended` not reset on remove)
+- [ ] First play before the soundfont loads is silent (notes dropped, not queued — deliberate since session 15); consider a visible hint
+- [ ] Song: the empty chip created by `+` is persisted while editing; a reload mid-edit leaves an orphan input chip
+- [ ] Song paste puts the whole progression in one new measure (notice shown, no split)
+- [ ] Performance: history chips run the full `buildHarmonicAnalysis` (scales, subs, negative harmony…) only to get roman/function — hundreds of UMT calls per key change with a long history. Song chips run two `analyzeProgression` per chip on every full re-render
+- [ ] MIDI device names and modal text go through `innerHTML` unescaped (low risk; print export is already escaped)
+- [ ] `song-view.ts` `newPasteMeasure` duplicates `addChord` logic from the model
+- [ ] No `.gitattributes`: every commit warns LF→CRLF
 - [ ] UMT: scale/key spelling is by pitch, not by letter (F# major gives F, not E#), so Modus keeps its own key-signature table (`src/keys.ts`). A letter-correct spelling in UMT would let Modus drop it
 - [ ] UX audit — non-obvious behaviours the user does not know about: 800ms history debounce, same chord not logged twice in a row, dblclick to play, ⊙ for MIDI capture, drag between sections, the three confirmation patterns. Walk the whole app and decide per item: behaviour change, tooltip, help popup text, or nothing. Prioritize active confusion.
 - [ ] Shortcuts review — Space and P now both call the same `playCurrent`, so P is redundant. Decide which shortcuts make sense, which are redundant, which are missing, before touching code.
