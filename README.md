@@ -41,7 +41,7 @@ For each detected chord:
 | Cadence | vs. the previous chord: last different chord played, previous history chip, or previous song chord |
 | Coltrane axis | Three major-third substitution chords |
 | Negative harmony | Mirror chord in the active key |
-| Key detection | Krumhansl-Schmuckler running on history note pool |
+| Key detection | Krumhansl-Schmuckler running on history note pool. With the key on Auto, the detected key drives the whole app: analysis, history and song romans, Circle of Fifths and staff key signature |
 
 Each field can be toggled individually. Font scale adjustable with +/−.
 
@@ -53,7 +53,7 @@ Four columns, each togglable independently ([St][An][CoF][Git]):
 
 - **Staff** (abcjs) — chord summary (name, notes, alternatives) always shown above; key signature follows the active key
 - **Analysis** — all harmonic analysis fields, each field individually togglable; font scale +/−
-- **Circle of Fifths** — click major segments to set key + play chord; minor/dim segments play without changing key. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels, 7th labels, size
+- **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels, size
 - **Guitar voicing** (notae) — Standard / Drop D / Open G / Custom tuning, next/prev voicing
 
 ### Instruments panel
@@ -67,7 +67,7 @@ Any note played on the MIDI controller sounds through the selected soundfont. Cl
 
 ### History
 
-Every chord is logged automatically after 0.8s of stability. Each chip shows chord name and Roman numeral in the selected key (updates live when the key changes; not shown while the key is on Auto). Click to load it in the detector and play it, drag onto a song measure to insert, right-click to remove. Clear empties the strip at once; both can be undone from the toast that appears.
+Every chord is logged automatically after 0.8s of stability. Each chip shows chord name and Roman numeral in the selected key (updates live when the key changes; on Auto, the detected key is used). Click to load it in the detector and play it, drag onto a song measure to insert, right-click to remove. Clear empties the strip at once; both can be undone from the toast that appears.
 
 ### Song
 

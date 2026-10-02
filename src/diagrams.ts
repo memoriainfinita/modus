@@ -1,4 +1,4 @@
-import { playNoteByName, playChord } from './audio'
+import { playNoteByName } from './audio'
 import { NOTE_SEMITONE, noteNameToMidi } from './midi'
 import { chordColor, NEUTRAL_COLOR, tryParseChord, tryUMT } from './chord'
 import { keySignature } from './keys'
@@ -340,27 +340,49 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
 const CIRCLE_KEYS_FLAT  = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F']
 const CIRCLE_KEYS_SHARP = ['C','G','D','A','E','B','F#','C#','G#','D#','Bb','F']
 const CIRCLE_KEYS_MINOR_FLAT  = ['Am','Em','Bm','F#m','C#m','G#m','Ebm','Bbm','Fm','Cm','Gm','Dm']
-const CIRCLE_KEYS_MINOR_SHARP = ['Am','Em','Bm','F#m','C#m','G#m','D#m','Bbm','Fm','Cm','Gm','Dm']
-const CIRCLE_DIM = ['B°','F#°','C#°','G#°','D#°','A#°','F°','C°','G°','D°','A°','E°']
-const COF_DEGREES       = ['I','V','II','VI','III','VII','♭V','♭II','♭VI','♭III','♭VII','IV']
-const COF_DEGREES_MINOR = ['vi','iii','vii','♯iv','♭ii','♭vi','♭iii','♭vii','iv','i','v','ii']
+const CIRCLE_KEYS_MINOR_SHARP = ['Am','Em','Bm','F#m','C#m','G#m','D#m','A#m','Fm','Cm','Gm','Dm']
+const CIRCLE_DIM = ['B','F#','C#','G#','D#','A#','F','C','G','D','A','E']
 
+// Roman numeral by semitones above the tonic. In a minor key the natural-minor degrees
+// (III, VI, VII) carry no accidental.
+const DEGREE_IN_MAJOR = ['I','♭II','II','♭III','III','IV','♭V','V','♭VI','VI','♭VII','VII']
+const DEGREE_IN_MINOR = ['I','♭II','II','III','♯III','IV','♭V','V','VI','♯VI','VII','♯VII']
+
+const pitchClass = (note: string): number => NOTE_SEMITONE[note] ?? -1
+const rootOf = (symbol: string): string => symbol.match(/^([A-G][b#]?)/)?.[1] ?? ''
+
+export type CofOptions = { accidental: 'sharp' | 'flat', showMinor: boolean, showDegrees: boolean, show7ths: boolean, fontScale?: number }
+
+/**
+ * Renders the circle. `onSegmentClick` receives the segment's chord and, for major and
+ * minor segments, the key it stands for ("G Major", "E Minor"); the caller decides what
+ * a click or a double click does.
+ */
 export function renderCircleOfFifths(
   container: HTMLElement,
   activeKey: string | null,
   activeChord: string | null,
-  onKeyClick: (key: string | null, chord?: string) => void,
+  onSegmentClick: (chord: string, key: string | null) => void,
   size = 160,
-  opts: { accidental: 'sharp' | 'flat', showMinor: boolean, showDegrees: boolean, show7ths: boolean, fontScale?: number } = { accidental: 'flat', showMinor: true, showDegrees: false, show7ths: false }
+  opts: CofOptions = { accidental: 'flat', showMinor: true, showDegrees: false, show7ths: false }
 ) {
   const keys = opts.accidental === 'sharp' ? CIRCLE_KEYS_SHARP : CIRCLE_KEYS_FLAT
   const minorKeys = opts.accidental === 'sharp' ? CIRCLE_KEYS_MINOR_SHARP : CIRCLE_KEYS_MINOR_FLAT
 
-  const activeRoot = activeKey?.split(' ')[0] ?? null
-  const activePos = activeRoot !== null ? keys.findIndex(k => k === activeRoot) : -1
+  // The active key sits on its relative major's segment; a minor key's tonic is the minor
+  // segment there. Matching is by pitch class, so F# Major finds Gb in flat mode.
+  const [keyRoot, keyMode] = activeKey?.split(' ') ?? []
+  const keyIsMinor = keyMode?.toLowerCase() === 'minor'
+  const tonicPc = keyRoot ? pitchClass(keyRoot) : -1
+  const activePos = tonicPc === -1 ? -1
+    : keyIsMinor ? minorKeys.findIndex(m => pitchClass(rootOf(m)) === tonicPc)
+    : keys.findIndex(k => pitchClass(k) === tonicPc)
+  const degreeTable = keyIsMinor ? DEGREE_IN_MINOR : DEGREE_IN_MAJOR
+  const degreeOf = (root: string) => tonicPc === -1 ? '' : degreeTable[(pitchClass(root) - tonicPc + 12) % 12]
 
-  const activeChordRoot = activeChord?.match(/^([A-G][b#]?)/)?.[1] ?? null
-  const isMinorActiveChord = activeChord ? /^[A-G][b#]?m(?!aj)/.test(activeChord) : false
+  const chordRootPc = activeChord ? pitchClass(rootOf(activeChord)) : -1
+  const isDimActiveChord = activeChord ? /^[A-G][b#]?(dim|°|m7b5|ø)/.test(activeChord) : false
+  const isMinorActiveChord = !isDimActiveChord && activeChord ? /^[A-G][b#]?m(?!aj)/.test(activeChord) : false
 
   const cx = size / 2, cy = size / 2
   const outerR    = size * 0.425
@@ -377,132 +399,75 @@ export function renderCircleOfFifths(
   const minorFont = Math.max(3, Math.round(size * 0.05   * fs))
   const dimFont   = Math.max(3, Math.round(size * 0.04   * fs))
 
-  let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`
+  const ring = (rOut: number, rIn: number, a1: number, a2: number) => {
+    const p = (r: number, a: number) => `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`
+    return `M${p(rIn, a1)} L${p(rOut, a1)} A${rOut},${rOut} 0 0,1 ${p(rOut, a2)} L${p(rIn, a2)} A${rIn},${rIn} 0 0,0 ${p(rIn, a1)}`
+  }
+  const label = (x: number, y: number, font: number, fill: string, main: string, sub: string | null, subFill: string) => sub
+    ? `<text x="${x}" y="${y - font * 0.5}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text>` +
+      `<text x="${x}" y="${y + font * 0.72}" text-anchor="middle" dominant-baseline="middle" font-size="${font * 0.85}" fill="${subFill}" pointer-events="none">${sub}</text>`
+    : `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text>`
+  const TIP = 'Click: play · double-click: set as key'
 
   const diatonicPos = activePos !== -1
     ? new Set([(activePos + 11) % 12, activePos, (activePos + 1) % 12])
     : new Set<number>()
-  const diatonicDimPos = activePos
+
+  let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`
 
   keys.forEach((key, i) => {
     const angle = (i * 30 - 90) * Math.PI / 180
     const nextAngle = ((i + 1) * 30 - 90) * Math.PI / 180
-    const x1o = cx + outerR * Math.cos(angle), y1o = cy + outerR * Math.sin(angle)
-    const x2o = cx + outerR * Math.cos(nextAngle), y2o = cy + outerR * Math.sin(nextAngle)
-    const x1i = cx + innerR * Math.cos(angle), y1i = cy + innerR * Math.sin(angle)
-    const x2i = cx + innerR * Math.cos(nextAngle), y2i = cy + innerR * Math.sin(nextAngle)
-
-    const isActiveKey = activeRoot && key === activeRoot
-    const isChordRoot = !isMinorActiveChord && activeChordRoot === key
-    const minorKeyRoot = minorKeys[i].match(/^([A-G][b#]?)/)?.[1] ?? ''
-    const isMinorChordHere = isMinorActiveChord && activeChordRoot === minorKeyRoot
-    const isDiatonic = diatonicPos.has(i)
-    const fill = isActiveKey ? '#4f46e5' : isChordRoot ? '#0d9488' : isDiatonic ? '#252550' : '#2d2d44'
-    const stroke = isChordRoot ? '#0d9488' : isDiatonic ? '#7c7ca0' : '#4a4a6a'
-
     const midAngle = (i * 30 + 15 - 90) * Math.PI / 180
-    const lx = cx + labelR * Math.cos(midAngle)
-    const ly = cy + labelR * Math.sin(midAngle)
-
-    const degree = opts.showDegrees && activePos !== -1
-      ? COF_DEGREES[(i - activePos + 12) % 12]
-      : null
-
     const relPos = activePos !== -1 ? (i - activePos + 12) % 12 : -1
-    const suffix7 = opts.show7ths ? (relPos === 1 ? '7' : 'maj7') : ''
-    const keyLabel = key + suffix7
+    const isDiatonic = diatonicPos.has(i)
+    const showDeg = opts.showDegrees && activePos !== -1
 
-    svg += `<path d="M${x1i},${y1i} L${x1o},${y1o} A${outerR},${outerR} 0 0,1 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0,0 ${x1i},${y1i}"
-      fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
-      data-key="${key} Major" data-chord="${key + suffix7}" />`
-    if (degree) {
-      svg += `<text x="${lx}" y="${ly - majorFont * 0.45}" text-anchor="middle" dominant-baseline="middle"
-        font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${keyLabel}</text>`
-      svg += `<text x="${lx}" y="${ly + majorFont * 0.7}" text-anchor="middle" dominant-baseline="middle"
-        font-size="${majorFont * 0.85}" fill="#a5b4fc" pointer-events="none">${degree}</text>`
-    } else {
-      svg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
-        font-size="${majorFont}" fill="#e0e0e0" pointer-events="none">${keyLabel}</text>`
-    }
+    // Major ring
+    const isTonic = activePos === i && !keyIsMinor
+    const isChordRoot = !isMinorActiveChord && !isDimActiveChord && chordRootPc === pitchClass(key)
+    const fill = isTonic ? '#4f46e5' : isChordRoot ? '#0d9488' : isDiatonic ? '#252550' : '#2d2d44'
+    const stroke = isChordRoot ? '#0d9488' : isDiatonic ? '#7c7ca0' : '#4a4a6a'
+    // The dominant seventh sits one step clockwise of the relative major (V in major, VII in minor).
+    const suffix7 = opts.show7ths ? (relPos === 1 && !keyIsMinor ? '7' : 'maj7') : ''
+    svg += `<path d="${ring(outerR, innerR, angle, nextAngle)}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
+      data-chord="${key + suffix7}" data-key="${key} Major"><title>${TIP}</title></path>`
+    svg += label(cx + labelR * Math.cos(midAngle), cy + labelR * Math.sin(midAngle), majorFont, '#e0e0e0',
+      key + suffix7, showDeg ? degreeOf(key) : null, '#a5b4fc')
 
-    if (opts.showMinor) {
-      const mx = cx + minorR * Math.cos(midAngle)
-      const my = cy + minorR * Math.sin(midAngle)
-      const minorLabel = minorKeys[i] + (opts.show7ths ? '7' : '')
-      const minorDegree = opts.showDegrees && activePos !== -1
-        ? COF_DEGREES_MINOR[(i - activePos + 12) % 12]
-        : null
+    if (!opts.showMinor) return
 
-      // Minor ring path segment
-      const mx1o = cx + minorOutR * Math.cos(angle),    my1o = cy + minorOutR * Math.sin(angle)
-      const mx2o = cx + minorOutR * Math.cos(nextAngle), my2o = cy + minorOutR * Math.sin(nextAngle)
-      const mx1i = cx + minorInR  * Math.cos(angle),    my1i = cy + minorInR  * Math.sin(angle)
-      const mx2i = cx + minorInR  * Math.cos(nextAngle), my2i = cy + minorInR  * Math.sin(nextAngle)
-      const minorSegFill   = isMinorChordHere ? '#0d9488' : isDiatonic ? '#252550' : 'transparent'
-      const minorSegStroke = isMinorChordHere ? '#0d9488' : isDiatonic ? '#7c7ca0' : 'transparent'
-      const minorChordSym = minorKeys[i] + (opts.show7ths ? '7' : '')
-      svg += `<path d="M${mx1i},${my1i} L${mx1o},${my1o} A${minorOutR},${minorOutR} 0 0,1 ${mx2o},${my2o} L${mx2i},${my2i} A${minorInR},${minorInR} 0 0,0 ${mx1i},${my1i}"
-        fill="${minorSegFill}" stroke="${minorSegStroke}" stroke-width="1"
-        pointer-events="all" style="cursor:pointer" data-minor-chord="${minorChordSym}"/>`
+    // Minor ring
+    const minorRoot = rootOf(minorKeys[i])
+    const isMinorTonic = activePos === i && keyIsMinor
+    const isMinorChordHere = isMinorActiveChord && chordRootPc === pitchClass(minorRoot)
+    const minorChord = minorKeys[i] + (opts.show7ths ? '7' : '')
+    const minorSegFill   = isMinorTonic ? '#4f46e5' : isMinorChordHere ? '#0d9488' : isDiatonic ? '#252550' : 'transparent'
+    const minorSegStroke = isMinorTonic ? '#4f46e5' : isMinorChordHere ? '#0d9488' : isDiatonic ? '#7c7ca0' : 'transparent'
+    svg += `<path d="${ring(minorOutR, minorInR, angle, nextAngle)}" fill="${minorSegFill}" stroke="${minorSegStroke}" stroke-width="1"
+      pointer-events="all" style="cursor:pointer" data-chord="${minorChord}" data-key="${minorRoot} Minor"><title>${TIP}</title></path>`
+    const minorFill = isMinorTonic || isMinorChordHere ? '#e0e0e0' : isDiatonic ? '#c4b5fd' : '#9ca3af'
+    svg += label(cx + minorR * Math.cos(midAngle), cy + minorR * Math.sin(midAngle), minorFont, minorFill,
+      minorChord, showDeg ? degreeOf(minorRoot).toLowerCase() : null, '#818cf8')
 
-      const minorFill = isMinorChordHere ? '#e0e0e0' : isDiatonic ? '#c4b5fd' : '#9ca3af'
-      if (minorDegree) {
-        svg += `<text x="${mx}" y="${my - minorFont * 0.55}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${minorFont}" fill="${minorFill}" pointer-events="none">${minorLabel}</text>`
-        svg += `<text x="${mx}" y="${my + minorFont * 0.75}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${minorFont * 0.85}" fill="#818cf8" pointer-events="none">${minorDegree}</text>`
-      } else {
-        svg += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${minorFont}" fill="${minorFill}" pointer-events="none">${minorLabel}</text>`
-      }
-
-      // Diminished inner ring
-      const da = angle, dna = nextAngle
-      const dx1o = cx + dimOutR * Math.cos(da),  dy1o = cy + dimOutR * Math.sin(da)
-      const dx2o = cx + dimOutR * Math.cos(dna), dy2o = cy + dimOutR * Math.sin(dna)
-      const dx1i = cx + dimInR  * Math.cos(da),  dy1i = cy + dimInR  * Math.sin(da)
-      const dx2i = cx + dimInR  * Math.cos(dna), dy2i = cy + dimInR  * Math.sin(dna)
-      const isDiatonicDim = i === diatonicDimPos
-      const dimRoot = CIRCLE_DIM[i].replace('°', '')
-      const dimChordSym = `${dimRoot}${opts.show7ths ? 'm7b5' : 'dim'}`
-      svg += `<path d="M${dx1i},${dy1i} L${dx1o},${dy1o} A${dimOutR},${dimOutR} 0 0,1 ${dx2o},${dy2o} L${dx2i},${dy2i} A${dimInR},${dimInR} 0 0,0 ${dx1i},${dy1i}"
-        fill="${isDiatonicDim ? '#2a2a5a' : '#1e1e35'}" stroke="${isDiatonicDim ? '#a0a0d8' : '#3a3a5c'}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
-        pointer-events="all" style="cursor:pointer" data-dim-chord="${dimChordSym}"/>`
-      const dlx = cx + dimLabR * Math.cos(midAngle)
-      const dly = cy + dimLabR * Math.sin(midAngle)
-      const dimChord = opts.show7ths ? CIRCLE_DIM[i].replace('°', 'ø7') : CIRCLE_DIM[i]
-      const dimTextFill = isDiatonicDim ? '#a78bfa' : '#6b7280'
-      if (opts.showDegrees && activePos !== -1) {
-        svg += `<text x="${dlx}" y="${dly - dimFont * 0.55}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${dimFont}" fill="${dimTextFill}" pointer-events="none">${dimChord}</text>`
-        svg += `<text x="${dlx}" y="${dly + dimFont * 0.75}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${dimFont * 0.85}" fill="#818cf8" pointer-events="none">vii°</text>`
-      } else {
-        svg += `<text x="${dlx}" y="${dly}" text-anchor="middle" dominant-baseline="middle"
-          font-size="${dimFont}" fill="${dimTextFill}" pointer-events="none">${dimChord}</text>`
-      }
-    }
+    // Diminished ring: the leading-tone chord of the major key on this segment
+    const dimRoot = CIRCLE_DIM[i]
+    const isDiatonicDim = i === activePos
+    const isDimChordHere = isDimActiveChord && chordRootPc === pitchClass(dimRoot)
+    const dimChord = `${dimRoot}${opts.show7ths ? 'm7b5' : 'dim'}`
+    svg += `<path d="${ring(dimOutR, dimInR, angle, nextAngle)}"
+      fill="${isDimChordHere ? '#0d9488' : isDiatonicDim ? '#2a2a5a' : '#1e1e35'}" stroke="${isDiatonicDim ? '#a0a0d8' : '#3a3a5c'}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
+      pointer-events="all" style="cursor:pointer" data-chord="${dimChord}"><title>Click: play</title></path>`
+    const dimText = opts.show7ths ? `${dimRoot}ø7` : `${dimRoot}°`
+    svg += label(cx + dimLabR * Math.cos(midAngle), cy + dimLabR * Math.sin(midAngle), dimFont,
+      isDimChordHere ? '#e0e0e0' : isDiatonicDim ? '#a78bfa' : '#6b7280',
+      dimText, showDeg ? `${degreeOf(dimRoot).toLowerCase()}°` : null, '#818cf8')
   })
 
   svg += '</svg>'
   container.innerHTML = svg
 
-  container.querySelectorAll<SVGPathElement>('[data-key]').forEach(el => {
-    el.addEventListener('click', () => {
-      if (el.dataset.chord) playChord(el.dataset.chord)
-      onKeyClick(el.dataset.key!, el.dataset.chord)
-    })
-  })
-  container.querySelectorAll<SVGPathElement>('[data-minor-chord]').forEach(el => {
-    el.addEventListener('click', () => {
-      playChord(el.dataset.minorChord!)
-      onKeyClick(null, el.dataset.minorChord)
-    })
-  })
-  container.querySelectorAll<SVGPathElement>('[data-dim-chord]').forEach(el => {
-    el.addEventListener('click', () => {
-      playChord(el.dataset.dimChord!)
-      onKeyClick(null, el.dataset.dimChord)
-    })
+  container.querySelectorAll<SVGPathElement>('[data-chord]').forEach(el => {
+    el.addEventListener('click', () => onSegmentClick(el.dataset.chord!, el.dataset.key ?? null))
   })
 }

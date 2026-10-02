@@ -1,6 +1,7 @@
 import type { DetectionResult, HarmonicAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult } from './types'
 import { midiToNoteName, PITCH_NAMES_FLAT } from './midi'
 import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from './chord'
+import { normalizeKey } from './keys'
 
 const INTERVAL_NAMES = [
   'Unison','Minor 2nd','Major 2nd','Minor 3rd','Major 3rd','Perfect 4th',
@@ -139,5 +140,6 @@ function emptyAnalysis(chordName: string): HarmonicAnalysis {
 export function getAutoKey(history: HistoryEntry[]): string | null {
   const noteNames = history.flatMap(e => e.notes)
   if (noteNames.length === 0) return null
-  return tryUMT('key detection', () => UMT.KeyDetection.detect(noteNames.map(n => UMT.parseNote(n)))[0]?.key ?? null, null)
+  // Spelled as the key selector does ("Gb Major" → "F# Major").
+  return normalizeKey(tryUMT('key detection', () => UMT.KeyDetection.detect(noteNames.map(n => UMT.parseNote(n)))[0]?.key ?? null, null))
 }
