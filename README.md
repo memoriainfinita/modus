@@ -6,7 +6,7 @@ Real-time MIDI harmonic analysis for musicians. Connect a controller, play notes
 
 A chord history and song structure builder extend that — log what you play, build chord sequences, document song structure.
 
-No server. No account. No installation. Open in Chrome or Edge and play.
+No server. No account. No installation. Open in Chrome, Edge or Firefox and play.
 
 ---
 
@@ -105,8 +105,8 @@ All three projects are independent, GPL-3.0, and built for the music community �
 | App | TypeScript → esbuild → `dist/app.js` |
 | Theory | [UMT](https://github.com/memoriainfinita/UMT) via jsDelivr CDN |
 | Diagrams | [notae](https://github.com/memoriainfinita/notae) via jsDelivr CDN |
-| Staff | abcjs 6.4.0 via CDN |
-| MIDI | Web MIDI API (Chrome/Edge only) |
+| Staff | abcjs 6.7.1 via CDN |
+| MIDI | Web MIDI API (Chrome, Edge, Firefox — Firefox asks for MIDI permission per site) |
 | Audio | soundfont-player 0.12.0 + FluidR3_GM |
 | Styles | Plain CSS (`styles.css`) |
 | Persistence | localStorage |
@@ -115,7 +115,7 @@ All three projects are independent, GPL-3.0, and built for the music community �
 
 ## Requirements
 
-- Chrome or Edge (Web MIDI API required)
+- A browser with Web MIDI: Chrome, Edge or Firefox. Without it the app runs, minus the controller
 - A MIDI controller (optional — song builder and CoF interaction work without one)
 - A local server: `pnpm dlx http-server . -p 8080` (`file://` + Web MIDI may be blocked by some Chromium versions)
 

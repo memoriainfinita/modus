@@ -8,7 +8,7 @@
 </head>
 <body>
   <div id="browser-warning">
-    Chrome or Edge required for MIDI support. Non-MIDI features (song builder, chord analysis by click) still work.
+    This browser has no Web MIDI, so a controller cannot connect (Chrome, Edge and Firefox have it). Everything else — song builder, circle of fifths, history — still works.
     <button onclick="this.parentElement.style.display='none'" style="margin-left:12px;background:transparent;border:1px solid #fff;color:#fff;border-radius:3px;padding:2px 8px;cursor:pointer">×</button>
   </div>
   <div id="cdn-error-banner">Failed to load a required resource. Check your internet connection.</div>
@@ -31,7 +31,7 @@
   <!-- CDN dependencies — UMT and notae pinned to a commit; bump deliberately -->
   <script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@870d3d8fe20a7ad7707475b6b75867d6e28d44e6/dist/umt.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/memoriainfinita/notae@8fb052dbcc936fb8aed443cb79bbefcf9e9ff871/dist/notae.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.0/dist/abcjs-basic-min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/abcjs@6.7.1/dist/abcjs-basic-min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
 
   <script src="dist/app.js"></script>
