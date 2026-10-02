@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { analyzeNotes, getAutoKey, buildHarmonicAnalysis } from '../src/analyzer'
+import { analyzeNotes, getAutoKey, buildHarmonicAnalysis, romanInKey } from '../src/analyzer'
 import type { DetectionResult, ChordResult, IntervalResult, SingleNoteResult } from '../src/types'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
@@ -169,5 +169,26 @@ describe('getAutoKey', () => {
       { id: '3', symbol: 'G7', notes: ['G3', 'B3', 'D4', 'F4'] },
     ]
     expect(getAutoKey(entries)).toBe('C Major')
+  })
+})
+
+describe('romanInKey', () => {
+  it('writes secondary dominants as V7/x in the roman', () => {
+    expect(romanInKey('D7', 'C Major')?.roman).toBe('V7/V')
+    expect(romanInKey('A7', 'C Major')?.roman).toBe('V7/ii')
+  })
+
+  it('keeps the plain roman for diatonic chords', () => {
+    expect(romanInKey('Cmaj7', 'C Major')?.roman).toBe('Imaj7')
+    expect(romanInKey('G7', 'C Major')?.roman).toBe('V7')
+  })
+
+  it('returns null without key or for an unknown chord', () => {
+    expect(romanInKey('C', null)).toBeNull()
+    expect(romanInKey('notachord', 'C Major')).toBeNull()
+  })
+
+  it('buildHarmonicAnalysis carries the same roman', () => {
+    expect(buildHarmonicAnalysis('A7', 'C Major', null).roman).toBe('V7/ii')
   })
 })

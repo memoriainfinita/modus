@@ -1,5 +1,5 @@
 import type { HistoryEntry } from './types'
-import { buildHarmonicAnalysis } from './analyzer'
+import { romanInKey } from './analyzer'
 import { playChord, playNoteNames } from './audio'
 import { escapeHtml } from './html'
 
@@ -68,7 +68,7 @@ export function renderHistory(
   strip.className = 'history-strip'
 
   entries.forEach(entry => {
-    const analysis = activeKey ? buildHarmonicAnalysis(entry.symbol, activeKey, null) : null
+    const analysis = romanInKey(entry.symbol, activeKey)
     const roman = analysis?.roman ?? '—'
     const fn = analysis?.function ?? 'unknown'
     const color = FUNCTION_COLORS[fn] ?? '#6b7280'

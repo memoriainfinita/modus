@@ -1,6 +1,7 @@
 declare const UMT: {
   parseNote: (str: string, defaultOctave?: number) => any
   parseChordSymbol: (symbol: string, tuning?: any) => any
+  parseScaleSymbol: (symbol: string, tuning?: any) => { getNotes: (octaves?: number) => { name: string }[] }
   getFretboardVoicings: (chord: any, tuning: readonly number[]) => any[]
   GUITAR_STANDARD: readonly number[]
   GUITAR_DROPPED_D: readonly number[]

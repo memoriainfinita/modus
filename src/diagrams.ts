@@ -1,5 +1,5 @@
 import { playNoteByName, playChord } from './audio'
-import { PITCH_NAMES_FLAT, NOTE_SEMITONE, noteNameToMidi } from './midi'
+import { NOTE_SEMITONE, noteNameToMidi } from './midi'
 import { chordColor, NEUTRAL_COLOR, tryParseChord, tryUMT } from './chord'
 import { keySignature } from './keys'
 import { loadBool, loadChoice, loadJSON, loadNumber, save } from './storage'
@@ -43,7 +43,7 @@ export function adjustNeckSpacing(delta: number) {
   save('neck-spacing', neckSpacing)
 }
 
-export function renderNeck(container: HTMLElement, noteNames: string[], root: string | null = null) {
+export function renderNeck(container: HTMLElement, noteNames: string[], preferFlats = true) {
   const midi = noteNames.map(noteNameToMidi).filter((n): n is number => n !== null)
 
   const frets = OPEN_MIDI.map(open => {
@@ -63,12 +63,13 @@ export function renderNeck(container: HTMLElement, noteNames: string[], root: st
     fretSpacing: Math.round(sp * 28 / 16),
     dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
     fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
-    ...(root ? { showDegrees: true } : {}),
+    showNoteNames: true,
+    preferFlats,
   }
 
   try {
     container.innerHTML = Notae.renderFretboard(
-      { name: '', frets, tuning: ['E','A','D','G','B','E'], ...(root ? { root } : {}) } as any,
+      { name: '', frets, tuning: ['E','A','D','G','B','E'] } as any,
       { ...style, orientation: 'horizontal' }
     )
   } catch {
@@ -77,18 +78,6 @@ export function renderNeck(container: HTMLElement, noteNames: string[], root: st
 }
 
 // ─── Piano ────────────────────────────────────────────────────────────────────
-
-// Notae renderPiano renders: all white keys left→right, then all black keys left→right.
-// Range C2-B5: 4 octaves × 7 white = 28 white keys, 4 × 5 black = 20 black keys.
-const PIANO_WHITE_NOTES: string[] = []
-const PIANO_BLACK_NOTES: string[] = []
-const WHITE_SEMITONES_P = [0, 2, 4, 5, 7, 9, 11]
-const BLACK_SEMITONES_P = [1, 3, 6, 8, 10]
-for (let oct = 2; oct <= 5; oct++) {
-  WHITE_SEMITONES_P.forEach(s => PIANO_WHITE_NOTES.push(PITCH_NAMES_FLAT[s] + oct))
-  BLACK_SEMITONES_P.forEach(s => PIANO_BLACK_NOTES.push(PITCH_NAMES_FLAT[s] + oct))
-}
-const PIANO_KEY_ORDER = [...PIANO_WHITE_NOTES, ...PIANO_BLACK_NOTES]
 
 export function renderPiano(container: HTMLElement, noteNames: string[], chordSymbol: string | null) {
   const color = chordSymbol ? chordColor(chordSymbol) : NEUTRAL_COLOR
@@ -99,11 +88,9 @@ export function renderPiano(container: HTMLElement, noteNames: string[], chordSy
     range: { from: 'C2', to: 'B5' }
   })
 
-  const rects = container.querySelectorAll<SVGRectElement>('rect')
-  rects.forEach((el, i) => {
-    const note = PIANO_KEY_ORDER[i]
-    if (!note) return
-    el.dataset.note = note
+  // notae tags every key with data-note (sharp spelling + octave).
+  container.querySelectorAll<SVGRectElement>('rect[data-note]').forEach(el => {
+    const note = el.dataset.note!
     el.style.cursor = 'pointer'
     el.addEventListener('click', () => playNoteByName(note))
   })

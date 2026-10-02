@@ -59,6 +59,39 @@ export function analyzeNotes(midiNotes: number[]): DetectionResult {
   return result
 }
 
+/** Roman-numeral level analysis of one chord in a key — what the chips need. */
+export interface RomanInfo {
+  roman: string               // secondary dominants written as V7/x
+  function: HarmonicAnalysis['function']
+  isDiatonic: boolean
+  isBorrowed: boolean
+  borrowedFrom?: string
+  isSecondary: boolean
+  secondaryTarget?: string    // e.g. "V7/ii"
+}
+
+// History and song chips ask for the same (chord, key) pairs on every render.
+const romanCache = new Map<string, RomanInfo | null>()
+
+export function romanInKey(chordSymbol: string, key: string | null): RomanInfo | null {
+  if (!key || !chordSymbol) return null
+  const cacheKey = `${chordSymbol}|${key}`
+  if (romanCache.has(cacheKey)) return romanCache.get(cacheKey)!
+  const chord = tryParseChord(chordSymbol)
+  const a = chord ? tryUMT('progression', () => UMT.Harmony.analyzeProgression([chord], key).analysis[0], null) : null
+  const info: RomanInfo | null = a ? {
+    roman: (a.isSecondary && a.secondaryTarget) ? a.secondaryTarget : (a.roman ?? '?'),
+    function: a.function ?? 'unknown',
+    isDiatonic: a.isDiatonic ?? false,
+    isBorrowed: a.isBorrowed ?? false,
+    borrowedFrom: a.borrowedFrom,
+    isSecondary: a.isSecondary ?? false,
+    secondaryTarget: a.secondaryTarget,
+  } : null
+  romanCache.set(cacheKey, info)
+  return info
+}
+
 export function buildHarmonicAnalysis(
   chordSymbol: string,
   activeKey: string | null,
@@ -75,16 +108,8 @@ export function buildHarmonicAnalysis(
 
   if (!activeKey) return result
 
-  const a = tryUMT('progression', () => UMT.Harmony.analyzeProgression([chord], activeKey).analysis[0], null)
-  if (a) {
-    result.roman = a.roman ?? '?'
-    result.function = a.function ?? 'unknown'
-    result.isDiatonic = a.isDiatonic ?? false
-    result.isBorrowed = a.isBorrowed ?? false
-    result.borrowedFrom = a.borrowedFrom
-    result.isSecondary = a.isSecondary ?? false
-    result.secondaryTarget = a.secondaryTarget
-  }
+  const a = romanInKey(chordSymbol, activeKey)
+  if (a) Object.assign(result, a)
 
   const prevChord = tryParseChord(prevChordSymbol)
   if (prevChord) {

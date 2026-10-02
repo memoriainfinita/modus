@@ -218,9 +218,6 @@
       return [];
     }
   }
-  function chordRoot(symbol) {
-    return symbol?.match(/^([A-G][b#]?)/)?.[1] ?? null;
-  }
 
   // src/analyzer.ts
   var INTERVAL_NAMES = [
@@ -277,6 +274,25 @@
     };
     return result;
   }
+  var romanCache = /* @__PURE__ */ new Map();
+  function romanInKey(chordSymbol, key) {
+    if (!key || !chordSymbol) return null;
+    const cacheKey = `${chordSymbol}|${key}`;
+    if (romanCache.has(cacheKey)) return romanCache.get(cacheKey);
+    const chord = tryParseChord(chordSymbol);
+    const a = chord ? tryUMT("progression", () => UMT.Harmony.analyzeProgression([chord], key).analysis[0], null) : null;
+    const info = a ? {
+      roman: a.isSecondary && a.secondaryTarget ? a.secondaryTarget : a.roman ?? "?",
+      function: a.function ?? "unknown",
+      isDiatonic: a.isDiatonic ?? false,
+      isBorrowed: a.isBorrowed ?? false,
+      borrowedFrom: a.borrowedFrom,
+      isSecondary: a.isSecondary ?? false,
+      secondaryTarget: a.secondaryTarget
+    } : null;
+    romanCache.set(cacheKey, info);
+    return info;
+  }
   function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol) {
     const chord = tryParseChord(chordSymbol);
     if (!chord) return emptyAnalysis(chordSymbol);
@@ -285,16 +301,8 @@
     if (bassNote) result.figuredBass = tryUMT("figured bass", () => UMT.FiguredBass.fromChord(chord, bassNote), "");
     result.suggestedScales = tryUMT("scales", () => UMT.Harmony.getSuggestedScales(chord).map((s) => s.scale), []);
     if (!activeKey) return result;
-    const a = tryUMT("progression", () => UMT.Harmony.analyzeProgression([chord], activeKey).analysis[0], null);
-    if (a) {
-      result.roman = a.roman ?? "?";
-      result.function = a.function ?? "unknown";
-      result.isDiatonic = a.isDiatonic ?? false;
-      result.isBorrowed = a.isBorrowed ?? false;
-      result.borrowedFrom = a.borrowedFrom;
-      result.isSecondary = a.isSecondary ?? false;
-      result.secondaryTarget = a.secondaryTarget;
-    }
+    const a = romanInKey(chordSymbol, activeKey);
+    if (a) Object.assign(result, a);
     const prevChord = tryParseChord(prevChordSymbol);
     if (prevChord) {
       const cad = tryUMT("cadence", () => UMT.Harmony.analyzeCadence(prevChord, chord, activeKey), null);
@@ -467,68 +475,45 @@
   }
 
   // src/keys.ts
-  var KEY_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
-  var MAJOR_KEY_SIG = {
-    C: 0,
-    G: 1,
-    D: 2,
-    A: 3,
-    E: 4,
-    B: 5,
-    "F#": 6,
-    "C#": 7,
-    F: -1,
-    Bb: -2,
-    Eb: -3,
-    Ab: -4,
-    Db: -5,
-    Gb: -6,
-    Cb: -7
-  };
-  var MINOR_KEY_SIG = {
-    A: 0,
-    E: 1,
-    B: 2,
-    "F#": 3,
-    "C#": 4,
-    "G#": 5,
-    "D#": 6,
-    "A#": 7,
-    D: -1,
-    G: -2,
-    C: -3,
-    F: -4,
-    Bb: -5,
-    Eb: -6,
-    Ab: -7
-  };
-  var MINOR_ENHARMONIC = { Db: "C#", Gb: "F#" };
-  var SHARP_ORDER = ["F", "C", "G", "D", "A", "E", "B"];
-  var FLAT_ORDER = ["B", "E", "A", "D", "G", "C", "F"];
+  var MAJOR_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+  var MINOR_ROOTS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
+  var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc) => [`${root} Major`, `${MINOR_ROOTS[pc]} Minor`]);
   function parseKey(key) {
     const [root, mode2] = key.split(" ");
-    return { root, minor: mode2?.toLowerCase() === "minor" };
+    const pc = NOTE_SEMITONE[root];
+    if (pc === void 0) return null;
+    return { pc, minor: mode2?.toLowerCase() === "minor" };
   }
-  function signatureOf(key) {
-    let { root, minor } = parseKey(key);
-    if (minor && MINOR_ENHARMONIC[root]) root = MINOR_ENHARMONIC[root];
-    const count = (minor ? MINOR_KEY_SIG : MAJOR_KEY_SIG)[root];
-    return count === void 0 ? null : { root, minor, count };
+  function keyName(pc, minor) {
+    const p = (pc % 12 + 12) % 12;
+    return minor ? `${MINOR_ROOTS[p]} Minor` : `${MAJOR_ROOTS[p]} Major`;
   }
-  function keyPrefersSharps(key) {
-    return key ? (signatureOf(key)?.count ?? 0) > 0 : false;
+  function normalizeKey(key) {
+    const k = key ? parseKey(key) : null;
+    return k ? keyName(k.pc, k.minor) : null;
+  }
+  function transposeKey(key, semitones) {
+    const k = parseKey(key);
+    return k ? keyName(k.pc + semitones, k.minor) : key;
   }
   function keySignature(key) {
-    const sig = key ? signatureOf(key) : null;
-    if (!sig) return { abcKey: "none", accidentals: {} };
+    const name = normalizeKey(key);
+    let degrees = [];
+    try {
+      degrees = name ? UMT.parseScaleSymbol(name).getNotes().slice(0, 7).map((n) => n.name) : [];
+    } catch {
+    }
+    if (!name || degrees.length !== 7) return { abcKey: "none", accidentals: {} };
     const accidentals = {};
-    if (sig.count > 0) SHARP_ORDER.slice(0, sig.count).forEach((l) => {
-      accidentals[l] = "#";
-    });
-    else FLAT_ORDER.slice(0, -sig.count).forEach((l) => {
-      accidentals[l] = "b";
-    });
-    return { abcKey: sig.root + (sig.minor ? "m" : ""), accidentals };
+    for (const n of degrees) {
+      const m = n.match(/^([A-G])([#b])/);
+      if (m) accidentals[m[1]] = m[2];
+    }
+    const [root, mode2] = name.split(" ");
+    return { abcKey: root + (mode2 === "Minor" ? "m" : ""), accidentals };
+  }
+  function keyPrefersSharps(key) {
+    return Object.values(keySignature(key ?? null).accidentals).includes("#");
   }
 
   // src/diagrams.ts
@@ -565,7 +550,7 @@ K:${abcKey}
     neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta));
     save("neck-spacing", neckSpacing);
   }
-  function renderNeck(container, noteNames, root = null) {
+  function renderNeck(container, noteNames, preferFlats = true) {
     const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
     const frets = OPEN_MIDI.map((open) => {
       const pos = midi.map((n) => n - open).filter((f) => f >= 0 && f <= NECK_FRETS);
@@ -583,26 +568,18 @@ K:${abcKey}
       fretSpacing: Math.round(sp * 28 / 16),
       dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
       fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
-      ...root ? { showDegrees: true } : {}
+      showNoteNames: true,
+      preferFlats
     };
     try {
       container.innerHTML = Notae.renderFretboard(
-        { name: "", frets, tuning: ["E", "A", "D", "G", "B", "E"], ...root ? { root } : {} },
+        { name: "", frets, tuning: ["E", "A", "D", "G", "B", "E"] },
         { ...style, orientation: "horizontal" }
       );
     } catch {
       container.innerHTML = "";
     }
   }
-  var PIANO_WHITE_NOTES = [];
-  var PIANO_BLACK_NOTES = [];
-  var WHITE_SEMITONES_P = [0, 2, 4, 5, 7, 9, 11];
-  var BLACK_SEMITONES_P = [1, 3, 6, 8, 10];
-  for (let oct = 2; oct <= 5; oct++) {
-    WHITE_SEMITONES_P.forEach((s) => PIANO_WHITE_NOTES.push(PITCH_NAMES_FLAT[s] + oct));
-    BLACK_SEMITONES_P.forEach((s) => PIANO_BLACK_NOTES.push(PITCH_NAMES_FLAT[s] + oct));
-  }
-  var PIANO_KEY_ORDER = [...PIANO_WHITE_NOTES, ...PIANO_BLACK_NOTES];
   function renderPiano(container, noteNames, chordSymbol) {
     const color = chordSymbol ? chordColor(chordSymbol) : NEUTRAL_COLOR;
     const colors = noteNames.map(() => color);
@@ -612,11 +589,8 @@ K:${abcKey}
       colors,
       range: { from: "C2", to: "B5" }
     });
-    const rects = container.querySelectorAll("rect");
-    rects.forEach((el, i) => {
-      const note = PIANO_KEY_ORDER[i];
-      if (!note) return;
-      el.dataset.note = note;
+    container.querySelectorAll("rect[data-note]").forEach((el) => {
+      const note = el.dataset.note;
       el.style.cursor = "pointer";
       el.addEventListener("click", () => playNoteByName(note));
     });
@@ -1023,7 +997,7 @@ K:${abcKey}
     const strip = document.createElement("div");
     strip.className = "history-strip";
     entries.forEach((entry) => {
-      const analysis = activeKey ? buildHarmonicAnalysis(entry.symbol, activeKey, null) : null;
+      const analysis = romanInKey(entry.symbol, activeKey);
       const roman = analysis?.roman ?? "\u2014";
       const fn = analysis?.function ?? "unknown";
       const color = FUNCTION_COLORS[fn] ?? "#6b7280";
@@ -1276,25 +1250,10 @@ K:${abcKey}
   }
   function computeDegree(chordSymbol, activeKey) {
     if (!activeKey || !chordSymbol) return "\u2014";
-    try {
-      const chord = UMT.parseChordSymbol(chordSymbol);
-      const { analysis } = UMT.Harmony.analyzeProgression([chord], activeKey);
-      const a = analysis[0];
-      if (!a) return "?";
-      return a.roman ?? "?";
-    } catch {
-      return "?";
-    }
+    return romanInKey(chordSymbol, activeKey)?.roman ?? "?";
   }
   function isBorrowedChord(chordSymbol, activeKey) {
-    if (!activeKey) return false;
-    try {
-      const chord = UMT.parseChordSymbol(chordSymbol);
-      const { analysis } = UMT.Harmony.analyzeProgression([chord], activeKey);
-      return analysis[0]?.isBorrowed ?? false;
-    } catch {
-      return false;
-    }
+    return romanInKey(chordSymbol, activeKey)?.isBorrowed ?? false;
   }
   var isValidChordSymbol = isKnownChord;
   var SEMITONE_NAMES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -1304,12 +1263,6 @@ K:${abcKey}
     const idx = all.indexOf(root);
     if (idx === -1) return root;
     return names[((idx % 12 + semitones) % 12 + 12) % 12];
-  }
-  function transposeKey(key, semitones) {
-    const [root, mode2] = key.split(" ");
-    const pc = NOTE_SEMITONE[root];
-    if (pc === void 0) return key;
-    return [KEY_ROOTS[((pc + semitones) % 12 + 12) % 12], mode2].filter(Boolean).join(" ");
   }
   function transposeSong(song, semitones, targetKey) {
     const preferSharps = keyPrefersSharps(targetKey);
@@ -2197,7 +2150,7 @@ K:${abcKey}
       diatonic = analysis.isDiatonic ? "Yes" : analysis.isBorrowed ? `Borrowed (${analysis.borrowedFrom ?? "?"})` : "Chromatic";
       scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
       cadence = analysis.cadence || "\u2014";
-      if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget}`;
+      if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget?.split("/")[1] ?? "?"}`;
       if (analysis.coltraneAxis) coltrane = analysis.coltraneAxis.join(" \xB7 ");
       if (analysis.negativeHarmony) negharm = analysis.negativeHarmony;
       if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
@@ -2217,7 +2170,7 @@ K:${abcKey}
   );
   var analysisScale = loadNumber("analysis-scale", 11, 8, 20);
   var state = {
-    activeKey: loadString("active-key", "") || null,
+    activeKey: normalizeKey(loadString("active-key", "")),
     detection: null,
     analysis: null,
     history: [],
@@ -2367,9 +2320,7 @@ K:${abcKey}
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
       <select id="key-select" class="ctrl-select">
         <option value="">Key: Auto</option>
-        ${["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"].flatMap(
-      (r) => [`<option value="${r} Major">${r} Major</option>`, `<option value="${r} Minor">${r} Minor</option>`]
-    ).join("")}
+        ${ALL_KEYS.map((k) => `<option value="${k}">${k}</option>`).join("")}
       </select>
       <span id="auto-key-label" class="auto-key-label"></span>
       <span class="toolbar-sep"></span>
@@ -2548,7 +2499,7 @@ K:${abcKey}
       save("analysis-scale", analysisScale);
       renderAnalysisPanel();
     });
-    const reRenderNeck = () => renderNeck($("neck-container"), displayedNotes(), chordRoot(selectedSymbol()));
+    const reRenderNeck = () => renderNeck($("neck-container"), displayedNotes(), !keyPrefersSharps(analysisKey()));
     $("btn-neck-minus").addEventListener("click", () => {
       adjustNeckSpacing(-2);
       reRenderNeck();
@@ -2758,7 +2709,7 @@ K:${abcKey}
   function renderZone1Diagrams(noteNames, chordSymbol) {
     renderStaff($("staff-container"), noteNames, staffWidth, state.activeKey);
     renderPiano($("piano-container"), noteNames, chordSymbol);
-    renderNeck($("neck-container"), noteNames, chordRoot(chordSymbol));
+    renderNeck($("neck-container"), noteNames, !keyPrefersSharps(analysisKey()));
     renderGuitar($("guitar-container"), chordSymbol, noteNames);
     renderCircleOfFifths(
       $("cof-container"),

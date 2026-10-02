@@ -5,7 +5,7 @@ vi.mock('../src/audio', () => ({
   playNoteNames: vi.fn(),
 }))
 vi.mock('../src/analyzer', () => ({
-  buildHarmonicAnalysis: vi.fn(() => null),
+  romanInKey: vi.fn(() => null),
 }))
 
 import {

@@ -93,7 +93,8 @@ export function renderZone1Analysis(
     diatonic = analysis.isDiatonic ? 'Yes' : analysis.isBorrowed ? `Borrowed (${analysis.borrowedFrom ?? '?'})` : 'Chromatic'
     scales = analysis.suggestedScales.slice(0, 4).join(', ') || '—'
     cadence = analysis.cadence || '—'
-    if (analysis.isSecondary) secondary = `→ ${analysis.secondaryTarget}`
+    // The Roman field already reads V7/x; this row names the tonicized degree.
+    if (analysis.isSecondary) secondary = `→ ${analysis.secondaryTarget?.split('/')[1] ?? '?'}`
     if (analysis.coltraneAxis) coltrane = analysis.coltraneAxis.join(' · ')
     if (analysis.negativeHarmony) negharm = analysis.negativeHarmony
     if (analysis.substitutions?.length) subs = analysis.substitutions.join(', ')
