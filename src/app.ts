@@ -20,6 +20,7 @@ import { ALL_KEYS, normalizeKey, keyPrefersSharps } from './keys'
 // ─── Size preferences ────────────────────────────────────────────────────────
 
 const staffWidth = 380
+let staffScale = loadNumber('staff-scale', 2, 1, 3)
 let cofSize = loadNumber('cof-size', 160, 100, 400)
 let cofAccidental = loadChoice('cof-accidental', ['flat', 'sharp'] as const, 'flat')
 let cofShowMinor   = loadBool('cof-show-minor', true)
@@ -220,6 +221,10 @@ function buildNotationPanel(): string {
           <div class="col-label">Staff</div>
           <div id="chord-summary"></div>
           <div id="staff-container"></div>
+          <div class="ctrl-row" style="justify-content:center">
+            <button id="btn-staff-minus" class="size-ctrl-btn" title="Smaller staff">−</button>
+            <button id="btn-staff-plus"  class="size-ctrl-btn" title="Larger staff">+</button>
+          </div>
         </div>
         <div class="col-analysis" id="col-analysis">
           <div class="col-header">
@@ -342,6 +347,14 @@ function wireLayoutEvents() {
     save('analysis-scale', analysisScale)
     renderAnalysisPanel()
   })
+
+  const resizeStaff = (delta: number) => {
+    staffScale = Math.min(3, Math.max(1, staffScale + delta))
+    save('staff-scale', staffScale)
+    renderStaff($('staff-container'), displayedNotes(), staffWidth, analysisKey(), staffScale)
+  }
+  $('btn-staff-minus').addEventListener('click', () => resizeStaff(-0.25))
+  $('btn-staff-plus').addEventListener('click', () => resizeStaff(0.25))
 
   const reRenderNeck = () => renderNeck($('neck-container'), displayedNotes(), !keyPrefersSharps(analysisKey()))
   $('btn-neck-minus').addEventListener('click', () => { adjustNeckSpacing(-2); reRenderNeck() })
@@ -587,7 +600,7 @@ function updateAutoKeyLabel() {
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
 function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
-  renderStaff($('staff-container'), noteNames, staffWidth, analysisKey())
+  renderStaff($('staff-container'), noteNames, staffWidth, analysisKey(), staffScale)
   renderPiano($('piano-container'), noteNames, chordSymbol)
   renderNeck($('neck-container'), noteNames, !keyPrefersSharps(analysisKey()))
   renderGuitar($('guitar-container'), chordSymbol, noteNames)

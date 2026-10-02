@@ -2,6 +2,7 @@ import { playNoteByName } from './audio'
 import { NOTE_SEMITONE, noteNameToMidi } from './midi'
 import { chordColor, NEUTRAL_COLOR, tryParseChord, tryUMT } from './chord'
 import { keySignature } from './keys'
+import { playableVoicings, tuningToMidi, normalizeNoteName } from './voicings'
 import { loadBool, loadChoice, loadJSON, loadNumber, save } from './storage'
 
 let guitarControlsVisible = loadBool('panel-guitarControls', true)
@@ -28,8 +29,8 @@ export function buildStaffAbc(noteNames: string[], keyStr: string | null): strin
   return header + (abcNotes.length ? `[${abcNotes.join('')}]1` : 'z')
 }
 
-export function renderStaff(container: HTMLElement, noteNames: string[], width = 380, keyStr: string | null = null) {
-  ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr), { staffwidth: width - 20, scale: 2 })
+export function renderStaff(container: HTMLElement, noteNames: string[], width = 380, keyStr: string | null = null, scale = 2) {
+  ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr), { staffwidth: width - 20, scale })
 }
 
 // ─── Full-neck horizontal fretboard ──────────────────────────────────────────
@@ -108,22 +109,6 @@ const DARK_FRETBOARD_STYLE = {
 
 const EMPTY_FRETBOARD = { name: '', frets: [null, null, null, null, null, null], tuning: ['E','A','D','G','B','E'] }
 
-function deriveVoicingFromNotes(noteNames: string[], tuning: string[]): { frets: (number|null)[], baseFret: number } {
-  const activeClasses = new Set(
-    noteNames.map(n => NOTE_SEMITONE[n.match(/^([A-G][b#]?)/)?.[1] ?? ''] ?? -1).filter(n => n >= 0)
-  )
-  if (!activeClasses.size) return { frets: tuning.map(() => null), baseFret: 1 }
-
-  const frets = tuning.map(open => {
-    const base = NOTE_SEMITONE[open] ?? 0
-    for (let f = 0; f <= 12; f++) { if (activeClasses.has((base + f) % 12)) return f }
-    return null
-  })
-  const nonOpen = frets.filter((f): f is number => f !== null && f > 0)
-  const baseFret = nonOpen.length ? Math.min(...nonOpen) : 1
-  return { frets, baseFret }
-}
-
 let guitarVoicingIdx = 0
 let lastGuitarSymbol: string | null = null
 let lastNoteNames: string[] = []
@@ -133,15 +118,17 @@ let guitarTuningKey = loadChoice<GuitarTuningKey>('guitar-tuning', ['standard', 
 let guitarTunerExpanded = false
 let guitarSpacing = loadNumber('guitar-spacing', 19, 12, 32)
 
-const GUITAR_TUNINGS: Record<string, { umt: () => any; notae: string[]; label: string }> = {
-  standard: { umt: () => UMT.GUITAR_STANDARD,  notae: ['E','A','D','G','B','E'], label: 'Standard' },
-  dropD:    { umt: () => UMT.GUITAR_DROPPED_D, notae: ['D','A','D','G','B','E'], label: 'Drop D'   },
-  openG:    { umt: () => UMT.GUITAR_OPEN_G,    notae: ['D','G','D','G','B','D'], label: 'Open G'   },
+const GUITAR_TUNINGS: Record<string, { notae: string[]; label: string }> = {
+  standard: { notae: ['E','A','D','G','B','E'], label: 'Standard' },
+  dropD:    { notae: ['D','A','D','G','B','E'], label: 'Drop D'   },
+  openG:    { notae: ['D','G','D','G','B','D'], label: 'Open G'   },
 }
 
 function loadStringTuning(): string[] {
   const saved = loadJSON<unknown>('guitar-string-tuning', null)
-  if (Array.isArray(saved) && saved.length === 6 && saved.every(n => typeof n === 'string')) return saved
+  if (Array.isArray(saved) && saved.length === 6 && saved.every(n => typeof n === 'string' && normalizeNoteName(n))) {
+    return saved.map(n => normalizeNoteName(n)!)
+  }
   return [...(GUITAR_TUNINGS[guitarTuningKey]?.notae ?? ['E','A','D','G','B','E'])]
 }
 
@@ -250,9 +237,16 @@ function wireGuitarControls(container: HTMLElement) {
 
   container.querySelectorAll<HTMLInputElement>('.guitar-string-input').forEach(input => {
     input.addEventListener('change', () => {
-      const val = input.value.trim()
-      if (!val) return
-      guitarStringTuning[parseInt(input.dataset.string!)] = val
+      const i = parseInt(input.dataset.string!)
+      const val = normalizeNoteName(input.value)
+      if (!val) {
+        // Not a note name: put the string back and flag the field briefly.
+        input.value = guitarStringTuning[i]
+        input.classList.add('invalid')
+        setTimeout(() => input.classList.remove('invalid'), 1200)
+        return
+      }
+      guitarStringTuning[i] = val
       save('guitar-string-tuning', guitarStringTuning)
       guitarTuningKey = detectPreset(guitarStringTuning)
       save('guitar-tuning', guitarTuningKey)
@@ -288,25 +282,14 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
     lastGuitarSymbol = chordSymbol
   }
 
-  // Custom tuning: derive fret positions directly from active notes
-  if (guitarTuningKey === 'custom') {
-    const { frets, baseFret } = deriveVoicingFromNotes(noteNames, guitarStringTuning)
-    let svg = ''
-    try {
-      svg = Notae.renderFretboard(
-        { name: chordSymbol, frets, tuning: guitarStringTuning, baseFret } as any,
-        guitarStyle()
-      )
-    } catch { }
-    container.innerHTML = `<div>${svg}</div>` + guitarControls(0, 0)
-    wireGuitarControls(container)
-    return
-  }
-
-  // Preset tuning: use UMT voicings
-  const umtTuning = GUITAR_TUNINGS[guitarTuningKey].umt()
+  // Every tuning, preset or custom, goes through UMT: open strings as steps from A4.
+  const openMidi = tuningToMidi(guitarStringTuning) ?? tuningToMidi(GUITAR_TUNINGS.standard.notae)!
+  const umtTuning = openMidi.map(m => m - 69)
   const chord = tryParseChord(chordSymbol)
-  const voicings: any[] = chord ? tryUMT('fretboard voicings', () => UMT.getFretboardVoicings(chord, umtTuning) ?? [], []) : []
+  const bassPc = chord ? ((((chord.bassStep ?? chord.rootStep) + 9) % 12) + 12) % 12 : 0
+  const voicings: any[] = chord
+    ? playableVoicings(tryUMT('fretboard voicings', () => UMT.getFretboardVoicings(chord, umtTuning) ?? [], []), openMidi, bassPc)
+    : []
 
   if (!voicings.length) {
     container.innerHTML = '<div class="no-voicing">No voicings</div>' + guitarControls(0, 0)
