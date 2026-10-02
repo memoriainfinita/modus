@@ -2,6 +2,7 @@ import type { HistoryEntry } from './types'
 import { romanInKey } from './analyzer'
 import { playChord, playNoteNames } from './audio'
 import { escapeHtml } from './html'
+import { showUndo } from './undo'
 
 const MAX_ENTRIES = 200
 // Chip accent by harmonic function (T/S/D), not by chord quality
@@ -33,6 +34,21 @@ export function removeEntry(id: string) {
   onChange(entries)
 }
 
+/** Puts back a previous list (undo). Dedup re-arms against its newest entry. */
+export function restoreEntries(list: HistoryEntry[]) {
+  entries = list.slice(0, MAX_ENTRIES)
+  lastAutoAppended = entries[0]?.symbol ?? null
+  onChange(entries)
+}
+
+/** Clears the strip at once and offers Undo. */
+export function clearHistoryWithUndo() {
+  if (!entries.length) return
+  const before = entries
+  clearHistory()
+  showUndo(`History cleared (${before.length})`, () => restoreEntries(before))
+}
+
 export function clearHistory() {
   entries = []
   lastAutoAppended = null
@@ -51,7 +67,7 @@ export function notifyChordDetected(symbol: string, notes: string[]) {
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
-/** Moves the cursor highlight without rebuilding the strip (a rebuild between clicks breaks dblclick). */
+/** Moves the cursor highlight without rebuilding the strip. */
 export function markActiveHistoryEntry(container: HTMLElement, entryId: string | null) {
   container.querySelectorAll<HTMLElement>('.history-chip').forEach(el => {
     el.classList.toggle('active-cursor', el.dataset.id === entryId)
@@ -83,12 +99,12 @@ export function renderHistory(
       <span class="history-chip-roman">${escapeHtml(roman)}</span>
     `
 
-    chip.addEventListener('click', () => onChipClick(entry))
-    chip.addEventListener('dblclick', () => {
+    chip.addEventListener('click', () => {
+      onChipClick(entry)
       if (entry.notes.length > 0) playNoteNames(entry.notes)
       else playChord(entry.symbol)
     })
-    chip.title = `${entry.symbol} — dblclick to play, drag to song, right-click to remove`
+    chip.title = `${entry.symbol} — click to play, drag to song, right-click to remove`
 
     // Drag to song
     chip.draggable = true
@@ -102,37 +118,19 @@ export function renderHistory(
     // Right-click to remove
     chip.addEventListener('contextmenu', e => {
       e.preventDefault()
+      const before = entries
       removeEntry(entry.id)
+      showUndo(`Removed ${entry.symbol}`, () => restoreEntries(before))
     })
 
     strip.appendChild(chip)
   })
 
-  // Clear button — double-click to confirm
-  let _clearPending = false
-  let _clearTimer = 0
   const clearBtn = document.createElement('button')
   clearBtn.textContent = 'Clear'
-  clearBtn.title = 'Clear history — click twice to confirm'
+  clearBtn.title = 'Clear history (C) — can be undone'
   clearBtn.className = 'history-clear-btn'
-  clearBtn.addEventListener('click', () => {
-    if (_clearPending) {
-      clearTimeout(_clearTimer)
-      _clearPending = false
-      clearBtn.textContent = 'Clear'
-      clearBtn.style.background = '#374151'
-      clearHistory()
-    } else {
-      _clearPending = true
-      clearBtn.textContent = '?'
-      clearBtn.style.background = '#991b1b'
-      _clearTimer = window.setTimeout(() => {
-        _clearPending = false
-        clearBtn.textContent = 'Clear'
-        clearBtn.style.background = '#374151'
-      }, 3000)
-    }
-  })
+  clearBtn.addEventListener('click', clearHistoryWithUndo)
 
   const wrap = document.createElement('div')
   wrap.className = 'history-wrap'

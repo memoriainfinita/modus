@@ -224,7 +224,35 @@ export function computeMeasureNumbers(song: Song): Map<string, number> {
 }
 
 export function parseProgressionText(text: string): string[] {
-  return text.split(/[\s,\n]+/).map(t => t.trim()).filter(Boolean)
+  return text.split(/[\s,\n|]+/).map(t => t.trim()).filter(Boolean)
+}
+
+/**
+ * Splits a pasted progression into measures: `|` marks bar lines, as in a chord chart
+ * ("Am G | C F" → two measures). Without bars, each chord gets its own measure.
+ */
+export function parseProgressionMeasures(text: string): string[][] {
+  if (!text.includes('|')) return parseProgressionText(text).map(sym => [sym])
+  return text.split('|').map(parseProgressionText).filter(m => m.length > 0)
+}
+
+/** Appends measures of chords to a section. An empty last measure is filled first. */
+export function appendProgression(song: Song, sectionId: string, measures: string[][]): Song {
+  return {
+    ...song,
+    sections: song.sections.map(s => {
+      if (s.id !== sectionId) return s
+      const kept = [...s.measures]
+      const last = kept[kept.length - 1]
+      const reuse = last && last.chords.length === 0
+      if (reuse) kept.pop()
+      const added: Measure[] = measures.map((syms, i) => ({
+        id: i === 0 && reuse ? last.id : newId(),
+        chords: syms.map(symbol => ({ id: newId(), symbol, valid: isValidChordSymbol(symbol) })),
+      }))
+      return { ...s, measures: [...kept, ...added] }
+    })
+  }
 }
 
 export function computeDegree(chordSymbol: string, activeKey: string | null): string {

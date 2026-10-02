@@ -136,6 +136,49 @@ await check('no orphan chord input after reload', async () => {
   assert(await page.locator('.chord-input').count() === 0, 'orphan input after reload')
 })
 
+await check('paste splits measures at bar lines', async () => {
+  await page.getByRole('button', { name: 'Paste' }).click()
+  await page.fill('.paste-textarea', 'Dm7 G7 | Cmaj7')
+  await page.getByRole('button', { name: 'Add chords' }).click()
+  const rows = await page.locator('.measure-row').evaluateAll(rs => rs.map(r =>
+    [...r.querySelectorAll('.chord-chip-symbol')].map(e => e.textContent).join(' ')))
+  assert(rows.includes('Dm7 G7') && rows.includes('Cmaj7'), `measures: ${JSON.stringify(rows)}`)
+})
+
+await check('MIDI fill continues into the next measure', async () => {
+  await page.locator('.chord-chip', { hasText: 'G7' }).hover()
+  await page.locator('.chord-chip', { hasText: 'G7' }).locator('button', { hasText: '⊙' }).click()
+  await play([62, 65, 69], 400)                 // Dm replaces G7
+  await off([62, 65, 69])
+  await play([64, 67, 71], 400)                 // Em replaces Cmaj7, in the next measure
+  await off([64, 67, 71])
+  const chips = await page.locator('.chord-chip-symbol').allInnerTexts()
+  assert(chips.join(' ') === 'Dm7 Dm Em', `chips: ${chips.join(' ')}`)
+  await page.keyboard.press('Escape')
+})
+
+await check('deleting a section can be undone', async () => {
+  await page.locator('.section-header button', { hasText: '×' }).first().click()
+  assert(await page.locator('.chord-chip').count() === 0, 'section still there')
+  await page.locator('.undo-btn').click()
+  assert(await page.locator('.chord-chip').count() === 3, 'undo did not restore')
+})
+
+await check('history Clear can be undone', async () => {
+  const before = await page.locator('.history-chip').count()
+  await page.locator('.history-clear-btn').click()
+  assert(await page.locator('.history-chip').count() === 0, 'not cleared')
+  await page.locator('.undo-btn').click()
+  assert(await page.locator('.history-chip').count() === before, 'undo did not restore')
+})
+
+await check('clicking a history chip loads it in the detector', async () => {
+  const first = await text('.history-chip-symbol')
+  await page.locator('.history-chip').first().click()
+  const shown = await text('.chord-name-badge')
+  assert(shown === first, `detector shows ${shown}, chip ${first}`)
+})
+
 await check('staff renders a key signature for F# Major', async () => {
   await setKey('F# Major')
   await play([66, 70, 73])

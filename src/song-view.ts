@@ -3,10 +3,11 @@ import { playChord, playNoteNames } from './audio'
 import {
   createSong, saveSong, addSection, removeSection, updateSection, duplicateSection,
   addMeasure, removeMeasure, addChord, updateChord, removeChord, duplicateChord,
-  moveChordToPosition, reorderSections, computeMeasureNumbers, parseProgressionText,
-  computeDegree, isBorrowedChord, isValidChordSymbol, transposeSong, transposeKey, detectForm,
+  moveChordToPosition, reorderSections, computeMeasureNumbers, parseProgressionMeasures, appendProgression,
+  computeDegree, isBorrowedChord, transposeSong, transposeKey, detectForm,
 } from './song-model'
 import { escapeHtml } from './html'
+import { showUndo } from './undo'
 
 // ─── Song UI ─────────────────────────────────────────────────────────────────
 
@@ -30,7 +31,6 @@ let _container: HTMLElement | null = null
 
 let _draggedSectionId: string | null = null
 let _draggedChordId: string | null = null
-let _pendingConfirmEl: { el: HTMLButtonElement; timer: number } | null = null
 let _dropIndicator: HTMLElement | null = null
 let _insertBeforeChordId: string | null = null  // null = append to end of measure
 
@@ -50,30 +50,23 @@ function showNotice(msg: string, type: 'info' | 'warn' = 'info') {
   window.setTimeout(() => div.remove(), 5000)
 }
 
-function confirmOnce(btn: HTMLButtonElement, action: () => void) {
-  if (_pendingConfirmEl?.el === btn) {
-    clearTimeout(_pendingConfirmEl.timer)
-    _pendingConfirmEl = null
-    btn.textContent = btn.dataset.orig!
-    btn.style.background = '#374151'
-    action()
-    return
-  }
-  if (_pendingConfirmEl) {
-    clearTimeout(_pendingConfirmEl.timer)
-    _pendingConfirmEl.el.textContent = _pendingConfirmEl.el.dataset.orig!
-    _pendingConfirmEl.el.style.background = '#374151'
-    _pendingConfirmEl = null
-  }
-  btn.dataset.orig = btn.textContent!
-  btn.textContent = '?'
-  btn.style.background = '#991b1b'
-  const timer = window.setTimeout(() => {
-    btn.textContent = btn.dataset.orig!
-    btn.style.background = '#374151'
-    _pendingConfirmEl = null
-  }, 3000)
-  _pendingConfirmEl = { el: btn, timer }
+/** Applies a destructive change at once and offers Undo back to the song before it. */
+function applyWithUndo(next: Song, message: string) {
+  const before = _song
+  _song = next
+  saveSong(_song)
+  _handlers?.onSongChange(_song)
+  showUndo(message, () => {
+    _song = before
+    saveSong(before)
+    _handlers?.onSongChange(before)
+  })
+}
+
+/** Removes a chord from the song, with Undo. */
+export function removeChordWithUndo(chordId: string) {
+  const chord = _song.sections.flatMap(s => s.measures.flatMap(m => m.chords)).find(c => c.id === chordId)
+  if (chord) applyWithUndo(removeChord(_song, chordId), `Removed ${chord.symbol || 'chord'}`)
 }
 
 export function mountSong(container: HTMLElement, song: Song, handlers: SongEventHandlers) {
@@ -83,7 +76,7 @@ export function mountSong(container: HTMLElement, song: Song, handlers: SongEven
   rerender()
 }
 
-/** Moves the cursor highlight without rebuilding the DOM (a rebuild between clicks breaks dblclick). */
+/** Moves the cursor highlight without rebuilding the DOM. */
 export function markActiveChord(chordId: string | null) {
   _container?.querySelectorAll<HTMLElement>('.chord-chip').forEach(el => {
     el.classList.toggle('active-cursor', el.dataset.chordId === chordId)
@@ -112,27 +105,27 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   })
 
   const newBtn = makeBtn('New', '#374151', () => {
-    confirmOnce(newBtn, () => { _song = createSong(); saveSong(_song); h.onSongChange(_song) })
+    if (!_song.sections.length && _song.title === 'Untitled') return
+    applyWithUndo(createSong(), `New song — "${_song.title}" closed`)
   })
-  newBtn.title = 'Start new song — click twice to confirm'
+  newBtn.title = 'Start a new song — can be undone'
 
   // Inline paste area
   const pasteArea = document.createElement('div')
   pasteArea.className = 'paste-area'
   pasteArea.style.display = 'none'
   const pasteTA = document.createElement('textarea')
-  pasteTA.placeholder = 'Am G C F  (space, comma or newline separated)'
+  pasteTA.placeholder = 'Am G | C F  (| separates measures; without bars, one chord per measure)'
   pasteTA.rows = 2
   pasteTA.className = 'paste-textarea'
   const pasteSubmit = makeBtn('Add chords', '#4f46e5', () => {
     const text = pasteTA.value.trim()
     if (!text) return
-    const symbols = parseProgressionText(text)
+    const measures = parseProgressionMeasures(text)
+    if (!measures.length) return
     if (!_song.sections.length) { _song = addSection(_song, 'Section', 'verse') }
     const section = _song.sections[_song.sections.length - 1]
-    const measure = newPasteMeasure(symbols)
-    _song = { ..._song, sections: _song.sections.map(s => s.id !== section.id ? s : { ...s, measures: [...s.measures, measure] }) }
-    if (symbols.length > 8) showNotice('All chords added to one measure — split as needed.')
+    _song = appendProgression(_song, section.id, measures)
     pasteTA.value = ''
     pasteArea.style.display = 'none'
     saveSong(_song); h.onSongChange(_song)
@@ -207,17 +200,6 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   })
 
   return root
-}
-
-function newPasteMeasure(symbols: string[]): Measure {
-  return {
-    id: crypto.randomUUID(),
-    chords: symbols.map(sym => ({
-      id: crypto.randomUUID(),
-      symbol: sym,
-      valid: isValidChordSymbol(sym)
-    }))
-  }
 }
 
 function buildSectionDOM(
@@ -317,10 +299,10 @@ function buildSectionDOM(
   const dupBtn = makeSmallBtn('⧉', () => { _song = duplicateSection(_song, section.id); saveSong(_song); h.onSongChange(_song) })
   dupBtn.title = 'Duplicate section'
   const delBtn = makeSmallBtn('×', () => {
-    confirmOnce(delBtn, () => { _song = removeSection(_song, section.id); saveSong(_song); h.onSongChange(_song) })
+    applyWithUndo(removeSection(_song, section.id), `Deleted section ${section.name}`)
   })
   delBtn.style.color = '#f87171'
-  delBtn.title = 'Delete section — click twice to confirm'
+  delBtn.title = 'Delete section — can be undone'
 
   secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn)
 
@@ -459,8 +441,9 @@ function buildMeasureDOM(
   wrap.appendChild(chordsRow)
 
   const delMBtn = makeSmallBtn('×', () => {
-    _song = removeMeasure(_song, section.id, measure.id); saveSong(_song); h.onSongChange(_song)
+    applyWithUndo(removeMeasure(_song, section.id, measure.id), `Deleted measure ${measureNum}`)
   })
+  delMBtn.title = 'Delete measure — can be undone'
   delMBtn.style.color = '#f87171'
   delMBtn.style.alignSelf = 'center'
   const sectionObj = _song.sections.find(s => s.id === section.id)
@@ -583,8 +566,8 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   editBtn.title = 'Edit chord symbol'
   const dupBtn = makeSmallBtn('⧉', () => { _song = duplicateChord(_song, chord.id); saveSong(_song); h.onSongChange(_song) })
   dupBtn.title = 'Duplicate chord'
-  const delBtn = makeSmallBtn('×', () => { _song = removeChord(_song, chord.id); saveSong(_song); h.onSongChange(_song) })
-  delBtn.title = 'Remove chord'
+  const delBtn = makeSmallBtn('×', () => removeChordWithUndo(chord.id))
+  delBtn.title = 'Remove chord (Del) — can be undone'
   const captureBtn = makeSmallBtn('⊙', () => h.onChordCapture(chord.id))
   captureBtn.title = 'MIDI fill: next chord played on MIDI keyboard replaces this slot'
   if (isCapture) { captureBtn.style.color = '#818cf8'; captureBtn.style.fontWeight = '700' }
@@ -595,8 +578,8 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   wrap.addEventListener('mouseenter', () => controls.style.display = 'flex')
   wrap.addEventListener('mouseleave', () => controls.style.display = 'none')
 
-  wrap.addEventListener('click', () => h.onChordClick(chord.id, chord.symbol, chord.notes))
-  wrap.addEventListener('dblclick', () => {
+  wrap.addEventListener('click', () => {
+    h.onChordClick(chord.id, chord.symbol, chord.notes)
     if (chord.notes?.length) playNoteNames(chord.notes)
     else playChord(chord.symbol)
   })

@@ -63,11 +63,11 @@ Four columns, each togglable independently ([St][An][CoF][Git]):
 
 ### Audio
 
-Any note played on the MIDI controller sounds through the selected soundfont. Click piano keys, CoF segments, or history/song chips to play. 128 GM instruments selectable (grouped by family). Volume slider. Loading progress bar.
+Any note played on the MIDI controller sounds through the selected soundfont. Click piano keys, CoF segments, or history/song chips to play. 128 GM instruments selectable (grouped by family). Volume slider. Loading progress bar. The instrument starts loading when the page opens; a note that arrives before it can sound (still loading, or no click yet to unlock audio) makes the progress bar flash.
 
 ### History
 
-Every chord is logged automatically after 0.8s of stability. Each chip shows chord name and Roman numeral in the selected key (updates live when the key changes; not shown while the key is on Auto). Click to reload in the detector, double-click to play, drag onto a song measure to insert, right-click to remove.
+Every chord is logged automatically after 0.8s of stability. Each chip shows chord name and Roman numeral in the selected key (updates live when the key changes; not shown while the key is on Auto). Click to load it in the detector and play it, drag onto a song measure to insert, right-click to remove. Clear empties the strip at once; both can be undone from the toast that appears.
 
 ### Song
 
@@ -77,9 +77,11 @@ A scratchpad and structure builder.
 - Unlimited chords per measure, unlimited measures per section
 - Each chord shows its Roman numeral — borrowed chords highlighted in amber
 - Drag to reorder sections and chords; drag history chips directly onto measures
-- MIDI fill: arm any chord slot (⊙) and play to fill it from the controller
+- Click a chord to select and play it
+- MIDI fill: arm any chord slot (⊙) and play — each chord fills a slot and the next slot is armed, across measures and sections, until the song ends or Esc
 - Transpose entire song in semitone steps (stored voicings move with it)
-- Paste a progression as text (`Cmaj7 Am7 F G`)
+- Paste a progression as text: `|` marks bar lines (`Dm7 G7 | Cmaj7`); without bars, one chord per measure
+- Deleting a chord, measure or section, or starting a new song, happens at once and can be undone
 - Export as printable chord chart
 
 ---
@@ -177,7 +179,7 @@ tests/
 | `H` | Toggle hold mode |
 | `A` | Toggle arpeggio mode |
 | `S` | Send active history chip to song cursor |
-| `C` | Clear history (with confirmation) |
+| `C` | Clear history (can be undone) |
 | `P` | Same as `Space` |
 | `1`–`9` | Select alternative chord interpretation |
 | `Esc` | Cancel MIDI fill / close help / deselect |
