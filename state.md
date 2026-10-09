@@ -1,6 +1,6 @@
 ---
 created: 2026-05-20
-last_updated: 2026-10-02
+last_updated: 2026-10-09
 ---
 
 # Modus — state
@@ -13,12 +13,13 @@ What is true now. What already happened lives in `state-history.md`.
 
 Part of the **memoriainfinita** ecosystem alongside UMT and notae. GPL-3.0.
 
-**Spec:** `docs/spec.md` · Executed plans in `docs/archive/`
+**Spec:** `docs/spec.md` (design and behaviour only) · Executed plans and earlier spec revisions in `.archive/` (local, gitignored)
 
 ## Status
 
 - Core app complete: detection, analysis, history, song builder, audio, CoF, guitar voicings, piano/fretboard
-- 2026-10-02: every TODO of the base review closed except the soundfont decision and the two manual tests (real controller, Firefox). TSC clean, 192 unit tests against the real UMT bundle, `pnpm test:e2e` 27/27 (installed Chrome + fake Web MIDI)
+- 2026-10-09: TSC clean, 204 unit tests against the real UMT bundle, `pnpm test:e2e` 28/28 (installed Chrome + fake Web MIDI). Open: the two manual tests (real controller, Firefox)
+- Audio: controller notes follow velocity, note-off and sustain pedal; previews (history, song, CoF, arrows, Space) cut the previous one; master gain for volume; the app starts without the soundfont-player script. Checked in Chrome with the real library: no source stops while a key is held; note-off and pedal-up stop with the 0.3 s release
 - Detector flow: every source (MIDI, history, song, CoF, arrow keys) goes through `showDetection` in `app.ts`; analysis and diagrams are derived from it. Each diagram re-renders only when its inputs change
 - Interaction model: a single click plays (history, song, CoF); double-click on a CoF major/minor segment sets the key; destructive actions run at once with an Undo toast
 - With the key on Auto, the detected key drives the whole app
@@ -117,6 +118,7 @@ const umtNote = UMT.parseNote(noteName)
 - [theory] Music-theory fixes go into UMT or notae (their repo, tests, push), then Modus bumps the pin. No workarounds in Modus for library output. Confirmed 2026-10.
 - [ux] Destructive actions run at once and offer Undo (`undo.ts`), never a confirmation. Confirmed 2026-10.
 - [ux] Play on single click. A double click is detected by hand (same target within 400 ms) wherever the element is rebuilt on click: a rebuilt node never gets the browser's dblclick. Confirmed 2026-10.
+- [audio] Stay on soundfont-player 0.12.0 + FluidR3_GM: archived upstream but pinned and working. smplr (same author) loads its GM soundfonts from the same `gleitz.github.io`, so swapping does not remove the sample-host risk. A reason to move would be smplr's sampled instruments (Steinway with velocity layers, electric pianos) or reverb, not maintenance. Confirmed 2026-10.
 - [testing] `pnpm test:e2e` after each behaviour change: `tests/e2e/smoke.mjs` serves the repo, opens the installed Chrome (`channel: 'chrome'`) with a fake `navigator.requestMIDIAccess`, and plays notes through `window.__midi`. Each check releases all notes when it ends. Confirmed 2026-10.
 
 ## Preferences
@@ -125,6 +127,8 @@ const umtNote = UMT.parseNote(noteName)
 
 ## TODO
 
-- [ ] Test with a real MIDI controller: capture (⊙) chaining with its 250 ms settle time, hold/arpeggio modes, device hot-plug, the audio flash when a note arrives before the first click
+- [ ] Test with a real MIDI controller: capture (⊙) chaining with its 250 ms settle time, hold/arpeggio modes, device hot-plug, the audio flash when a note arrives before the first click; by ear: the velocity curve (linear, `velocityGain` in `audio.ts`), note-off release and the sustain pedal
+- [ ] Colour themes: user-selectable background and diagram colours (dots, frets, piano keys, CoF segments)
+- [ ] More display modes [PENDIENTE: which ones — to define with the user]
+- [ ] Modular layout (panels placed and resized freely, VSCode-style): undecided whether it is wanted
 - [ ] Test in Firefox (Web MIDI behind a per-site permission): connection, playback, layout. The README and the warning already list Firefox; this confirms it
-- [ ] Audio depends on soundfont-player 0.12.0 (unmaintained since 2020) and FluidR3_GM samples from `gleitz.github.io`. If that host fails, audio breaks and the CDN banner does not fire. Successor: smplr (same author, 1.1.0, 2026-09). Left for last on purpose: soundfont-player works today
