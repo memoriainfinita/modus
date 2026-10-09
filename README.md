@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-Real-time MIDI harmonic analysis for musicians. Connect a controller, play notes, get instant chord detection and full harmonic analysis — Roman numerals, harmonic function, figured bass, scales, substitutions, Coltrane axis, negative harmony, and more.
+See and understand the harmony of what you play, in real time. Connect a controller, play notes, get instant chord detection and full harmonic analysis — Roman numerals, harmonic function, figured bass, scales, substitutions, Coltrane axis, negative harmony, and more.
 
 A chord history and song structure builder extend that — log what you play, build chord sequences, document song structure.
 
@@ -10,9 +10,15 @@ No server. No account. No installation. Open in Chrome, Edge or Firefox and play
 
 ---
 
-## Who it's for
+## What it's for
 
-Students, scholars, composers, teachers, music theory educators — anyone who wants to understand or demonstrate harmony.
+- **Studying** theory and harmony
+- **Transcribing** songs and seeing the harmony of what you work out
+- **Composing:** trying progressions and documenting the structure of a piece
+- **Teaching:** explaining concepts and giving examples in class
+- **Making videos** and other content about music
+
+For any musician, from learners to teachers and content creators. Modus is in active development towards a complete, universal and didactic app: usable with or without a controller, on any device, in English and Spanish, and beyond Western tonal harmony.
 
 ---
 
