@@ -6,7 +6,7 @@ import {
   insertChordAfter, updateChord, duplicateChord,
   moveChordToPosition, reorderSections, reorderChordInMeasure,
   computeDegree, isBorrowedChord, transposeKey, withoutEmptyChords, saveSong, loadSong, parseProgressionMeasures, appendProgression,
-} from '../src/song-model'
+} from '../src/song/model'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
 

@@ -1,13 +1,13 @@
-import type { Song, Section, Measure, SongChord, SectionColor } from './types'
-import { playChord, playNoteNames } from './audio'
+import type { Song, Section, Measure, SongChord, SectionColor } from '../types'
+import { playChord, playNoteNames } from '../audio/audio'
 import {
   createSong, saveSong, addSection, removeSection, updateSection, duplicateSection,
   addMeasure, removeMeasure, addChord, updateChord, removeChord, duplicateChord,
   moveChordToPosition, reorderSections, computeMeasureNumbers, parseProgressionMeasures, appendProgression,
   computeDegree, isBorrowedChord, transposeSong, transposeKey, detectForm,
-} from './song-model'
-import { escapeHtml } from './html'
-import { showUndo } from './undo'
+} from './model'
+import { escapeHtml } from '../ui/html'
+import { showUndo } from '../ui/undo'
 
 // ─── Song UI ─────────────────────────────────────────────────────────────────
 

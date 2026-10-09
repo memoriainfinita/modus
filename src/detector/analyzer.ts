@@ -1,7 +1,7 @@
-import type { DetectionResult, HarmonicAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult } from './types'
-import { midiToNoteName, PITCH_NAMES_FLAT } from './midi'
-import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from './chord'
-import { normalizeKey } from './keys'
+import type { DetectionResult, HarmonicAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult } from '../types'
+import { midiToNoteName, PITCH_NAMES_FLAT } from '../theory/notes'
+import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from '../theory/chord'
+import { normalizeKey } from '../theory/keys'
 
 const INTERVAL_NAMES = [
   'Unison','Minor 2nd','Major 2nd','Minor 3rd','Major 3rd','Perfect 4th',

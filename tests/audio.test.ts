@@ -48,7 +48,7 @@ beforeEach(() => {
 async function flush() { await Promise.resolve(); await Promise.resolve() }
 
 async function loadAudio() {
-  const audio = await import('../src/audio')
+  const audio = await import('../src/audio/audio')
   const missed = vi.fn()
   const status = vi.fn()
   audio.setAudioMissedCallback(missed)

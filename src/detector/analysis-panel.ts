@@ -1,6 +1,6 @@
-import type { DetectionResult, HarmonicAnalysis } from './types'
-import { chordColor } from './chord'
-import { escapeHtml } from './html'
+import type { DetectionResult, HarmonicAnalysis } from '../types'
+import { chordColor } from '../theory/chord'
+import { escapeHtml } from '../ui/html'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 

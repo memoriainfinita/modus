@@ -1,6 +1,6 @@
-import { noteNameToMidi } from './midi'
-import { chordNoteNames } from './chord'
-import { loadNumber, loadString, save } from './storage'
+import { noteNameToMidi } from '../theory/notes'
+import { chordNoteNames } from '../theory/chord'
+import { loadNumber, loadString, save } from '../ui/storage'
 
 let audioCtx: AudioContext | null = null
 let masterGain: GainNode | null = null

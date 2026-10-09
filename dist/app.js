@@ -1,38 +1,6 @@
 "use strict";
 (() => {
-  // src/midi.ts
-  var PITCH_NAMES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
-  var NOTE_SEMITONE = {
-    "C": 0,
-    "C#": 1,
-    "Db": 1,
-    "D": 2,
-    "D#": 3,
-    "Eb": 3,
-    "E": 4,
-    "F": 5,
-    "F#": 6,
-    "Gb": 6,
-    "G": 7,
-    "G#": 8,
-    "Ab": 8,
-    "A": 9,
-    "A#": 10,
-    "Bb": 10,
-    "B": 11
-  };
-  function midiToNoteName(midiNote) {
-    const pc = midiNote % 12;
-    const octave = Math.floor(midiNote / 12) - 1;
-    return PITCH_NAMES_FLAT[pc] + octave;
-  }
-  function noteNameToMidi(name) {
-    const m = name.match(/^([A-G][b#]?)(-?\d+)$/);
-    if (!m) return null;
-    const pc = NOTE_SEMITONE[m[1]];
-    if (pc === void 0) return null;
-    return (parseInt(m[2]) + 1) * 12 + pc;
-  }
+  // src/input/midi.ts
   function isNoteOff(status, velocity) {
     return (status & 240) === 128 || (status & 240) === 144 && velocity === 0;
   }
@@ -166,7 +134,41 @@
     return mode;
   }
 
-  // src/chord.ts
+  // src/theory/notes.ts
+  var PITCH_NAMES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+  var NOTE_SEMITONE = {
+    "C": 0,
+    "C#": 1,
+    "Db": 1,
+    "D": 2,
+    "D#": 3,
+    "Eb": 3,
+    "E": 4,
+    "F": 5,
+    "F#": 6,
+    "Gb": 6,
+    "G": 7,
+    "G#": 8,
+    "Ab": 8,
+    "A": 9,
+    "A#": 10,
+    "Bb": 10,
+    "B": 11
+  };
+  function midiToNoteName(midiNote) {
+    const pc = midiNote % 12;
+    const octave = Math.floor(midiNote / 12) - 1;
+    return PITCH_NAMES_FLAT[pc] + octave;
+  }
+  function noteNameToMidi(name) {
+    const m = name.match(/^([A-G][b#]?)(-?\d+)$/);
+    if (!m) return null;
+    const pc = NOTE_SEMITONE[m[1]];
+    if (pc === void 0) return null;
+    return (parseInt(m[2]) + 1) * 12 + pc;
+  }
+
+  // src/theory/chord.ts
   var CHORD_FAMILY_COLORS = {
     major: "#f59e0b",
     minor: "#3b82f6",
@@ -228,7 +230,7 @@
     }
   }
 
-  // src/keys.ts
+  // src/theory/keys.ts
   var MAJOR_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
   var MINOR_ROOTS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
   var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc) => [`${root} Major`, `${MINOR_ROOTS[pc]} Minor`]);
@@ -270,7 +272,7 @@
     return Object.values(keySignature(key ?? null).accidentals).includes("#");
   }
 
-  // src/analyzer.ts
+  // src/detector/analyzer.ts
   var INTERVAL_NAMES = [
     "Unison",
     "Minor 2nd",
@@ -389,7 +391,7 @@
     return normalizeKey(tryUMT("key detection", () => UMT.KeyDetection.detect(noteNames.map((n) => UMT.parseNote(n)))[0]?.key ?? null, null));
   }
 
-  // src/storage.ts
+  // src/ui/storage.ts
   function loadJSON(key, fallback) {
     try {
       const raw = localStorage.getItem(key);
@@ -425,7 +427,7 @@
     }
   }
 
-  // src/audio.ts
+  // src/audio/audio.ts
   var audioCtx = null;
   var masterGain = null;
   var instrument = null;
@@ -604,7 +606,48 @@
     sustainedNotes.clear();
   }
 
-  // src/voicings.ts
+  // src/diagrams/staff.ts
+  function buildStaffAbc(noteNames, keyStr) {
+    const { abcKey, accidentals } = keySignature(keyStr);
+    const header = `X:1
+M:none
+L:1
+K:${abcKey}
+`;
+    const abcNotes = noteNames.flatMap((n) => {
+      const m = n.match(/^([A-G])([b#]?)(-?\d+)$/);
+      if (!m) return [];
+      const [, letter, acc, octStr] = m;
+      const keyAcc = accidentals[letter] ?? "";
+      const mark = acc === keyAcc ? "" : acc === "b" ? "_" : acc === "#" ? "^" : "=";
+      const oct = parseInt(octStr);
+      const pitch = oct >= 5 ? letter.toLowerCase() + "'".repeat(oct - 5) : oct === 4 ? letter : letter + ",".repeat(4 - oct);
+      return [mark + pitch];
+    });
+    return header + (abcNotes.length ? `[${abcNotes.join("")}]1` : "z");
+  }
+  function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2) {
+    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr), { staffwidth: width - 20, scale });
+  }
+
+  // src/diagrams/piano.ts
+  function renderPiano(container, noteNames, chordSymbol) {
+    const color = chordSymbol ? chordColor(chordSymbol) : NEUTRAL_COLOR;
+    const colors = noteNames.map(() => color);
+    container.innerHTML = Notae.renderPiano({
+      name: "",
+      keys: noteNames,
+      colors,
+      range: { from: "C2", to: "B5" }
+    });
+    container.querySelectorAll("rect[data-note]").forEach((el) => {
+      const note = el.dataset.note;
+      el.style.cursor = "pointer";
+      el.addEventListener("click", () => playNoteByName(note));
+    });
+  }
+
+  // src/theory/voicings.ts
   var STANDARD_OPEN_MIDI = [40, 45, 50, 55, 59, 64];
   var MAX_SPAN = 3;
   var MIN_STRINGS = 4;
@@ -657,85 +700,7 @@
     return (playable.length ? playable : unique).sort(byNeck);
   }
 
-  // src/diagrams.ts
-  var guitarControlsVisible = loadBool("panel-guitarControls", true);
-  function setGuitarControlsVisible(v) {
-    guitarControlsVisible = v;
-  }
-  function buildStaffAbc(noteNames, keyStr) {
-    const { abcKey, accidentals } = keySignature(keyStr);
-    const header = `X:1
-M:none
-L:1
-K:${abcKey}
-`;
-    const abcNotes = noteNames.flatMap((n) => {
-      const m = n.match(/^([A-G])([b#]?)(-?\d+)$/);
-      if (!m) return [];
-      const [, letter, acc, octStr] = m;
-      const keyAcc = accidentals[letter] ?? "";
-      const mark = acc === keyAcc ? "" : acc === "b" ? "_" : acc === "#" ? "^" : "=";
-      const oct = parseInt(octStr);
-      const pitch = oct >= 5 ? letter.toLowerCase() + "'".repeat(oct - 5) : oct === 4 ? letter : letter + ",".repeat(4 - oct);
-      return [mark + pitch];
-    });
-    return header + (abcNotes.length ? `[${abcNotes.join("")}]1` : "z");
-  }
-  function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2) {
-    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr), { staffwidth: width - 20, scale });
-  }
-  var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
-  var NECK_FRETS = 12;
-  var neckSpacing = loadNumber("neck-spacing", 16, 10, 28);
-  function adjustNeckSpacing(delta) {
-    neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta));
-    save("neck-spacing", neckSpacing);
-  }
-  function renderNeck(container, noteNames, preferFlats = true) {
-    const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
-    const frets = OPEN_MIDI.map((open) => {
-      const pos = midi.map((n) => n - open).filter((f) => f >= 0 && f <= NECK_FRETS);
-      return pos.length ? pos : [null];
-    });
-    const sp = neckSpacing;
-    const style = {
-      ...DARK_FRETBOARD_STYLE,
-      numFrets: NECK_FRETS,
-      dotColor: "#3b82f6",
-      chordNameSize: 0,
-      chordNameY: 4,
-      chordNameGapH: 4,
-      stringSpacing: sp,
-      fretSpacing: Math.round(sp * 28 / 16),
-      dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
-      fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
-      showNoteNames: true,
-      preferFlats
-    };
-    try {
-      container.innerHTML = Notae.renderFretboard(
-        { name: "", frets, tuning: ["E", "A", "D", "G", "B", "E"] },
-        { ...style, orientation: "horizontal" }
-      );
-    } catch {
-      container.innerHTML = "";
-    }
-  }
-  function renderPiano(container, noteNames, chordSymbol) {
-    const color = chordSymbol ? chordColor(chordSymbol) : NEUTRAL_COLOR;
-    const colors = noteNames.map(() => color);
-    container.innerHTML = Notae.renderPiano({
-      name: "",
-      keys: noteNames,
-      colors,
-      range: { from: "C2", to: "B5" }
-    });
-    container.querySelectorAll("rect[data-note]").forEach((el) => {
-      const note = el.dataset.note;
-      el.style.cursor = "pointer";
-      el.addEventListener("click", () => playNoteByName(note));
-    });
-  }
+  // src/diagrams/fretboard-style.ts
   var DARK_FRETBOARD_STYLE = {
     chordNameColor: "#e0e0e0",
     fretLabelColor: "#9ca3af",
@@ -743,6 +708,12 @@ K:${abcKey}
     indicatorColor: "#9ca3af",
     stringLabelColor: "#9ca3af"
   };
+
+  // src/diagrams/guitar.ts
+  var guitarControlsVisible = loadBool("panel-guitarControls", true);
+  function setGuitarControlsVisible(v) {
+    guitarControlsVisible = v;
+  }
   var EMPTY_FRETBOARD = { name: "", frets: [null, null, null, null, null, null], tuning: ["E", "A", "D", "G", "B", "E"] };
   var guitarVoicingIdx = 0;
   var lastGuitarSymbol = null;
@@ -927,6 +898,47 @@ K:${abcKey}
     });
     wireGuitarControls(container);
   }
+
+  // src/diagrams/neck.ts
+  var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
+  var NECK_FRETS = 12;
+  var neckSpacing = loadNumber("neck-spacing", 16, 10, 28);
+  function adjustNeckSpacing(delta) {
+    neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta));
+    save("neck-spacing", neckSpacing);
+  }
+  function renderNeck(container, noteNames, preferFlats = true) {
+    const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
+    const frets = OPEN_MIDI.map((open) => {
+      const pos = midi.map((n) => n - open).filter((f) => f >= 0 && f <= NECK_FRETS);
+      return pos.length ? pos : [null];
+    });
+    const sp = neckSpacing;
+    const style = {
+      ...DARK_FRETBOARD_STYLE,
+      numFrets: NECK_FRETS,
+      dotColor: "#3b82f6",
+      chordNameSize: 0,
+      chordNameY: 4,
+      chordNameGapH: 4,
+      stringSpacing: sp,
+      fretSpacing: Math.round(sp * 28 / 16),
+      dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
+      fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
+      showNoteNames: true,
+      preferFlats
+    };
+    try {
+      container.innerHTML = Notae.renderFretboard(
+        { name: "", frets, tuning: ["E", "A", "D", "G", "B", "E"] },
+        { ...style, orientation: "horizontal" }
+      );
+    } catch {
+      container.innerHTML = "";
+    }
+  }
+
+  // src/diagrams/cof.ts
   var CIRCLE_KEYS_FLAT = ["C", "G", "D", "A", "E", "B", "Gb", "Db", "Ab", "Eb", "Bb", "F"];
   var CIRCLE_KEYS_SHARP = ["C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "Bb", "F"];
   var CIRCLE_KEYS_MINOR_FLAT = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "Ebm", "Bbm", "Fm", "Cm", "Gm", "Dm"];
@@ -1037,12 +1049,12 @@ K:${abcKey}
     });
   }
 
-  // src/html.ts
+  // src/ui/html.ts
   function escapeHtml(text) {
     return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   }
 
-  // src/undo.ts
+  // src/ui/undo.ts
   var UNDO_MS = 5e3;
   var current = null;
   function dismiss() {
@@ -1064,7 +1076,7 @@ K:${abcKey}
     current = { el, timer: window.setTimeout(dismiss, UNDO_MS) };
   }
 
-  // src/history.ts
+  // src/history/history.ts
   var MAX_ENTRIES = 200;
   var FUNCTION_COLORS = {
     "T": "#f59e0b",
@@ -1173,7 +1185,7 @@ K:${abcKey}
     container.appendChild(wrap);
   }
 
-  // src/song-model.ts
+  // src/song/model.ts
   function createSong() {
     return { schemaVersion: 1, title: "Untitled", sections: [] };
   }
@@ -1473,7 +1485,7 @@ K:${abcKey}
     return `${pattern}`;
   }
 
-  // src/song-view.ts
+  // src/song/view.ts
   var SECTION_COLORS = {
     intro: "#7c3aed",
     verse: "#2563eb",
@@ -2114,7 +2126,7 @@ K:${abcKey}
     return html;
   }
 
-  // src/shortcuts.ts
+  // src/input/shortcuts.ts
   var SHORTCUTS = [
     { key: "Space", action: "Play current chord (or last if none active)" },
     { key: "\u2190 \u2192", action: "Previous / next chord in the song (or history) \u2014 plays it" },
@@ -2223,7 +2235,7 @@ K:${abcKey}
     });
   }
 
-  // src/analysis-panel.ts
+  // src/detector/analysis-panel.ts
   var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "diatonic", "scales", "cadence", "secondary", "coltrane", "negharm", "subs"];
   var ANALYSIS_FIELD_LABELS = {
     roman: "Roman",
@@ -2314,7 +2326,7 @@ K:${abcKey}
     el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("coltrane", "Coltrane", coltrane) + conditionalRow("negharm", "Neg. harm.", negharm) + conditionalRow("subs", "Subs.", subs) + extra;
   }
 
-  // src/layout.ts
+  // src/ui/layout.ts
   var $ = (id) => document.getElementById(id);
   function loadPanels() {
     return {

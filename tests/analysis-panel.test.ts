@@ -3,7 +3,7 @@ import {
   ANALYSIS_FIELD_KEYS,
   ANALYSIS_FIELD_LABELS,
   ANALYSIS_FIELD_TOOLTIPS,
-} from '../src/analysis-panel'
+} from '../src/detector/analysis-panel'
 
 describe('ANALYSIS_FIELD_KEYS', () => {
   it('contains exactly 10 keys', () => {

@@ -2,7 +2,7 @@
 // fingering that covers the chord's notes within a stretch (hundreds per chord); this keeps
 // the ones a guitarist would actually play and orders them along the neck.
 
-import { NOTE_SEMITONE } from './midi'
+import { NOTE_SEMITONE } from './notes'
 
 export interface Voicing {
   frets: number[]   // per string low→high: -1 muted, 0 open, n fretted

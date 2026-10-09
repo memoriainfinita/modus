@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-vi.mock('../src/audio', () => ({
+vi.mock('../src/audio/audio', () => ({
   playChord: vi.fn(),
   playNoteNames: vi.fn(),
 }))
-vi.mock('../src/analyzer', () => ({
+vi.mock('../src/detector/analyzer', () => ({
   romanInKey: vi.fn(() => null),
 }))
 
 import {
   getEntries, addEntry, removeEntry, clearHistory,
   notifyChordDetected, setHistoryChangeCallback, clearHistoryWithUndo, restoreEntries
-} from '../src/history'
+} from '../src/history/history'
 
 beforeEach(() => {
   clearHistory()

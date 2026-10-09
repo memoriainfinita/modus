@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   chordFamily, chordColor, CHORD_FAMILY_COLORS, NEUTRAL_COLOR,
   normalizeChordName, isKnownChord, tryParseChord, chordNoteNames, chordRoot,
-} from '../src/chord'
+} from '../src/theory/chord'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
 

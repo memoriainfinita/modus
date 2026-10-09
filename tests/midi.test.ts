@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { midiToNoteName, isNoteOff, isSustain, setMode, setNoteChangeCallback } from '../src/midi'
+import { midiToNoteName } from '../src/theory/notes'
+import { isNoteOff, isSustain, setMode, setNoteChangeCallback } from '../src/input/midi'
 
 describe('midiToNoteName', () => {
   it('converts middle C (MIDI 60) to C4', () => {

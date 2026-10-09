@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { playableVoicings, tuningToMidi, normalizeNoteName, STANDARD_OPEN_MIDI } from '../src/voicings'
+import { playableVoicings, tuningToMidi, normalizeNoteName, STANDARD_OPEN_MIDI } from '../src/theory/voicings'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
 const umtVoicings = (symbol: string, open = STANDARD_OPEN_MIDI) =>
