@@ -37,13 +37,26 @@ let arpeggioNotes: number[] = []
 let arpeggioTimer: ReturnType<typeof setTimeout> | null = null
 
 type NoteChangeCallback = (notes: number[]) => void
-type NoteOnCallback = (note: number) => void
+
+/** What the controller does to the sound, independent of what the mode keeps on screen. */
+export type SoundCallbacks = {
+  noteOn: (note: number, velocity: number) => void
+  noteOff: (note: number) => void
+  sustain: (down: boolean) => void
+}
 
 let onNoteChange: NoteChangeCallback = () => {}
-let onNoteOn: NoteOnCallback = () => {}
+let sound: SoundCallbacks = { noteOn: () => {}, noteOff: () => {}, sustain: () => {} }
 
 export function setNoteChangeCallback(cb: NoteChangeCallback) { onNoteChange = cb }
-export function setNoteOnCallback(cb: NoteOnCallback) { onNoteOn = cb }
+export function setSoundCallbacks(cb: SoundCallbacks) { sound = cb }
+
+export const SUSTAIN_CC = 64
+
+/** Sustain pedal: CC 64, down at value ≥ 64 (MIDI convention). */
+export function isSustain(status: number, controller: number): boolean {
+  return (status & 0xF0) === 0xB0 && controller === SUSTAIN_CC
+}
 
 // ─── Permission + init ───────────────────────────────────────────────────────
 
@@ -104,9 +117,13 @@ function handleMidiMessage(e: MIDIMessageEvent) {
   const [status, note, velocity] = e.data
 
   if (isNoteOff(status, velocity)) {
+    sound.noteOff(note)
     handleNoteOff(note)
   } else if ((status & 0xF0) === 0x90) {
+    sound.noteOn(note, velocity)
     handleNoteOn(note)
+  } else if (isSustain(status, note)) {
+    sound.sustain(velocity >= 64)
   }
 }
 
@@ -115,7 +132,6 @@ function sortedNotes(s: Set<number>): number[] {
 }
 
 function handleNoteOn(note: number) {
-  onNoteOn(note)
   if (mode === 'normal') {
     activeNotes.add(note)
     onNoteChange(sortedNotes(activeNotes))

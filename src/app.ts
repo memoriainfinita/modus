@@ -1,6 +1,6 @@
-import { initMidi, setNoteChangeCallback, setNoteOnCallback, setMode, getMode, getDevices, selectDevice, getSelectedDeviceId } from './midi'
+import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, selectDevice, getSelectedDeviceId } from './midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './analyzer'
-import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, playNote, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback } from './audio'
+import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback } from './audio'
 import { renderStaff, renderPiano, renderGuitar, renderNeck, renderCircleOfFifths, adjustNeckSpacing } from './diagrams'
 import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history'
 import { loadSong, saveSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song-model'
@@ -73,7 +73,7 @@ function init() {
   })
 
   setNoteChangeCallback(onNoteChange)
-  setNoteOnCallback(note => playNote(note, 1.5))
+  setSoundCallbacks({ noteOn: liveNoteOn, noteOff: liveNoteOff, sustain: setSustain })
   setHistoryChangeCallback(onHistoryChange)
 
   setAudioMissedCallback(() => {

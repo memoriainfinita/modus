@@ -3,6 +3,7 @@ import { chordNoteNames } from './chord'
 import { loadNumber, loadString, save } from './storage'
 
 let audioCtx: AudioContext | null = null
+let masterGain: GainNode | null = null
 let instrument: any = null
 let loadingInstrument = false
 
@@ -13,7 +14,8 @@ export type AudioStatus = 'idle' | 'loading' | 'suspended' | 'ready' | 'error'
 let audioStatus: AudioStatus = 'idle'
 let onStatusChange: ((s: AudioStatus) => void) | null = null
 
-export function setAudioStatusCallback(cb: (s: AudioStatus) => void) { onStatusChange = cb }
+/** The callback gets the current status at once: loading starts before the UI exists. */
+export function setAudioStatusCallback(cb: (s: AudioStatus) => void) { onStatusChange = cb; cb(audioStatus) }
 
 let onMissed: () => void = () => {}
 /** Called when notes are dropped because the instrument cannot sound yet. */
@@ -40,8 +42,13 @@ export const GM_INSTRUMENT_GROUPS: { label: string; instruments: string[] }[] = 
   { label: 'Sound FX',       instruments: ['guitar_fret_noise','breath_noise','seashore','bird_tweet','telephone_ring','helicopter','applause','gunshot'] },
 ]
 
+// Every note goes through the master gain, so the volume slider also moves notes already sounding.
 function ensureContext() {
-  if (!audioCtx) audioCtx = new AudioContext()
+  if (audioCtx) return
+  audioCtx = new AudioContext()
+  masterGain = audioCtx.createGain()
+  masterGain.gain.value = volume
+  masterGain.connect(audioCtx.destination)
 }
 
 // Each load gets a token; a load that finishes after a newer one started is discarded,
@@ -50,11 +57,17 @@ let loadToken = 0
 
 function loadCurrentInstrument() {
   if (!audioCtx) return
+  // The soundfont-player script comes from a CDN; without it the app still runs, silent.
+  if (typeof Soundfont === 'undefined') {
+    if (audioStatus !== 'error') console.error('[audio] soundfont-player did not load')
+    setStatus('error')
+    return
+  }
   const token = ++loadToken
   loadingInstrument = true
   instrument = null
   setStatus('loading')
-  Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: 'FluidR3_GM' })
+  Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: 'FluidR3_GM', destination: masterGain! })
     .then((inst: any) => {
       if (token !== loadToken) return
       instrument = inst
@@ -99,41 +112,104 @@ export function getCurrentInstrument() { return currentInstrumentName }
 export function setVolume(v: number) {
   volume = Math.max(0, Math.min(1, v))
   save('audio-volume', volume)
+  if (audioCtx && masterGain) masterGain.gain.setTargetAtTime(volume, audioCtx.currentTime, 0.02)
 }
 
 export function getVolume() { return volume }
 
-// Single playback path: every play* call starts the context and the instrument load
-// if needed. Notes requested before the instrument is ready are dropped, not queued
-// (a late note would sound out of time); the missed callback lets the UI say so.
-function playMidi(midis: number[], duration: number) {
+// ─── Playback ────────────────────────────────────────────────────────────────
+
+// Notes requested before the instrument can sound are dropped, not queued (a late note
+// would sound out of time); the missed callback lets the UI say so.
+function playableInstrument(): any {
   initAudioOnGesture()
   const inst = instrument
-  if (!midis.length) return
-  if (!inst) { onMissed(); return }
+  if (!inst) { onMissed(); return null }
   // A suspended context only resumes on a user gesture. Without one (a MIDI note before
   // the first click) the resume would wait and fire every queued note at the next click.
   const activation = (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation
-  if (audioCtx!.state === 'suspended' && activation && !activation.isActive) { onMissed(); return }
-  audioCtx!.resume().then(() => {
-    for (const midi of midis) inst.play(midi, audioCtx!.currentTime, { duration, gain: volume })
+  if (audioCtx!.state === 'suspended' && activation && !activation.isActive) { onMissed(); return null }
+  return inst
+}
+
+/** Runs now on a running context, so a note-off that follows finds its node. */
+function whenRunning(fn: () => void) {
+  if (audioCtx!.state === 'running') fn()
+  else audioCtx!.resume().then(fn)
+}
+
+// A node can get stop() after it already ended or was stopped; that is harmless here.
+function stopNode(node: any) {
+  try { node?.stop(audioCtx!.currentTime) } catch { /* already stopped */ }
+}
+
+// Chords and notes played from history, song, CoF, arrows and Space: a new one cuts the
+// previous one, so walking a progression does not pile chords up.
+let previewNodes: any[] = []
+
+function playPreview(midis: number[], duration: number) {
+  if (!midis.length) return
+  const inst = playableInstrument()
+  if (!inst) return
+  whenRunning(() => {
+    previewNodes.forEach(stopNode)
+    previewNodes = midis.map(midi => inst.play(midi, audioCtx!.currentTime, { duration, gain: 1 }))
   })
 }
 
-export function playNote(midiNumber: number, duration = 1.5) {
-  playMidi([midiNumber], duration)
-}
-
+/** A clicked piano key: does not cut what is sounding. */
 export function playNoteByName(noteName: string, duration = 1.5) {
   const midi = noteNameToMidi(noteName)
-  if (midi !== null) playMidi([midi], duration)
+  if (midi === null) return
+  const inst = playableInstrument()
+  if (!inst) return
+  whenRunning(() => inst.play(midi, audioCtx!.currentTime, { duration, gain: 1 }))
 }
 
 export function playNoteNames(noteNames: string[], duration = 2) {
-  playMidi(noteNames.map(noteNameToMidi).filter((m): m is number => m !== null), duration)
+  playPreview(noteNames.map(noteNameToMidi).filter((m): m is number => m !== null), duration)
 }
 
 /** Plays the chord as UMT spells it (same notes the staff and piano show). */
 export function playChord(chordSymbol: string) {
   playNoteNames(chordNoteNames(chordSymbol))
+}
+
+// ─── Controller ──────────────────────────────────────────────────────────────
+
+// Controller notes sound while the key (or the sustain pedal) holds them, with their
+// velocity. Previews never cut them.
+const liveNodes = new Map<number, any>()
+const sustainedNotes = new Set<number>()
+let pedalDown = false
+
+export function velocityGain(velocity: number): number {
+  return Math.max(0, Math.min(127, velocity)) / 127
+}
+
+function stopLive(midi: number) {
+  stopNode(liveNodes.get(midi))
+  liveNodes.delete(midi)
+}
+
+export function liveNoteOn(midi: number, velocity: number) {
+  const inst = playableInstrument()
+  if (!inst) return
+  whenRunning(() => {
+    stopLive(midi)  // a repeated key retriggers instead of stacking
+    sustainedNotes.delete(midi)
+    liveNodes.set(midi, inst.play(midi, audioCtx!.currentTime, { gain: velocityGain(velocity) }))
+  })
+}
+
+export function liveNoteOff(midi: number) {
+  if (pedalDown) { if (liveNodes.has(midi)) sustainedNotes.add(midi); return }
+  stopLive(midi)
+}
+
+export function setSustain(down: boolean) {
+  pedalDown = down
+  if (down) return
+  sustainedNotes.forEach(stopLive)
+  sustainedNotes.clear()
 }

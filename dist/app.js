@@ -45,13 +45,19 @@
   var arpeggioTimer = null;
   var onNoteChange = () => {
   };
-  var onNoteOn = () => {
-  };
+  var sound = { noteOn: () => {
+  }, noteOff: () => {
+  }, sustain: () => {
+  } };
   function setNoteChangeCallback(cb) {
     onNoteChange = cb;
   }
-  function setNoteOnCallback(cb) {
-    onNoteOn = cb;
+  function setSoundCallbacks(cb) {
+    sound = cb;
+  }
+  var SUSTAIN_CC = 64;
+  function isSustain(status, controller) {
+    return (status & 240) === 176 && controller === SUSTAIN_CC;
   }
   async function initMidi() {
     if (!navigator.requestMIDIAccess) {
@@ -102,16 +108,19 @@
     if (!e.data || e.data.length < 3) return;
     const [status, note, velocity] = e.data;
     if (isNoteOff(status, velocity)) {
+      sound.noteOff(note);
       handleNoteOff(note);
     } else if ((status & 240) === 144) {
+      sound.noteOn(note, velocity);
       handleNoteOn(note);
+    } else if (isSustain(status, note)) {
+      sound.sustain(velocity >= 64);
     }
   }
   function sortedNotes(s) {
     return Array.from(s).sort((a, b) => a - b);
   }
   function handleNoteOn(note) {
-    onNoteOn(note);
     if (mode === "normal") {
       activeNotes.add(note);
       onNoteChange(sortedNotes(activeNotes));
@@ -418,6 +427,7 @@
 
   // src/audio.ts
   var audioCtx = null;
+  var masterGain = null;
   var instrument = null;
   var loadingInstrument = false;
   var volume = loadNumber("audio-volume", 0.8, 0, 1);
@@ -426,6 +436,7 @@
   var onStatusChange = null;
   function setAudioStatusCallback(cb) {
     onStatusChange = cb;
+    cb(audioStatus);
   }
   var onMissed = () => {
   };
@@ -455,16 +466,25 @@
     { label: "Sound FX", instruments: ["guitar_fret_noise", "breath_noise", "seashore", "bird_tweet", "telephone_ring", "helicopter", "applause", "gunshot"] }
   ];
   function ensureContext() {
-    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx) return;
+    audioCtx = new AudioContext();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = volume;
+    masterGain.connect(audioCtx.destination);
   }
   var loadToken = 0;
   function loadCurrentInstrument() {
     if (!audioCtx) return;
+    if (typeof Soundfont === "undefined") {
+      if (audioStatus !== "error") console.error("[audio] soundfont-player did not load");
+      setStatus("error");
+      return;
+    }
     const token = ++loadToken;
     loadingInstrument = true;
     instrument = null;
     setStatus("loading");
-    Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: "FluidR3_GM" }).then((inst) => {
+    Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: "FluidR3_GM", destination: masterGain }).then((inst) => {
       if (token !== loadToken) return;
       instrument = inst;
       loadingInstrument = false;
@@ -499,39 +519,89 @@
   function setVolume(v) {
     volume = Math.max(0, Math.min(1, v));
     save("audio-volume", volume);
+    if (audioCtx && masterGain) masterGain.gain.setTargetAtTime(volume, audioCtx.currentTime, 0.02);
   }
   function getVolume() {
     return volume;
   }
-  function playMidi(midis, duration) {
+  function playableInstrument() {
     initAudioOnGesture();
     const inst = instrument;
-    if (!midis.length) return;
     if (!inst) {
       onMissed();
-      return;
+      return null;
     }
     const activation = navigator.userActivation;
     if (audioCtx.state === "suspended" && activation && !activation.isActive) {
       onMissed();
-      return;
+      return null;
     }
-    audioCtx.resume().then(() => {
-      for (const midi of midis) inst.play(midi, audioCtx.currentTime, { duration, gain: volume });
-    });
+    return inst;
   }
-  function playNote(midiNumber, duration = 1.5) {
-    playMidi([midiNumber], duration);
+  function whenRunning(fn) {
+    if (audioCtx.state === "running") fn();
+    else audioCtx.resume().then(fn);
+  }
+  function stopNode(node) {
+    try {
+      node?.stop(audioCtx.currentTime);
+    } catch {
+    }
+  }
+  var previewNodes = [];
+  function playPreview(midis, duration) {
+    if (!midis.length) return;
+    const inst = playableInstrument();
+    if (!inst) return;
+    whenRunning(() => {
+      previewNodes.forEach(stopNode);
+      previewNodes = midis.map((midi) => inst.play(midi, audioCtx.currentTime, { duration, gain: 1 }));
+    });
   }
   function playNoteByName(noteName, duration = 1.5) {
     const midi = noteNameToMidi(noteName);
-    if (midi !== null) playMidi([midi], duration);
+    if (midi === null) return;
+    const inst = playableInstrument();
+    if (!inst) return;
+    whenRunning(() => inst.play(midi, audioCtx.currentTime, { duration, gain: 1 }));
   }
   function playNoteNames(noteNames, duration = 2) {
-    playMidi(noteNames.map(noteNameToMidi).filter((m) => m !== null), duration);
+    playPreview(noteNames.map(noteNameToMidi).filter((m) => m !== null), duration);
   }
   function playChord(chordSymbol) {
     playNoteNames(chordNoteNames(chordSymbol));
+  }
+  var liveNodes = /* @__PURE__ */ new Map();
+  var sustainedNotes = /* @__PURE__ */ new Set();
+  var pedalDown = false;
+  function velocityGain(velocity) {
+    return Math.max(0, Math.min(127, velocity)) / 127;
+  }
+  function stopLive(midi) {
+    stopNode(liveNodes.get(midi));
+    liveNodes.delete(midi);
+  }
+  function liveNoteOn(midi, velocity) {
+    const inst = playableInstrument();
+    if (!inst) return;
+    whenRunning(() => {
+      stopLive(midi);
+      sustainedNotes.delete(midi);
+      liveNodes.set(midi, inst.play(midi, audioCtx.currentTime, { gain: velocityGain(velocity) }));
+    });
+  }
+  function liveNoteOff(midi) {
+    if (pedalDown) {
+      if (liveNodes.has(midi)) sustainedNotes.add(midi);
+      return;
+    }
+    stopLive(midi);
+  }
+  function setSustain(down) {
+    pedalDown = down;
+    if (down) return;
+    sustainedNotes.forEach(stopLive);
+    sustainedNotes.clear();
   }
 
   // src/voicings.ts
@@ -2499,7 +2569,7 @@ K:${abcKey}
       }
     });
     setNoteChangeCallback(onNoteChange2);
-    setNoteOnCallback((note) => playNote(note, 1.5));
+    setSoundCallbacks({ noteOn: liveNoteOn, noteOff: liveNoteOff, sustain: setSustain });
     setHistoryChangeCallback(onHistoryChange);
     setAudioMissedCallback(() => {
       const el = document.getElementById("audio-progress");
