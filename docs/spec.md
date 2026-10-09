@@ -36,7 +36,7 @@ The core is the **Detector**: input → chord detection → harmonic analysis, s
 
 **Two ways to look.** The full view is for studying; a presentation view (planned) is for teaching and recording: large elements, no controls.
 
-**Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`styles.css`). Dark today; light mode and colour themes are planned.
+**Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`src/styles.css`). Dark today; light mode and colour themes are planned.
 
 **User-configurable.** Every panel can be toggled; sizes and visible fields persist in localStorage.
 
@@ -151,7 +151,7 @@ Four columns, toggled with [St][An][CoF][Git].
 
 **Analysis:** the fields above.
 
-**Circle of Fifths:** custom SVG (`diagrams.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: size, b/♯, minor/dim rings, degree labels, seventh labels. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring; degrees count from the tonic.
+**Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: size, b/♯, minor/dim rings, degree labels, seventh labels. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring; degrees count from the tonic.
 
 **Guitar:** `UMT.getFretboardVoicings(chord, tuning)` kept only when playable — bass lowest, contiguous strings, four-fret span, open strings only in first position — ordered along the neck; ‹/› to browse. Tunings: Standard, Drop D, Open G, custom per string. String labels: off / tuning / notes. Fret spacing −/+. Rendered by notae.
 

@@ -2,6 +2,11 @@
 
 What left `state.md`. Most recent first.
 
+### 2026-10-09 — src/ organized by area; styles into src/
+
+**What changed:** `src/` grouped into detector, theory, diagrams, history, song, input, audio and ui. `diagrams.ts` split into one file per diagram. Note-name helpers moved from `midi.ts` to `theory/notes.ts`. `styles.css` moved from the root to `src/`, bundled by esbuild to `dist/app.css`.
+**Why:** the roadmap adds many features, most of them to the diagrams; a flat `src/` and a five-diagram file would not hold them. Theory code imported from the MIDI input module only for note names. The root keeps only what tools and conventions require there.
+
 ### 2026-10-09 — Purpose redefined; the v1 out-of-scope list reopened
 
 **What changed:** Modus aims to be a complete, professional, useful, universal and didactic app. Out of scope now holds only cloud sync/accounts and analytics/monetization; the rest of the v1 list (several songs, MIDI files, mobile, light mode, microtonal, channel filtering, velocity display, free section colours) moved to the roadmap with the gaps found against each use.

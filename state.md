@@ -32,7 +32,7 @@ What is true now. What already happened lives in `state-history.md`.
 - [deps] UMT and notae pinned to a commit hash in the CDN URL, never `@main`/`@master`. Bump deliberately. Confirmed 2026-10.
 - [naming] Project name: Modus (Latin — mode, measure). Confirmed 2026-05.
 - [theory] Music-theory fixes go into UMT or notae (their repo, tests, push), then Modus bumps the pin. No workarounds in Modus for library output. Confirmed 2026-10.
-- [ux] Destructive actions run at once and offer Undo (`undo.ts`), never a confirmation. Confirmed 2026-10.
+- [ux] Destructive actions run at once and offer Undo (`ui/undo.ts`), never a confirmation. Confirmed 2026-10.
 - [ux] Play on single click. A double click is detected by hand (same target within 400 ms) wherever the element is rebuilt on click: a rebuilt node never gets the browser's dblclick. Confirmed 2026-10.
 - [audio] Stay on soundfont-player 0.12.0 + FluidR3_GM: archived upstream but pinned and working. smplr (same author) loads its GM soundfonts from the same `gleitz.github.io`, so swapping does not remove the sample-host risk. A reason to move would be smplr's sampled instruments (Steinway with velocity layers, electric pianos) or reverb, not maintenance. Confirmed 2026-10.
 - [testing] `pnpm test:e2e` after each behaviour change: `tests/e2e/smoke.mjs` serves the repo, opens the installed Chrome (`channel: 'chrome'`) with a fake `navigator.requestMIDIAccess`, and plays notes through `window.__midi`. Each check releases all notes when it ends. Confirmed 2026-10.
@@ -47,7 +47,7 @@ Roadmap agreed 2026-10-09, not yet prioritized.
 
 ### Tests
 
-- [ ] Test with a real MIDI controller: capture (⊙) chaining with its 250 ms settle time, hold/arpeggio modes, device hot-plug, the audio flash when a note arrives before the first click; by ear: the velocity curve (linear, `velocityGain` in `audio.ts`), note-off release and the sustain pedal
+- [ ] Test with a real MIDI controller: capture (⊙) chaining with its 250 ms settle time, hold/arpeggio modes, device hot-plug, the audio flash when a note arrives before the first click; by ear: the velocity curve (linear, `velocityGain` in `audio/audio.ts`), note-off release and the sustain pedal
 - [ ] Test in Firefox (Web MIDI behind a per-site permission): connection, playback, layout. The README and the warning already list Firefox; this confirms it
 
 ### Songs and data
@@ -62,7 +62,7 @@ Roadmap agreed 2026-10-09, not yet prioritized.
 
 ### Input
 
-- [ ] Clicking the on-screen piano feeds the detector (today it only sounds the note, `diagrams.ts:96`)
+- [ ] Clicking the on-screen piano feeds the detector (today it only sounds the note, `diagrams/piano.ts:17`)
 - [ ] Computer keyboard as note input
 - [ ] Type a chord name in the detector and see it on every diagram (today only inside the song)
 - [ ] MIDI channel filtering

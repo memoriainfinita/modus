@@ -10,11 +10,11 @@ UMT.parseNote(str: string, defaultOctave?: number): Note
 // Chord detection — takes Note[] objects, NOT strings
 UMT.Harmony.detectChords(notes: Note[]): string[]
 // Returns ranked chord name strings, e.g. ["Cmaj7"], ["Dm7", "F6/D"]
-// Plain major triad is "CM" / "CM/E" (normalized to "C" / "C/E" in src/chord.ts)
-// No match returns ["Unknown Chord"], which parseChordSymbol rejects (filtered in analyzer.ts)
+// Plain major triad is "CM" / "CM/E" (normalized to "C" / "C/E" in theory/chord.ts)
+// No match returns ["Unknown Chord"], which parseChordSymbol rejects (filtered in detector/analyzer.ts)
 
 // Chord object: name, rootStep, intervalsInSteps (semitones above root), bassStep, preferFlats
-// There is NO `quality` field — chord family is derived from intervalsInSteps (src/chord.ts)
+// There is NO `quality` field — chord family is derived from intervalsInSteps (theory/chord.ts)
 // chord.getNotes() → Note[] with name incl. octave, slash bass first: "C/E" → E3 C4 E4 G4
 
 // Full harmonic analysis — returns .analysis (NOT .analyses)
@@ -26,7 +26,7 @@ UMT.Harmony.analyzeProgression(chords: Chord[], key: string): {
 // ChordAnalysis has: roman, degree, function ('T'|'S'|'D'|'unknown'),
 // isDiatonic, isBorrowed, borrowedFrom, isSecondary, secondaryTarget, cadenceWithNext
 // roman for D7 in C is "II7"; secondaryTarget is "V7/V" (lower case for minor targets: "V7/ii").
-// Modus shows secondaryTarget in the Roman field (romanInKey in analyzer.ts)
+// Modus shows secondaryTarget in the Roman field (romanInKey in detector/analyzer.ts)
 // modulations and harmonicRhythm are not used by Modus yet
 
 // Scales: letter-correct spelling for heptatonic 12-TET scales (F# major has E#)
