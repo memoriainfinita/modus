@@ -114,7 +114,7 @@ All three projects are independent, GPL-3.0, and built for the music community �
 | Staff | abcjs 6.7.1 via CDN |
 | MIDI | Web MIDI API (Chrome, Edge, Firefox — Firefox asks for MIDI permission per site) |
 | Audio | soundfont-player 0.12.0 + FluidR3_GM |
-| Styles | Plain CSS (`styles.css`) |
+| Styles | Plain CSS (`src/styles.css`, bundled by esbuild) |
 | Persistence | localStorage |
 
 ---
@@ -155,25 +155,40 @@ UMT and notae are loaded from jsDelivr pinned to a commit hash in `index.html`. 
 
 ```
 src/
-  app.ts              entry point — state, detector flow, zones, keyboard actions
-  layout.ts           page structure and panel visibility
-  midi.ts             Web MIDI: device selection, note on/off, modes
-  analyzer.ts         chord/interval detection and harmonic analysis
-  chord.ts            adapters over UMT chords: family/colour, name normalization, notes
-  keys.ts             key names, normalization and key signatures (from UMT spelling)
-  diagrams.ts         staff, piano, guitar, fretboard, CoF rendering
-  voicings.ts         playable guitar voicings, tuning names → MIDI
-  history.ts          chord history log
-  song-model.ts       song structure: pure operations, transpose, persistence
-  song-view.ts        song structure rendering and interaction
-  audio.ts            soundfont-player playback, preload, instrument selector
-  undo.ts             Undo toast for destructive actions
-  html.ts             HTML escaping
-  analysis-panel.ts   harmonic analysis fields rendering
-  shortcuts.ts        keyboard handling, shortcuts and gestures help popup
-  storage.ts          localStorage preferences with safe fallbacks
-  types.ts            shared TypeScript types
-  globals.d.ts        CDN global declarations
+  app.ts                  entry point — state, detector flow, zones, keyboard actions
+  types.ts                shared TypeScript types
+  globals.d.ts            CDN global declarations
+  styles.css              all styles, bundled to dist/app.css
+  detector/
+    analyzer.ts           chord/interval detection and harmonic analysis
+    analysis-panel.ts     harmonic analysis fields rendering
+  theory/
+    notes.ts              note names ↔ MIDI numbers
+    chord.ts              adapters over UMT chords: family/colour, name normalization, notes
+    keys.ts               key names, normalization and key signatures (from UMT spelling)
+    voicings.ts           playable guitar voicings, tuning names → MIDI
+  diagrams/
+    staff.ts              staff (abcjs)
+    piano.ts              piano (notae), click to play
+    guitar.ts             guitar voicings and tuning controls (notae)
+    neck.ts               full-neck horizontal fretboard (notae)
+    cof.ts                circle of fifths (custom SVG)
+    fretboard-style.ts    colours shared by guitar and neck
+  history/
+    history.ts            chord history log
+  song/
+    model.ts              song structure: pure operations, transpose, persistence
+    view.ts               song structure rendering and interaction
+  input/
+    midi.ts               Web MIDI: device selection, note on/off, sustain, modes
+    shortcuts.ts          keyboard handling, shortcuts and gestures help popup
+  audio/
+    audio.ts              soundfont-player playback: controller notes, previews, volume
+  ui/
+    layout.ts             page structure and panel visibility
+    undo.ts               Undo toast for destructive actions
+    html.ts               HTML escaping
+    storage.ts            localStorage preferences with safe fallbacks
 tests/
   setup-umt.ts        loads the real UMT bundle (pinned devDependency) as the UMT global
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
