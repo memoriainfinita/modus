@@ -1,9 +1,9 @@
-import type { Song, Section, Measure, SongChord, SectionColor } from './types'
-import { PITCH_NAMES_FLAT, noteNameToMidi } from './midi'
-import { isKnownChord } from './chord'
-import { romanInKey } from './analyzer'
-import { keyPrefersSharps } from './keys'
-export { transposeKey } from './keys'
+import type { Song, Section, Measure, SongChord, SectionColor } from '../types'
+import { PITCH_NAMES_FLAT, noteNameToMidi } from '../theory/notes'
+import { isKnownChord } from '../theory/chord'
+import { romanInKey } from '../detector/analyzer'
+import { keyPrefersSharps } from '../theory/keys'
+export { transposeKey } from '../theory/keys'
 
 export function createSong(): Song {
   return { schemaVersion: 1, title: 'Untitled', sections: [] }

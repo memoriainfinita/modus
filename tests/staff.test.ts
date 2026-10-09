@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildStaffAbc } from '../src/diagrams'
-import { keySignature, keyPrefersSharps, normalizeKey } from '../src/keys'
+import { buildStaffAbc } from '../src/diagrams/staff'
+import { keySignature, keyPrefersSharps, normalizeKey } from '../src/theory/keys'
 
 const body = (abc: string) => abc.split('\n').pop()
 

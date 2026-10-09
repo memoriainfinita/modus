@@ -1,9 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 
-vi.mock('../src/audio', () => ({ playNoteByName: vi.fn(), playChord: vi.fn() }))
-
-import { renderCircleOfFifths } from '../src/diagrams'
-import type { CofOptions } from '../src/diagrams'
+import { renderCircleOfFifths } from '../src/diagrams/cof'
+import type { CofOptions } from '../src/diagrams/cof'
 
 const OPTS: CofOptions = { accidental: 'flat', showMinor: true, showDegrees: false, show7ths: false }
 

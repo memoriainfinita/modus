@@ -1,8 +1,8 @@
-import type { HistoryEntry } from './types'
-import { romanInKey } from './analyzer'
-import { playChord, playNoteNames } from './audio'
-import { escapeHtml } from './html'
-import { showUndo } from './undo'
+import type { HistoryEntry } from '../types'
+import { romanInKey } from '../detector/analyzer'
+import { playChord, playNoteNames } from '../audio/audio'
+import { escapeHtml } from '../ui/html'
+import { showUndo } from '../ui/undo'
 
 const MAX_ENTRIES = 200
 // Chip accent by harmonic function (T/S/D), not by chord quality

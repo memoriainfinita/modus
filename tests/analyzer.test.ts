@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { analyzeNotes, getAutoKey, buildHarmonicAnalysis, romanInKey } from '../src/analyzer'
+import { analyzeNotes, getAutoKey, buildHarmonicAnalysis, romanInKey } from '../src/detector/analyzer'
 import type { DetectionResult, ChordResult, IntervalResult, SingleNoteResult } from '../src/types'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).

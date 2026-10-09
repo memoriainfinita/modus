@@ -2,7 +2,7 @@
 // Keys are strings like "C Major" / "F# Minor" (the format UMT uses). The signature is
 // read from UMT's scale spelling, which names each degree on its own letter.
 
-import { NOTE_SEMITONE } from './midi'
+import { NOTE_SEMITONE } from './notes'
 
 /** Major-key root per pitch class, as the key selector offers it. */
 export const MAJOR_ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']

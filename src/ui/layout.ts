@@ -1,12 +1,12 @@
 // Static page structure: toolbar, notation and instrument panels, zone headers, and which
 // panels and columns are shown. Behaviour is wired in app.ts.
 
-import type { AppState } from './types'
-import { ALL_KEYS } from './keys'
-import { GM_INSTRUMENT_GROUPS, getCurrentInstrument, getVolume } from './audio'
-import { setGuitarControlsVisible } from './diagrams'
-import { ANALYSIS_FIELD_KEYS, ANALYSIS_FIELD_LABELS, ANALYSIS_FIELD_TOOLTIPS } from './analysis-panel'
-import type { AnalysisFieldKey } from './analysis-panel'
+import type { AppState } from '../types'
+import { ALL_KEYS } from '../theory/keys'
+import { GM_INSTRUMENT_GROUPS, getCurrentInstrument, getVolume } from '../audio/audio'
+import { setGuitarControlsVisible } from '../diagrams/guitar'
+import { ANALYSIS_FIELD_KEYS, ANALYSIS_FIELD_LABELS, ANALYSIS_FIELD_TOOLTIPS } from '../detector/analysis-panel'
+import type { AnalysisFieldKey } from '../detector/analysis-panel'
 import { loadBool, save } from './storage'
 
 export type Panels = AppState['panels']
