@@ -2,13 +2,25 @@
 
 What left `state.md`. Most recent first.
 
-### 2026-10-09 — Docs audit, audio engine kept, controller audio
+### 2026-10-09 — Purpose redefined; the v1 out-of-scope list reopened
 
-- Spec rewritten (rev 7) after checking every claim against the code: ten statements were false (abcjs version, piano `data-note`, arpeggio window, function labels, transpose to a target key, MIDI audio listed as out of scope…). Content repeated from README and state.md removed. Previous revision and the three executed May plans moved to `.archive/` (gitignored)
-- Removed the claim that some Chromium versions block Web MIDI on `file://`: no source for it
-- Audio engine: considered replacing soundfont-player with smplr and keeping both. Rejected: smplr loads the same GM samples from the same host, so it removes no risk; the current library works and is pinned
-- Blank page without soundfont-player: `preloadAudio()` ran before the layout and threw `Soundfont is not defined`, so the whole init stopped. Reproduced by blocking the script in Chrome. Also, the error status was set before the UI registered its status callback and was lost; the callback now receives the current status on registration
-- Controller notes used to play a fixed 1.5 s at fixed gain, ignoring velocity and note-off
+**What changed:** Modus aims to be a complete, professional, useful, universal and didactic app. Out of scope now holds only cloud sync/accounts and analytics/monetization; the rest of the v1 list (several songs, MIDI files, mobile, light mode, microtonal, channel filtering, velocity display, free section colours) moved to the roadmap with the gaps found against each use.
+**Why:** the user set no time or budget limits and no marketing or profit goals. The v1 list was a scope cut for a first version, and "several songs" contradicted transcribing as a main use.
+
+### 2026-10-09 — Audio engine kept: soundfont-player, not smplr
+
+**What changed:** considered replacing soundfont-player with smplr, and keeping both engines. Rejected.
+**Why:** smplr loads its GM soundfonts from the same `gleitz.github.io`, so it removes no risk; soundfont-player is archived but pinned and works. A real reason to move would be smplr's sampled instruments or reverb.
+
+### 2026-10-09 — Blank page without the soundfont-player script
+
+**What changed:** `loadCurrentInstrument` checks that `Soundfont` exists; the status callback receives the current status when registered.
+**Why:** `preloadAudio()` runs before the layout is built and threw `Soundfont is not defined`, stopping the whole init. Reproduced by blocking the script in Chrome. The error status was also lost, because it was set before the UI registered its callback.
+
+### 2026-10-09 — Spec audit; Stack and UMT contract out of state.md
+
+**What changed:** spec rewritten after checking every claim against the code: ten statements were false (abcjs version, piano `data-note`, arpeggio window, function labels, transpose to a target key, controller audio listed as out of scope…). The claim that some Chromium versions block Web MIDI on `file://` removed. Previous spec and the three executed May plans moved to `.archive/` (gitignored). In `state.md`, the Stack table went (README has it) and the UMT API contract moved to `docs/umt-contract.md`.
+**Why:** the spec had drifted from the code; the `file://` claim had no source. `state.md` follows the animus template: Project, Status, Patterns, Preferences, TODO.
 
 ### 2026-10-02 — TODO sweep: interaction model, CoF, voicings, UMT/notae fixes
 

@@ -1,21 +1,46 @@
 # Modus — Design Spec
-_Rev 7 · 2026-10-09_
+_Rev 8 · 2026-10-09_
 
-Design and behaviour. Stack, build and commands: `README.md`. UMT API contract and working conventions: `state.md`.
+Purpose, design and behaviour. Stack, build and commands: `README.md`. UMT API contract: `docs/umt-contract.md`. Roadmap: TODO in `state.md`.
 
-## What it is
+## Purpose
 
-A real-time harmonic analysis tool. The core is the **Detector**: MIDI input → chord detection → harmonic analysis, shown at once. A chord history and a song builder extend it, to work with progressions over time.
+See and understand the harmony of what you play, in real time. Modus aims to be a complete, professional, useful, universal and didactic app. No marketing or profit goals.
+
+**Uses**
+- Studying theory and harmony
+- Transcribing songs: seeing the harmony of what you work out
+- Composing: trying progressions, documenting the structure of a piece
+- Teaching: explaining concepts and giving examples in class
+- Making videos and other content about music
+
+**For whom:** any musician, from learners to teachers and content creators.
+
+**Universal** means all of:
+- With or without a MIDI controller; on desktop, phone or tablet
+- In English and Spanish
+- Accessible by keyboard and screen reader
+- Not limited to Western tonal harmony: other systems, modes and tunings
+
+**Didactic:** the app does not only name things (V7/V, borrowed from dorian); it can explain what they mean.
+
+All theory comes from UMT, developed for Modus. What UMT lacks is added to UMT, never worked around in Modus.
+
+## Structure
+
+The core is the **Detector**: input → chord detection → harmonic analysis, shown at once. A chord history and a song builder extend it, to work with progressions over time.
 
 ## Design principles
 
 **Information density over decoration.** The app exposes everything UMT can compute. Each field can be shown or hidden. Theory added to UMT reaches Modus through a pin bump.
 
-**Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`styles.css`).
+**Two ways to look.** The full view is for studying; a presentation view (planned) is for teaching and recording: large elements, no controls.
+
+**Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`styles.css`). Dark today; light mode and colour themes are planned.
 
 **User-configurable.** Every panel can be toggled; sizes and visible fields persist in localStorage.
 
-**Serverless.** Pure HTML + JS from any static host. No backend, no account.
+**Serverless, the data is the user's.** Pure HTML + JS from any static host. No backend, no account; songs live in the browser or in the user's files.
 
 ## Browser compatibility
 
@@ -244,14 +269,11 @@ Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/A
 | `Esc` | Close help; otherwise stop MIDI fill and clear the cursor |
 | `?` | Toggle shortcuts and gestures help |
 
-## Out of scope (v1)
+## Out of scope
 
-- Multiple saved songs
-- Cloud sync / account
-- Mobile / touch layout
-- MIDI file import/export
-- Microtonal / non-12TET analysis
-- MIDI channel filtering
-- Note velocity display
-- Free colour picker for sections (preset palette only)
-- Light mode
+Only what contradicts the principles:
+
+- Cloud sync and accounts
+- Analytics and monetization
+
+Everything else that was out of scope in v1 (several songs, MIDI files, mobile, light mode, microtonal, channel filtering, velocity display, free section colours) is on the roadmap.
