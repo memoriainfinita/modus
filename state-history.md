@@ -2,6 +2,14 @@
 
 What left `state.md`. Most recent first.
 
+### 2026-10-09 — Docs audit, audio engine kept, controller audio
+
+- Spec rewritten (rev 7) after checking every claim against the code: ten statements were false (abcjs version, piano `data-note`, arpeggio window, function labels, transpose to a target key, MIDI audio listed as out of scope…). Content repeated from README and state.md removed. Previous revision and the three executed May plans moved to `.archive/` (gitignored)
+- Removed the claim that some Chromium versions block Web MIDI on `file://`: no source for it
+- Audio engine: considered replacing soundfont-player with smplr and keeping both. Rejected: smplr loads the same GM samples from the same host, so it removes no risk; the current library works and is pinned
+- Blank page without soundfont-player: `preloadAudio()` ran before the layout and threw `Soundfont is not defined`, so the whole init stopped. Reproduced by blocking the script in Chrome. Also, the error status was set before the UI registered its status callback and was lost; the callback now receives the current status on registration
+- Controller notes used to play a fixed 1.5 s at fixed gain, ignoring velocity and note-off
+
 ### 2026-10-02 — TODO sweep: interaction model, CoF, voicings, UMT/notae fixes
 
 All base-review TODOs closed in one batch after the user answered the open design questions. 10 Modus commits, one each in UMT (`870d3d8`) and notae (`8fb052d`), both pushed.

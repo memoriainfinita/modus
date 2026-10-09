@@ -33,7 +33,7 @@ For each detected chord:
 | Chord name | Top candidate + alternatives (clickable, keys 1–9) |
 | Roman numeral | Scale degree in the active key — `Imaj7`, `ii7`, `V7/ii`, `bVII`. Secondary dominants are written `V7/x` |
 | Secondary | Degree a secondary dominant tonicizes — `→ ii` |
-| Harmonic function | Tonic / Subdominant / Dominant |
+| Harmonic function | Tonic / Subdominant / Dominant / Unknown |
 | Figured bass | e.g. `6/4`, `7` |
 | Borrowed chord | Modal interchange — source mode shown |
 | Suggested scales | Ordered by fit |
@@ -45,7 +45,7 @@ For each detected chord:
 
 Each field can be toggled individually. Font scale adjustable with +/−.
 
-**Input modes:** Normal, Hold (chord stays after release — useful for arpeggios), Arpeggio (accumulates notes within a 1.2s window).
+**Input modes:** Normal, Hold (chord stays after release — useful for arpeggios), Arpeggio (accumulates notes until 1.2 s pass with no new one).
 
 ### Notation panel
 
@@ -63,7 +63,7 @@ Four columns, each togglable independently ([St][An][CoF][Git]):
 
 ### Audio
 
-Any note played on the MIDI controller sounds through the selected soundfont. Click piano keys, CoF segments, or history/song chips to play. 128 GM instruments selectable (grouped by family). Volume slider. Loading progress bar. The instrument starts loading when the page opens; a note that arrives before it can sound (still loading, or no click yet to unlock audio) makes the progress bar flash.
+Any note played on the MIDI controller sounds through the selected soundfont, with its velocity, for as long as the key or the sustain pedal holds it. Click piano keys, CoF segments, or history/song chips to play. 128 GM instruments selectable (grouped by family). Volume slider. Loading progress bar. The instrument starts loading when the page opens; a note that arrives before it can sound (still loading, or no click yet to unlock audio) makes the progress bar flash.
 
 ### History
 
@@ -117,7 +117,7 @@ All three projects are independent, GPL-3.0, and built for the music community �
 
 - A browser with Web MIDI: Chrome, Edge or Firefox. Without it the app runs, minus the controller
 - A MIDI controller (optional — song builder and CoF interaction work without one)
-- A local server: `pnpm dlx http-server . -p 8080` (`file://` + Web MIDI may be blocked by some Chromium versions)
+- A local server: `pnpm dlx http-server . -p 8080`
 
 ---
 
