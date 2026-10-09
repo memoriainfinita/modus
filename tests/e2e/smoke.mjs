@@ -293,6 +293,23 @@ await check('no errors after the walk', async () => {
   assert(page.errors.length === 0, page.errors.join(' | '))
 })
 
+await check('without the soundfont-player script the app still renders, audio in error', async () => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
+  await context.addInitScript(FAKE_MIDI)
+  await context.route('**/soundfont-player*', r => r.abort())
+  const p = await context.newPage()
+  await p.goto(URL_)
+  await p.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
+  await p.waitForTimeout(300)
+  const r = await p.evaluate(() => ({
+    zone1: document.getElementById('zone1').innerHTML.length,
+    status: document.getElementById('audio-status')?.textContent,
+  }))
+  await context.close()
+  assert(r.zone1 > 0, 'zone 1 is empty')
+  assert(r.status === '♪ error', `audio status: ${r.status}`)
+})
+
 await browser.close()
 server.close()
 

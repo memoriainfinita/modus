@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { midiToNoteName, isNoteOff, setMode, setNoteChangeCallback } from '../src/midi'
+import { midiToNoteName, isNoteOff, isSustain, setMode, setNoteChangeCallback } from '../src/midi'
 
 describe('midiToNoteName', () => {
   it('converts middle C (MIDI 60) to C4', () => {
@@ -28,6 +28,17 @@ describe('isNoteOff', () => {
   })
   it('handles all MIDI channels for note-off (0x8F)', () => {
     expect(isNoteOff(0x8F, 64)).toBe(true)
+  })
+})
+
+describe('isSustain', () => {
+  it('is CC 64 on any channel', () => {
+    expect(isSustain(0xB0, 64)).toBe(true)
+    expect(isSustain(0xBF, 64)).toBe(true)
+  })
+  it('ignores other controllers and note messages', () => {
+    expect(isSustain(0xB0, 1)).toBe(false)
+    expect(isSustain(0x90, 64)).toBe(false)
   })
 })
 
