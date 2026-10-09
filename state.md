@@ -39,7 +39,7 @@ What is true now. What already happened lives in `state-history.md`.
 
 ## Preferences
 
-- At session start Claude launches `pnpm dev` in background (`run_in_background: true`, `timeout: 7200000` — the default background limit kills it after 30 min); `--watch=forever` keeps it alive when stdin closes. Do not use `!` in chat for this (it blocks). `pnpm build` only to check errors on demand.
+- `pnpm dev` only when a task needs continuous rebuilds, not at session start; otherwise `pnpm build`. When launched: in background (`run_in_background: true`, `timeout: 7200000` — the default background limit kills it after 30 min), never with `!` in chat (it blocks). `--watch=forever` outlives TaskStop and the session: at the end, kill the `cmd.exe` tree whose command line has `watch=forever` (`taskkill /PID <pid> /T /F`).
 
 ## TODO
 
