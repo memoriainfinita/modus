@@ -179,6 +179,9 @@ tests/
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts
   e2e/smoke.mjs       pnpm test:e2e
+docs/
+  spec.md             purpose, design and behaviour
+  umt-contract.md     UMT API signatures Modus relies on
 ```
 
 ---
