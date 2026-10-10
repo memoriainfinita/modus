@@ -12,7 +12,7 @@ const CIRCLE_DIM = ['B','F#','C#','G#','D#','A#','F','C','G','D','A','E']
 const pitchClass = pitchClassOf
 const rootOf = (symbol: string): string => symbol.match(/^([A-G][b#]*)/)?.[1] ?? ''
 
-export type CofOptions = { accidental: 'sharp' | 'flat', showMinor: boolean, showDegrees: boolean, show7ths: boolean, fontScale?: number }
+export type CofOptions = { accidental: 'sharp' | 'flat', showMinor: boolean, showDegrees: boolean, show7ths: boolean, fontScale?: number, backdrop?: string }
 
 /**
  * Renders the circle. `onSegmentClick` receives the segment's chord and, for major and
@@ -76,6 +76,8 @@ export function renderCircleOfFifths(
     : new Set<number>()
 
   let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`
+  // A view window on a chroma background needs the rings on a solid disc.
+  if (opts.backdrop) svg += `<circle cx="${size / 2}" cy="${size / 2}" r="${size * 0.43}" fill="${opts.backdrop}"/>`
 
   keys.forEach((key, i) => {
     const angle = (i * 30 - 90) * Math.PI / 180

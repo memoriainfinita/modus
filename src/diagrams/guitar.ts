@@ -9,6 +9,11 @@ export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v
 const EMPTY_FRETBOARD = { name: '', frets: [null, null, null, null, null, null], tuning: ['E','A','D','G','B','E'] }
 
 let guitarVoicingIdx = 0
+let onVoicingChange: (idx: number) => void = () => {}
+
+/** The voicing on screen (index into the playable list), for view windows. */
+export function getGuitarVoicingIndex(): number { return guitarVoicingIdx }
+export function setGuitarVoicingChange(cb: (idx: number) => void) { onVoicingChange = cb }
 let lastGuitarSymbol: string | null = null
 let lastNoteNames: string[] = []
 let guitarLabelMode = loadChoice('guitar-label-mode', ['none', 'tuning', 'notes'] as const, 'none')
@@ -158,7 +163,8 @@ function wireGuitarControls(container: HTMLElement) {
   })
 }
 
-export function renderGuitar(container: HTMLElement, chordSymbol: string | null, noteNames: string[] = []) {
+/** `voicingIndex` forces a voicing (a view window shows the one the main window shows). */
+export function renderGuitar(container: HTMLElement, chordSymbol: string | null, noteNames: string[] = [], voicingIndex?: number) {
   lastNoteNames = noteNames
 
   if (!chordSymbol) {
@@ -180,6 +186,7 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
     guitarVoicingIdx = 0
     lastGuitarSymbol = chordSymbol
   }
+  if (voicingIndex !== undefined) guitarVoicingIdx = voicingIndex
 
   // Every tuning, preset or custom, goes through UMT: open strings as steps from A4.
   const openMidi = tuningToMidi(guitarStringTuning) ?? tuningToMidi(GUITAR_TUNINGS.standard.notae)!
@@ -212,6 +219,7 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
     btn.addEventListener('click', () => {
       guitarVoicingIdx = (idx + parseInt(btn.dataset.dir!) + total) % total
       renderGuitar(container, lastGuitarSymbol, lastNoteNames)
+      onVoicingChange(guitarVoicingIdx)
     })
   })
   wireGuitarControls(container)
