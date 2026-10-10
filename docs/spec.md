@@ -250,7 +250,7 @@ Persisted to localStorage:
 - CoF size, b/♯, minor/dim rings, degrees, sevenths
 - Guitar tuning (including custom strings), label mode, fret spacing
 - Fretboard spacing
-- Key, MIDI device, input mode, instrument, volume
+- MIDI device, input mode, instrument, volume (the key is stored with each song)
 
 ## Keyboard shortcuts
 
