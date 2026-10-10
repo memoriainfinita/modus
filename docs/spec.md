@@ -97,7 +97,7 @@ Zone 1 is the primary module. Instruments, History and Song are collapsible.
 
 Changing mode drops the notes held by the previous mode.
 
-Pitch spelling of MIDI input: flats (`Bb`, `Eb`, `Ab`, `Db`, `Gb`).
+**Spelling.** MIDI has no spelling of its own: with a key (selected, or detected on Auto) everything the controller plays is written in that key, through UMT (`spellPitchInKey`, `spellChordInKey`, `spellChord`): chord names and readings, notes, the single note, intervals, the staff and the diagrams. G#m in E major, Abm in C minor. Key notes take the key's letters; chromatic notes follow the harmonic chromatic scale without needless double accidentals; chord tones are named by interval (Cm7b5: Gb). A key change rewrites what is on screen. A chord picked from history, song or CoF keeps the spelling it was given, and its notes are named by interval. History chips are shown in the current key. Without a key, MIDI input stays in flats.
 
 ### Detection
 
@@ -200,7 +200,7 @@ type Section = {
 type Song = { schemaVersion: 2; id: string; title: string; key: string | null; updatedAt: number; sections: Section[] }
 ```
 
-Several songs, each under its own localStorage key `modus-song:<id>`; the index `modus-songs` lists them and holds the open one. Each song keeps its key (`null` = Auto): opening a song restores it, picking a key stores it in the open song. The single schema-1 song of earlier versions (`modus-song`, or the older `harmony-companion-song`) is migrated once as the first song, with the key that was selected (`active-key`); the old keys are left in place. An unreadable song is skipped. Empty chord slots are never persisted.
+Several songs, each under its own localStorage key `modus-song:<id>`; the index `modus-songs` lists them and holds the open one. Each song keeps its key (`null` = Auto): opening a song restores it, picking a key stores it in the open song. The single schema-1 song of earlier versions (`modus-song`, or the older `harmony-companion-song`) is migrated once as the first song, with the key that was selected (`active-key`); the old keys are left in place. An unreadable song is skipped. Empty chord slots are never persisted. The first time a song with content is saved, the app asks the browser for persistent storage (once ever), so songs and preferences are not evicted under storage pressure: Firefox shows its permission prompt then, Chromium decides silently.
 
 ### Chord chip
 

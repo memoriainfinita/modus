@@ -54,12 +54,18 @@ UMT.Harmony.getSuggestedScales(chord: Chord): { scale: string; hint?: string }[]
 UMT.Harmony.getColtraneAxis(key: string): { root: string; majorThirds: [string,string,string] }
 UMT.Harmony.getNegativeHarmony(chord: Chord, key: string): Chord  // 12-TET only
 UMT.parseChordSymbol(symbol: string): Chord
+
+// Spelling (12-TET; other tunings fall back to getNotes names / the chord unchanged)
+UMT.spellPitchInKey(stepsFromA4: number, key: string): string  // "G#4" for MIDI 68 in "E Major"; flats for an unknown key
+UMT.spellChord(chord: Chord, rootName?: string): string[]       // tones by interval, getNotes() order: Cm7b5 → C4 Eb4 Gb4 Bb4
+UMT.spellChordInKey(chord: Chord, key: string): Chord           // Ab7 in A Major → G#7; unknown key → same chord
+// Chord.getNotes() spells tritones by heuristic (Cm7b5 gives F#): Modus names chord notes with spellChord
 ```
 
 ## MIDI → UMT Note conversion
 
 ```ts
-// Pitch spelling: flats by default (jazz convention)
+// Names handed to UMT for detection: flats. What is shown is respelled in the key (theory/spelling.ts)
 const PITCH_NAMES_FLAT = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B']
 const noteName = PITCH_NAMES_FLAT[midiNote % 12] + (Math.floor(midiNote / 12) - 1)
 // MIDI 60 → "C4", MIDI 58 → "Bb3"

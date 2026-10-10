@@ -12,13 +12,13 @@ What is true now. What already happened lives in `state-history.md`.
 **Modus** — see and understand the harmony of what you play, in real time. Aimed at being a complete, professional, useful, universal and didactic app, for studying, transcribing songs, composing, teaching and making videos. No time or budget limits, no marketing or profit goals. GPL-3.0, part of the **memoriainfinita** ecosystem: UMT (developed for Modus, all theory) and notae (diagrams).
 
 - **Spec:** `docs/spec.md` (purpose, design, behaviour) · **UMT contract:** `docs/umt-contract.md` · Executed plans and earlier spec revisions in `.archive/` (local, gitignored)
-- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to `debda14`, notae to `8fb052d`
+- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to `801e5ec`, notae to `8fb052d`
 
 ## Status
 
 - Working: detector, analysis, history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-10: TSC clean, 215 unit tests against the real UMT bundle, `pnpm test:e2e` 36/36 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present
+- Tests 2026-10-10: TSC clean, 225 unit tests against the real UMT bundle, `pnpm test:e2e` 37/37 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
@@ -37,6 +37,7 @@ What is true now. What already happened lives in `state-history.md`.
 - [ux] Destructive actions run at once and offer Undo (`ui/undo.ts`), never a confirmation. Confirmed 2026-10.
 - [ux] Play on single click. A double click is detected by hand (same target within 400 ms) wherever the element is rebuilt on click: a rebuilt node never gets the browser's dblclick. Confirmed 2026-10.
 - [audio] Stay on soundfont-player 0.12.0 + FluidR3_GM: archived upstream but pinned and working. smplr (same author) loads its GM soundfonts from the same `gleitz.github.io`, so swapping does not remove the sample-host risk. A reason to move would be smplr's sampled instruments (Steinway with velocity layers, electric pianos) or reverb, not maintenance. Confirmed 2026-10.
+- [spelling] Display spelling goes through `theory/spelling.ts` over UMT's `spellPitchInKey` / `spellChord` / `spellChordInKey`: MIDI detections are written in the analysis key and rewritten on a key change; a chord picked from history, song or CoF keeps its symbol and its notes are named by interval; history chips render in the current key. Note names may carry any accidentals (`notes.ts`: F##4, B#3 = MIDI 60). Confirmed 2026-10.
 - [testing] `pnpm test:e2e` after each behaviour change: `tests/e2e/smoke.mjs` serves the repo, opens the installed Chrome (`channel: 'chrome'`) with a fake `navigator.requestMIDIAccess`, and plays notes through `window.__midi`. Each check releases all notes when it ends. `window.__plug(id, name|null)` hot-plugs; `__hotplug(false)` switches to Firefox behaviour. Confirmed 2026-10.
 - [testing] `pnpm test:e2e:midi` (`tests/e2e/real-midi.mjs`) for the real Web MIDI path: Node writes to "loopMIDI Port" with `jzz`; Chrome gets `grantPermissions(['midi'])`; Playwright's Firefox gets a fresh profile whose `permissions.sqlite` holds the `midi` rows the site-permission add-on would write (no pref skips the add-on; Playwright knows no `midi` permission for Firefox). Needs loopMIDI running. Browsers launch muted (`--mute-audio`, `media.volume_scale` 0). Hot-plug stays in the fake: loopMIDI's GUI cannot unplug a port. Confirmed 2026-10.
 - [midi] Firefox reports no hot-plug (no statechange, `inputs` frozen) but a new `requestMIDIAccess` returns the current ports: `input/midi.ts` rescans every 2 s while visible and on focus. The device the user picked (or the first used) is preferred, found by name (Chrome ids are positional, `input-0`; Firefox ids are stable hashes): a fallback never replaces it. Confirmed 2026-10.
@@ -49,15 +50,14 @@ What is true now. What already happened lives in `state-history.md`.
 
 ### Analysis, in order (2026-10-10)
 
-1. [ ] Pitch spelling follows the key: MIDI input is spelled with flats today (G# in E major shows as Ab, on the staff with a wrong accidental). With it, `navigator.storage.persist()` so the browser does not evict preferences and songs
-2. [ ] Voicing analysis: inversion, close / open position, drop 2 / drop 3, doubled and omitted notes
-3. [ ] Scales and modes that fit a melody or a set of single notes
-4. [ ] Show what UMT computes and Modus does not: upper structures and slash-chord reading (`upper-structures`), neo-Riemannian P/L/R between consecutive chords, Forte number and interval vector
-5. [ ] Key and scale explorer: pick a key or mode, see its diatonic chords, functions and usual borrowings, without playing. The Coltrane axis and negative harmony move here from the per-chord panel (the axis depends only on the key)
-6. [ ] Next-chord suggestions, as didactics: what usually follows and why (function, cadences, UMT's named progressions)
-7. [ ] Progression analysis over the history: modulations, harmonic rhythm, cadences (`analyzeProgression` returns them, unused today)
-8. [ ] OBS view (a URL showing only the chord, staff or circle on a transparent or chroma background, for a browser source) and export of diagrams as SVG / PNG
-9. [ ] MIDI output: send what sounds to an external synth or DAW
+1. [ ] Voicing analysis: inversion, close / open position, drop 2 / drop 3, doubled and omitted notes
+2. [ ] Scales and modes that fit a melody or a set of single notes
+3. [ ] Show what UMT computes and Modus does not: upper structures and slash-chord reading (`upper-structures`), neo-Riemannian P/L/R between consecutive chords, Forte number and interval vector
+4. [ ] Key and scale explorer: pick a key or mode, see its diatonic chords, functions and usual borrowings, without playing. The Coltrane axis and negative harmony move here from the per-chord panel (the axis depends only on the key)
+5. [ ] Next-chord suggestions, as didactics: what usually follows and why (function, cadences, UMT's named progressions)
+6. [ ] Progression analysis over the history: modulations, harmonic rhythm, cadences (`analyzeProgression` returns them, unused today)
+7. [ ] OBS view (a URL showing only the chord, staff or circle on a transparent or chroma background, for a browser source) and export of diagrams as SVG / PNG
+8. [ ] MIDI output: send what sounds to an external synth or DAW
 
 ### Analysis, not yet ordered (agreed 2026-10-09)
 
@@ -96,4 +96,4 @@ Transcription
 
 ### Song builder, frozen
 
-Works and keeps its tests; no new features. Later: a separate app on UMT and notae, or kept as is. Parked until then: export / import to a file, share by URL, MIDI file import / export, MusicXML and chord-sheet PDF, playback at a tempo with time signature, chord durations within the measure, lyrics and notes per measure, undo / redo of edits, free colour for sections, metronome and recording takes into bars. Whole-song analysis moved to analysis item 7, over the history.
+Works and keeps its tests; no new features. Later: a separate app on UMT and notae, or kept as is. Parked until then: export / import to a file, share by URL, MIDI file import / export, MusicXML and chord-sheet PDF, playback at a tempo with time signature, chord durations within the measure, lyrics and notes per measure, undo / redo of edits, free colour for sections, metronome and recording takes into bars. Whole-song analysis moved to the analysis item on the history.
