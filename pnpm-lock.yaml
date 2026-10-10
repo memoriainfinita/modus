@@ -17,6 +17,9 @@ importers:
       jsdom:
         specifier: ^30.1.1
         version: 30.1.1
+      jzz:
+        specifier: ^1.9.6
+        version: 1.9.6
       playwright-core:
         specifier: ^1.63.0
         version: 1.63.0
@@ -455,6 +458,10 @@ packages:
   is-potential-custom-element-name@1.0.1:
     resolution: {integrity: sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==}
 
+  jazz-midi@1.7.9:
+    resolution: {integrity: sha512-c8c4BBgwxdsIr1iVm53nadCrtH7BUlnX3V95ciK/gbvXN/ndE5+POskBalXgqlc/r9p2XUbdLTrgrC6fou5p9w==}
+    engines: {node: '>=10.0.0'}
+
   jsdom@30.1.1:
     resolution: {integrity: sha512-FahmoPK5vbPc+jxV1iErMHmAZypCZ942NHF4+qqaWAuvaKKTBZxawnmAtrbGWLU7MtlxfqIP0qw6aSI+aWGtLg==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
@@ -463,6 +470,9 @@ packages:
     peerDependenciesMeta:
       canvas:
         optional: true
+
+  jzz@1.9.6:
+    resolution: {integrity: sha512-J7ENLhXwfm2BNDKRUrL8eKtPhUS/CtMBpiafxQHDBcOWSocLhearDKEdh+ylnZFcr5OXWTed0gj6l/txeQA9vg==}
 
   lightningcss-android-arm64@1.33.0:
     resolution: {integrity: sha512-gEpRTalKdosp4Bb8qWtc2iOgE5SeIHlpS1up9bFq2wAyYhl1UdTObYiHe98zEM9SQvSoqQZ1IQD0JNpg3Ml5pg==}
@@ -1046,6 +1056,8 @@ snapshots:
 
   is-potential-custom-element-name@1.0.1: {}
 
+  jazz-midi@1.7.9: {}
+
   jsdom@30.1.1:
     dependencies:
       '@asamuzakjp/css-color': 7.1.2
@@ -1070,6 +1082,10 @@ snapshots:
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - '@noble/hashes'
+
+  jzz@1.9.6:
+    dependencies:
+      jazz-midi: 1.7.9
 
   lightningcss-android-arm64@1.33.0:
     optional: true
