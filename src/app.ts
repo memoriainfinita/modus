@@ -8,14 +8,16 @@ import { renderGuitar } from './diagrams/guitar'
 import { renderNeck, adjustNeckSpacing } from './diagrams/neck'
 import { renderCircleOfFifths } from './diagrams/cof'
 import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history/history'
-import { loadSong, saveSong, addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song/model'
+import { addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song/model'
+import { loadActiveSong, saveSong, listSongs, openSong, newSong, deleteSong, restoreSong } from './song/library'
+import { showUndo, dismiss as dismissUndo } from './ui/undo'
 import { mountSong, markActiveChord, removeChordWithUndo } from './song/view'
 import type { AppState, DetectionResult, HistoryEntry, MidiMode, Song, SongChord } from './types'
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames } from './theory/chord'
-import { loadBool, loadChoice, loadNumber, loadString, save } from './ui/storage'
+import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps } from './theory/keys'
 import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles } from './ui/layout'
@@ -37,12 +39,14 @@ let analysisScale = loadNumber('analysis-scale', 11, 8, 20)
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
+const initialSong = loadActiveSong()
+
 const state: AppState = {
-  activeKey: normalizeKey(loadString('active-key', '')),
+  activeKey: normalizeKey(initialSong.key),   // each song keeps the key it is analysed in
   detection: null,
   analysis: null,
   history: [],
-  song: loadSong(),
+  song: initialSong,
   activeCursorId: null,
   historyActiveCursorId: null,
   captureTargetId: null,
@@ -155,8 +159,29 @@ function makeSongHandlers() {
       state.song = song
       saveSong(song)
       renderZone3()
-    }
+    },
+    songs: listSongs(),
+    onOpenSong: (id: string) => {
+      const song = openSong(id)
+      if (song) showSong(song)
+    },
+    onNewSong: () => showSong(newSong()),
+    onDeleteSong: () => {
+      const { deleted, open } = deleteSong(state.song.id)
+      showSong(open)
+      if (deleted) showUndo(`Deleted "${deleted.title}"`, () => { restoreSong(deleted); showSong(deleted) })
+    },
   }
+}
+
+/** Puts another song on screen with its own key; cursor, capture and pending Undo reset. */
+function showSong(song: Song) {
+  dismissUndo()
+  cancelCapture()
+  state.song = song
+  state.activeCursorId = null
+  state.captureTargetId = null
+  applyKey(normalizeKey(song.key))
 }
 
 // ─── Layout events ───────────────────────────────────────────────────────────
@@ -321,9 +346,15 @@ function onAltSelect(idx: number) {
   renderDetector()
 }
 
+/** The user picks a key: it is stored with the open song. */
 function setActiveKey(key: string | null) {
+  state.song = { ...state.song, key }
+  saveSong(state.song)
+  applyKey(key)
+}
+
+function applyKey(key: string | null) {
   state.activeKey = key
-  save('active-key', key ?? '')
   ;($('key-select') as HTMLSelectElement).value = key ?? ''
   updateAutoKeyLabel()
   refreshAnalysis()

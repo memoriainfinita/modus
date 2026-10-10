@@ -6,7 +6,12 @@ import { keyPrefersSharps } from '../theory/keys'
 export { transposeKey } from '../theory/keys'
 
 export function createSong(): Song {
-  return { schemaVersion: 1, title: 'Untitled', sections: [] }
+  return { schemaVersion: 2, id: newId(), title: 'Untitled', key: null, updatedAt: Date.now(), sections: [] }
+}
+
+/** Nothing written yet: no sections and the default title. */
+export function isBlankSong(song: Song): boolean {
+  return !song.sections.length && song.title === 'Untitled'
 }
 
 function newId(): string { return crypto.randomUUID() }
@@ -320,23 +325,6 @@ export function withoutEmptyChords(song: Song): Song {
       measures: s.measures.map(m => ({ ...m, chords: m.chords.filter(c => c.symbol) }))
     }))
   }
-}
-
-export function saveSong(song: Song) {
-  localStorage.setItem('modus-song', JSON.stringify(withoutEmptyChords(song)))
-}
-
-export function loadSong(): Song {
-  try {
-    const raw = localStorage.getItem('modus-song') ?? localStorage.getItem('harmony-companion-song')
-    if (!raw) return createSong()
-    const parsed = JSON.parse(raw)
-    if (parsed.schemaVersion !== 1) {
-      console.warn('Song schema version mismatch — resetting')
-      return createSong()
-    }
-    return withoutEmptyChords(parsed as Song)
-  } catch { return createSong() }
 }
 
 export function detectForm(sectionNames: string[]): string {
