@@ -32,38 +32,90 @@
       return { ok: false, denied: false, unsupported: true };
     }
     try {
-      midiAccess = await navigator.requestMIDIAccess();
-      midiAccess.onstatechange = () => refreshDeviceList();
+      useAccess(await navigator.requestMIDIAccess());
       const savedMode = localStorage.getItem("midi-mode");
       if (savedMode && ["normal", "hold", "arpeggio"].includes(savedMode)) mode = savedMode;
-      restoreDevice();
+      resolveDevice();
+      startRescan();
       return { ok: true, denied: false, unsupported: false };
     } catch {
       return { ok: false, denied: true, unsupported: false };
     }
   }
+  function useAccess(access) {
+    if (midiAccess) {
+      midiAccess.onstatechange = null;
+      for (const input of midiAccess.inputs.values()) input.onmidimessage = null;
+    }
+    midiAccess = access;
+    midiAccess.onstatechange = () => refreshDeviceList();
+  }
+  function devicesOf(access) {
+    if (!access) return [];
+    return Array.from(access.inputs.values()).filter((i) => i.state !== "disconnected").map((i) => ({ id: i.id, name: i.name ?? i.id }));
+  }
   function getDevices() {
-    if (!midiAccess) return [];
-    return Array.from(midiAccess.inputs.values()).filter((i) => i.state !== "disconnected").map((i) => ({ id: i.id, name: i.name ?? i.id }));
+    return devicesOf(midiAccess);
   }
-  function getSelectedDeviceId() {
-    return selectedDeviceId;
+  var PREFERRED_KEY = "midi-device";
+  function loadPreferred() {
+    try {
+      const raw = localStorage.getItem(PREFERRED_KEY);
+      if (raw) return JSON.parse(raw);
+      const legacyId = localStorage.getItem("midi-device-id");
+      return legacyId ? { id: legacyId } : {};
+    } catch {
+      return {};
+    }
   }
-  function selectDevice(id) {
-    selectedDeviceId = id;
-    localStorage.setItem("midi-device-id", id);
+  function savePreferred(device) {
+    try {
+      localStorage.setItem(PREFERRED_KEY, JSON.stringify(device));
+    } catch {
+    }
+  }
+  function chooseDevice(id) {
+    const device = getDevices().find((d) => d.id === id);
+    if (!device) return;
+    savePreferred(device);
     attachToDevice(id);
   }
-  function restoreDevice() {
-    const saved = localStorage.getItem("midi-device-id");
+  function resolveDevice() {
     const devices = getDevices();
-    const target = saved && devices.find((d) => d.id === saved) ? saved : devices[0]?.id ?? null;
-    if (target) selectDevice(target);
+    const preferred = loadPreferred();
+    const target = devices.find((d) => d.id === preferred.id) ?? devices.find((d) => d.name === preferred.name) ?? devices.find((d) => d.id === selectedDeviceId) ?? devices[0];
+    if (!target) return null;
+    if (!preferred.id && !preferred.name) savePreferred(target);
+    attachToDevice(target.id);
+    return target.id;
   }
   function attachToDevice(id) {
+    selectedDeviceId = id;
     if (!midiAccess) return;
     for (const input of midiAccess.inputs.values()) {
       input.onmidimessage = input.id === id ? handleMidiMessage : null;
+    }
+  }
+  var RESCAN_MS = 2e3;
+  var rescanning = false;
+  function startRescan() {
+    setInterval(() => {
+      if (document.visibilityState === "visible") void rescan();
+    }, RESCAN_MS);
+    window.addEventListener("focus", () => void rescan());
+  }
+  var signature = (devices) => devices.map((d) => d.name).sort().join("\n");
+  async function rescan() {
+    if (rescanning || !midiAccess) return;
+    rescanning = true;
+    try {
+      const fresh = await navigator.requestMIDIAccess();
+      if (signature(devicesOf(fresh)) === signature(getDevices())) return;
+      useAccess(fresh);
+      refreshDeviceList();
+    } catch {
+    } finally {
+      rescanning = false;
     }
   }
   function refreshDeviceList() {
@@ -2960,13 +3012,9 @@ K:${abcKey}
     const sel = $2("midi-device");
     const devices = getDevices();
     sel.innerHTML = devices.length ? devices.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join("") : "<option>No MIDI devices</option>";
-    sel.onchange = () => selectDevice(sel.value);
-    const current2 = getSelectedDeviceId();
-    const target = devices.find((d) => d.id === current2)?.id ?? devices[0]?.id;
-    if (target) {
-      selectDevice(target);
-      sel.value = target;
-    }
+    sel.onchange = () => chooseDevice(sel.value);
+    const target = resolveDevice();
+    if (target) sel.value = target;
     $2("midi-status").textContent = devices.length ? "MIDI: connected" : "MIDI: no devices";
     $2("midi-status").style.color = devices.length ? "#4ade80" : "#6b7280";
     if (!deviceListenersAttached) {

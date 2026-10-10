@@ -1,5 +1,5 @@
 import './styles.css'
-import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, selectDevice, getSelectedDeviceId } from './input/midi'
+import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice } from './input/midi'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './detector/analyzer'
 import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback } from './audio/audio'
 import { renderStaff } from './diagrams/staff'
@@ -520,12 +520,11 @@ function refreshDeviceDropdown() {
   sel.innerHTML = devices.length
     ? devices.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('')
     : '<option>No MIDI devices</option>'
-  sel.onchange = () => selectDevice(sel.value)
-  // Keep the chosen device (restored from localStorage in initMidi) across hot-plug events;
-  // re-select it so a reconnected port gets its message handler back.
-  const current = getSelectedDeviceId()
-  const target = devices.find(d => d.id === current)?.id ?? devices[0]?.id
-  if (target) { selectDevice(target); sel.value = target }
+  sel.onchange = () => chooseDevice(sel.value)
+  // Back to the device the user picked when it reappears; a reconnected port gets its
+  // message handler back.
+  const target = resolveDevice()
+  if (target) sel.value = target
 
   $('midi-status').textContent = devices.length ? 'MIDI: connected' : 'MIDI: no devices'
   $('midi-status').style.color = devices.length ? '#4ade80' : '#6b7280'

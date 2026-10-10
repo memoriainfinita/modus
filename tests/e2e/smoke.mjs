@@ -23,14 +23,36 @@ const server = createServer(async (req, res) => {
 await new Promise(r => server.listen(0, '127.0.0.1', r))
 const URL_ = `http://127.0.0.1:${server.address().port}/`
 
-// Fake Web MIDI: one input whose name needs escaping; window.__midi(bytes) plays into it.
+// Fake Web MIDI: one input whose name needs escaping; window.__midi(bytes, id) plays into it.
+// window.__plug(id, name | null) plugs or unplugs a port. Chrome style (default): every
+// access keeps the port, changes its state and fires statechange. Firefox style
+// (__hotplug(false)): nothing fires and old accesses never change; only a new
+// requestMIDIAccess sees the current ports.
 const FAKE_MIDI = () => {
-  const input = { id: 'fake-1', name: '<b>Fake</b> Keys', onmidimessage: null }
-  const access = { inputs: new Map([['fake-1', input]]), outputs: new Map(), onstatechange: null }
-  navigator.requestMIDIAccess = async () => access
-  window.__midi = bytes => input.onmidimessage?.({ data: new Uint8Array(bytes) })
-  // Chrome-style hot-plug: the port stays in `inputs` and only its state changes.
-  window.__plug = connected => { input.state = connected ? 'connected' : 'disconnected'; access.onstatechange?.({ port: input }) }
+  const plugged = new Map([['fake-1', '<b>Fake</b> Keys']])
+  const accesses = []
+  let hotplug = true
+  const port = (id, name) => ({ id, name, state: 'connected', onmidimessage: null })
+  navigator.requestMIDIAccess = async () => {
+    const access = { inputs: new Map([...plugged].map(([id, name]) => [id, port(id, name)])), outputs: new Map(), onstatechange: null }
+    accesses.push(access)
+    return access
+  }
+  window.__midi = (bytes, id = 'fake-1') => {
+    if (!plugged.has(id)) return
+    for (const a of accesses) a.inputs.get(id)?.onmidimessage?.({ data: new Uint8Array(bytes) })
+  }
+  window.__hotplug = on => { hotplug = on }
+  window.__plug = (id, name) => {
+    if (name) plugged.set(id, name); else plugged.delete(id)
+    if (!hotplug) return
+    for (const a of accesses) {
+      const p = a.inputs.get(id) ?? port(id, name)
+      p.state = name ? 'connected' : 'disconnected'
+      a.inputs.set(id, p)
+      a.onstatechange?.({ port: p })
+    }
+  }
 }
 
 const browser = await chromium.launch({ channel: 'chrome', headless: !process.env.HEADED })
@@ -303,14 +325,43 @@ await check('staff renders a key signature for F# Major', async () => {
   await off([66, 70, 73])
 })
 
+const KEYS = '<b>Fake</b> Keys'
+const device = () => page.locator('#midi-device').inputValue()
+
 await check('an unplugged port left in the list is not a device; replugged, it plays', async () => {
-  await page.evaluate(() => window.__plug(false))
+  await page.evaluate(() => window.__plug('fake-1', null))
   assert((await text('#midi-status')).includes('disconnected'), `status: ${await text('#midi-status')}`)
   assert(!(await page.locator('#midi-device').innerText()).includes('Fake'), 'unplugged device still listed')
-  await page.evaluate(() => window.__plug(true))
+  await page.evaluate(k => window.__plug('fake-1', k), KEYS)
   await play([60, 64, 67])
   assert((await text('.chord-name-badge')) === 'C', 'no chord after replug')
   await off([60, 64, 67])
+})
+
+await check('with another port present, the controller is used again when it comes back', async () => {
+  await page.evaluate(() => window.__plug('loop', 'Loop Port'))
+  await page.evaluate(() => window.__plug('fake-1', null))
+  assert(await device() === 'loop', `fallback: ${await device()}`)
+  await page.evaluate(k => window.__plug('fake-1', k), KEYS)
+  assert(await device() === 'fake-1', `after replug: ${await device()}`)
+  await play([62, 65, 69])
+  assert((await text('.chord-name-badge')) === 'Dm', 'controller silent after replug')
+  await off([62, 65, 69])
+})
+
+await check('Firefox style (no statechange): unplug and replug are found by rescanning', async () => {
+  await page.evaluate(() => window.__hotplug(false))
+  await page.evaluate(() => window.__plug('fake-1', null))
+  await page.waitForTimeout(2500)
+  assert(!(await page.locator('#midi-device').innerText()).includes('Fake'), 'unplugged device still listed')
+  assert(await device() === 'loop', `fallback: ${await device()}`)
+  await page.evaluate(k => window.__plug('fake-1', k), KEYS)
+  await page.waitForTimeout(2500)
+  assert(await device() === 'fake-1', `after replug: ${await device()}`)
+  await play([64, 67, 71])
+  assert((await text('.chord-name-badge')) === 'Em', 'controller silent after replug')
+  await off([64, 67, 71])
+  await page.evaluate(() => window.__hotplug(true))
 })
 
 await check('no errors after the walk', async () => {

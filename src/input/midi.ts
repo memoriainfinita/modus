@@ -43,44 +43,113 @@ export async function initMidi(): Promise<{ ok: boolean; denied: boolean; unsupp
     return { ok: false, denied: false, unsupported: true }
   }
   try {
-    midiAccess = await navigator.requestMIDIAccess()
-    midiAccess.onstatechange = () => refreshDeviceList()
+    useAccess(await navigator.requestMIDIAccess())
     const savedMode = localStorage.getItem('midi-mode') as MidiMode | null
     if (savedMode && ['normal', 'hold', 'arpeggio'].includes(savedMode)) mode = savedMode
-    restoreDevice()
+    resolveDevice()
+    startRescan()
     return { ok: true, denied: false, unsupported: false }
   } catch {
     return { ok: false, denied: true, unsupported: false }
   }
 }
 
+function useAccess(access: MIDIAccess) {
+  if (midiAccess) {
+    midiAccess.onstatechange = null
+    for (const input of midiAccess.inputs.values()) input.onmidimessage = null
+  }
+  midiAccess = access
+  midiAccess.onstatechange = () => refreshDeviceList()
+}
+
+type Device = { id: string; name: string }
+
 // A browser may keep an unplugged port in `inputs` with state 'disconnected'; it is not a device.
-export function getDevices(): { id: string; name: string }[] {
-  if (!midiAccess) return []
-  return Array.from(midiAccess.inputs.values())
+function devicesOf(access: MIDIAccess | null): Device[] {
+  if (!access) return []
+  return Array.from(access.inputs.values())
     .filter(i => i.state !== 'disconnected')
     .map(i => ({ id: i.id, name: i.name ?? i.id }))
 }
 
-export function getSelectedDeviceId(): string | null { return selectedDeviceId }
+export function getDevices(): Device[] { return devicesOf(midiAccess) }
 
-export function selectDevice(id: string) {
-  selectedDeviceId = id
-  localStorage.setItem('midi-device-id', id)
+// The device the user picked. A fallback chosen because it went missing does not replace
+// it, so the controller is used again as soon as it comes back.
+const PREFERRED_KEY = 'midi-device'
+
+function loadPreferred(): Partial<Device> {
+  try {
+    const raw = localStorage.getItem(PREFERRED_KEY)
+    if (raw) return JSON.parse(raw)
+    const legacyId = localStorage.getItem('midi-device-id')
+    return legacyId ? { id: legacyId } : {}
+  } catch { return {} }
+}
+
+function savePreferred(device: Device) {
+  try { localStorage.setItem(PREFERRED_KEY, JSON.stringify(device)) } catch { }
+}
+
+/** The user picks a device: it becomes the preferred one. */
+export function chooseDevice(id: string) {
+  const device = getDevices().find(d => d.id === id)
+  if (!device) return
+  savePreferred(device)
   attachToDevice(id)
 }
 
-function restoreDevice() {
-  const saved = localStorage.getItem('midi-device-id')
+/**
+ * Picks the device to listen to: the preferred one if present (by id, else by name, as a
+ * browser may give a replugged port a new id), else the current one, else the first.
+ * With no devices the last selection is kept, so the caller can report it disconnected.
+ */
+export function resolveDevice(): string | null {
   const devices = getDevices()
-  const target = saved && devices.find(d => d.id === saved) ? saved : devices[0]?.id ?? null
-  if (target) selectDevice(target)
+  const preferred = loadPreferred()
+  const target = devices.find(d => d.id === preferred.id)
+    ?? devices.find(d => d.name === preferred.name)
+    ?? devices.find(d => d.id === selectedDeviceId)
+    ?? devices[0]
+  if (!target) return null
+  // Until the user picks one, the first device used is the one to come back to
+  if (!preferred.id && !preferred.name) savePreferred(target)
+  attachToDevice(target.id)
+  return target.id
 }
 
 function attachToDevice(id: string) {
+  selectedDeviceId = id
   if (!midiAccess) return
   for (const input of midiAccess.inputs.values()) {
     input.onmidimessage = input.id === id ? handleMidiMessage : null
+  }
+}
+
+// Firefox does not report hot-plug (no statechange; its `inputs` never change), but a new
+// requestMIDIAccess returns the current ports. While the page is visible, ask again every
+// RESCAN_MS and on focus; switch only when the device list changed.
+const RESCAN_MS = 2000
+let rescanning = false
+
+function startRescan() {
+  setInterval(() => { if (document.visibilityState === 'visible') void rescan() }, RESCAN_MS)
+  window.addEventListener('focus', () => void rescan())
+}
+
+const signature = (devices: Device[]) => devices.map(d => d.name).sort().join('\n')
+
+async function rescan() {
+  if (rescanning || !midiAccess) return
+  rescanning = true
+  try {
+    const fresh = await navigator.requestMIDIAccess()
+    if (signature(devicesOf(fresh)) === signature(getDevices())) return
+    useAccess(fresh)
+    refreshDeviceList()
+  } catch { /* access withdrawn: keep what we have */ } finally {
+    rescanning = false
   }
 }
 
