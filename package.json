@@ -17,7 +17,7 @@
     "jzz": "^1.9.6",
     "playwright-core": "^1.63.0",
     "typescript": "~5.9.3",
-    "umt": "github:memoriainfinita/UMT#debda148eaa927287ee3ea8106943b91c50d7695",
+    "umt": "github:memoriainfinita/UMT#801e5ecb10bfef3d25eef839a187b073b69e3d47",
     "vite": "^8.3.1",
     "vitest": "^5.0.3"
   }

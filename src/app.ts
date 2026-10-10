@@ -17,6 +17,7 @@ import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames } from './theory/chord'
+import { spellDetection, spellVoicing } from './theory/spelling'
 import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps } from './theory/keys'
@@ -321,6 +322,15 @@ function renderDetector() {
   renderDiagrams()
 }
 
+// MIDI input has no spelling of its own: it is written in the key, and rewritten when the
+// key changes. A chord picked from history, song or CoF keeps the spelling it was given.
+let detectionFromMidi = false
+
+/** Rewrites a MIDI detection in the current key (after a key change). */
+function respellMidiDetection() {
+  if (detectionFromMidi) state.detection = spellDetection(state.detection, analysisKey())
+}
+
 function showDetection(detection: DetectionResult, prev: string | null) {
   state.detection = detection
   cadencePrev = prev
@@ -331,9 +341,10 @@ function showDetection(detection: DetectionResult, prev: string | null) {
 
 /** Shows a chord picked from history, song or CoF. Without a stored voicing, UMT's spelling is shown and played. */
 function showChord(symbol: string, notes: string[] | undefined, prev: string | null) {
+  detectionFromMidi = false
   showDetection({
     kind: 'chord',
-    notes: notes?.length ? notes : chordNoteNames(symbol),
+    notes: notes?.length ? spellVoicing(notes, symbol, analysisKey()) : chordNoteNames(symbol),
     candidates: [symbol],
     selectedIndex: 0,
   }, prev)
@@ -341,7 +352,9 @@ function showChord(symbol: string, notes: string[] | undefined, prev: string | n
 
 function onAltSelect(idx: number) {
   if (state.detection?.kind !== 'chord') return
-  state.detection.selectedIndex = idx
+  const symbol = state.detection.candidates[idx]
+  state.detection = { ...state.detection, selectedIndex: idx,
+    notes: spellVoicing(state.detection.notes, symbol === '?' ? null : symbol, analysisKey()) }
   refreshAnalysis()
   renderDetector()
 }
@@ -357,6 +370,7 @@ function applyKey(key: string | null) {
   state.activeKey = key
   ;($('key-select') as HTMLSelectElement).value = key ?? ''
   updateAutoKeyLabel()
+  respellMidiDetection()
   refreshAnalysis()
   renderDetector()
   renderZone2()
@@ -413,7 +427,8 @@ function cancelCapture() {
 }
 
 function onNoteChange(notes: number[]) {
-  const result = analyzeNotes(notes)
+  detectionFromMidi = true
+  const result = spellDetection(analyzeNotes(notes), analysisKey())
   const top = result?.kind === 'chord' ? result.candidates[0] : null
   const known = top && top !== '?' ? top : null
 
@@ -435,6 +450,7 @@ function onHistoryChange(entries: HistoryEntry[]) {
   updateAutoKeyLabel()
   // On Auto, the detected key drives every view, not only the analysis panel.
   if (autoKeyChanged && !state.activeKey) {
+    respellMidiDetection()
     refreshAnalysis()
     renderDetector()
     renderZone3()

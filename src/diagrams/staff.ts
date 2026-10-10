@@ -5,11 +5,12 @@ export function buildStaffAbc(noteNames: string[], keyStr: string | null): strin
   const { abcKey, accidentals } = keySignature(keyStr)
   const header = `X:1\nM:none\nL:1\nK:${abcKey}\n`
   const abcNotes = noteNames.flatMap(n => {
-    const m = n.match(/^([A-G])([b#]?)(-?\d+)$/)
+    const m = n.match(/^([A-G])(#{0,2}|b{0,2})(-?\d+)$/)
     if (!m) return []
     const [, letter, acc, octStr] = m
     const keyAcc = accidentals[letter] ?? ''
-    const mark = acc === keyAcc ? '' : acc === 'b' ? '_' : acc === '#' ? '^' : '='
+    // ABC: ^ sharp, _ flat, doubled for double accidentals, = natural against the signature
+    const mark = acc === keyAcc ? '' : acc ? acc.replace(/#/g, '^').replace(/b/g, '_') : '='
     const oct = parseInt(octStr)
     const pitch = oct >= 5 ? letter.toLowerCase() + "'".repeat(oct - 5)
       : oct === 4 ? letter

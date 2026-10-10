@@ -187,36 +187,32 @@
 
   // src/theory/notes.ts
   var PITCH_NAMES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
-  var NOTE_SEMITONE = {
-    "C": 0,
-    "C#": 1,
-    "Db": 1,
-    "D": 2,
-    "D#": 3,
-    "Eb": 3,
-    "E": 4,
-    "F": 5,
-    "F#": 6,
-    "Gb": 6,
-    "G": 7,
-    "G#": 8,
-    "Ab": 8,
-    "A": 9,
-    "A#": 10,
-    "Bb": 10,
-    "B": 11
-  };
+  var LETTER_SEMITONE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  function accidentalSemitones(acc) {
+    let n = 0;
+    for (const ch of acc) n += ch === "#" ? 1 : ch === "b" ? -1 : 0;
+    return n;
+  }
+  function pitchClassOf(name) {
+    const m = name.match(/^([A-G])([#b]*)$/);
+    if (!m) return -1;
+    return ((LETTER_SEMITONE[m[1]] + accidentalSemitones(m[2])) % 12 + 12) % 12;
+  }
   function midiToNoteName(midiNote) {
     const pc = midiNote % 12;
     const octave = Math.floor(midiNote / 12) - 1;
     return PITCH_NAMES_FLAT[pc] + octave;
   }
   function noteNameToMidi(name) {
-    const m = name.match(/^([A-G][b#]?)(-?\d+)$/);
+    const m = name.match(/^([A-G])([#b]*)(-?\d+)$/);
     if (!m) return null;
-    const pc = NOTE_SEMITONE[m[1]];
-    if (pc === void 0) return null;
-    return (parseInt(m[2]) + 1) * 12 + pc;
+    return (parseInt(m[3]) + 1) * 12 + LETTER_SEMITONE[m[1]] + accidentalSemitones(m[2]);
+  }
+  function nameAtMidi(base, midi) {
+    const m = base.match(/^([A-G])([#b]*)$/);
+    if (!m) return null;
+    const offset = midi - LETTER_SEMITONE[m[1]] - accidentalSemitones(m[2]);
+    return offset % 12 === 0 ? `${base}${offset / 12 - 1}` : null;
   }
 
   // src/theory/chord.ts
@@ -250,7 +246,7 @@
     return tryParseChord(symbol) !== null;
   }
   function normalizeChordName(name) {
-    return name.replace(/^([A-G][b#]?)M(?=\/|$)/, "$1");
+    return name.replace(/^([A-G][b#]*)M(?=\/|$)/, "$1");
   }
   function chordFamily(symbol) {
     const chord = tryParseChord(symbol);
@@ -274,11 +270,7 @@
   function chordNoteNames(symbol) {
     const chord = tryParseChord(symbol);
     if (!chord) return [];
-    try {
-      return (chord.getNotes?.() ?? []).map((n) => n.name).filter(Boolean);
-    } catch {
-      return [];
-    }
+    return tryUMT("chord tones", () => UMT.spellChord(chord), []).filter(Boolean);
   }
 
   // src/theory/keys.ts
@@ -287,8 +279,8 @@
   var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc) => [`${root} Major`, `${MINOR_ROOTS[pc]} Minor`]);
   function parseKey(key) {
     const [root, mode2] = key.split(" ");
-    const pc = NOTE_SEMITONE[root];
-    if (pc === void 0) return null;
+    const pc = pitchClassOf(root ?? "");
+    if (pc === -1) return null;
     return { pc, minor: mode2?.toLowerCase() === "minor" };
   }
   function keyName(pc, minor) {
@@ -666,11 +658,11 @@ L:1
 K:${abcKey}
 `;
     const abcNotes = noteNames.flatMap((n) => {
-      const m = n.match(/^([A-G])([b#]?)(-?\d+)$/);
+      const m = n.match(/^([A-G])(#{0,2}|b{0,2})(-?\d+)$/);
       if (!m) return [];
       const [, letter, acc, octStr] = m;
       const keyAcc = accidentals[letter] ?? "";
-      const mark = acc === keyAcc ? "" : acc === "b" ? "_" : acc === "#" ? "^" : "=";
+      const mark = acc === keyAcc ? "" : acc ? acc.replace(/#/g, "^").replace(/b/g, "_") : "=";
       const oct = parseInt(octStr);
       const pitch = oct >= 5 ? letter.toLowerCase() + "'".repeat(oct - 5) : oct === 4 ? letter : letter + ",".repeat(4 - oct);
       return [mark + pitch];
@@ -707,8 +699,8 @@ K:${abcKey}
     if (names.length !== STANDARD_OPEN_MIDI.length) return null;
     const midi = [];
     for (let i = 0; i < names.length; i++) {
-      const pc = NOTE_SEMITONE[normalizeNoteName(names[i]) ?? ""];
-      if (pc === void 0) return null;
+      const pc = pitchClassOf(normalizeNoteName(names[i]) ?? "");
+      if (pc === -1) return null;
       const ref = STANDARD_OPEN_MIDI[i];
       const below = ref - ((ref - pc) % 12 + 12) % 12;
       midi.push(ref - below <= 6 ? below : below + 12);
@@ -997,8 +989,8 @@ K:${abcKey}
   var CIRCLE_DIM = ["B", "F#", "C#", "G#", "D#", "A#", "F", "C", "G", "D", "A", "E"];
   var DEGREE_IN_MAJOR = ["I", "\u266DII", "II", "\u266DIII", "III", "IV", "\u266DV", "V", "\u266DVI", "VI", "\u266DVII", "VII"];
   var DEGREE_IN_MINOR = ["I", "\u266DII", "II", "III", "\u266FIII", "IV", "\u266DV", "V", "VI", "\u266FVI", "VII", "\u266FVII"];
-  var pitchClass = (note) => NOTE_SEMITONE[note] ?? -1;
-  var rootOf = (symbol) => symbol.match(/^([A-G][b#]?)/)?.[1] ?? "";
+  var pitchClass = pitchClassOf;
+  var rootOf = (symbol) => symbol.match(/^([A-G][b#]*)/)?.[1] ?? "";
   function renderCircleOfFifths(container, activeKey, activeChord, onSegmentClick, size = 160, opts = { accidental: "flat", showMinor: true, showDegrees: false, show7ths: false }) {
     const keys = opts.accidental === "sharp" ? CIRCLE_KEYS_SHARP : CIRCLE_KEYS_FLAT;
     const minorKeys = opts.accidental === "sharp" ? CIRCLE_KEYS_MINOR_SHARP : CIRCLE_KEYS_MINOR_FLAT;
@@ -1009,8 +1001,8 @@ K:${abcKey}
     const degreeTable = keyIsMinor ? DEGREE_IN_MINOR : DEGREE_IN_MAJOR;
     const degreeOf = (root) => tonicPc === -1 ? "" : degreeTable[(pitchClass(root) - tonicPc + 12) % 12];
     const chordRootPc = activeChord ? pitchClass(rootOf(activeChord)) : -1;
-    const isDimActiveChord = activeChord ? /^[A-G][b#]?(dim|°|m7b5|ø)/.test(activeChord) : false;
-    const isMinorActiveChord = !isDimActiveChord && activeChord ? /^[A-G][b#]?m(?!aj)/.test(activeChord) : false;
+    const isDimActiveChord = activeChord ? /^[A-G][b#]*(dim|°|m7b5|ø)/.test(activeChord) : false;
+    const isMinorActiveChord = !isDimActiveChord && activeChord ? /^[A-G][b#]*m(?!aj)/.test(activeChord) : false;
     const cx = size / 2, cy = size / 2;
     const outerR = size * 0.425;
     const innerR = size * 0.275;
@@ -1127,6 +1119,48 @@ K:${abcKey}
     current = { el, timer: window.setTimeout(dismiss, UNDO_MS) };
   }
 
+  // src/theory/spelling.ts
+  var A4 = 69;
+  function spellMidi(midi, key) {
+    return tryUMT("spelling", () => UMT.spellPitchInKey(midi - A4, key), "") || "";
+  }
+  function spellName(name, key) {
+    const midi = noteNameToMidi(name);
+    return midi === null ? name : spellMidi(midi, key) || name;
+  }
+  function spellChordSymbol(symbol, key) {
+    if (!key || symbol === "?") return symbol;
+    const chord = tryParseChord(symbol);
+    return chord ? tryUMT("chord spelling", () => UMT.spellChordInKey(chord, key).name, symbol) : symbol;
+  }
+  function spellVoicing(names, symbol, key) {
+    const chord = symbol ? tryParseChord(symbol) : null;
+    const toneByPc = /* @__PURE__ */ new Map();
+    if (chord) {
+      for (const t of tryUMT("chord tones", () => UMT.spellChord(chord), [])) {
+        const base = t.replace(/-?\d+$/, "");
+        toneByPc.set(pitchClassOf(base), base);
+      }
+    }
+    return names.map((n) => {
+      const midi = noteNameToMidi(n);
+      if (midi === null) return n;
+      const tone = toneByPc.get(midi % 12);
+      return (tone && nameAtMidi(tone, midi)) ?? (key ? spellName(n, key) : n);
+    });
+  }
+  function spellDetection(d, key) {
+    if (!d || !key) return d;
+    if (d.kind === "note") {
+      const noteName = spellName(d.noteName, key);
+      return { ...d, noteName, pitchClass: noteName.replace(/-?\d+$/, "") };
+    }
+    if (d.kind === "interval") return { ...d, notes: d.notes.map((n) => spellName(n, key)) };
+    const candidates = d.candidates.map((c) => spellChordSymbol(c, key));
+    const selected = candidates[d.selectedIndex];
+    return { ...d, candidates, notes: spellVoicing(d.notes, selected === "?" ? null : selected, key) };
+  }
+
   // src/history/history.ts
   var MAX_ENTRIES = 200;
   var FUNCTION_COLORS = {
@@ -1186,7 +1220,8 @@ K:${abcKey}
   function renderHistory(container, activeKey, onChipClick, activeCursorEntryId) {
     const strip = document.createElement("div");
     strip.className = "history-strip";
-    entries.forEach((entry) => {
+    entries.forEach((stored) => {
+      const entry = { ...stored, symbol: spellChordSymbol(stored.symbol, activeKey) };
       const analysis = romanInKey(entry.symbol, activeKey);
       const roman = analysis?.roman ?? "\u2014";
       const fn = analysis?.function ?? "unknown";
@@ -1574,6 +1609,18 @@ K:${abcKey}
     write(songKey(stored.id), stored);
     const index = ensureIndex();
     write(INDEX_KEY, { ...index, songs: [...index.songs.filter((m) => m.id !== stored.id), metaOf(stored)] });
+    if (!isBlankSong(stored)) requestPersistence();
+  }
+  var PERSIST_ASKED_KEY = "storage-persist-asked";
+  function requestPersistence() {
+    try {
+      if (localStorage.getItem(PERSIST_ASKED_KEY) || !navigator.storage?.persist) return;
+      localStorage.setItem(PERSIST_ASKED_KEY, "1");
+    } catch {
+      return;
+    }
+    navigator.storage.persisted().then((already) => already || navigator.storage.persist()).catch(() => {
+    });
   }
   function setActive(id) {
     write(INDEX_KEY, { ...ensureIndex(), activeId: id });
@@ -2952,6 +2999,10 @@ K:${abcKey}
     renderAnalysisPanel();
     renderDiagrams();
   }
+  var detectionFromMidi = false;
+  function respellMidiDetection() {
+    if (detectionFromMidi) state.detection = spellDetection(state.detection, analysisKey());
+  }
   function showDetection(detection, prev) {
     state.detection = detection;
     cadencePrev = prev;
@@ -2960,16 +3011,22 @@ K:${abcKey}
     renderDetector();
   }
   function showChord(symbol, notes, prev) {
+    detectionFromMidi = false;
     showDetection({
       kind: "chord",
-      notes: notes?.length ? notes : chordNoteNames(symbol),
+      notes: notes?.length ? spellVoicing(notes, symbol, analysisKey()) : chordNoteNames(symbol),
       candidates: [symbol],
       selectedIndex: 0
     }, prev);
   }
   function onAltSelect(idx) {
     if (state.detection?.kind !== "chord") return;
-    state.detection.selectedIndex = idx;
+    const symbol = state.detection.candidates[idx];
+    state.detection = {
+      ...state.detection,
+      selectedIndex: idx,
+      notes: spellVoicing(state.detection.notes, symbol === "?" ? null : symbol, analysisKey())
+    };
     refreshAnalysis();
     renderDetector();
   }
@@ -2982,6 +3039,7 @@ K:${abcKey}
     state.activeKey = key;
     $2("key-select").value = key ?? "";
     updateAutoKeyLabel();
+    respellMidiDetection();
     refreshAnalysis();
     renderDetector();
     renderZone2();
@@ -3024,7 +3082,8 @@ K:${abcKey}
     }
   }
   function onNoteChange2(notes) {
-    const result = analyzeNotes(notes);
+    detectionFromMidi = true;
+    const result = spellDetection(analyzeNotes(notes), analysisKey());
     const top = result?.kind === "chord" ? result.candidates[0] : null;
     const known = top && top !== "?" ? top : null;
     if (state.captureTargetId) {
@@ -3042,6 +3101,7 @@ K:${abcKey}
     autoKey = nextAutoKey;
     updateAutoKeyLabel();
     if (autoKeyChanged && !state.activeKey) {
+      respellMidiDetection();
       refreshAnalysis();
       renderDetector();
       renderZone3();

@@ -2,7 +2,7 @@
 // rewrites the others; an index lists them and remembers the open one.
 
 import type { Song } from '../types'
-import { createSong, withoutEmptyChords } from './model'
+import { createSong, isBlankSong, withoutEmptyChords } from './model'
 import { normalizeKey } from '../theory/keys'
 
 const INDEX_KEY = 'modus-songs'
@@ -70,6 +70,22 @@ export function saveSong(song: Song) {
   write(songKey(stored.id), stored)
   const index = ensureIndex()
   write(INDEX_KEY, { ...index, songs: [...index.songs.filter(m => m.id !== stored.id), metaOf(stored)] })
+  if (!isBlankSong(stored)) requestPersistence()
+}
+
+// Persistent storage keeps the browser from evicting songs and preferences under storage
+// pressure. Firefox asks the user, Chromium decides silently: asked once ever, when there
+// is a song worth keeping, never on a first visit.
+const PERSIST_ASKED_KEY = 'storage-persist-asked'
+
+function requestPersistence() {
+  try {
+    if (localStorage.getItem(PERSIST_ASKED_KEY) || !navigator.storage?.persist) return
+    localStorage.setItem(PERSIST_ASKED_KEY, '1')
+  } catch { return }
+  navigator.storage.persisted()
+    .then(already => already || navigator.storage.persist())
+    .catch(() => { })
 }
 
 function setActive(id: string) {
