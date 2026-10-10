@@ -376,6 +376,67 @@ await check('Firefox style (no statechange): unplug and replug are found by resc
   await page.evaluate(() => window.__hotplug(true))
 })
 
+const pianoKey = note => page.locator(`#piano-container rect[data-note="${note}"]`)
+const badgeOrNone = async () => (await page.locator('.chord-name-badge').count()) ? text('.chord-name-badge') : null
+
+await check('on-screen piano, Normal: a key sounds in the detector while pressed', async () => {
+  await page.click('#btn-normal')
+  await setKey('')
+  const box = await pianoKey('C4').boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height - 5)
+  await page.mouse.down()
+  await page.waitForTimeout(80)
+  assert((await page.locator('#zone1-analysis, #analysis-container, body').first().innerText()).includes('MIDI 60'), 'note not shown while pressed')
+  await page.mouse.up()
+  await page.waitForTimeout(80)
+  assert(!(await page.locator('body').innerText()).includes('MIDI 60'), 'note still shown after release')
+})
+
+await check('on-screen piano, Hold: each click adds a note, a second click removes it; Esc drops the chord', async () => {
+  await page.click('#btn-hold')
+  for (const n of ['C4', 'E4', 'G4']) await pianoKey(n).click({ force: true })
+  assert(await badgeOrNone() === 'C', `after C E G: ${await badgeOrNone()}`)
+  await pianoKey('E4').click({ force: true })
+  assert(await badgeOrNone() === null, `after removing E: ${await badgeOrNone()}`)
+  await pianoKey('Eb4').click({ force: true }).catch(() => pianoKey('D#4').click({ force: true }))
+  assert(await badgeOrNone() === 'Cm', `after adding Eb: ${await badgeOrNone()}`)
+  await page.keyboard.press('Escape')
+  assert(await badgeOrNone() === null, 'Esc did not drop the held chord')
+  await page.click('#btn-normal')
+})
+
+await check('computer keyboard: M on, A D G is a C chord, H plays A instead of toggling Hold; M off', async () => {
+  await page.keyboard.press('m')
+  assert(await page.locator('#btn-keyboard.active-mode').count() === 1, 'keyboard mode not on')
+  for (const k of ['a', 'd', 'g']) await page.keyboard.down(k)
+  await page.waitForTimeout(80)
+  assert(await badgeOrNone() === 'C', `A D G: ${await badgeOrNone()}`)
+  await page.keyboard.down('h')
+  await page.waitForTimeout(80)
+  assert(await page.locator('#btn-hold.active-mode').count() === 0, 'H toggled Hold in keyboard mode')
+  assert(await badgeOrNone() === 'C6', `A D G H: ${await badgeOrNone()}`)
+  for (const k of ['a', 'd', 'g', 'h']) await page.keyboard.up(k)
+  await page.waitForTimeout(80)
+  assert(await badgeOrNone() === null, 'notes hang after key up')
+  await page.keyboard.press('z')
+  assert((await text('#keyboard-status')).startsWith('C3'), `octave: ${await text('#keyboard-status')}`)
+  await page.keyboard.press('x')
+  await page.keyboard.press('m')
+  assert(await page.locator('#btn-keyboard.active-mode').count() === 0, 'keyboard mode still on')
+})
+
+await check('typed chord: / focuses the field, Enter shows it; an unknown name is marked', async () => {
+  await page.keyboard.press('/')
+  await page.keyboard.type('F#m7b5')
+  await page.keyboard.press('Enter')
+  assert(await badgeOrNone() === 'F#m7b5', `typed: ${await badgeOrNone()}`)
+  await page.fill('#typed-chord', 'Xyz')
+  await page.keyboard.press('Enter')
+  assert(await page.locator('#typed-chord.invalid').count() === 1, 'unknown name not marked')
+  await page.fill('#typed-chord', '')
+  await page.locator('#typed-chord').blur()
+})
+
 const songChips = () => page.locator('.chord-chip-symbol').allInnerTexts()
 const songOptions = () => page.locator('.song-select option').allInnerTexts()
 

@@ -862,4 +862,15 @@ body {
 .capture-target {
   animation: pulse-border 0.8s infinite;
 }
+#piano-container circle,
+#piano-container text {
+  pointer-events: none;
+}
+.typed-chord {
+  width: 9em;
+}
+.typed-chord.invalid {
+  border-color: #ef4444;
+  color: #fca5a5;
+}
 /*# sourceMappingURL=app.css.map */

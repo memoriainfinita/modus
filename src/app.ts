@@ -1,5 +1,6 @@
 import './styles.css'
-import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice } from './input/midi'
+import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes } from './input/midi'
+import { wireComputerKeyboard, toggleComputerKeyboard, isComputerKeyboardOn, computerKeyboardStatus, setComputerKeyboardChange } from './input/computer-keyboard'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './detector/analyzer'
 import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback } from './audio/audio'
 import { renderStaff } from './diagrams/staff'
@@ -16,7 +17,7 @@ import type { AppState, DetectionResult, HistoryEntry, MidiMode, Song, SongChord
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
-import { chordNoteNames } from './theory/chord'
+import { chordNoteNames, isKnownChord, normalizeChordName } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
 import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
@@ -68,6 +69,17 @@ function init() {
 
   buildLayout()
   wireShortcuts()
+  wireComputerKeyboard()
+  setComputerKeyboardChange(updateComputerKeyboardButton)
+  $('btn-keyboard').addEventListener('click', () => { initAudioOnGesture(); toggleComputerKeyboard() })
+  window.addEventListener('pointerup', onPianoRelease)
+  window.addEventListener('pointercancel', onPianoRelease)
+  const chordInput = $('typed-chord') as HTMLInputElement
+  chordInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); submitTypedChord(chordInput) }
+    else if (e.key === 'Escape') chordInput.blur()
+  })
+  chordInput.addEventListener('input', () => chordInput.classList.remove('invalid'))
   setModeBtn(getMode())
   renderDetector()
 
@@ -246,7 +258,7 @@ function wireLayoutEvents() {
     ($('key-select') as HTMLSelectElement).value = state.activeKey
   }
 
-  document.querySelectorAll<HTMLButtonElement>('.mode-btn').forEach(btn => {
+  document.querySelectorAll<HTMLButtonElement>('.mode-btn[data-mode]').forEach(btn => {
     btn.addEventListener('click', () => setModeBtn(btn.dataset.mode as MidiMode))
   })
 
@@ -473,6 +485,41 @@ function renderIfChanged(name: string, sig: string, render: () => void) {
   render()
 }
 
+// On-screen piano: a press goes through the input path like a controller key. The key
+// that was pressed is rebuilt when the detector lights it, so the release is watched on
+// the window.
+const PIANO_VELOCITY = 90
+let pianoNote: number | null = null
+
+function onPianoPress(midi: number) {
+  if (pianoNote !== null) pointerUp(pianoNote)
+  pianoNote = midi
+  pointerDown(midi, PIANO_VELOCITY)
+}
+
+function onPianoRelease() {
+  if (pianoNote === null) return
+  pointerUp(pianoNote)
+  pianoNote = null
+}
+
+/** A chord typed in the detector field: shown and played like one picked from history. */
+function submitTypedChord(input: HTMLInputElement) {
+  const symbol = normalizeChordName(input.value.trim())
+  if (!symbol) return
+  const valid = isKnownChord(symbol)
+  input.classList.toggle('invalid', !valid)
+  if (!valid) return
+  showChord(symbol, undefined, null)
+  playChord(symbol)
+}
+
+function updateComputerKeyboardButton() {
+  const on = isComputerKeyboardOn()
+  $('btn-keyboard').classList.toggle('active-mode', on)
+  $('keyboard-status').textContent = on ? computerKeyboardStatus() : ''
+}
+
 function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const key = analysisKey()
   const notes = noteNames.join(' ')
@@ -480,7 +527,7 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderIfChanged('staff', `${notes}|${key}|${staffScale}`, () =>
     renderStaff($('staff-container'), noteNames, staffWidth, key, staffScale))
   renderIfChanged('piano', `${notes}|${chordSymbol}`, () =>
-    renderPiano($('piano-container'), noteNames, chordSymbol))
+    renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress))
   renderIfChanged('neck', `${notes}|${keyPrefersSharps(key)}`, () =>
     renderNeck($('neck-container'), noteNames, !keyPrefersSharps(key)))
   renderIfChanged('guitar', `${chordSymbol}`, () =>
@@ -614,7 +661,10 @@ function wireShortcuts() {
       deleteChordAtCursor()
       return true
     },
+    toggleComputerKeyboard: () => { initAudioOnGesture(); toggleComputerKeyboard(true) },
+    focusChordInput: () => ($('typed-chord') as HTMLInputElement).focus(),
     escape: () => {
+      releaseKeptNotes()
       cancelCapture()
       state.activeCursorId = null
       state.captureTargetId = null
@@ -670,7 +720,7 @@ function deleteChordAtCursor() {
 
 function setModeBtn(mode: MidiMode) {
   setMode(mode)
-  document.querySelectorAll<HTMLElement>('.mode-btn').forEach(b => {
+  document.querySelectorAll<HTMLElement>('.mode-btn[data-mode]').forEach(b => {
     b.classList.toggle('active-mode', b.dataset.mode === mode)
   })
 }

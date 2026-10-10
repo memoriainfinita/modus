@@ -624,3 +624,9 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   50% { border-color: #a5b4fc; }
 }
 .capture-target { animation: pulse-border 0.8s infinite; }
+
+/* ─── Input without a controller ───────────────────────────────── */
+/* Dots and labels drawn over lit piano keys must not catch the press meant for the key */
+#piano-container circle, #piano-container text { pointer-events: none; }
+.typed-chord { width: 9em; }
+.typed-chord.invalid { border-color: #ef4444; color: #fca5a5; }
