@@ -79,6 +79,8 @@ Every chord is logged automatically after 0.8s of stability. Each chip shows cho
 
 A scratchpad and structure builder.
 
+- Several songs saved in the browser, listed by last change; each keeps its own key
+
 - Sections (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro) with colour coding and repeat counts
 - Unlimited chords per measure, unlimited measures per section
 - Each chord shows its Roman numeral — borrowed chords highlighted in amber
@@ -87,7 +89,7 @@ A scratchpad and structure builder.
 - MIDI fill: arm any chord slot (⊙) and play — each chord fills a slot and the next slot is armed, across measures and sections, until the song ends or Esc
 - Transpose entire song in semitone steps (stored voicings move with it)
 - Paste a progression as text: `|` marks bar lines (`Dm7 G7 | Cmaj7`); without bars, one chord per measure
-- Deleting a chord, measure or section, or starting a new song, happens at once and can be undone
+- Deleting a chord, measure, section or song happens at once and can be undone
 - Export as printable chord chart
 
 ---
@@ -179,7 +181,8 @@ src/
   history/
     history.ts            chord history log
   song/
-    model.ts              song structure: pure operations, transpose, persistence
+    model.ts              song structure: pure operations, transpose
+    library.ts            saved songs: one localStorage key per song, index, migration
     view.ts               song structure rendering and interaction
   input/
     midi.ts               Web MIDI: device selection, note on/off, sustain, modes
@@ -194,7 +197,8 @@ src/
 tests/
   setup-umt.ts        loads the real UMT bundle (pinned devDependency) as the UMT global
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
-  midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts
+  midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
+  library.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both

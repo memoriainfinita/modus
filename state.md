@@ -16,9 +16,9 @@ What is true now. What already happened lives in `state-history.md`.
 
 ## Status
 
-- Working: detector, analysis, history, song builder, audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
+- Working: detector, analysis, history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-10: TSC clean, 206 unit tests against the real UMT bundle, `pnpm test:e2e` 33/33 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present
+- Tests 2026-10-10: TSC clean, 215 unit tests against the real UMT bundle, `pnpm test:e2e` 36/36 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
 - Interface languages: English and Spanish (today English only). Docs, code and commits stay in English
@@ -50,7 +50,6 @@ Roadmap agreed 2026-10-09, not yet prioritized.
 
 ### Songs and data
 
-- [ ] Several saved songs (today one: `modus-song`, and New replaces it)
 - [ ] Export / import songs to a file
 - [ ] Share a song or example by URL, encoded in the link (no server)
 - [ ] MIDI file import / export
