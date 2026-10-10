@@ -33,7 +33,7 @@ What is true now. What already happened lives in `state-history.md`.
 - [build] pnpm, not npm. Confirmed 2026-10.
 - [deps] UMT and notae pinned to a commit hash in the CDN URL, never `@main`/`@master`. Bump deliberately. Confirmed 2026-10.
 - [naming] Project name: Modus (Latin — mode, measure). Confirmed 2026-05.
-- [theory] Music-theory fixes go into UMT or notae (their repo, tests, push), then Modus bumps the pin. No workarounds in Modus for library output. Confirmed 2026-10.
+- [theory] Music-theory fixes go into UMT or notae, then Modus bumps the pin. No workarounds in Modus for library output. Since 2026-10-10 only the session running the UMT audit (`umt/docs/auditoria-2026-10.md`) commits to UMT: Modus writes what it needs in `umt/docs/notas-desde-modus-2026-10.md` (both local, gitignored) and waits. Confirmed 2026-10.
 - [ux] Destructive actions run at once and offer Undo (`ui/undo.ts`), never a confirmation. Confirmed 2026-10.
 - [ux] Play on single click. A double click is detected by hand (same target within 400 ms) wherever the element is rebuilt on click: a rebuilt node never gets the browser's dblclick. Confirmed 2026-10.
 - [audio] Stay on soundfont-player 0.12.0 + FluidR3_GM: archived upstream but pinned and working. smplr (same author) loads its GM soundfonts from the same `gleitz.github.io`, so swapping does not remove the sample-host risk. A reason to move would be smplr's sampled instruments (Steinway with velocity layers, electric pianos) or reverb, not maintenance. Confirmed 2026-10.
@@ -49,6 +49,8 @@ What is true now. What already happened lives in `state-history.md`.
 ## TODO
 
 ### Analysis, in order (2026-10-10)
+
+Items 1-3 need new UMT functions or UMT fixes: requested in `umt/docs/notas-desde-modus-2026-10.md`.
 
 1. [ ] Voicing analysis: inversion, close / open position, drop 2 / drop 3, doubled and omitted notes
 2. [ ] Scales and modes that fit a melody or a set of single notes
