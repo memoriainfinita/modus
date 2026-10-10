@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-See and understand the harmony of what you play, in real time. Connect a controller, play notes, get instant chord detection and full harmonic analysis — Roman numerals, harmonic function, figured bass, scales, substitutions, Coltrane axis, negative harmony, and more.
+See and understand the harmony of what you play, in real time. Connect a controller, play notes, get instant chord detection and full harmonic analysis — Roman numerals, harmonic function, figured bass, scales, substitutions, and more — and a map of the key: its chords, functions, parallel modes, negative harmony and Coltrane axis.
 
 A chord history and song structure builder extend that — log what you play, build chord sequences, document song structure.
 
@@ -45,8 +45,6 @@ For each detected chord:
 | Suggested scales | Ordered by fit |
 | Substitutions | As UMT proposes them — e.g. tritone, sus4, deceptive |
 | Cadence | vs. the previous chord: last different chord played, previous history chip, or previous song chord |
-| Coltrane axis | Three major-third substitution chords |
-| Negative harmony | Mirror chord in the active key |
 | Key detection | Krumhansl-Schmuckler running on history note pool. With the key on Auto, the detected key drives the whole app: analysis, history and song romans, Circle of Fifths and staff key signature |
 
 Each field can be toggled individually. Font scale adjustable with +/−.
@@ -61,6 +59,17 @@ Four columns, each togglable independently ([St][An][CoF][Git]):
 - **Analysis** — all harmonic analysis fields, each field individually togglable; font scale +/−
 - **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels, size
 - **Guitar voicing** (notae) — Standard / Drop D / Open G / Custom tuning. Out of every fingering UMT finds, only playable ones are kept (chord bass lowest, no muted string in between, four-fret hand, open strings only in first position), ordered along the neck from the open shapes up; next/prev to browse. Custom tuning accepts note names per string and gets real voicings too
+
+### Key panel
+
+A map of the analysis key (selected, or detected on Auto), without playing:
+
+- **Diatonic chords** — triads or sevenths (`7`), each with its degree and function (T / S / D). A chord the analysis reads as a secondary (G7 in A minor: `V7/III`) says so on hover
+- **Negative harmony** (`Neg`) — the mirror of each diatonic chord, under it
+- **Parallel modes** (`Par`) — seventh chords of each mode on the same tonic that use a note outside the key, lydian to locrian, plus harmonic and melodic minor and harmonic major
+- **Coltrane axis** (`Colt`) — the three tonics a major third apart
+
+Click a chord to play it and show it in the detector; the key stays. The chord on screen is outlined wherever it appears. Font scale −/+.
 
 ### Instruments panel
 

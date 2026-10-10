@@ -35,6 +35,7 @@ UMT.Harmony.analyzeProgression(chords: Chord[], key: string): {
 
 // Scales: letter-correct spelling for heptatonic 12-TET scales (F# major has E#)
 UMT.parseScaleSymbol(symbol: string): Scale   // e.g. "F# Major"; .getNotes() → Note[] (8, root repeated)
+scale.getDiatonicChords(type: 'triad' | 'seventh'): Chord[]  // letters of the scale: E#m7b5 in F# Major. "A Minor" is natural minor (Em, G)
 
 UMT.FiguredBass.fromChord(chord: Chord, bassNote: Note): string
 // Triads "", "6", "6/4"; seventh chords "7", "6/5", "4/3", "4/2"
@@ -51,7 +52,12 @@ UMT.getSubstitutions(chord: Chord, key: string): SubstitutionResult[]
 // Other confirmed methods
 UMT.Harmony.analyzeCadence(c1: Chord, c2: Chord, key: string): string  // deceptive: 'Deceptive Cadence (V -> vi)' in major, '(V -> VI)' in minor
 UMT.Harmony.getSuggestedScales(chord: Chord): { scale: string; hint?: string }[]
-UMT.Harmony.getColtraneAxis(key: string): { root: string; majorThirds: [string,string,string] }
+UMT.Harmony.getColtraneAxis(key: string): { root: string; majorThirds: [string,string,string] }  // names in flats (F# Major → Gb Bb D): Modus writes them in the key
+UMT.Harmony.getBorrowedChords(key: string): { chord: Chord; sourceMode: string; brightness: number; function; characteristic: boolean }[]
+// Seventh chords only, of lydian, mixolydian, dorian, aeolian, phrygian, locrian, harmonic minor, melodic minor,
+// harmonic major on the key's tonic, keeping those with a note outside the key's scale. A mode identical to the key is skipped.
+// brightness: lydian 1, mixolydian -1, dorian -2, aeolian -3, phrygian -4, locrian -5, harmonic minor -3, melodic minor -2, harmonic major -1
+// In a minor key it lists V7 and vii°7 under harmonic minor, which analyzeProgression counts as diatonic
 UMT.Harmony.getNegativeHarmony(chord: Chord, key: string): Chord  // 12-TET only; rootStep is the named root, a different lowest note goes to bassStep (C6 in C → Cm7/Bb)
 UMT.parseChordSymbol(symbol: string): Chord  // accepts 6/9, m6/9, 6/9/<bass>
 

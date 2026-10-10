@@ -8,6 +8,8 @@ import { renderPiano } from './diagrams/piano'
 import { renderGuitar } from './diagrams/guitar'
 import { renderNeck, adjustNeckSpacing } from './diagrams/neck'
 import { renderCircleOfFifths } from './diagrams/cof'
+import { renderKeyExplorer } from './diagrams/key-explorer'
+import { buildKeyMap } from './theory/key-map'
 import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history/history'
 import { addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song/model'
 import { loadActiveSong, saveSong, listSongs, openSong, newSong, deleteSong, restoreSong } from './song/library'
@@ -38,6 +40,12 @@ const analysisFieldsVisible = Object.fromEntries(
   ANALYSIS_FIELD_KEYS.map(f => [f, loadBool(`analysis-field-${f}`, true)])
 ) as Record<AnalysisFieldKey, boolean>
 let analysisScale = loadNumber('analysis-scale', 11, 8, 20)
+
+let keyScale = loadNumber('key-scale', 11, 8, 20)
+let keySevenths = loadBool('key-sevenths', false)
+let keyShowNegative = loadBool('key-show-negative', true)
+let keyShowParallel = loadBool('key-show-parallel', true)
+let keyShowColtrane = loadBool('key-show-coltrane', true)
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -251,6 +259,23 @@ function wireLayoutEvents() {
       renderAnalysisPanel()
     })
   })
+
+  const updateKeyButtons = () => {
+    $('btn-key-7').style.opacity    = keySevenths     ? '1' : '0.4'
+    $('btn-key-neg').style.opacity  = keyShowNegative ? '1' : '0.4'
+    $('btn-key-par').style.opacity  = keyShowParallel ? '1' : '0.4'
+    $('btn-key-colt').style.opacity = keyShowColtrane ? '1' : '0.4'
+  }
+  updateKeyButtons()
+  const onKeyControl = (id: string, apply: () => void) => {
+    $(id).addEventListener('click', () => { apply(); updateKeyButtons(); renderDiagrams() })
+  }
+  onKeyControl('btn-key-minus', () => { keyScale = Math.max(8, keyScale - 1);  save('key-scale', keyScale) })
+  onKeyControl('btn-key-plus',  () => { keyScale = Math.min(20, keyScale + 1); save('key-scale', keyScale) })
+  onKeyControl('btn-key-7',     () => { keySevenths = !keySevenths;         save('key-sevenths', keySevenths) })
+  onKeyControl('btn-key-neg',   () => { keyShowNegative = !keyShowNegative; save('key-show-negative', keyShowNegative) })
+  onKeyControl('btn-key-par',   () => { keyShowParallel = !keyShowParallel; save('key-show-parallel', keyShowParallel) })
+  onKeyControl('btn-key-colt',  () => { keyShowColtrane = !keyShowColtrane; save('key-show-coltrane', keyShowColtrane) })
 
   wirePanelToggles(state.panels)
 
@@ -534,6 +559,16 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
     renderGuitar($('guitar-container'), chordSymbol, noteNames))
   renderIfChanged('cof', `${key}|${chordSymbol}|${cofSize}|${JSON.stringify(cofOpts)}`, () =>
     renderCircleOfFifths($('cof-container'), key, chordSymbol, onCofClick, cofSize, cofOpts))
+  const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale }
+  const keyLabel = key ? (state.activeKey ? key : `${key} (auto)`) : ''
+  renderIfChanged('key', `${keyLabel}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () =>
+    renderKeyExplorer($('key-container'), key ? buildKeyMap(key, keySevenths) : null, keyLabel, chordSymbol, onKeyChordClick, keyOpts))
+}
+
+/** A chord picked in the key explorer: played and shown like a CoF segment; the key stays. */
+function onKeyChordClick(chord: string) {
+  playChord(chord)
+  showChord(chord, undefined, previousHistorySymbol(chord))
 }
 
 // A click plays and shows the segment's chord; a second click on the same segment within

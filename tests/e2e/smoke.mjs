@@ -223,12 +223,26 @@ await check('CoF minor segment double click sets the minor key', async () => {
   assert(await page.inputValue('#key-select') === 'E Minor', `key: ${await page.inputValue('#key-select')}`)
 })
 
+await check('key explorer follows the key; a click shows the chord and keeps the key', async () => {
+  await setKey('E Minor')
+  assert((await text('#key-container .key-title')) === 'E Minor', `title: ${await text('#key-container .key-title')}`)
+  const diatonic = await page.locator('#key-container .key-grid').first().locator('.key-chord').allInnerTexts()
+  assert(diatonic.join(' ') === 'Em F#dim G Am Bm C D', `diatonic: ${diatonic.join(' ')}`)
+  await page.locator('#key-container .key-grid').first().locator('[data-chord="C"]').click()
+  assert((await text('.chord-name-badge')) === 'C', 'chord not shown')
+  assert((await text('#analysis-content')).includes('VI'), 'analysis not in E minor')
+  assert(await page.inputValue('#key-select') === 'E Minor', 'the click changed the key')
+  assert(await page.locator('#key-container .key-chord.active').count() > 0, 'chord on screen not outlined')
+})
+
 await check('on Auto, history chips show romans in the detected key', async () => {
   await setKey('')
   const label = await text('#auto-key-label')
   assert(label.startsWith('auto:'), `auto label: ${label}`)
   const romans = await page.locator('.history-chip-roman').allInnerTexts()
   assert(romans.length > 0 && romans.every(r => r !== '—'), `romans: ${romans.join(',')}`)
+  const title = await text('#key-container .key-title')
+  assert(title === `${label.slice(6)} (auto)`, `explorer title: ${title}, ${label}`)
 })
 
 await check('guitar shows a short list of playable voicings, open shape first', async () => {

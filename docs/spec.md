@@ -62,6 +62,10 @@ Single page, dark. Three zones stacked vertically.
 │  ┌──────────┐ ┌────────────────┐ ┌───────┐ ┌────────────┐   │
 │  │  Staff   │ │   Analysis     │ │  CoF  │ │  Guitar    │   │
 │  └──────────┘ └────────────────┘ └───────┘ └────────────┘   │
+│  Key [▼]  [−][+][7][Neg][Par][Colt]                          │
+│  ┌──────────────────────────┐ ┌──────────────────────────┐  │
+│  │ Diatonic · Negative · Ax │ │ Parallel modes           │  │
+│  └──────────────────────────┘ └──────────────────────────┘  │
 │  Instruments [▼]  [Pi][Fr]                                   │
 │  ┌────────────────────────┐ ┌────────────────────────────┐  │
 │  │  Piano  (C2–B5)        │ │  Fretboard  (0–12 frets)   │  │
@@ -73,7 +77,7 @@ Single page, dark. Three zones stacked vertically.
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Zone 1 is the primary module. Instruments, History and Song are collapsible.
+Zone 1 is the primary module. Key, Instruments, History and Song are collapsible.
 
 ## Zone 1 — Detector
 
@@ -147,8 +151,6 @@ Key reference: the key selector (or the detected key on Auto).
 | Suggested scales | `Harmony.getSuggestedScales` |
 | Substitutions | `getSubstitutions` |
 | Cadence | `Harmony.analyzeCadence` against the previous chord |
-| Coltrane axis | `Harmony.getColtraneAxis` |
-| Negative harmony | `Harmony.getNegativeHarmony` |
 | Key detection | `KeyDetection.detect` over the history note pool |
 
 Each field has a show/hide toggle; font scale 8–20 px.
@@ -164,6 +166,19 @@ Four columns, toggled with [St][An][CoF][Git].
 **Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: size, b/♯, minor/dim rings, degree labels, seventh labels. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring; degrees count from the tonic.
 
 **Guitar:** `UMT.getFretboardVoicings(chord, tuning)` kept only when playable — bass lowest, contiguous strings, four-fret span, open strings only in first position — ordered along the neck; ‹/› to browse. Tunings: Standard, Drop D, Open G, custom per string. String labels: off / tuning / notes. Fret spacing −/+. Rendered by notae.
+
+### Key panel
+
+What the analysis key (selected, or detected on Auto) offers, without playing. Without a key it says how to get one.
+
+| Section | Source |
+|---|---|
+| Diatonic chords, triads or sevenths | `parseScaleSymbol(key).getDiatonicChords`; degree and function from `analyzeProgression`, the same call as the analysis fields. Listed by degree (VII7); a secondary reading (V7/III) is in the tooltip |
+| Negative harmony of each diatonic chord | `Harmony.getNegativeHarmony`, written in the key |
+| Parallel modes | `Harmony.getBorrowedChords`: seventh chords of each mode on the tonic that use a note outside the key, grouped by mode, brightest first |
+| Coltrane axis | `Harmony.getColtraneAxis`, written in the key |
+
+Controls: font scale, triads / sevenths (`7`), show/hide Neg, Par, Colt. A click plays the chord and shows it in the detector like a CoF segment; the key does not change. The chord on screen is outlined in every section where it appears (matched by pitch, so G#7 lights Ab7).
 
 ### Instruments panel
 
@@ -258,6 +273,7 @@ Persisted to localStorage:
 - Analysis fields and font scale
 - Staff size
 - CoF size, b/♯, minor/dim rings, degrees, sevenths
+- Key panel font scale, triads / sevenths, sections shown
 - Guitar tuning (including custom strings), label mode, fret spacing
 - Fretboard spacing
 - MIDI device, input mode, instrument, volume (the key is stored with each song)

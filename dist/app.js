@@ -533,6 +533,7 @@
     const a = chord ? tryUMT("progression", () => UMT.Harmony.analyzeProgression([chord], key).analysis[0], null) : null;
     const info = a ? {
       roman: a.isSecondary && a.secondaryTarget ? a.secondaryTarget : a.roman ?? "?",
+      degree: a.roman ?? "?",
       function: a.function ?? "unknown",
       isDiatonic: a.isDiatonic ?? false,
       isBorrowed: a.isBorrowed ?? false,
@@ -558,8 +559,6 @@
       const cad = tryUMT("cadence", () => UMT.Harmony.analyzeCadence(prevChord, chord, activeKey), null);
       if (cad && cad !== "No standard cadence") result.cadence = cad;
     }
-    result.coltraneAxis = tryUMT("coltrane axis", () => UMT.Harmony.getColtraneAxis(activeKey).majorThirds, null);
-    result.negativeHarmony = tryUMT("negative harmony", () => UMT.Harmony.getNegativeHarmony(chord, activeKey)?.name ?? null, null);
     result.substitutions = tryUMT("substitutions", () => UMT.getSubstitutions(chord, activeKey).map((s) => {
       const name = s.chord?.name ?? s.name ?? String(s);
       return s.type ? `${name} (${s.type})` : name;
@@ -577,9 +576,7 @@
       figuredBass: "",
       suggestedScales: [],
       substitutions: [],
-      cadence: null,
-      coltraneAxis: null,
-      negativeHarmony: null
+      cadence: null
     };
   }
   function getAutoKey(history) {
@@ -1244,33 +1241,6 @@ K:${abcKey}
     });
   }
 
-  // src/ui/html.ts
-  function escapeHtml(text) {
-    return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  }
-
-  // src/ui/undo.ts
-  var UNDO_MS = 5e3;
-  var current = null;
-  function dismiss() {
-    if (!current) return;
-    clearTimeout(current.timer);
-    current.el.remove();
-    current = null;
-  }
-  function showUndo(message, undo) {
-    dismiss();
-    const el = document.createElement("div");
-    el.className = "undo-toast";
-    el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">Undo</button>`;
-    el.querySelector("button").addEventListener("click", () => {
-      dismiss();
-      undo();
-    });
-    document.body.appendChild(el);
-    current = { el, timer: window.setTimeout(dismiss, UNDO_MS) };
-  }
-
   // src/theory/spelling.ts
   var A4 = 69;
   function spellMidi(midi, key) {
@@ -1279,6 +1249,10 @@ K:${abcKey}
   function spellName(name, key) {
     const midi = noteNameToMidi(name);
     return midi === null ? name : spellMidi(midi, key) || name;
+  }
+  function spellPitchClassInKey(name, key) {
+    const pc = pitchClassOf(name);
+    return pc === -1 ? name : spellMidi(60 + pc, key).replace(/-?\d+$/, "") || name;
   }
   function spellChordSymbol(symbol, key) {
     if (!key || symbol === "?") return symbol;
@@ -1311,6 +1285,126 @@ K:${abcKey}
     const candidates = d.candidates.map((c) => spellChordSymbol(c, key));
     const selected = candidates[d.selectedIndex];
     return { ...d, candidates, notes: spellVoicing(d.notes, selected === "?" ? null : selected, key) };
+  }
+
+  // src/theory/key-map.ts
+  function keyChord(symbol, key) {
+    const a = romanInKey(symbol, key);
+    const secondary = a && a.roman !== a.degree ? a.roman : void 0;
+    return { symbol, roman: a?.degree ?? "?", secondary, function: a?.function ?? "unknown" };
+  }
+  var cache = /* @__PURE__ */ new Map();
+  function buildKeyMap(key, sevenths) {
+    const cacheKey = `${key}|${sevenths}`;
+    if (cache.has(cacheKey)) return cache.get(cacheKey);
+    const chords = tryUMT("diatonic chords", () => UMT.parseScaleSymbol(key).getDiatonicChords(sevenths ? "seventh" : "triad"), []);
+    if (!chords.length) {
+      cache.set(cacheKey, null);
+      return null;
+    }
+    const diatonic = chords.map((c) => keyChord(c.name, key));
+    const negative = chords.map((c) => tryUMT("negative harmony", () => {
+      const name = UMT.Harmony.getNegativeHarmony(c, key)?.name;
+      return name ? spellChordSymbol(name, key) : null;
+    }, null));
+    const byMode = /* @__PURE__ */ new Map();
+    for (const b of tryUMT("borrowed chords", () => UMT.Harmony.getBorrowedChords(key), [])) {
+      const name = b.chord?.name;
+      if (!name || !tryParseChord(name)) continue;
+      let row = byMode.get(b.sourceMode);
+      if (!row) byMode.set(b.sourceMode, row = { mode: b.sourceMode, brightness: b.brightness ?? 0, chords: [] });
+      row.chords.push(keyChord(name, key));
+    }
+    const parallel = [...byMode.values()].sort((a, b) => b.brightness - a.brightness);
+    const axis = tryUMT("coltrane axis", () => UMT.Harmony.getColtraneAxis(key).majorThirds, null);
+    const coltraneAxis = axis ? axis.map((n) => spellPitchClassInKey(n, key)) : null;
+    const map = { key, diatonic, negative, parallel, coltraneAxis };
+    cache.set(cacheKey, map);
+    return map;
+  }
+  function sameChord(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    const ca = tryParseChord(a), cb = tryParseChord(b);
+    if (!ca || !cb) return false;
+    const pc = (s) => s === void 0 ? -1 : (s % 12 + 12) % 12;
+    return pc(ca.rootStep) === pc(cb.rootStep) && (ca.intervalsInSteps ?? []).join() === (cb.intervalsInSteps ?? []).join() && pc(ca.bassStep) === pc(cb.bassStep);
+  }
+
+  // src/ui/html.ts
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+
+  // src/diagrams/key-explorer.ts
+  var FUNCTION_NAMES = { T: "Tonic", S: "Subdominant", D: "Dominant", unknown: "Unknown function" };
+  var describe = (c) => [c.roman, c.secondary && `also ${c.secondary}`, FUNCTION_NAMES[c.function]].filter(Boolean).join(" \xB7 ");
+  function renderKeyExplorer(container, map, keyLabel, activeChord, onChordClick, opts) {
+    container.style.fontSize = opts.fontScale + "px";
+    if (!map) {
+      container.innerHTML = `<div class="key-empty">Pick a key, or play: on Auto the detected key shows here.</div>`;
+      return;
+    }
+    const button = (symbol, cls, title) => `<button class="key-chord ${cls}${sameChord(symbol, activeChord) ? " active" : ""}" data-chord="${escapeHtml(symbol)}"
+      title="${escapeHtml(title)}" style="border-left-color:${chordColor(symbol)}">${escapeHtml(symbol)}</button>`;
+    const cell = (c) => `
+    <div class="key-cell">
+      <span class="key-roman">${escapeHtml(c.roman)}</span>
+      ${button(c.symbol, "", describe(c))}
+      <span class="key-function key-fn-${c.function}" title="${FUNCTION_NAMES[c.function]}">${c.function === "unknown" ? "\xB7" : c.function}</span>
+    </div>`;
+    let html = `<div class="key-main"><div class="key-title">${escapeHtml(keyLabel)}</div>`;
+    html += `<div class="key-grid">${map.diatonic.map(cell).join("")}</div>`;
+    if (opts.showNegative) {
+      html += `<div class="key-section-label" title="Each diatonic chord mirrored around the axis between the minor and major 3rd of the tonic (Harmony.getNegativeHarmony)">Negative harmony</div>
+      <div class="key-grid">${map.negative.map(
+        (n, i) => `<div class="key-cell">${n ? button(n, "", `Negative of ${map.diatonic[i].symbol}`) : '<span class="key-roman">\u2014</span>'}</div>`
+      ).join("")}</div>`;
+    }
+    if (opts.showColtrane && map.coltraneAxis) {
+      html += `<div class="key-axis" title="Tonics a major third apart (Harmony.getColtraneAxis)">
+      <span class="key-section-label">Coltrane axis</span> ${map.coltraneAxis.map(escapeHtml).join(" \xB7 ")}</div>`;
+    }
+    html += "</div>";
+    if (opts.showParallel && map.parallel.length) {
+      html += `<div class="key-parallel"><div class="key-section-label" title="Seventh chords of each mode on the same tonic that use a note outside the key (Harmony.getBorrowedChords)">Parallel modes</div><div class="key-mode-grid">`;
+      html += map.parallel.map((row) => `
+      <div class="key-mode-row">
+        <span class="key-mode-name">${escapeHtml(row.mode)}</span>
+        <div class="key-mode-chords">${row.chords.map((c) => `
+          <span class="key-mode-chord">
+            <span class="key-roman">${escapeHtml(c.roman)}</span>
+            ${button(c.symbol, "", `${describe(c)} \xB7 from ${row.mode}`)}
+          </span>`).join("")}
+        </div>
+      </div>`).join("") + "</div></div>";
+    }
+    container.innerHTML = html;
+    container.querySelectorAll(".key-chord").forEach((btn) => {
+      btn.addEventListener("click", () => onChordClick(btn.dataset.chord));
+    });
+  }
+
+  // src/ui/undo.ts
+  var UNDO_MS = 5e3;
+  var current = null;
+  function dismiss() {
+    if (!current) return;
+    clearTimeout(current.timer);
+    current.el.remove();
+    current = null;
+  }
+  function showUndo(message, undo) {
+    dismiss();
+    const el = document.createElement("div");
+    el.className = "undo-toast";
+    el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">Undo</button>`;
+    el.querySelector("button").addEventListener("click", () => {
+      dismiss();
+      undo();
+    });
+    document.body.appendChild(el);
+    current = { el, timer: window.setTimeout(dismiss, UNDO_MS) };
   }
 
   // src/history/history.ts
@@ -2583,7 +2677,7 @@ K:${abcKey}
   }
 
   // src/detector/analysis-panel.ts
-  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "diatonic", "scales", "cadence", "secondary", "coltrane", "negharm", "subs"];
+  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "diatonic", "scales", "cadence", "secondary", "subs"];
   var ANALYSIS_FIELD_LABELS = {
     roman: "Roman",
     function: "Func",
@@ -2592,8 +2686,6 @@ K:${abcKey}
     scales: "Scl",
     cadence: "Cad",
     secondary: "Sec",
-    coltrane: "Colt",
-    negharm: "Neg",
     subs: "Subs"
   };
   var ANALYSIS_FIELD_TOOLTIPS = {
@@ -2604,8 +2696,6 @@ K:${abcKey}
     scales: "Suggested scales",
     cadence: "Cadence",
     secondary: "Secondary dominant",
-    coltrane: "Coltrane axis",
-    negharm: "Negative harmony",
     subs: "Substitutions"
   };
   function renderChordSummary(detection, onAltSelect2) {
@@ -2651,8 +2741,7 @@ K:${abcKey}
     const maybeRow = (f, label, val) => fieldsVisible[f] ? row(label, val) : "";
     const conditionalRow = (f, label, val) => fieldsVisible[f] ? row(label, val ?? "\u2014") : "";
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
-    let secondary = null, coltrane = null;
-    let negharm = null, subs = null;
+    let secondary = null, subs = null;
     let extra = "";
     if (detection?.kind === "note") {
       extra = row("Note", `${detection.noteName} \xB7 MIDI ${detection.midiNumber}`);
@@ -2666,11 +2755,9 @@ K:${abcKey}
       scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
       cadence = analysis.cadence || "\u2014";
       if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget?.split("/")[1] ?? "?"}`;
-      if (analysis.coltraneAxis) coltrane = analysis.coltraneAxis.join(" \xB7 ");
-      if (analysis.negativeHarmony) negharm = analysis.negativeHarmony;
       if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
     }
-    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("coltrane", "Coltrane", coltrane) + conditionalRow("negharm", "Neg. harm.", negharm) + conditionalRow("subs", "Subs.", subs) + extra;
+    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("subs", "Subs.", subs) + extra;
   }
 
   // src/ui/layout.ts
@@ -2689,12 +2776,13 @@ K:${abcKey}
       analysisControls: loadBool("panel-analysisControls", true),
       colStaff: loadBool("panel-colStaff", true),
       colAnalysis: loadBool("panel-colAnalysis", true),
+      key: loadBool("panel-key", true),
       colCoF: loadBool("panel-colCoF", true),
       colGuitar: loadBool("panel-colGuitar", true)
     };
   }
   function renderLayout(panels, fieldsVisible) {
-    $("zone1").innerHTML = buildToolbar() + buildNotationPanel(panels, fieldsVisible) + buildInstrumentsPanel(panels) + '<div id="midi-banner"></div>';
+    $("zone1").innerHTML = buildToolbar() + buildNotationPanel(panels, fieldsVisible) + buildKeyPanel() + buildInstrumentsPanel(panels) + '<div id="midi-banner"></div>';
     buildZoneHeaders();
   }
   function wirePanelToggles(panels) {
@@ -2774,7 +2862,7 @@ K:${abcKey}
               <button id="btn-analysis-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
               <button id="btn-analysis-plus"  class="size-ctrl-btn" title="Larger">+</button>
             </div>
-            <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">
+            <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
               ${ANALYSIS_FIELD_KEYS.map(
       (f) => `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? " active" : ""}"
                   title="${ANALYSIS_FIELD_TOOLTIPS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
@@ -2810,6 +2898,24 @@ K:${abcKey}
           <div id="guitar-container"></div>
         </div>
       </div>
+    </div>`;
+  }
+  function buildKeyPanel() {
+    return `
+    <div id="key-panel" class="zone-panel">
+      <div class="panel-header">
+        <span>Key</span>
+        <div class="ctrl-row">
+          <button id="btn-key-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
+          <button id="btn-key-plus"  class="size-ctrl-btn" title="Larger">+</button>
+          <button id="btn-key-7"     class="size-ctrl-btn" title="Seventh chords instead of triads">7</button>
+          <button id="btn-key-neg"   class="size-ctrl-btn" title="Show/hide negative harmony">Neg</button>
+          <button id="btn-key-par"   class="size-ctrl-btn" title="Show/hide parallel modes">Par</button>
+          <button id="btn-key-colt"  class="size-ctrl-btn" title="Show/hide Coltrane axis">Colt</button>
+        </div>
+        <button class="toggle-btn" data-panel="key">\u25BC</button>
+      </div>
+      <div id="key-container"></div>
     </div>`;
   }
   function buildInstrumentsPanel(panels) {
@@ -2869,6 +2975,8 @@ K:${abcKey}
     if (gcw) gcw.style.display = panels.guitarControls ? "" : "none";
     const ac = $("analysis-controls");
     if (ac) ac.style.display = panels.analysisControls ? "" : "none";
+    const kp = $("key-container");
+    if (kp) kp.style.display = panels.key ? "" : "none";
     const cs = $("col-staff");
     if (cs) cs.style.display = panels.colStaff ? "" : "none";
     const ca = $("col-analysis");
@@ -2881,7 +2989,7 @@ K:${abcKey}
       const col = btn.dataset.col;
       if (col) btn.classList.toggle("active", !!panels[col]);
     });
-    ["notation", "instruments", "history", "song", "cofControls", "guitarControls", "analysisControls"].forEach((key) => {
+    ["notation", "instruments", "history", "song", "cofControls", "guitarControls", "analysisControls", "key"].forEach((key) => {
       const btn = document.querySelector(`.toggle-btn[data-panel="${key}"]`);
       if (btn) btn.textContent = panels[key] ? "\u25B2" : "\u25BC";
     });
@@ -2899,6 +3007,11 @@ K:${abcKey}
     ANALYSIS_FIELD_KEYS.map((f) => [f, loadBool(`analysis-field-${f}`, true)])
   );
   var analysisScale = loadNumber("analysis-scale", 11, 8, 20);
+  var keyScale = loadNumber("key-scale", 11, 8, 20);
+  var keySevenths = loadBool("key-sevenths", false);
+  var keyShowNegative = loadBool("key-show-negative", true);
+  var keyShowParallel = loadBool("key-show-parallel", true);
+  var keyShowColtrane = loadBool("key-show-coltrane", true);
   var initialSong = loadActiveSong();
   var state = {
     activeKey: normalizeKey(initialSong.key),
@@ -3122,6 +3235,44 @@ K:${abcKey}
         renderAnalysisPanel();
       });
     });
+    const updateKeyButtons = () => {
+      $2("btn-key-7").style.opacity = keySevenths ? "1" : "0.4";
+      $2("btn-key-neg").style.opacity = keyShowNegative ? "1" : "0.4";
+      $2("btn-key-par").style.opacity = keyShowParallel ? "1" : "0.4";
+      $2("btn-key-colt").style.opacity = keyShowColtrane ? "1" : "0.4";
+    };
+    updateKeyButtons();
+    const onKeyControl = (id, apply) => {
+      $2(id).addEventListener("click", () => {
+        apply();
+        updateKeyButtons();
+        renderDiagrams();
+      });
+    };
+    onKeyControl("btn-key-minus", () => {
+      keyScale = Math.max(8, keyScale - 1);
+      save("key-scale", keyScale);
+    });
+    onKeyControl("btn-key-plus", () => {
+      keyScale = Math.min(20, keyScale + 1);
+      save("key-scale", keyScale);
+    });
+    onKeyControl("btn-key-7", () => {
+      keySevenths = !keySevenths;
+      save("key-sevenths", keySevenths);
+    });
+    onKeyControl("btn-key-neg", () => {
+      keyShowNegative = !keyShowNegative;
+      save("key-show-negative", keyShowNegative);
+    });
+    onKeyControl("btn-key-par", () => {
+      keyShowParallel = !keyShowParallel;
+      save("key-show-parallel", keyShowParallel);
+    });
+    onKeyControl("btn-key-colt", () => {
+      keyShowColtrane = !keyShowColtrane;
+      save("key-show-coltrane", keyShowColtrane);
+    });
     wirePanelToggles(state.panels);
     if (state.activeKey) {
       $2("key-select").value = state.activeKey;
@@ -3334,6 +3485,13 @@ K:${abcKey}
     renderIfChanged("neck", `${notes}|${keyPrefersSharps(key)}`, () => renderNeck($2("neck-container"), noteNames, !keyPrefersSharps(key)));
     renderIfChanged("guitar", `${chordSymbol}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames));
     renderIfChanged("cof", `${key}|${chordSymbol}|${cofSize}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, cofSize, cofOpts));
+    const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale };
+    const keyLabel = key ? state.activeKey ? key : `${key} (auto)` : "";
+    renderIfChanged("key", `${keyLabel}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () => renderKeyExplorer($2("key-container"), key ? buildKeyMap(key, keySevenths) : null, keyLabel, chordSymbol, onKeyChordClick, keyOpts));
+  }
+  function onKeyChordClick(chord) {
+    playChord(chord);
+    showChord(chord, void 0, previousHistorySymbol(chord));
   }
   var COF_DOUBLE_MS = 400;
   var lastCofClick = { key: null, at: 0 };

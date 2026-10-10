@@ -27,6 +27,7 @@ export function loadPanels(): Panels {
     analysisControls: loadBool('panel-analysisControls', true),
     colStaff:         loadBool('panel-colStaff', true),
     colAnalysis:      loadBool('panel-colAnalysis', true),
+    key:              loadBool('panel-key', true),
     colCoF:           loadBool('panel-colCoF', true),
     colGuitar:        loadBool('panel-colGuitar', true),
   }
@@ -36,6 +37,7 @@ export function renderLayout(panels: Panels, fieldsVisible: Record<AnalysisField
   $('zone1').innerHTML =
     buildToolbar() +
     buildNotationPanel(panels, fieldsVisible) +
+    buildKeyPanel() +
     buildInstrumentsPanel(panels) +
     '<div id="midi-banner"></div>'
   buildZoneHeaders()
@@ -121,7 +123,7 @@ function buildNotationPanel(panels: Panels, fieldsVisible: Record<AnalysisFieldK
               <button id="btn-analysis-minus" class="size-ctrl-btn" title="Smaller">−</button>
               <button id="btn-analysis-plus"  class="size-ctrl-btn" title="Larger">+</button>
             </div>
-            <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px">
+            <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
               ${ANALYSIS_FIELD_KEYS.map(f =>
                 `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? ' active' : ''}"
                   title="${ANALYSIS_FIELD_TOOLTIPS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
@@ -157,6 +159,25 @@ function buildNotationPanel(panels: Panels, fieldsVisible: Record<AnalysisFieldK
           <div id="guitar-container"></div>
         </div>
       </div>
+    </div>`
+}
+
+function buildKeyPanel(): string {
+  return `
+    <div id="key-panel" class="zone-panel">
+      <div class="panel-header">
+        <span>Key</span>
+        <div class="ctrl-row">
+          <button id="btn-key-minus" class="size-ctrl-btn" title="Smaller">−</button>
+          <button id="btn-key-plus"  class="size-ctrl-btn" title="Larger">+</button>
+          <button id="btn-key-7"     class="size-ctrl-btn" title="Seventh chords instead of triads">7</button>
+          <button id="btn-key-neg"   class="size-ctrl-btn" title="Show/hide negative harmony">Neg</button>
+          <button id="btn-key-par"   class="size-ctrl-btn" title="Show/hide parallel modes">Par</button>
+          <button id="btn-key-colt"  class="size-ctrl-btn" title="Show/hide Coltrane axis">Colt</button>
+        </div>
+        <button class="toggle-btn" data-panel="key">▼</button>
+      </div>
+      <div id="key-container"></div>
     </div>`
 }
 
@@ -211,6 +232,7 @@ export function applyPanelVisibility(panels: Panels) {
   setGuitarControlsVisible(panels.guitarControls)
   const gcw = document.getElementById('guitar-ctrl-wrap'); if (gcw) gcw.style.display = panels.guitarControls ? '' : 'none'
   const ac = $('analysis-controls'); if (ac) ac.style.display = panels.analysisControls ? '' : 'none'
+  const kp = $('key-container'); if (kp) kp.style.display = panels.key ? '' : 'none'
   const cs = $('col-staff');    if (cs) cs.style.display = panels.colStaff ? '' : 'none'
   const ca = $('col-analysis'); if (ca) ca.style.display = panels.colAnalysis ? '' : 'none'
   const ccof = $('col-cof');    if (ccof) ccof.style.display = panels.colCoF ? '' : 'none'
@@ -219,7 +241,7 @@ export function applyPanelVisibility(panels: Panels) {
     const col = btn.dataset.col as keyof Panels
     if (col) btn.classList.toggle('active', !!panels[col])
   })
-  ;(['notation', 'instruments', 'history', 'song', 'cofControls', 'guitarControls', 'analysisControls'] as const).forEach(key => {
+  ;(['notation', 'instruments', 'history', 'song', 'cofControls', 'guitarControls', 'analysisControls', 'key'] as const).forEach(key => {
     const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-panel="${key}"]`)
     if (btn) btn.textContent = panels[key] ? '▲' : '▼'
   })
