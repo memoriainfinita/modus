@@ -61,9 +61,7 @@
   function loadPreferred() {
     try {
       const raw = localStorage.getItem(PREFERRED_KEY);
-      if (raw) return JSON.parse(raw);
-      const legacyId = localStorage.getItem("midi-device-id");
-      return legacyId ? { id: legacyId } : {};
+      return raw ? JSON.parse(raw) : {};
     } catch {
       return {};
     }
@@ -83,7 +81,8 @@
   function resolveDevice() {
     const devices = getDevices();
     const preferred = loadPreferred();
-    const target = devices.find((d) => d.id === preferred.id) ?? devices.find((d) => d.name === preferred.name) ?? devices.find((d) => d.id === selectedDeviceId) ?? devices[0];
+    const sameName = devices.filter((d) => d.name === preferred.name);
+    const target = sameName.find((d) => d.id === preferred.id) ?? sameName[0] ?? devices.find((d) => d.id === selectedDeviceId) ?? devices[0];
     if (!target) return null;
     if (!preferred.id && !preferred.name) savePreferred(target);
     attachToDevice(target.id);
