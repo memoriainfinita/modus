@@ -26,7 +26,7 @@ For any musician, from learners to teachers and content creators. Modus is in ac
 
 ### Detector — real-time harmonic analysis
 
-Connect a MIDI controller and play. The app detects what you're playing:
+Connect a MIDI controller and play, or play without one: the computer keyboard works as a piano (⌨ or `M`: A S D F… white keys, W E T… black, Z/X octave, C/V velocity, Tab sustain), the on-screen piano takes clicks (in Hold, each click adds or removes a note of the chord), and a chord name can be typed (`/`). The app detects what you're playing:
 
 - **1 note:** note name, octave, MIDI number
 - **2 notes:** interval name, semitone count
@@ -124,7 +124,7 @@ All three projects are independent, GPL-3.0, and built for the music community �
 ## Requirements
 
 - A browser with Web MIDI: Chrome, Edge or Firefox. Without it the app runs, minus the controller
-- A MIDI controller (optional — song builder and CoF interaction work without one)
+- A MIDI controller (optional — the computer keyboard, the on-screen piano and the chord field play without one)
 - A local server: `pnpm dlx http-server . -p 8080`
 
 ---
@@ -185,7 +185,8 @@ src/
     library.ts            saved songs: one localStorage key per song, index, migration
     view.ts               song structure rendering and interaction
   input/
-    midi.ts               Web MIDI: device selection, note on/off, sustain, modes
+    midi.ts               Web MIDI: device selection, note on/off, sustain, modes; the input path the other inputs share
+    computer-keyboard.ts  the computer keyboard as a piano (M), by physical key
     shortcuts.ts          keyboard handling, shortcuts and gestures help popup
   audio/
     audio.ts              soundfont-player playback: controller notes, previews, volume
@@ -221,7 +222,9 @@ docs/
 | `S` | Send active history chip to song cursor |
 | `C` | Clear history (can be undone) |
 | `1`–`9` | Select alternative chord interpretation |
-| `Esc` | Cancel MIDI fill / close help / deselect |
+| `Esc` | Drop a Hold / Arpeggio chord / cancel MIDI fill / close help / deselect |
+| `M` | Computer keyboard as a piano (M or Esc to stop) |
+| `/` | Type a chord name |
 | `?` | Show / hide shortcuts and mouse gestures |
 
 Shortcuts are disabled while typing in input fields or with a dropdown focused, and never fire with Ctrl/Cmd/Alt held.

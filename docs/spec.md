@@ -80,7 +80,9 @@ Zone 1 is the primary module. Instruments, History and Song are collapsible.
 ### Toolbar
 
 - **MIDI status and device selector:** updates on connect/disconnect (Firefox reports neither: the list is rescanned every 2 s while the page is visible, and on focus). The device the user picks, or the first one used, is preferred by name and taken back when it reappears; a fallback used meanwhile does not replace it.
-- **Mode buttons:** Normal, Hold, Arpeggio (mutually exclusive).
+- **Mode buttons:** Normal, Hold, Arpeggio (mutually exclusive). They apply to every input: controller, computer keyboard and on-screen piano.
+- **⌨ (M):** the computer keyboard as a piano; octave and velocity shown next to it.
+- **Chord field (/):** type a chord name, Enter shows and plays it like a chord picked from history; an unknown name is marked red.
 - **Key selector:** 24 major/minor keys + Auto. On Auto, the detected key is shown next to it and drives the whole app. The choice belongs to the open song (see Zone 3).
 - **Audio status bar, play button (▶, same as Space), instrument selector, volume.**
 - **? button:** shortcuts and mouse gestures.
@@ -95,7 +97,15 @@ Zone 1 is the primary module. Instruments, History and Song are collapsible.
 | Hold | Chord stays after all keys are released; the next note-on after a full release starts a new chord |
 | Arpeggio | Note-ons accumulate until 1.2 s pass with no new note; then the display clears. Note-off is ignored |
 
-Changing mode drops the notes held by the previous mode.
+Changing mode drops the notes held by the previous mode. Esc drops the notes Hold or Arpeggio keep.
+
+### Input without a controller
+
+Both go through the same path as MIDI: modes, sound, spelling in the key, history, MIDI fill.
+
+**Computer keyboard** (⌨ or M; M or Esc to stop), laid out like Ableton Live's and Logic's: home row A S D F G H J K L Ñ ' = white keys from C, W E · T Y U · O P = black keys; Z / X octave down / up (C1–C7), C / V velocity −/+20 (default C4, velocity 100); Tab = sustain pedal. Keys are read by physical position (`event.code`), so any keyboard language works. While on, the keys it uses never reach the shortcuts. Each key sounds while held; leaving the window releases everything. Laptop keyboards may not register more than two or three keys at once: Arpeggio builds bigger chords.
+
+**On-screen piano:** press a key to play it (velocity 90). Normal and Arpeggio: like a controller key, it sounds while pressed. Hold: each click adds the note to the chord and a second click takes it out, so a chord is built note by note with the mouse; a controller phrase replaces it.
 
 **Spelling.** MIDI has no spelling of its own: with a key (selected, or detected on Auto) everything the controller plays is written in that key, through UMT (`spellPitchInKey`, `spellChordInKey`, `spellChord`): chord names and readings, notes, the single note, intervals, the staff and the diagrams. G#m in E major, Abm in C minor. Key notes take the key's letters; chromatic notes follow the harmonic chromatic scale without needless double accidentals; chord tones are named by interval (Cm7b5: Gb). A key change rewrites what is on screen. A chord picked from history, song or CoF keeps the spelling it was given, and its notes are named by interval. History chips are shown in the current key. Without a key, MIDI input stays in flats.
 
@@ -159,7 +169,7 @@ Four columns, toggled with [St][An][CoF][Git].
 
 Toggled with [Pi][Fr].
 
-**Piano:** notae, C2–B5. Click a key to play it (notae tags each key with `data-note`).
+**Piano:** notae, C2–B5. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`.
 
 **Fretboard:** notae, horizontal, all positions of the active notes over frets 0–12. Spacing −/+.
 
@@ -266,7 +276,9 @@ Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/A
 | `S` | Send the active history chip to the song cursor |
 | `C` | Clear history (Undo) |
 | `1`–`9` | Select the Nth alternative reading |
-| `Esc` | Close help; otherwise stop MIDI fill and clear the cursor |
+| `Esc` | Close help; otherwise drop a Hold / Arpeggio chord, stop MIDI fill and clear the cursor |
+| `M` | Computer keyboard as a piano (M or Esc to stop) |
+| `/` | Type a chord name |
 | `?` | Toggle shortcuts and gestures help |
 
 ## Out of scope
