@@ -10,7 +10,7 @@ UMT.parseNote(str: string, defaultOctave?: number): Note
 // Chord detection — takes Note[] objects, NOT strings
 UMT.Harmony.detectChords(notes: Note[]): string[]
 // Returns ranked chord name strings, e.g. ["Cmaj7"], ["Dm7", "F6/D"]
-// Plain major triad is "CM" / "CM/E" (normalized to "C" / "C/E" in theory/chord.ts)
+// Plain major triad is "C" / "C/E" (since 6750e23; it was "CM")
 // No match returns ["Unknown Chord"], which parseChordSymbol rejects (filtered in detector/analyzer.ts)
 
 // Chord object: name, rootStep, intervalsInSteps (semitones above root), bassStep, preferFlats
@@ -49,11 +49,11 @@ UMT.getSubstitutions(chord: Chord, key: string): SubstitutionResult[]
 // Diatonic subs only in major / natural minor keys; 'modal' = minor subdominant family in major
 
 // Other confirmed methods
-UMT.Harmony.analyzeCadence(c1: Chord, c2: Chord, key: string): string
+UMT.Harmony.analyzeCadence(c1: Chord, c2: Chord, key: string): string  // deceptive: 'Deceptive Cadence (V -> vi)' in major, '(V -> VI)' in minor
 UMT.Harmony.getSuggestedScales(chord: Chord): { scale: string; hint?: string }[]
 UMT.Harmony.getColtraneAxis(key: string): { root: string; majorThirds: [string,string,string] }
-UMT.Harmony.getNegativeHarmony(chord: Chord, key: string): Chord  // 12-TET only
-UMT.parseChordSymbol(symbol: string): Chord
+UMT.Harmony.getNegativeHarmony(chord: Chord, key: string): Chord  // 12-TET only; rootStep is the named root, a different lowest note goes to bassStep (C6 in C → Cm7/Bb)
+UMT.parseChordSymbol(symbol: string): Chord  // accepts 6/9, m6/9, 6/9/<bass>
 
 // Spelling (12-TET; other tunings fall back to getNotes names / the chord unchanged)
 UMT.spellPitchInKey(stepsFromA4: number, key: string): string  // "G#4" for MIDI 68 in "E Major"; flats for an unknown key
