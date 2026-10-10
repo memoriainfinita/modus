@@ -37,7 +37,7 @@ export function isKnownChord(symbol: string | null | undefined): symbol is strin
   return tryParseChord(symbol) !== null
 }
 
-/** UMT.detectChords names a plain major triad "CM" ("CM/E" when inverted). Show it as "C". */
+/** "CM" → "C" ("CM/E" → "C/E"). UMT stopped returning "CM" in 6750e23; a name typed that way still needs it. */
 export function normalizeChordName(name: string): string {
   return name.replace(/^([A-G][b#]*)M(?=\/|$)/, '$1')
 }
