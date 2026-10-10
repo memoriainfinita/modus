@@ -1,5 +1,6 @@
 import { pitchClassOf } from '../theory/notes'
 import { romanInKey } from '../detector/analyzer'
+import { keyPrefersSharps } from '../theory/keys'
 
 const CIRCLE_KEYS_FLAT  = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F']
 // Sharps only where they name a standard key: G# and D# major would need double sharps.
@@ -11,6 +12,14 @@ const CIRCLE_DIM = ['B','F#','C#','G#','D#','A#','F','C','G','D','A','E']
 
 const pitchClass = pitchClassOf
 const rootOf = (symbol: string): string => symbol.match(/^([A-G][b#]*)/)?.[1] ?? ''
+
+/**
+ * The spelling of the circle's enharmonic segments: with a key (selected, or detected on
+ * Auto) the key's signature decides, as everywhere else; the b / # buttons only without one.
+ */
+export function cofAccidentalFor(key: string | null, chosen: 'sharp' | 'flat'): 'sharp' | 'flat' {
+  return key ? (keyPrefersSharps(key) ? 'sharp' : 'flat') : chosen
+}
 
 export type CofOptions = { accidental: 'sharp' | 'flat', showMinor: boolean, showDegrees: boolean, show7ths: boolean, fontScale?: number, backdrop?: string }
 

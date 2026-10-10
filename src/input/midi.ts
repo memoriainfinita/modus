@@ -1,4 +1,5 @@
 import type { MidiMode } from '../types'
+import { loadNumber, save } from '../ui/storage'
 
 export function isNoteOff(status: number, velocity: number): boolean {
   return (status & 0xF0) === 0x80 || ((status & 0xF0) === 0x90 && velocity === 0)
@@ -10,6 +11,7 @@ let midiAccess: MIDIAccess | null = null
 let selectedDeviceId: string | null = null
 let mode: MidiMode = 'normal'
 let activeNotes = new Set<number>()
+const velocities = new Map<number, number>()   // last velocity each note was struck with, any input
 let physicallyHeldNotes = new Set<number>()  // tracks keys currently depressed in hold mode
 let arpeggioNotes: number[] = []
 let arpeggioTimer: ReturnType<typeof setTimeout> | null = null
@@ -177,13 +179,42 @@ function refreshDeviceList() {
 
 // ─── Message handling ────────────────────────────────────────────────────────
 
-function handleMidiMessage(e: MIDIMessageEvent) {
+// Input channel filter: 0 = every channel. A note let in is always let out on its channel,
+// even after the filter changes, so changing it never leaves a note hanging.
+let inputChannel = loadNumber('midi-in-channel', 0, 0, 16)
+const controllerHeld = new Map<number, number>()   // note → channel it came in on
+let controllerPedal = false
+
+export function getInputChannel(): number { return inputChannel }
+
+export function setInputChannel(ch: number) {
+  inputChannel = Math.min(16, Math.max(0, Math.round(ch)))
+  save('midi-in-channel', inputChannel)
+  // The pedal's release may come on a channel no longer let in
+  if (controllerPedal) { controllerPedal = false; sound.sustain(false, 'controller') }
+}
+
+export function handleMidiMessage(e: Pick<MIDIMessageEvent, 'data'>) {
   if (!e.data || e.data.length < 3) return
   const [status, note, velocity] = e.data
+  const channel = (status & 0x0F) + 1
+  const passes = inputChannel === 0 || channel === inputChannel
 
-  if (isNoteOff(status, velocity)) keyUp(note, 'controller')
-  else if ((status & 0xF0) === 0x90) keyDown(note, velocity, 'controller')
-  else if (isSustain(status, note)) sound.sustain(velocity >= 64, 'controller')
+  if (isNoteOff(status, velocity)) {
+    if (!passes && controllerHeld.get(note) !== channel) return
+    controllerHeld.delete(note)
+    keyUp(note, 'controller')
+  }
+  else if ((status & 0xF0) === 0x90) {
+    if (!passes) return
+    controllerHeld.set(note, channel)
+    keyDown(note, velocity, 'controller')
+  }
+  else if (isSustain(status, note)) {
+    if (!passes) return
+    controllerPedal = velocity >= 64
+    sound.sustain(controllerPedal, 'controller')
+  }
 }
 
 // ─── Other inputs ────────────────────────────────────────────────────────────
@@ -193,9 +224,13 @@ function handleMidiMessage(e: MIDIMessageEvent) {
 
 /** A key pressed on any input: sound and the current mode. */
 export function keyDown(note: number, velocity: number, source: NoteSource = 'virtual') {
+  velocities.set(note, velocity)
   sound.noteOn(note, velocity, source)
   handleNoteOn(note)
 }
+
+/** The velocity a note was last struck with (kept after release: Hold still shows it). */
+export function getVelocity(note: number): number | null { return velocities.get(note) ?? null }
 
 /** A key released on any input. */
 export function keyUp(note: number, source: NoteSource = 'virtual') {
@@ -210,6 +245,7 @@ export function setPedal(down: boolean) { sound.sustain(down, 'virtual') }
 export function pointerDown(note: number, velocity: number) {
   if (mode !== 'hold') { keyDown(note, velocity); return }
   if (activeNotes.delete(note)) { onNoteChange(sortedNotes(activeNotes)); return }
+  velocities.set(note, velocity)
   sound.noteOn(note, velocity, 'virtual')
   activeNotes.add(note)
   onNoteChange(sortedNotes(activeNotes))

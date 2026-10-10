@@ -1,5 +1,41 @@
 "use strict";
 (() => {
+  // src/ui/storage.ts
+  function loadJSON(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw === null ? fallback : JSON.parse(raw);
+    } catch {
+      return fallback;
+    }
+  }
+  function loadBool(key, fallback) {
+    const v = loadJSON(key, fallback);
+    return typeof v === "boolean" ? v : fallback;
+  }
+  function loadNumber(key, fallback, min = -Infinity, max = Infinity) {
+    const raw = loadString(key, "");
+    const v = Number(raw);
+    return raw !== "" && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
+  }
+  function loadString(key, fallback) {
+    try {
+      return localStorage.getItem(key) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  function loadChoice(key, choices, fallback) {
+    const v = loadString(key, fallback);
+    return choices.includes(v) ? v : fallback;
+  }
+  function save(key, value) {
+    try {
+      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+    } catch {
+    }
+  }
+
   // src/input/midi.ts
   function isNoteOff(status2, velocity2) {
     return (status2 & 240) === 128 || (status2 & 240) === 144 && velocity2 === 0;
@@ -8,6 +44,7 @@
   var selectedDeviceId = null;
   var mode = "normal";
   var activeNotes = /* @__PURE__ */ new Set();
+  var velocities = /* @__PURE__ */ new Map();
   var physicallyHeldNotes = /* @__PURE__ */ new Set();
   var arpeggioNotes = [];
   var arpeggioTimer = null;
@@ -132,16 +169,46 @@
       window.dispatchEvent(new CustomEvent("midi-device-disconnected"));
     }
   }
+  var inputChannel = loadNumber("midi-in-channel", 0, 0, 16);
+  var controllerHeld = /* @__PURE__ */ new Map();
+  var controllerPedal = false;
+  function getInputChannel() {
+    return inputChannel;
+  }
+  function setInputChannel(ch) {
+    inputChannel = Math.min(16, Math.max(0, Math.round(ch)));
+    save("midi-in-channel", inputChannel);
+    if (controllerPedal) {
+      controllerPedal = false;
+      sound.sustain(false, "controller");
+    }
+  }
   function handleMidiMessage(e) {
     if (!e.data || e.data.length < 3) return;
     const [status2, note, velocity2] = e.data;
-    if (isNoteOff(status2, velocity2)) keyUp(note, "controller");
-    else if ((status2 & 240) === 144) keyDown(note, velocity2, "controller");
-    else if (isSustain(status2, note)) sound.sustain(velocity2 >= 64, "controller");
+    const channel2 = (status2 & 15) + 1;
+    const passes = inputChannel === 0 || channel2 === inputChannel;
+    if (isNoteOff(status2, velocity2)) {
+      if (!passes && controllerHeld.get(note) !== channel2) return;
+      controllerHeld.delete(note);
+      keyUp(note, "controller");
+    } else if ((status2 & 240) === 144) {
+      if (!passes) return;
+      controllerHeld.set(note, channel2);
+      keyDown(note, velocity2, "controller");
+    } else if (isSustain(status2, note)) {
+      if (!passes) return;
+      controllerPedal = velocity2 >= 64;
+      sound.sustain(controllerPedal, "controller");
+    }
   }
   function keyDown(note, velocity2, source = "virtual") {
+    velocities.set(note, velocity2);
     sound.noteOn(note, velocity2, source);
     handleNoteOn(note);
+  }
+  function getVelocity(note) {
+    return velocities.get(note) ?? null;
   }
   function keyUp(note, source = "virtual") {
     sound.noteOff(note, source);
@@ -159,6 +226,7 @@
       onNoteChange(sortedNotes(activeNotes));
       return;
     }
+    velocities.set(note, velocity2);
     sound.noteOn(note, velocity2, "virtual");
     activeNotes.add(note);
     onNoteChange(sortedNotes(activeNotes));
@@ -602,42 +670,6 @@
     const noteNames = history.flatMap((e) => e.notes);
     if (noteNames.length === 0) return null;
     return normalizeKey(tryUMT("key detection", () => UMT.KeyDetection.detect(noteNames.map((n) => UMT.parseNote(n)))[0]?.key ?? null, null));
-  }
-
-  // src/ui/storage.ts
-  function loadJSON(key, fallback) {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw === null ? fallback : JSON.parse(raw);
-    } catch {
-      return fallback;
-    }
-  }
-  function loadBool(key, fallback) {
-    const v = loadJSON(key, fallback);
-    return typeof v === "boolean" ? v : fallback;
-  }
-  function loadNumber(key, fallback, min = -Infinity, max = Infinity) {
-    const raw = loadString(key, "");
-    const v = Number(raw);
-    return raw !== "" && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
-  }
-  function loadString(key, fallback) {
-    try {
-      return localStorage.getItem(key) ?? fallback;
-    } catch {
-      return fallback;
-    }
-  }
-  function loadChoice(key, choices, fallback) {
-    const v = loadString(key, fallback);
-    return choices.includes(v) ? v : fallback;
-  }
-  function save(key, value) {
-    try {
-      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
-    } catch {
-    }
   }
 
   // src/audio/audio.ts
@@ -1316,6 +1348,9 @@ ${lower.length ? chordOf(lower) : empty}`;
   var CIRCLE_DIM = ["B", "F#", "C#", "G#", "D#", "A#", "F", "C", "G", "D", "A", "E"];
   var pitchClass = pitchClassOf;
   var rootOf = (symbol) => symbol.match(/^([A-G][b#]*)/)?.[1] ?? "";
+  function cofAccidentalFor(key, chosen) {
+    return key ? keyPrefersSharps(key) ? "sharp" : "flat" : chosen;
+  }
   function renderCircleOfFifths(container, activeKey, activeChord, onSegmentClick, size = 160, opts = { accidental: "flat", showMinor: true, showDegrees: false, show7ths: false }) {
     const keys = opts.accidental === "sharp" ? CIRCLE_KEYS_SHARP : CIRCLE_KEYS_FLAT;
     const minorKeys = opts.accidental === "sharp" ? CIRCLE_KEYS_MINOR_SHARP : CIRCLE_KEYS_MINOR_FLAT;
@@ -1435,9 +1470,9 @@ ${lower.length ? chordOf(lower) : empty}`;
     svg.style.width = "100%";
     svg.style.height = "100%";
   }
-  function cofOptions() {
+  function cofOptions(key) {
     return {
-      accidental: loadChoice("cof-accidental", ["flat", "sharp"], "flat"),
+      accidental: cofAccidentalFor(key, loadChoice("cof-accidental", ["flat", "sharp"], "flat")),
       showMinor: loadBool("cof-show-minor", true),
       showDegrees: loadBool("cof-show-degrees", false),
       show7ths: loadBool("cof-show-7ths", false)
@@ -1463,7 +1498,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       inner.style.height = "100%";
       inner.style.width = "100%";
     } else if (view === "cof") renderCircleOfFifths(el, s.key, s.symbol, () => {
-    }, 400, { ...cofOptions(), backdrop: "#1a1a2e" });
+    }, 400, { ...cofOptions(s.key), backdrop: "#1a1a2e" });
     else if (view === "piano") renderPiano(el, s.notes, s.symbol);
     else if (view === "guitar") renderGuitar(el, s.symbol, s.notes, s.guitarVoicing);
     fitSvg(el.querySelector("svg"));
@@ -1539,6 +1574,21 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
   function onFullscreenChange() {
     if (!document.fullscreenElement) closePresentation();
+  }
+
+  // src/diagrams/velocity.ts
+  function renderVelocity(container, notes) {
+    if (!notes.length) {
+      container.innerHTML = '<div class="vel-empty">Play to see how hard each note is struck</div>';
+      return;
+    }
+    const sorted = [...notes].sort((a, b) => b.midi - a.midi);
+    container.innerHTML = sorted.map((n) => `
+    <div class="vel-row" title="${escapeHtml(n.name)}: velocity ${n.velocity} of 127">
+      <span class="vel-note">${escapeHtml(n.name)}</span>
+      <span class="vel-bar"><span style="width:${(n.velocity / 127 * 100).toFixed(1)}%"></span></span>
+      <span class="vel-num">${n.velocity}</span>
+    </div>`).join("");
   }
 
   // src/ui/export.ts
@@ -3195,6 +3245,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       instruments: loadBool("panel-instruments", true),
       colPiano: loadBool("panel-colPiano", true),
       colNeck: loadBool("panel-colNeck", true),
+      colVelocity: loadBool("panel-colVelocity", true),
       history: loadBool("panel-history", true),
       song: loadBool("panel-song", true),
       cofControls: loadBool("panel-cofControls", true),
@@ -3226,6 +3277,10 @@ ${lower.length ? chordOf(lower) : empty}`;
     <div id="z1-toolbar" class="toolbar">
       <span id="midi-status" class="midi-status">MIDI: \u2014</span>
       <select id="midi-device" class="ctrl-select"></select>
+      <select id="midi-in-ch" class="ctrl-select" title="Input channel: only notes on this channel are read (a keyboard split, or one track of a DAW)">
+        <option value="0">in: all ch</option>
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">in: ch ${i + 1}</option>`).join("")}
+      </select>
       <select id="midi-out" class="ctrl-select" title="MIDI out: what sounds goes to this port"><option value="">Out: off</option></select>
       <select id="midi-out-ch" class="ctrl-select" title="MIDI out channel">
         ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">ch ${i + 1}</option>`).join("")}
@@ -3378,11 +3433,13 @@ ${lower.length ? chordOf(lower) : empty}`;
         <div class="col-vis-row">
           <button class="col-vis-btn${panels.colPiano ? " active" : ""}" data-col="colPiano" title="Piano">Pi</button>
           <button class="col-vis-btn${panels.colNeck ? " active" : ""}" data-col="colNeck"  title="Fretboard">Fr</button>
+          <button class="col-vis-btn${panels.colVelocity ? " active" : ""}" data-col="colVelocity" title="Velocity of each note">Ve</button>
         </div>
         <button class="toggle-btn" data-panel="instruments">\u25BC</button>
       </div>
       <div id="instruments-content">
         <div id="col-piano"><div id="piano-container"></div></div>
+        <div id="col-velocity"><div class="col-label">Velocity</div><div id="velocity-container"></div></div>
         <div id="col-neck">
           <div id="neck-container"></div>
           <div class="ctrl-row" style="justify-content:center;margin-top:4px">
@@ -3416,6 +3473,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     if (cp) cp.style.display = panels.colPiano ? "" : "none";
     const cn = $("col-neck");
     if (cn) cn.style.display = panels.colNeck ? "" : "none";
+    const cv = $("col-velocity");
+    if (cv) cv.style.display = panels.colVelocity ? "" : "none";
     const z2 = $("zone2-content");
     if (z2) z2.style.display = panels.history ? "" : "none";
     const z3 = $("zone3-content");
@@ -3626,10 +3685,19 @@ ${lower.length ? chordOf(lower) : empty}`;
     state.captureTargetId = null;
     applyKey(normalizeKey(song.key));
   }
+  function syncCofAccidentalButtons() {
+    const key = analysisKey();
+    const used = cofAccidentalFor(key, cofAccidental);
+    for (const [id, acc] of [["btn-cof-flat", "flat"], ["btn-cof-sharp", "sharp"]]) {
+      const btn = $2(id);
+      btn.classList.toggle("active", used === acc);
+      btn.disabled = !!key;
+      btn.title = key ? `Spelled as in ${key}; b / # apply without a key` : acc === "flat" ? "Show flat enharmonics (Gb, Db\u2026)" : "Show sharp enharmonics (F#, C#\u2026)";
+    }
+  }
   function wireLayoutEvents() {
     const updateCofButtons = () => {
-      $2("btn-cof-flat").classList.toggle("active", cofAccidental === "flat");
-      $2("btn-cof-sharp").classList.toggle("active", cofAccidental === "sharp");
+      syncCofAccidentalButtons();
       $2("btn-cof-minor").style.opacity = cofShowMinor ? "1" : "0.4";
       $2("btn-cof-deg").style.opacity = cofShowDegrees ? "1" : "0.4";
       $2("btn-cof-7").style.opacity = cofShow7ths ? "1" : "0.4";
@@ -4033,12 +4101,23 @@ ${lower.length ? chordOf(lower) : empty}`;
     $2("btn-keyboard").classList.toggle("active-mode", on);
     $2("keyboard-status").textContent = on ? computerKeyboardStatus() : "";
   }
+  function noteVelocities(noteNames) {
+    if (!detectionFromMidi) return [];
+    return noteNames.flatMap((name) => {
+      const midi = noteNameToMidi(name);
+      const velocity2 = midi === null ? null : getVelocity(midi);
+      return midi === null || velocity2 === null ? [] : [{ name, midi, velocity: velocity2 }];
+    });
+  }
   function renderZone1Diagrams(noteNames, chordSymbol) {
     const key = analysisKey();
     const notes = noteNames.join(" ");
-    const cofOpts = { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
+    syncCofAccidentalButtons();
+    const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
     renderIfChanged("staff", `${notes}|${key}|${staffScale}|${staffClef}`, () => renderStaff($2("staff-container"), noteNames, staffWidth, key, staffScale, staffClef));
     renderIfChanged("piano", `${notes}|${chordSymbol}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress));
+    const vel = noteVelocities(noteNames);
+    renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
     renderIfChanged("neck", `${notes}|${keyPrefersSharps(key)}`, () => renderNeck($2("neck-container"), noteNames, !keyPrefersSharps(key)));
     renderIfChanged("guitar", `${chordSymbol}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames));
     renderIfChanged("cof", `${key}|${chordSymbol}|${cofSize}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, cofSize, cofOpts));
@@ -4111,7 +4190,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     sel.onchange = () => chooseDevice(sel.value);
     const target = resolveDevice();
     if (target) sel.value = target;
-    $2("midi-status").textContent = devices.length ? "MIDI: connected" : "MIDI: no devices";
+    $2("midi-status").textContent = devices.length ? "MIDI" : "MIDI: no devices";
+    $2("midi-status").title = devices.length ? "MIDI: connected" : "MIDI: no devices";
     $2("midi-status").style.color = devices.length ? "#4ade80" : "#6b7280";
     if (!deviceListenersAttached) {
       deviceListenersAttached = true;
@@ -4121,6 +4201,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       });
       window.addEventListener("midi-device-disconnected", () => {
         $2("midi-status").textContent = "MIDI: disconnected";
+        $2("midi-status").title = "MIDI: disconnected";
         $2("midi-status").style.color = "#f87171";
       });
     }
@@ -4138,6 +4219,9 @@ ${lower.length ? chordOf(lower) : empty}`;
     sel.title = loops ? "Same port as the input: nothing is sent, it would come back as input" : "MIDI out: what sounds goes to this port";
   }
   function wireMidiOut() {
+    const inCh = $2("midi-in-ch");
+    inCh.value = String(getInputChannel());
+    inCh.addEventListener("change", () => setInputChannel(parseInt(inCh.value)));
     const sel = $2("midi-out");
     const ch = $2("midi-out-ch");
     const thruBtn = $2("btn-thru");

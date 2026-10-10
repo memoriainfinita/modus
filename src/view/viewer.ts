@@ -7,7 +7,7 @@ import type { ViewName, ViewBackground, ViewState } from './channel'
 import { renderStaff, STAFF_CLEFS } from '../diagrams/staff'
 import { renderPiano } from '../diagrams/piano'
 import { renderGuitar } from '../diagrams/guitar'
-import { renderCircleOfFifths } from '../diagrams/cof'
+import { renderCircleOfFifths, cofAccidentalFor } from '../diagrams/cof'
 import type { CofOptions } from '../diagrams/cof'
 import { chordColor, NEUTRAL_COLOR } from '../theory/chord'
 import { escapeHtml } from '../ui/html'
@@ -28,9 +28,9 @@ function fitSvg(svg: SVGSVGElement | null) {
   svg.style.height = '100%'
 }
 
-function cofOptions(): CofOptions {
+function cofOptions(key: string | null): CofOptions {
   return {
-    accidental: loadChoice('cof-accidental', ['flat', 'sharp'] as const, 'flat'),
+    accidental: cofAccidentalFor(key, loadChoice('cof-accidental', ['flat', 'sharp'] as const, 'flat')),
     showMinor: loadBool('cof-show-minor', true),
     showDegrees: loadBool('cof-show-degrees', false),
     show7ths: loadBool('cof-show-7ths', false),
@@ -60,7 +60,7 @@ export function renderView(view: ViewName, el: HTMLElement, s: ViewState) {
     inner.style.height = '100%'
     inner.style.width = '100%'
   }
-  else if (view === 'cof') renderCircleOfFifths(el, s.key, s.symbol, () => {}, 400, { ...cofOptions(), backdrop: '#1a1a2e' })
+  else if (view === 'cof') renderCircleOfFifths(el, s.key, s.symbol, () => {}, 400, { ...cofOptions(s.key), backdrop: '#1a1a2e' })
   else if (view === 'piano') renderPiano(el, s.notes, s.symbol)
   else if (view === 'guitar') renderGuitar(el, s.symbol, s.notes, s.guitarVoicing)
   fitSvg(el.querySelector('svg'))

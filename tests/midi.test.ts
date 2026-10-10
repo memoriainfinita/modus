@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { midiToNoteName } from '../src/theory/notes'
-import { isNoteOff, isSustain, setMode, setNoteChangeCallback } from '../src/input/midi'
+import { isNoteOff, isSustain, setMode, setNoteChangeCallback, setSoundCallbacks, handleMidiMessage, setInputChannel, getVelocity } from '../src/input/midi'
 
 describe('midiToNoteName', () => {
   it('converts middle C (MIDI 60) to C4', () => {
@@ -50,5 +50,50 @@ describe('setMode', () => {
     setMode('hold')
     setMode('normal')
     expect(cb).not.toHaveBeenCalled()
+  })
+})
+
+describe('input channel filter', () => {
+  const msg = (...bytes: number[]) => handleMidiMessage({ data: new Uint8Array(bytes) })
+  const setup = () => {
+    const on = vi.fn(), off = vi.fn(), sustain = vi.fn()
+    setSoundCallbacks({ noteOn: on, noteOff: off, sustain })
+    setNoteChangeCallback(() => {})
+    setMode('normal')
+    return { on, off, sustain }
+  }
+
+  it('all channels by default; with a channel set, the others are ignored', () => {
+    const { on } = setup()
+    setInputChannel(0)
+    msg(0x93, 60, 100); msg(0x83, 60, 0)
+    expect(on).toHaveBeenCalledTimes(1)
+    setInputChannel(2)
+    msg(0x90, 62, 100)                       // channel 1
+    expect(on).toHaveBeenCalledTimes(1)
+    msg(0x91, 64, 100); msg(0x81, 64, 0)     // channel 2
+    expect(on).toHaveBeenCalledTimes(2)
+    setInputChannel(0)
+  })
+
+  it('a note let in is let out after the filter changes, and the pedal is released', () => {
+    const { off, sustain } = setup()
+    setInputChannel(1)
+    msg(0x90, 65, 90)
+    msg(0xB0, 64, 127)
+    setInputChannel(3)
+    expect(sustain).toHaveBeenLastCalledWith(false, 'controller')
+    msg(0x80, 65, 0)
+    expect(off).toHaveBeenCalledWith(65, 'controller')
+    msg(0x80, 67, 0)                         // never let in, other channel
+    expect(off).toHaveBeenCalledTimes(1)
+    setInputChannel(0)
+  })
+
+  it('keeps the velocity each note was struck with', () => {
+    setup()
+    msg(0x90, 70, 37); msg(0x80, 70, 0)
+    expect(getVelocity(70)).toBe(37)
+    expect(getVelocity(71)).toBeNull()
   })
 })

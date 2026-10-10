@@ -83,7 +83,8 @@ Zone 1 is the primary module. Key, Instruments, History and Song are collapsible
 
 ### Toolbar
 
-- **MIDI status and device selector:** updates on connect/disconnect (Firefox reports neither: the list is rescanned every 2 s while the page is visible, and on focus). The device the user picks, or the first one used, is preferred by name and taken back when it reappears; a fallback used meanwhile does not replace it.
+- **MIDI status and device selector:** updates on connect/disconnect (Firefox reports neither: the list is rescanned every 2 s while the page is visible, and on focus). The device the user picks, or the first one used, is preferred by name and taken back when it reappears; a fallback used meanwhile does not replace it. Connected shows as a green "MIDI" (the full status in its tooltip).
+- **Input channel (in: all ch / in: ch N):** only notes and pedal on that channel are read, for a keyboard split or one DAW track. A note let in is always let out on its own channel, and a pedal held down is released when the filter changes, so changing it leaves nothing hanging. Remembered.
 - **MIDI out (Out ▾, ch, Thru):** see MIDI out.
 - **Mode buttons:** Normal, Hold, Arpeggio (mutually exclusive). They apply to every input: controller, computer keyboard and on-screen piano.
 - **⌨ (M):** the computer keyboard as a piano; octave and velocity shown next to it.
@@ -166,7 +167,7 @@ Four columns, toggled with [St][An][CoF][Git].
 
 **Analysis:** the fields above.
 
-**Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: size, b/♯, minor/dim rings, degree labels, seventh labels. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring. Degrees are the ones the analysis fields give (`analyzeProgression`), counted from the tonic: F#° in C is ♯iv°.
+**Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: size, b/♯, minor/dim rings, degree labels, seventh labels. The enharmonic segments are spelled by the key in effect (selected, or detected on Auto): sharps for a sharp signature, flats otherwise. b/♯ only apply with no key, and are greyed out while one decides. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring. Degrees are the ones the analysis fields give (`analyzeProgression`), counted from the tonic: F#° in C is ♯iv°.
 
 **Guitar:** `UMT.getFretboardVoicings(chord, tuning)` kept only when playable — bass lowest, contiguous strings, four-fret span, open strings only in first position — ordered along the neck; ‹/› to browse. Tunings: Standard, Drop D, Open G, custom per string. String labels: off / tuning / notes. Fret spacing −/+. Rendered by notae.
 
@@ -185,9 +186,11 @@ Controls: font scale, triads / sevenths (`7`), show/hide Neg, Par, Colt. A click
 
 ### Instruments panel
 
-Toggled with [Pi][Fr].
+Toggled with [Pi][Fr][Ve].
 
 **Piano:** notae, C2–B5. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`.
+
+**Velocity:** one bar per note on screen, highest on top, with the MIDI velocity (1–127) it was struck with on any input. Kept after release, so Hold still shows it. A chord picked from history, song or circle has none and shows nothing. No dynamic marks (p, mf…): there is no standard mapping from velocity.
 
 **Fretboard:** notae, horizontal, all positions of the active notes over frets 0–12. Spacing −/+.
 
@@ -288,12 +291,12 @@ Persisted to localStorage:
 - Panels: notation columns, instruments sub-panels, history, song, control rows
 - Analysis fields and font scale
 - Staff size and clef
-- CoF size, b/♯, minor/dim rings, degrees, sevenths
+- CoF size, b/♯ (without a key), minor/dim rings, degrees, sevenths
 - Key panel font scale, triads / sevenths, sections shown
 - View window background
 - Guitar tuning (including custom strings), label mode, fret spacing
 - Fretboard spacing
-- MIDI device, input mode, instrument, volume (the key is stored with each song)
+- MIDI device, input channel, input mode, instrument, volume (the key is stored with each song)
 
 ## Keyboard shortcuts
 
