@@ -16,7 +16,7 @@ What is true now. What already happened lives in `state-history.md`.
 
 ## Status
 
-- Working: detector, analysis, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
+- Working: detector, analysis, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard, velocity, grand staff, presentation mode, view windows for OBS and export, MIDI out, input channel filter. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
 - Tests 2026-10-11: TSC clean, 263 unit tests against the real UMT bundle, `pnpm test:e2e` 52/52 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `ac10838` (audit phase 1: letters in notes and numerals) the same day: all tests pass unchanged. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
@@ -63,44 +63,33 @@ Items 1-3 need new UMT functions or UMT fixes: requested in `umt/docs/notas-desd
 7. [x] Views for OBS and export, 2026-10-10. View windows (popups synced by BroadcastChannel) on a chroma background for Window Capture: not a Browser Source, which is another browser and cannot reach the playing tab. SVG / PNG export of staff, circle, guitar, piano. Checked headless in Chrome and Firefox; not yet in OBS itself
 8. [x] MIDI output, 2026-10-10: Out port and channel in the toolbar; previews and virtual inputs always, controller only with Thru; loop guard; notes released on any change. Not yet tried with a DAW or hardware synth
 
-### Added 2026-10-10, not yet ordered
+### Rest of the app, in order (2026-10-11)
 
-- [ ] Metronome, didactic: any meter including additive ones (7/8 as 2+2+3) with accents per group, subdivisions and tuplets, polyrhythms (3:2, 4:3, 5:4), clave and Euclidean patterns, tap tempo, tempo trainer (+N BPM every N bars). Shown as a circular necklace (beats as dots, groups as arcs, current beat lit; a polyrhythm as concentric rings). Clicks synthesized with Web Audio, not the soundfont. Theory from UMT `rhythm.ts` and `clave-patterns.ts`, which the audit found wrong in places (claves, metric modulation): waits on UMT
-- [ ] Microphone input: first monophonic (tuner, the note sung or played; feeds the scales-from-notes item), then chords from audio. Without it, guitarists, singers and wind players are left out
-- [ ] Note names as Do-Re-Mi (with the Spanish interface) and movable-do solfege for didactics, from UMT `solfege.ts` (movable do is major-only today: waits on UMT)
-- [ ] Scales and modes shown on the fretboard and piano, with positions, from UMT `getFretboardScale` / `getFretboardScalePositions` (positions are per-fret windows, not CAGED, per the audit: waits on UMT). Belongs with the key explorer
+Ordered by what each one makes cheaper or depends on: strings and colours before more UI is written, didactic text after the interface speaks Spanish, help last because it describes the finished UI.
 
-### Analysis, not yet ordered (agreed 2026-10-09)
+1. [ ] Interface in English and Spanish: one string table, the language picked or taken from the browser. Every later item writes its text once per language. Fixed-do note names (Do, Re, Mi) with it, if UMT `solfege.ts` names them; movable do waits on UMT (minor)
+2. [ ] Colours as theme tokens, then light mode and colour themes (background, dots, frets, piano keys, CoF segments). Today colours are written in CSS and in each diagram's code
+3. [ ] Voice leading: how each voice moves from one played chord to the next, on staff and piano (voices paired bass to top). Warnings (parallels, leading tone) from UMT `checkVoiceLeading` wait on UMT: the audit found it fixed to 12-TET steps and checking overlap between any voices
+4. [ ] One string-instrument panel: guitar, bass, ukulele, other tunings, with two views (chord positions, whole neck) instead of today's Guitar and Fretboard. First check what notae draws
+5. [ ] Explanations: each term the app shows (V7/V, borrowed from dorian, a cadence) explains what it means
+6. [ ] Reference progressions and examples (ii-V-I, cadences, modal interchange), loadable, with explanation, from UMT's named progressions
+7. [ ] Ear training: the app plays a chord or cadence and the user names it
+8. [ ] Audio player for the recording being transcribed: loop, slow down
+9. [ ] Microphone input: first monophonic (tuner, the note sung or played; feeds scales-from-notes), then chords from audio. Without it, guitarists, singers and wind players are left out
+10. [ ] Works offline and installable: UMT, notae, abcjs, soundfont-player and the samples served with the app instead of from CDNs (also removes the `gleitz.github.io` risk). Before publication
+11. [ ] Accessibility: full keyboard use and screen reader
+12. [ ] Mobile and touch
+13. [ ] Built-in help and a first-run guided tour
+14. [ ] Presentation mode, rest: history with its cadences, the key panel. Done 2026-10-11: chord, staff, CoF, guitar, piano large and full screen (⛶ / P), the ones the page shows; not yet tried on a projector
 
-Input
-- [x] MIDI input channel filter, 2026-10-11 (toolbar, after the device)
+Undecided, before 11 and 12: modular layout (panels placed and resized freely). Today's Notation / Instruments grouping is arbitrary (the CoF is not notation).
 
-Visualization
-- [x] Grand staff, 2026-10-11: grand by default, split at middle C by written letter; Treble / Bass alone on the clef button
-- [ ] Voice leading: how each voice moves from one chord to the next, on staff or piano
-- [~] Presentation mode, 2026-10-11 (⛶ / P): chord, staff, CoF, guitar, piano large and full screen, the ones the page shows. Open: history with its cadences in it, the key panel; checked headless in Chrome and Firefox, not yet on a projector
-- [x] Velocity display, 2026-10-11: Ve panel next to the piano, a bar and the number per note
-- [ ] More instruments: bass, ukulele, other tunings, as one string-instrument panel with two views (chord positions, whole neck) instead of today's separate Guitar and Fretboard panels. First check what notae draws
-- [x] CoF spelling from the key, 2026-10-11: with a key in effect (also the one detected on Auto) the signature spells the circle; b/♯ only with none
-- [ ] Colour themes: background and diagram colours (dots, frets, piano keys, CoF segments)
-- [ ] Light mode
-- [ ] Modular layout (panels placed and resized freely): undecided whether it is wanted. Today's Notation / Instruments grouping is arbitrary (the CoF is not notation)
+### Waiting on UMT
 
-Didactics
-- [ ] Explanations: each term the app shows (V7/V, borrowed from dorian...) can explain what it means
-- [ ] Reference progressions and examples (ii-V-I, cadences, modal interchange), loadable, with explanation
-- [ ] Ear training: the app plays a chord or cadence and the user identifies it
-- [ ] Built-in help and a first-run guided tour
-
-Universal
-- [ ] Interface in English and Spanish
-- [ ] Mobile and touch
-- [ ] Accessibility: full keyboard use and screen reader
-- [ ] Non-Western and microtonal systems, modes and tunings, through UMT
-- [ ] Works offline and installable: UMT, notae, abcjs, soundfont-player and the samples served with the app instead of from CDNs (also removes the `gleitz.github.io` risk)
-
-Transcription
-- [ ] Audio player for the recording being transcribed: loop, slow down
+- Metronome, didactic: any meter including additive ones (7/8 as 2+2+3) with accents per group, subdivisions and tuplets, polyrhythms (3:2, 4:3, 5:4), clave and Euclidean patterns, tap tempo, tempo trainer (+N BPM every N bars). Shown as a circular necklace (beats as dots, groups as arcs, current beat lit; a polyrhythm as concentric rings). Clicks synthesized with Web Audio, not the soundfont. From UMT `rhythm.ts` and `clave-patterns.ts`, which the audit found wrong in places (claves, metric modulation)
+- Movable-do solfege for didactics, from UMT `solfege.ts` (major only today)
+- Scales and modes on the fretboard and piano, with positions, from UMT `getFretboardScale` / `getFretboardScalePositions` (per-fret windows, not CAGED, per the audit). Belongs with the key explorer
+- Non-Western and microtonal systems, modes and tunings
 
 ### Song builder, frozen
 
