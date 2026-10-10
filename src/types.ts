@@ -43,8 +43,6 @@ export interface HarmonicAnalysis {
   suggestedScales: string[]
   substitutions: string[]       // e.g. ["Db7 (tritone sub)", "Fmaj7 (diatonic)"]
   cadence: string | null    // null = no standard cadence vs prev chord
-  coltraneAxis: [string, string, string] | null
-  negativeHarmony: string | null
 }
 
 // ─── History ─────────────────────────────────────────────────────────────────
@@ -112,6 +110,7 @@ export interface AppState {
     analysisControls: boolean
     colStaff: boolean
     colAnalysis: boolean
+    key: boolean
     colCoF: boolean
     colGuitar: boolean
   }

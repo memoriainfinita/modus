@@ -63,6 +63,7 @@ export function analyzeNotes(midiNotes: number[]): DetectionResult {
 /** Roman-numeral level analysis of one chord in a key — what the chips need. */
 export interface RomanInfo {
   roman: string               // secondary dominants written as V7/x
+  degree: string              // the plain degree: VII7 for G7 in A minor, where roman reads V7/III
   function: HarmonicAnalysis['function']
   isDiatonic: boolean
   isBorrowed: boolean
@@ -82,6 +83,7 @@ export function romanInKey(chordSymbol: string, key: string | null): RomanInfo |
   const a = chord ? tryUMT('progression', () => UMT.Harmony.analyzeProgression([chord], key).analysis[0], null) : null
   const info: RomanInfo | null = a ? {
     roman: (a.isSecondary && a.secondaryTarget) ? a.secondaryTarget : (a.roman ?? '?'),
+    degree: a.roman ?? '?',
     function: a.function ?? 'unknown',
     isDiatonic: a.isDiatonic ?? false,
     isBorrowed: a.isBorrowed ?? false,
@@ -118,8 +120,6 @@ export function buildHarmonicAnalysis(
     if (cad && cad !== 'No standard cadence') result.cadence = cad
   }
 
-  result.coltraneAxis = tryUMT('coltrane axis', () => UMT.Harmony.getColtraneAxis(activeKey).majorThirds, null)
-  result.negativeHarmony = tryUMT('negative harmony', () => UMT.Harmony.getNegativeHarmony(chord, activeKey)?.name ?? null, null)
   result.substitutions = tryUMT('substitutions', () => UMT.getSubstitutions(chord, activeKey).map((s: any) => {
     const name = s.chord?.name ?? s.name ?? String(s)
     return s.type ? `${name} (${s.type})` : name
@@ -133,7 +133,7 @@ function emptyAnalysis(chordName: string): HarmonicAnalysis {
     chordName, roman: '?', function: 'unknown',
     isDiatonic: false, isBorrowed: false, isSecondary: false,
     figuredBass: '', suggestedScales: [], substitutions: [],
-    cadence: null, coltraneAxis: null, negativeHarmony: null,
+    cadence: null,
   }
 }
 

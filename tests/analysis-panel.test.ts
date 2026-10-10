@@ -6,12 +6,12 @@ import {
 } from '../src/detector/analysis-panel'
 
 describe('ANALYSIS_FIELD_KEYS', () => {
-  it('contains exactly 10 keys', () => {
-    expect(ANALYSIS_FIELD_KEYS).toHaveLength(10)
+  it('contains exactly 8 keys', () => {
+    expect(ANALYSIS_FIELD_KEYS).toHaveLength(8)
   })
 
   it('contains all expected field identifiers', () => {
-    const expected = ['roman','function','figbass','diatonic','scales','cadence','secondary','coltrane','negharm','subs']
+    const expected = ['roman','function','figbass','diatonic','scales','cadence','secondary','subs']
     for (const key of expected) {
       expect(ANALYSIS_FIELD_KEYS).toContain(key)
     }

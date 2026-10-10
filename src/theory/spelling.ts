@@ -18,6 +18,12 @@ function spellName(name: string, key: string): string {
   return midi === null ? name : spellMidi(midi, key) || name
 }
 
+/** A pitch class written in the key ("Gb" in F# major → "F#"); unchanged when it is not a note name. */
+export function spellPitchClassInKey(name: string, key: string): string {
+  const pc = pitchClassOf(name)
+  return pc === -1 ? name : (spellMidi(60 + pc, key).replace(/-?\d+$/, '') || name)
+}
+
 /** A chord symbol written in the key: Ab7 in A major → G#7. Unparseable or no key: unchanged. */
 export function spellChordSymbol(symbol: string, key: string | null): string {
   if (!key || symbol === '?') return symbol

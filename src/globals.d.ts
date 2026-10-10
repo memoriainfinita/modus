@@ -1,7 +1,10 @@
 declare const UMT: {
   parseNote: (str: string, defaultOctave?: number) => any
   parseChordSymbol: (symbol: string, tuning?: any) => any
-  parseScaleSymbol: (symbol: string, tuning?: any) => { getNotes: (octaves?: number) => { name: string }[] }
+  parseScaleSymbol: (symbol: string, tuning?: any) => {
+    getNotes: (octaves?: number) => { name: string }[]
+    getDiatonicChords: (type?: 'triad' | 'seventh') => any[]
+  }
   getFretboardVoicings: (chord: any, tuning: readonly number[]) => any[]
   GUITAR_STANDARD: readonly number[]
   GUITAR_DROPPED_D: readonly number[]
@@ -13,6 +16,7 @@ declare const UMT: {
     getSuggestedScales: (chord: any) => { scale: string; hint?: string }[]
     getColtraneAxis: (key: string) => { root: string; majorThirds: [string, string, string] }
     getNegativeHarmony: (chord: any, key: string) => any
+    getBorrowedChords: (key: string) => { chord: any; sourceMode: string; brightness: number; function: string; characteristic: boolean }[]
   }
   FiguredBass: {
     fromChord: (chord: any, bassNote: any) => string

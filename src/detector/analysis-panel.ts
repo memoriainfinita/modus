@@ -4,18 +4,18 @@ import { escapeHtml } from '../ui/html'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 
-export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','diatonic','scales','cadence','secondary','coltrane','negharm','subs'] as const
+export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','diatonic','scales','cadence','secondary','subs'] as const
 export type AnalysisFieldKey = (typeof ANALYSIS_FIELD_KEYS)[number]
 
 export const ANALYSIS_FIELD_LABELS: Record<AnalysisFieldKey, string> = {
   roman: 'Roman', function: 'Func', figbass: 'Fig', diatonic: 'Diat', scales: 'Scl', cadence: 'Cad',
-  secondary: 'Sec', coltrane: 'Colt', negharm: 'Neg', subs: 'Subs'
+  secondary: 'Sec', subs: 'Subs'
 }
 
 export const ANALYSIS_FIELD_TOOLTIPS: Record<AnalysisFieldKey, string> = {
   roman: 'Roman numeral', function: 'Harmonic function', figbass: 'Figured bass',
   diatonic: 'Diatonic / borrowed', scales: 'Suggested scales', cadence: 'Cadence',
-  secondary: 'Secondary dominant', coltrane: 'Coltrane axis', negharm: 'Negative harmony', subs: 'Substitutions'
+  secondary: 'Secondary dominant', subs: 'Substitutions'
 }
 
 // ─── Chord summary (private — called only by renderZone1Analysis) ─────────────
@@ -78,8 +78,7 @@ export function renderZone1Analysis(
     fieldsVisible[f] ? row(label, val ?? '—') : ''
 
   let roman = '—', func_ = '—', figuredBass = '—', diatonic = '—', scales = '—', cadence = '—'
-  let secondary: string | null = null, coltrane: string | null = null
-  let negharm: string | null = null, subs: string | null = null
+  let secondary: string | null = null, subs: string | null = null
   let extra = ''
 
   if (detection?.kind === 'note') {
@@ -95,8 +94,6 @@ export function renderZone1Analysis(
     cadence = analysis.cadence || '—'
     // The Roman field already reads V7/x; this row names the tonicized degree.
     if (analysis.isSecondary) secondary = `→ ${analysis.secondaryTarget?.split('/')[1] ?? '?'}`
-    if (analysis.coltraneAxis) coltrane = analysis.coltraneAxis.join(' · ')
-    if (analysis.negativeHarmony) negharm = analysis.negativeHarmony
     if (analysis.substitutions?.length) subs = analysis.substitutions.join(', ')
   }
 
@@ -108,8 +105,6 @@ export function renderZone1Analysis(
     maybeRow('scales', 'Scales', scales) +
     maybeRow('cadence', 'Cadence', cadence) +
     conditionalRow('secondary', 'Secondary', secondary) +
-    conditionalRow('coltrane', 'Coltrane', coltrane) +
-    conditionalRow('negharm', 'Neg. harm.', negharm) +
     conditionalRow('subs', 'Subs.', subs) +
     extra
 }

@@ -105,8 +105,6 @@ describe('buildHarmonicAnalysis', () => {
     const r = buildHarmonicAnalysis('Cmaj7', null, null)
     expect(r.roman).toBe('?')
     expect(r.function).toBe('unknown')
-    expect(r.coltraneAxis).toBeNull()
-    expect(r.negativeHarmony).toBeNull()
   })
 
   it('with key: roman and function from UMT', () => {
@@ -142,12 +140,6 @@ describe('buildHarmonicAnalysis', () => {
 
   it('returns figured bass for an inversion', () => {
     expect(buildHarmonicAnalysis('C/E', 'C Major', null).figuredBass).toBe('6')
-  })
-
-  it('with key: returns coltraneAxis and negativeHarmony', () => {
-    const r = buildHarmonicAnalysis('Cmaj7', 'C Major', null)
-    expect(r.coltraneAxis).toEqual(['C', 'E', 'Ab'])
-    expect(r.negativeHarmony).toBe('Abmaj7')
   })
 
   it('does not throw on a symbol UMT rejects', () => {
