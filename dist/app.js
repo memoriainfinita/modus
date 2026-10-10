@@ -1238,7 +1238,10 @@ K:${abcKey}
 
   // src/song/model.ts
   function createSong() {
-    return { schemaVersion: 1, title: "Untitled", sections: [] };
+    return { schemaVersion: 2, id: newId(), title: "Untitled", key: null, updatedAt: Date.now(), sections: [] };
+  }
+  function isBlankSong(song) {
+    return !song.sections.length && song.title === "Untitled";
   }
   function newId() {
     return crypto.randomUUID();
@@ -1501,23 +1504,6 @@ K:${abcKey}
       }))
     };
   }
-  function saveSong(song) {
-    localStorage.setItem("modus-song", JSON.stringify(withoutEmptyChords(song)));
-  }
-  function loadSong() {
-    try {
-      const raw = localStorage.getItem("modus-song") ?? localStorage.getItem("harmony-companion-song");
-      if (!raw) return createSong();
-      const parsed = JSON.parse(raw);
-      if (parsed.schemaVersion !== 1) {
-        console.warn("Song schema version mismatch \u2014 resetting");
-        return createSong();
-      }
-      return withoutEmptyChords(parsed);
-    } catch {
-      return createSong();
-    }
-  }
   function detectForm(sectionNames) {
     if (sectionNames.length === 0) return "Empty";
     const map = /* @__PURE__ */ new Map();
@@ -1534,6 +1520,97 @@ K:${abcKey}
     if (pattern === "A") return "Single section (A)";
     if (/^A+$/.test(pattern)) return `Strophic (${pattern})`;
     return `${pattern}`;
+  }
+
+  // src/song/library.ts
+  var INDEX_KEY = "modus-songs";
+  var songKey = (id) => `modus-song:${id}`;
+  var LEGACY_SONG_KEYS = ["modus-song", "harmony-companion-song"];
+  var LEGACY_KEY_KEY = "active-key";
+  function readJSON(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw === null ? null : JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  function write(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+  var metaOf = (song) => ({ id: song.id, title: song.title, updatedAt: song.updatedAt });
+  function readSong(id) {
+    const s = readJSON(songKey(id));
+    return s?.schemaVersion === 2 && s.id === id && Array.isArray(s.sections) ? withoutEmptyChords(s) : null;
+  }
+  function readIndex() {
+    const i = readJSON(INDEX_KEY);
+    return i && typeof i.activeId === "string" && Array.isArray(i.songs) ? i : null;
+  }
+  function migrateLegacySong() {
+    const legacy = LEGACY_SONG_KEYS.map(readJSON).find((s) => s?.schemaVersion === 1 && Array.isArray(s.sections));
+    if (!legacy) return createSong();
+    let key = null;
+    try {
+      key = normalizeKey(localStorage.getItem(LEGACY_KEY_KEY));
+    } catch {
+    }
+    return withoutEmptyChords({ ...createSong(), title: legacy.title ?? "Untitled", key, sections: legacy.sections });
+  }
+  function ensureIndex() {
+    const index = readIndex();
+    if (index) return index;
+    const song = migrateLegacySong();
+    write(songKey(song.id), song);
+    const created = { activeId: song.id, songs: [metaOf(song)] };
+    write(INDEX_KEY, created);
+    return created;
+  }
+  function listSongs() {
+    return ensureIndex().songs.map((meta, order) => ({ meta, order })).sort((a, b) => b.meta.updatedAt - a.meta.updatedAt || b.order - a.order).map((x) => x.meta);
+  }
+  function saveSong(song) {
+    const stored = { ...withoutEmptyChords(song), updatedAt: Date.now() };
+    write(songKey(stored.id), stored);
+    const index = ensureIndex();
+    write(INDEX_KEY, { ...index, songs: [...index.songs.filter((m) => m.id !== stored.id), metaOf(stored)] });
+  }
+  function setActive(id) {
+    write(INDEX_KEY, { ...ensureIndex(), activeId: id });
+  }
+  function loadActiveSong() {
+    const index = ensureIndex();
+    const song = readSong(index.activeId) ?? listSongs().map((m) => readSong(m.id)).find((s) => s !== null);
+    if (song) {
+      if (song.id !== index.activeId) setActive(song.id);
+      return song;
+    }
+    return newSong();
+  }
+  function openSong(id) {
+    const song = readSong(id);
+    if (song) setActive(id);
+    return song;
+  }
+  function newSong() {
+    const song = createSong();
+    saveSong(song);
+    setActive(song.id);
+    return song;
+  }
+  function deleteSong(id) {
+    const deleted = readSong(id);
+    const index = ensureIndex();
+    try {
+      localStorage.removeItem(songKey(id));
+    } catch {
+    }
+    write(INDEX_KEY, { ...index, songs: index.songs.filter((m) => m.id !== id) });
+    return { deleted, open: loadActiveSong() };
+  }
+  function restoreSong(song) {
+    saveSong(song);
+    setActive(song.id);
   }
 
   // src/song/view.ts
@@ -1611,11 +1688,20 @@ K:${abcKey}
       _song = { ..._song, title: titleInput.value };
       h.onSongChange(_song);
     });
+    const songSelect = document.createElement("select");
+    songSelect.className = "transpose-select song-select";
+    songSelect.title = "Saved songs";
+    const metas = h.songs.some((m) => m.id === song.id) ? h.songs : [{ id: song.id, title: song.title, updatedAt: song.updatedAt }, ...h.songs];
+    songSelect.innerHTML = metas.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id === song.id ? song.title : m.title) || "Untitled"}</option>`).join("");
+    songSelect.value = song.id;
+    songSelect.addEventListener("change", () => h.onOpenSong(songSelect.value));
     const newBtn = makeBtn("New", "#374151", () => {
-      if (!_song.sections.length && _song.title === "Untitled") return;
-      applyWithUndo(createSong(), `New song \u2014 "${_song.title}" closed`);
+      if (isBlankSong(_song)) return;
+      h.onNewSong();
     });
-    newBtn.title = "Start a new song \u2014 can be undone";
+    newBtn.title = "Start a new song; the current one stays in the list";
+    const deleteBtn = makeBtn("Delete", "#374151", () => h.onDeleteSong());
+    deleteBtn.title = "Delete this song \u2014 can be undone";
     const pasteArea = document.createElement("div");
     pasteArea.className = "paste-area";
     pasteArea.style.display = "none";
@@ -1690,7 +1776,7 @@ K:${abcKey}
       if (open) pasteTA.focus();
     });
     pasteBtn.title = "Paste a chord progression as text";
-    header.append(titleInput, newBtn, templateWrap, transposeSelect, exportBtn, pasteBtn);
+    header.append(songSelect, titleInput, newBtn, deleteBtn, templateWrap, transposeSelect, exportBtn, pasteBtn);
     root.appendChild(header);
     root.appendChild(pasteArea);
     const formInfo = document.createElement("div");
@@ -2600,12 +2686,14 @@ K:${abcKey}
     ANALYSIS_FIELD_KEYS.map((f) => [f, loadBool(`analysis-field-${f}`, true)])
   );
   var analysisScale = loadNumber("analysis-scale", 11, 8, 20);
+  var initialSong = loadActiveSong();
   var state = {
-    activeKey: normalizeKey(loadString("active-key", "")),
+    activeKey: normalizeKey(initialSong.key),
+    // each song keeps the key it is analysed in
     detection: null,
     analysis: null,
     history: [],
-    song: loadSong(),
+    song: initialSong,
     activeCursorId: null,
     historyActiveCursorId: null,
     captureTargetId: null,
@@ -2702,8 +2790,30 @@ K:${abcKey}
         state.song = song;
         saveSong(song);
         renderZone3();
+      },
+      songs: listSongs(),
+      onOpenSong: (id) => {
+        const song = openSong(id);
+        if (song) showSong(song);
+      },
+      onNewSong: () => showSong(newSong()),
+      onDeleteSong: () => {
+        const { deleted, open } = deleteSong(state.song.id);
+        showSong(open);
+        if (deleted) showUndo(`Deleted "${deleted.title}"`, () => {
+          restoreSong(deleted);
+          showSong(deleted);
+        });
       }
     };
+  }
+  function showSong(song) {
+    dismiss();
+    cancelCapture();
+    state.song = song;
+    state.activeCursorId = null;
+    state.captureTargetId = null;
+    applyKey(normalizeKey(song.key));
   }
   function wireLayoutEvents() {
     const updateCofButtons = () => {
@@ -2864,8 +2974,12 @@ K:${abcKey}
     renderDetector();
   }
   function setActiveKey(key) {
+    state.song = { ...state.song, key };
+    saveSong(state.song);
+    applyKey(key);
+  }
+  function applyKey(key) {
     state.activeKey = key;
-    save("active-key", key ?? "");
     $2("key-select").value = key ?? "";
     updateAutoKeyLabel();
     refreshAnalysis();

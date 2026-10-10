@@ -6,7 +6,8 @@ import { escapeHtml } from './html'
 const UNDO_MS = 5000
 let current: { el: HTMLElement; timer: number } | null = null
 
-function dismiss() {
+/** Withdraws the pending offer, e.g. when it no longer applies to what is on screen. */
+export function dismiss() {
   if (!current) return
   clearTimeout(current.timer)
   current.el.remove()

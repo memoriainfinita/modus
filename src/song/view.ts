@@ -1,11 +1,12 @@
 import type { Song, Section, Measure, SongChord, SectionColor } from '../types'
 import { playChord, playNoteNames } from '../audio/audio'
 import {
-  createSong, saveSong, addSection, removeSection, updateSection, duplicateSection,
+  createSong, isBlankSong, addSection, removeSection, updateSection, duplicateSection,
   addMeasure, removeMeasure, addChord, updateChord, removeChord, duplicateChord,
   moveChordToPosition, reorderSections, computeMeasureNumbers, parseProgressionMeasures, appendProgression,
   computeDegree, isBorrowedChord, transposeSong, transposeKey, detectForm,
 } from './model'
+import { saveSong, type SongMeta } from './library'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
 
@@ -23,6 +24,10 @@ type SongEventHandlers = {
   captureTargetId: string | null
   activeKey: string | null
   onSongChange: (song: Song) => void
+  songs: SongMeta[]
+  onOpenSong: (id: string) => void
+  onNewSong: () => void
+  onDeleteSong: () => void
 }
 
 let _song: Song = createSong()
@@ -104,11 +109,24 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
     h.onSongChange(_song)
   })
 
+  // Saved songs, most recently changed first; the open one may not be saved yet
+  const songSelect = document.createElement('select')
+  songSelect.className = 'transpose-select song-select'
+  songSelect.title = 'Saved songs'
+  const metas = h.songs.some(m => m.id === song.id) ? h.songs : [{ id: song.id, title: song.title, updatedAt: song.updatedAt }, ...h.songs]
+  songSelect.innerHTML = metas.map(m =>
+    `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id === song.id ? song.title : m.title) || 'Untitled'}</option>`).join('')
+  songSelect.value = song.id
+  songSelect.addEventListener('change', () => h.onOpenSong(songSelect.value))
+
   const newBtn = makeBtn('New', '#374151', () => {
-    if (!_song.sections.length && _song.title === 'Untitled') return
-    applyWithUndo(createSong(), `New song — "${_song.title}" closed`)
+    if (isBlankSong(_song)) return   // already on an empty song
+    h.onNewSong()
   })
-  newBtn.title = 'Start a new song — can be undone'
+  newBtn.title = 'Start a new song; the current one stays in the list'
+
+  const deleteBtn = makeBtn('Delete', '#374151', () => h.onDeleteSong())
+  deleteBtn.title = 'Delete this song — can be undone'
 
   // Inline paste area
   const pasteArea = document.createElement('div')
@@ -181,7 +199,7 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   })
   pasteBtn.title = 'Paste a chord progression as text'
 
-  header.append(titleInput, newBtn, templateWrap, transposeSelect, exportBtn, pasteBtn)
+  header.append(songSelect, titleInput, newBtn, deleteBtn, templateWrap, transposeSelect, exportBtn, pasteBtn)
   root.appendChild(header)
   root.appendChild(pasteArea)
 

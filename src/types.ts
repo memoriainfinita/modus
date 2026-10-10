@@ -81,8 +81,11 @@ export interface Section {
 }
 
 export interface Song {
-  schemaVersion: 1
+  schemaVersion: 2
+  id: string
   title: string
+  key: string | null     // the key the song is analysed in, e.g. "A Minor"; null = auto
+  updatedAt: number      // ms since epoch, set on save; orders the song list
   sections: Section[]
 }
 

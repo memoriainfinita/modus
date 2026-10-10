@@ -5,15 +5,18 @@ import {
   parseProgressionText, computeMeasureNumbers, duplicateSection,
   insertChordAfter, updateChord, duplicateChord,
   moveChordToPosition, reorderSections, reorderChordInMeasure,
-  computeDegree, isBorrowedChord, transposeKey, withoutEmptyChords, saveSong, loadSong, parseProgressionMeasures, appendProgression,
+  computeDegree, isBorrowedChord, transposeKey, withoutEmptyChords, parseProgressionMeasures, appendProgression,
 } from '../src/song/model'
+import { saveSong, loadActiveSong } from '../src/song/library'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
 
 describe('createSong', () => {
-  it('creates empty song with schemaVersion 1', () => {
+  it('creates empty song with schemaVersion 2, an id and no key', () => {
     const s = createSong()
-    expect(s.schemaVersion).toBe(1)
+    expect(s.schemaVersion).toBe(2)
+    expect(s.id).toBeTruthy()
+    expect(s.key).toBeNull()
     expect(s.sections).toHaveLength(0)
     expect(s.title).toBe('Untitled')
   })
@@ -498,7 +501,8 @@ describe('empty chord slots', () => {
     let s = addSection(createSong(), 'Verse', 'verse')
     s = addChord(s, s.sections[0].id, s.sections[0].measures[0].id, '')
     saveSong(s)
-    expect(loadSong().sections[0].measures[0].chords).toHaveLength(0)
+    localStorage.setItem('modus-songs', JSON.stringify({ activeId: s.id, songs: [{ id: s.id, title: s.title, updatedAt: 1 }] }))
+    expect(loadActiveSong().sections[0].measures[0].chords).toHaveLength(0)
   })
 })
 

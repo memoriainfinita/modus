@@ -356,6 +356,44 @@ await check('Firefox style (no statechange): unplug and replug are found by resc
   await page.evaluate(() => window.__hotplug(true))
 })
 
+const songChips = () => page.locator('.chord-chip-symbol').allInnerTexts()
+const songOptions = () => page.locator('.song-select option').allInnerTexts()
+
+await check('New keeps the previous song; opening it again restores its chords and key', async () => {
+  await page.fill('.song-title-input', 'First song')
+  await page.locator('.song-title-input').blur()
+  await setKey('A Minor')
+  const chips = await songChips()
+  assert(chips.length > 0, 'first song has chords')
+  await page.getByRole('button', { name: 'New', exact: true }).click()
+  assert((await songChips()).length === 0, 'new song is empty')
+  assert(await page.locator('#key-select').inputValue() === '', 'new song starts on Auto')
+  assert((await songOptions()).includes('First song'), `list: ${(await songOptions()).join(', ')}`)
+  const firstId = await page.locator('.song-select option', { hasText: 'First song' }).getAttribute('value')
+  await page.selectOption('.song-select', firstId)
+  assert((await songChips()).join(' ') === chips.join(' '), `chips: ${(await songChips()).join(' ')}`)
+  assert(await page.locator('#key-select').inputValue() === 'A Minor', 'key restored')
+})
+
+await check('Delete removes the open song; Undo brings it back', async () => {
+  const before = await songOptions()
+  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+  assert(!(await songOptions()).includes('First song'), `after delete: ${(await songOptions()).join(', ')}`)
+  await page.locator('.undo-btn').click()
+  assert((await songOptions()).length === before.length, `after undo: ${(await songOptions()).join(', ')}`)
+  assert(await page.locator('.song-title-input').inputValue() === 'First song', 'restored song is open')
+})
+
+await check('the open song and the list survive a reload', async () => {
+  const options = await songOptions()
+  await page.reload()
+  await page.waitForFunction(() => window.UMT && window.Notae)
+  await page.waitForTimeout(200)
+  assert(await page.locator('.song-title-input').inputValue() === 'First song', 'open song after reload')
+  assert((await songOptions()).length === options.length, `list after reload: ${(await songOptions()).join(', ')}`)
+  assert(await page.locator('#key-select').inputValue() === 'A Minor', 'key after reload')
+})
+
 await check('no errors after the walk', async () => {
   assert(page.errors.length === 0, page.errors.join(' | '))
 })
