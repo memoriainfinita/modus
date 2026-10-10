@@ -125,6 +125,16 @@ await check('removing the newest chip lets the same chord log again', async () =
   assert(chips[0] === 'Am', `chips: ${chips.join(',')}`)
 })
 
+await check('history marks the cadence between two chips: G7 → C is Authentic in C Major', async () => {
+  await setKey('C Major')
+  await play([55, 59, 62, 65], 900)
+  await off([55, 59, 62, 65])
+  await play([60, 64, 67], 900)
+  await off([60, 64, 67])
+  const strip = await page.locator('#zone2 .history-strip > *').allInnerTexts()
+  assert(strip.slice(0, 3).join('|').replace(/\s+/g, ' ') === 'C I|Authentic|G7 V7', `strip: ${strip.slice(0, 3).join('|')}`)
+})
+
 await check('changing MIDI mode clears a held chord', async () => {
   await page.click('#btn-hold')
   await play([60, 64, 67])

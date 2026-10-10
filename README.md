@@ -82,7 +82,7 @@ Any note played on the MIDI controller sounds through the selected soundfont, wi
 
 ### History
 
-Every chord is logged automatically after 0.8s of stability. Each chip shows chord name and Roman numeral in the selected key (updates live when the key changes; on Auto, the detected key is used). Click to load it in the detector and play it, drag onto a song measure to insert, right-click to remove. Clear empties the strip at once; both can be undone from the toast that appears.
+Every chord is logged automatically after 0.8s of stability. Each chip shows chord name and Roman numeral in the selected key (updates live when the key changes; on Auto, the detected key is used). Between two chips, a tag names the cadence they make — Authentic, Half, Plagal, Deceptive, Phrygian… Click to load it in the detector and play it, drag onto a song measure to insert, right-click to remove. Clear empties the strip at once; both can be undone from the toast that appears.
 
 ### Song
 

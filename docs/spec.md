@@ -200,7 +200,8 @@ type HistoryEntry = {
 
 Roman numeral and badge are computed on render from `symbol` + current key.
 
-- Horizontal strip of chips
+- Horizontal strip of chips, newest on the left
+- Cadences: with a key, a tag between two chips names the cadence from the older to the newer (`analyzeProgression` → `cadenceWithNext`, i.e. `analyzeCadence`): Authentic, Half, Plagal, Deceptive, Phrygian… Full name and chords in the tooltip. Modulations and harmonic rhythm are not shown: see state.md
 - Auto-append: a chord held steady for 0.8 s, not twice in a row
 - Max 200 entries; oldest dropped
 - Click: load in the detector, play, mark active

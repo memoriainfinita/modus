@@ -544,6 +544,16 @@
     romanCache.set(cacheKey, info);
     return info;
   }
+  function progressionCadences(chords, key) {
+    const none = chords.map(() => null);
+    if (!key || chords.length < 2) return none;
+    const parsed = chords.map(tryParseChord);
+    if (parsed.some((c) => !c)) {
+      return chords.map((_, i) => parsed[i] && parsed[i + 1] ? progressionCadences([chords[i], chords[i + 1]], key)[0] : null);
+    }
+    const analysis = tryUMT("progression", () => UMT.Harmony.analyzeProgression(parsed, key).analysis, []);
+    return chords.map((_, i) => analysis[i]?.cadenceWithNext ?? null);
+  }
   function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol) {
     const chord = tryParseChord(chordSymbol);
     if (!chord) return emptyAnalysis(chordSymbol);
@@ -1455,6 +1465,9 @@ K:${abcKey}
       }
     }, 800);
   }
+  function shortCadence(name) {
+    return name.replace(/\s*\(.*\)$/, "").replace(/ Cadence$/, "").replace(/ Resolution$/, "");
+  }
   function markActiveHistoryEntry(container, entryId) {
     container.querySelectorAll(".history-chip").forEach((el) => {
       el.classList.toggle("active-cursor", el.dataset.id === entryId);
@@ -1463,8 +1476,10 @@ K:${abcKey}
   function renderHistory(container, activeKey, onChipClick, activeCursorEntryId) {
     const strip = document.createElement("div");
     strip.className = "history-strip";
-    entries.forEach((stored) => {
-      const entry = { ...stored, symbol: spellChordSymbol(stored.symbol, activeKey) };
+    const shown = entries.map((e) => ({ ...e, symbol: spellChordSymbol(e.symbol, activeKey) }));
+    const cadences = progressionCadences(shown.map((e) => e.symbol).reverse(), activeKey).reverse();
+    shown.forEach((entry, i) => {
+      const cadence = i + 1 < shown.length ? cadences[i + 1] : null;
       const analysis = romanInKey(entry.symbol, activeKey);
       const roman = analysis?.roman ?? "\u2014";
       const fn = analysis?.function ?? "unknown";
@@ -1500,6 +1515,13 @@ K:${abcKey}
         showUndo(`Removed ${entry.symbol}`, () => restoreEntries(before));
       });
       strip.appendChild(chip);
+      if (cadence) {
+        const tag = document.createElement("span");
+        tag.className = "history-cadence";
+        tag.textContent = shortCadence(cadence);
+        tag.title = `${cadence}: ${shown[i + 1].symbol} \u2192 ${entry.symbol}`;
+        strip.appendChild(tag);
+      }
     });
     const clearBtn = document.createElement("button");
     clearBtn.textContent = "Clear";

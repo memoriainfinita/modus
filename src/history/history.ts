@@ -1,5 +1,5 @@
 import type { HistoryEntry } from '../types'
-import { romanInKey } from '../detector/analyzer'
+import { romanInKey, progressionCadences } from '../detector/analyzer'
 import { playChord, playNoteNames } from '../audio/audio'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
@@ -68,6 +68,11 @@ export function notifyChordDetected(symbol: string, notes: string[]) {
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
+/** "Authentic Cadence (V -> I)" → "Authentic"; the full name goes in the tooltip. */
+export function shortCadence(name: string): string {
+  return name.replace(/\s*\(.*\)$/, '').replace(/ Cadence$/, '').replace(/ Resolution$/, '')
+}
+
 /** Moves the cursor highlight without rebuilding the strip. */
 export function markActiveHistoryEntry(container: HTMLElement, entryId: string | null) {
   container.querySelectorAll<HTMLElement>('.history-chip').forEach(el => {
@@ -84,9 +89,14 @@ export function renderHistory(
   const strip = document.createElement('div')
   strip.className = 'history-strip'
 
-  entries.forEach(stored => {
-    // Written in the current key: the entry keeps the spelling it was captured with
-    const entry = { ...stored, symbol: spellChordSymbol(stored.symbol, activeKey) }
+  // Written in the current key: an entry keeps the spelling it was captured with
+  const shown = entries.map(e => ({ ...e, symbol: spellChordSymbol(e.symbol, activeKey) }))
+  // The strip is newest first; cadences run in playing order, from each chip to the one on its left.
+  const cadences = progressionCadences(shown.map(e => e.symbol).reverse(), activeKey).reverse()
+
+  shown.forEach((entry, i) => {
+    // cadences[i + 1]: from the chip on the right (older) to this one
+    const cadence = i + 1 < shown.length ? cadences[i + 1] : null
     const analysis = romanInKey(entry.symbol, activeKey)
     const roman = analysis?.roman ?? '—'
     const fn = analysis?.function ?? 'unknown'
@@ -127,6 +137,14 @@ export function renderHistory(
     })
 
     strip.appendChild(chip)
+
+    if (cadence) {
+      const tag = document.createElement('span')
+      tag.className = 'history-cadence'
+      tag.textContent = shortCadence(cadence)
+      tag.title = `${cadence}: ${shown[i + 1].symbol} → ${entry.symbol}`
+      strip.appendChild(tag)   // between this chip and the older one on its right
+    }
   })
 
   const clearBtn = document.createElement('button')

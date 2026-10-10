@@ -95,6 +95,23 @@ export function romanInKey(chordSymbol: string, key: string | null): RomanInfo |
   return info
 }
 
+/**
+ * Cadence from each chord to the next, in playing order: result[i] is the cadence
+ * chords[i] → chords[i + 1] in the key, or null. Unparseable symbols break the chain.
+ */
+export function progressionCadences(chords: string[], key: string | null): (string | null)[] {
+  const none = chords.map(() => null)
+  if (!key || chords.length < 2) return none
+  const parsed = chords.map(tryParseChord)
+  if (parsed.some(c => !c)) {
+    // Cadences only between neighbours UMT can read
+    return chords.map((_, i) => parsed[i] && parsed[i + 1]
+      ? progressionCadences([chords[i], chords[i + 1]], key)[0] : null)
+  }
+  const analysis = tryUMT<any[]>('progression', () => UMT.Harmony.analyzeProgression(parsed, key).analysis, [])
+  return chords.map((_, i) => analysis[i]?.cadenceWithNext ?? null)
+}
+
 export function buildHarmonicAnalysis(
   chordSymbol: string,
   activeKey: string | null,

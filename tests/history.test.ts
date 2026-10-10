@@ -6,6 +6,7 @@ vi.mock('../src/audio/audio', () => ({
 }))
 vi.mock('../src/detector/analyzer', () => ({
   romanInKey: vi.fn(() => null),
+  progressionCadences: vi.fn((chords: string[]) => chords.map(() => null)),
 }))
 
 import {

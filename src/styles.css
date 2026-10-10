@@ -343,6 +343,10 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   user-select: none;
 }
 .history-chip-symbol { font-size: 12px; font-weight: 600; }
+.history-cadence {
+  font-size: 10px; color: #c4b5fd; white-space: nowrap; padding: 1px 5px;
+  border: 1px dashed #4a4a6a; border-radius: 8px; margin: 0 -2px; flex-shrink: 0;
+}
 .history-chip-roman { font-size: 10px; color: #9ca3af; }
 .history-clear-btn {
   padding: 4px 10px;
