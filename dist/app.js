@@ -1,8 +1,8 @@
 "use strict";
 (() => {
   // src/input/midi.ts
-  function isNoteOff(status, velocity) {
-    return (status & 240) === 128 || (status & 240) === 144 && velocity === 0;
+  function isNoteOff(status, velocity2) {
+    return (status & 240) === 128 || (status & 240) === 144 && velocity2 === 0;
   }
   var midiAccess = null;
   var selectedDeviceId = null;
@@ -125,16 +125,53 @@
   }
   function handleMidiMessage(e) {
     if (!e.data || e.data.length < 3) return;
-    const [status, note, velocity] = e.data;
-    if (isNoteOff(status, velocity)) {
-      sound.noteOff(note);
-      handleNoteOff(note);
-    } else if ((status & 240) === 144) {
-      sound.noteOn(note, velocity);
-      handleNoteOn(note);
-    } else if (isSustain(status, note)) {
-      sound.sustain(velocity >= 64);
+    const [status, note, velocity2] = e.data;
+    if (isNoteOff(status, velocity2)) keyUp(note);
+    else if ((status & 240) === 144) keyDown(note, velocity2);
+    else if (isSustain(status, note)) sound.sustain(velocity2 >= 64);
+  }
+  function keyDown(note, velocity2) {
+    sound.noteOn(note, velocity2);
+    handleNoteOn(note);
+  }
+  function keyUp(note) {
+    sound.noteOff(note);
+    handleNoteOff(note);
+  }
+  function setPedal(down) {
+    sound.sustain(down);
+  }
+  function pointerDown(note, velocity2) {
+    if (mode !== "hold") {
+      keyDown(note, velocity2);
+      return;
     }
+    if (activeNotes.delete(note)) {
+      onNoteChange(sortedNotes(activeNotes));
+      return;
+    }
+    sound.noteOn(note, velocity2);
+    activeNotes.add(note);
+    onNoteChange(sortedNotes(activeNotes));
+  }
+  function pointerUp(note) {
+    if (mode !== "hold") {
+      keyUp(note);
+      return;
+    }
+    sound.noteOff(note);
+  }
+  function releaseKeptNotes() {
+    if (mode === "normal") return;
+    const had = activeNotes.size > 0 || arpeggioNotes.length > 0;
+    activeNotes.clear();
+    physicallyHeldNotes.clear();
+    arpeggioNotes = [];
+    if (arpeggioTimer) {
+      clearTimeout(arpeggioTimer);
+      arpeggioTimer = null;
+    }
+    if (had) onNoteChange([]);
   }
   function sortedNotes(s) {
     return Array.from(s).sort((a, b) => a - b);
@@ -183,6 +220,123 @@
   }
   function getMode() {
     return mode;
+  }
+
+  // src/input/computer-keyboard.ts
+  var NOTE_OFFSET = {
+    KeyA: 0,
+    KeyW: 1,
+    KeyS: 2,
+    KeyE: 3,
+    KeyD: 4,
+    KeyF: 5,
+    KeyT: 6,
+    KeyG: 7,
+    KeyY: 8,
+    KeyH: 9,
+    KeyU: 10,
+    KeyJ: 11,
+    KeyK: 12,
+    KeyO: 13,
+    KeyL: 14,
+    KeyP: 15,
+    Semicolon: 16,
+    Quote: 17
+  };
+  var MIN_C = 24;
+  var MAX_C = 96;
+  var VELOCITY_STEP = 20;
+  var enabled = false;
+  var baseC = 60;
+  var velocity = 100;
+  var sounding = /* @__PURE__ */ new Map();
+  var onChange = () => {
+  };
+  function isComputerKeyboardOn() {
+    return enabled;
+  }
+  function computerKeyboardStatus() {
+    return `C${baseC / 12 - 1} \xB7 v${velocity}`;
+  }
+  function setComputerKeyboardChange(cb) {
+    onChange = cb;
+  }
+  function releaseAll() {
+    for (const note of sounding.values()) keyUp(note);
+    sounding.clear();
+    setPedal(false);
+  }
+  function toggleComputerKeyboard(on = !enabled) {
+    if (on === enabled) return;
+    enabled = on;
+    if (!on) releaseAll();
+    onChange();
+  }
+  function isTyping(t) {
+    return t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || t instanceof HTMLElement && t.isContentEditable;
+  }
+  function wireComputerKeyboard() {
+    document.addEventListener("keydown", (e) => {
+      if (!enabled || e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return;
+      const offset = NOTE_OFFSET[e.code];
+      const consume = () => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      };
+      if (offset !== void 0) {
+        consume();
+        if (e.repeat || sounding.has(e.code)) return;
+        const note = baseC + offset;
+        sounding.set(e.code, note);
+        keyDown(note, velocity);
+        return;
+      }
+      switch (e.code) {
+        case "KeyZ":
+          consume();
+          baseC = Math.max(MIN_C, baseC - 12);
+          onChange();
+          break;
+        case "KeyX":
+          consume();
+          baseC = Math.min(MAX_C, baseC + 12);
+          onChange();
+          break;
+        case "KeyC":
+          consume();
+          velocity = Math.max(1, velocity - VELOCITY_STEP);
+          onChange();
+          break;
+        case "KeyV":
+          consume();
+          velocity = Math.min(127, velocity + VELOCITY_STEP);
+          onChange();
+          break;
+        case "Tab":
+          consume();
+          if (!e.repeat) setPedal(true);
+          break;
+        case "KeyM":
+        case "Escape":
+          consume();
+          toggleComputerKeyboard(false);
+          break;
+      }
+    }, true);
+    document.addEventListener("keyup", (e) => {
+      if (!enabled) return;
+      const note = sounding.get(e.code);
+      if (note !== void 0) {
+        sounding.delete(e.code);
+        keyUp(note);
+        e.stopImmediatePropagation();
+        return;
+      }
+      if (e.code === "Tab") setPedal(false);
+    }, true);
+    window.addEventListener("blur", () => {
+      if (enabled) releaseAll();
+    });
   }
 
   // src/theory/notes.ts
@@ -603,13 +757,6 @@
       previewNodes = midis.map((midi) => inst.play(midi, audioCtx.currentTime, { duration, gain: 1 }));
     });
   }
-  function playNoteByName(noteName, duration = 1.5) {
-    const midi = noteNameToMidi(noteName);
-    if (midi === null) return;
-    const inst = playableInstrument();
-    if (!inst) return;
-    whenRunning(() => inst.play(midi, audioCtx.currentTime, { duration, gain: 1 }));
-  }
   function playNoteNames(noteNames, duration = 2) {
     playPreview(noteNames.map(noteNameToMidi).filter((m) => m !== null), duration);
   }
@@ -619,20 +766,20 @@
   var liveNodes = /* @__PURE__ */ new Map();
   var sustainedNotes = /* @__PURE__ */ new Set();
   var pedalDown = false;
-  function velocityGain(velocity) {
-    return Math.max(0, Math.min(127, velocity)) / 127;
+  function velocityGain(velocity2) {
+    return Math.max(0, Math.min(127, velocity2)) / 127;
   }
   function stopLive(midi) {
     stopNode(liveNodes.get(midi));
     liveNodes.delete(midi);
   }
-  function liveNoteOn(midi, velocity) {
+  function liveNoteOn(midi, velocity2) {
     const inst = playableInstrument();
     if (!inst) return;
     whenRunning(() => {
       stopLive(midi);
       sustainedNotes.delete(midi);
-      liveNodes.set(midi, inst.play(midi, audioCtx.currentTime, { gain: velocityGain(velocity) }));
+      liveNodes.set(midi, inst.play(midi, audioCtx.currentTime, { gain: velocityGain(velocity2) }));
     });
   }
   function liveNoteOff(midi) {
@@ -674,7 +821,7 @@ K:${abcKey}
   }
 
   // src/diagrams/piano.ts
-  function renderPiano(container, noteNames, chordSymbol) {
+  function renderPiano(container, noteNames, chordSymbol, onPress) {
     const color = chordSymbol ? chordColor(chordSymbol) : NEUTRAL_COLOR;
     const colors = noteNames.map(() => color);
     container.innerHTML = Notae.renderPiano({
@@ -684,9 +831,14 @@ K:${abcKey}
       range: { from: "C2", to: "B5" }
     });
     container.querySelectorAll("rect[data-note]").forEach((el) => {
-      const note = el.dataset.note;
+      const midi = noteNameToMidi(el.dataset.note);
+      if (midi === null) return;
       el.style.cursor = "pointer";
-      el.addEventListener("click", () => playNoteByName(note));
+      el.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        onPress?.(midi);
+      });
     });
   }
 
@@ -712,10 +864,10 @@ K:${abcKey}
     return m ? m[1].toUpperCase() + m[2] : null;
   }
   function isPlayable(v, openMidi, bassPc) {
-    const sounding = v.frets.map((f, i) => f >= 0 ? i : -1).filter((i) => i >= 0);
-    if (sounding.length < MIN_STRINGS) return false;
-    if (sounding[sounding.length - 1] - sounding[0] + 1 !== sounding.length) return false;
-    const lowest = openMidi[sounding[0]] + v.frets[sounding[0]];
+    const sounding2 = v.frets.map((f, i) => f >= 0 ? i : -1).filter((i) => i >= 0);
+    if (sounding2.length < MIN_STRINGS) return false;
+    if (sounding2[sounding2.length - 1] - sounding2[0] + 1 !== sounding2.length) return false;
+    const lowest = openMidi[sounding2[0]] + v.frets[sounding2[0]];
     if (lowest % 12 !== bassPc) return false;
     const fretted = v.frets.filter((f) => f > 0);
     if (fretted.length === 0) return true;
@@ -1172,25 +1324,25 @@ K:${abcKey}
   var entries = [];
   var debounceTimer = null;
   var lastAutoAppended = null;
-  var onChange = () => {
+  var onChange2 = () => {
   };
   function setHistoryChangeCallback(cb) {
-    onChange = cb;
+    onChange2 = cb;
   }
   function addEntry(symbol, notes) {
     const entry = { id: crypto.randomUUID(), symbol, notes };
     entries = [entry, ...entries].slice(0, MAX_ENTRIES);
-    onChange(entries);
+    onChange2(entries);
   }
   function removeEntry(id) {
     entries = entries.filter((e) => e.id !== id);
     lastAutoAppended = entries[0]?.symbol ?? null;
-    onChange(entries);
+    onChange2(entries);
   }
   function restoreEntries(list) {
     entries = list.slice(0, MAX_ENTRIES);
     lastAutoAppended = entries[0]?.symbol ?? null;
-    onChange(entries);
+    onChange2(entries);
   }
   function clearHistoryWithUndo() {
     if (!entries.length) return;
@@ -1201,7 +1353,7 @@ K:${abcKey}
   function clearHistory() {
     entries = [];
     lastAutoAppended = null;
-    onChange(entries);
+    onChange2(entries);
   }
   function notifyChordDetected(symbol, notes) {
     if (debounceTimer) clearTimeout(debounceTimer);
@@ -2319,7 +2471,9 @@ K:${abcKey}
     { key: "A", action: "Toggle Arpeggio mode" },
     { key: "S", action: "Send history chip \u2192 Song" },
     { key: "C", action: "Clear history (undo in the toast)" },
-    { key: "Esc", action: "Clear cursor / stop MIDI fill" },
+    { key: "Esc", action: "Drop a held chord, clear cursor, stop MIDI fill" },
+    { key: "M", action: "Play with the computer keyboard (M or Esc to stop)" },
+    { key: "/", action: "Type a chord name" },
     { key: "1\u20139", action: "Select chord candidate" },
     { key: "?", action: "Show / hide this panel" }
   ];
@@ -2329,7 +2483,8 @@ K:${abcKey}
     "A chord is logged to history once held steady for 0.8 s, and not twice in a row.",
     "Drag a history chip onto a song measure to insert it; drag song chords and section headers to reorder.",
     "\u2299 on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.",
-    "Right-click a history chip to remove it. Removals and Clear can be undone from the toast."
+    "Right-click a history chip to remove it. Removals and Clear can be undone from the toast.",
+    "Click the on-screen piano to play: in Hold each click adds or removes a note of the chord."
   ];
   var helpVisible = false;
   function closeHelp() {
@@ -2400,6 +2555,14 @@ K:${abcKey}
         case "?":
           e.preventDefault();
           toggleHelp();
+          break;
+        case "m":
+        case "M":
+          actions.toggleComputerKeyboard();
+          break;
+        case "/":
+          e.preventDefault();
+          actions.focusChordInput();
           break;
         case "ArrowLeft":
         case "ArrowRight":
@@ -2552,11 +2715,14 @@ K:${abcKey}
       <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
       <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
+      <button id="btn-keyboard" class="mode-btn" title="Play with the computer keyboard (M): A-\xD1 white keys, W E T Y U O P black, Z/X octave, C/V velocity, Tab sustain">\u2328</button>
+      <span id="keyboard-status" class="auto-key-label"></span>
       <select id="key-select" class="ctrl-select">
         <option value="">Key: Auto</option>
         ${ALL_KEYS.map((k) => `<option value="${k}">${k}</option>`).join("")}
       </select>
       <span id="auto-key-label" class="auto-key-label"></span>
+      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="Chord\u2026 (/)" title="Type a chord name and press Enter" autocomplete="off" spellcheck="false">
       <span class="toolbar-sep"></span>
       <div id="audio-progress" class="audio-progress" title="Soundfont status">
         <div id="audio-progress-fill" class="audio-progress-fill"></div>
@@ -2755,6 +2921,22 @@ K:${abcKey}
     preloadAudio();
     buildLayout();
     wireShortcuts();
+    wireComputerKeyboard();
+    setComputerKeyboardChange(updateComputerKeyboardButton);
+    $2("btn-keyboard").addEventListener("click", () => {
+      initAudioOnGesture();
+      toggleComputerKeyboard();
+    });
+    window.addEventListener("pointerup", onPianoRelease);
+    window.addEventListener("pointercancel", onPianoRelease);
+    const chordInput = $2("typed-chord");
+    chordInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submitTypedChord(chordInput);
+      } else if (e.key === "Escape") chordInput.blur();
+    });
+    chordInput.addEventListener("input", () => chordInput.classList.remove("invalid"));
     setModeBtn(getMode());
     renderDetector();
     initMidi().then((result) => {
@@ -2944,7 +3126,7 @@ K:${abcKey}
     if (state.activeKey) {
       $2("key-select").value = state.activeKey;
     }
-    document.querySelectorAll(".mode-btn").forEach((btn) => {
+    document.querySelectorAll(".mode-btn[data-mode]").forEach((btn) => {
       btn.addEventListener("click", () => setModeBtn(btn.dataset.mode));
     });
     $2("key-select").addEventListener("change", (e) => {
@@ -3117,12 +3299,38 @@ K:${abcKey}
     lastRenderSig[name] = sig;
     render();
   }
+  var PIANO_VELOCITY = 90;
+  var pianoNote = null;
+  function onPianoPress(midi) {
+    if (pianoNote !== null) pointerUp(pianoNote);
+    pianoNote = midi;
+    pointerDown(midi, PIANO_VELOCITY);
+  }
+  function onPianoRelease() {
+    if (pianoNote === null) return;
+    pointerUp(pianoNote);
+    pianoNote = null;
+  }
+  function submitTypedChord(input) {
+    const symbol = normalizeChordName(input.value.trim());
+    if (!symbol) return;
+    const valid = isKnownChord(symbol);
+    input.classList.toggle("invalid", !valid);
+    if (!valid) return;
+    showChord(symbol, void 0, null);
+    playChord(symbol);
+  }
+  function updateComputerKeyboardButton() {
+    const on = isComputerKeyboardOn();
+    $2("btn-keyboard").classList.toggle("active-mode", on);
+    $2("keyboard-status").textContent = on ? computerKeyboardStatus() : "";
+  }
   function renderZone1Diagrams(noteNames, chordSymbol) {
     const key = analysisKey();
     const notes = noteNames.join(" ");
     const cofOpts = { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
     renderIfChanged("staff", `${notes}|${key}|${staffScale}`, () => renderStaff($2("staff-container"), noteNames, staffWidth, key, staffScale));
-    renderIfChanged("piano", `${notes}|${chordSymbol}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol));
+    renderIfChanged("piano", `${notes}|${chordSymbol}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress));
     renderIfChanged("neck", `${notes}|${keyPrefersSharps(key)}`, () => renderNeck($2("neck-container"), noteNames, !keyPrefersSharps(key)));
     renderIfChanged("guitar", `${chordSymbol}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames));
     renderIfChanged("cof", `${key}|${chordSymbol}|${cofSize}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, cofSize, cofOpts));
@@ -3220,7 +3428,13 @@ K:${abcKey}
         deleteChordAtCursor();
         return true;
       },
+      toggleComputerKeyboard: () => {
+        initAudioOnGesture();
+        toggleComputerKeyboard(true);
+      },
+      focusChordInput: () => $2("typed-chord").focus(),
       escape: () => {
+        releaseKeptNotes();
         cancelCapture();
         state.activeCursorId = null;
         state.captureTargetId = null;
@@ -3270,7 +3484,7 @@ K:${abcKey}
   }
   function setModeBtn(mode2) {
     setMode(mode2);
-    document.querySelectorAll(".mode-btn").forEach((b) => {
+    document.querySelectorAll(".mode-btn[data-mode]").forEach((b) => {
       b.classList.toggle("active-mode", b.dataset.mode === mode2);
     });
   }

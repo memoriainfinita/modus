@@ -6,7 +6,9 @@ const SHORTCUTS: { key: string; action: string }[] = [
   { key: 'A',     action: 'Toggle Arpeggio mode' },
   { key: 'S',     action: 'Send history chip → Song' },
   { key: 'C',     action: 'Clear history (undo in the toast)' },
-  { key: 'Esc',   action: 'Clear cursor / stop MIDI fill' },
+  { key: 'Esc',   action: 'Drop a held chord, clear cursor, stop MIDI fill' },
+  { key: 'M',     action: 'Play with the computer keyboard (M or Esc to stop)' },
+  { key: '/',     action: 'Type a chord name' },
   { key: '1–9',   action: 'Select chord candidate' },
   { key: '?',     action: 'Show / hide this panel' },
 ]
@@ -19,6 +21,7 @@ const GESTURES: string[] = [
   'Drag a history chip onto a song measure to insert it; drag song chords and section headers to reorder.',
   '⊙ on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.',
   'Right-click a history chip to remove it. Removals and Clear can be undone from the toast.',
+  'Click the on-screen piano to play: in Hold each click adds or removes a note of the chord.',
 ]
 
 let helpVisible = false
@@ -73,6 +76,8 @@ export interface KeyActions {
   deleteAtCursor: () => boolean
   escape: () => void
   selectCandidate: (index: number) => void
+  toggleComputerKeyboard: () => void
+  focusChordInput: () => void
 }
 
 export function wireKeyboard(actions: KeyActions) {
@@ -90,6 +95,8 @@ export function wireKeyboard(actions: KeyActions) {
       case 's': case 'S': actions.sendToSong(); break
       case 'c': case 'C': actions.clearHistory(); break
       case '?': e.preventDefault(); toggleHelp(); break
+      case 'm': case 'M': actions.toggleComputerKeyboard(); break
+      case '/': e.preventDefault(); actions.focusChordInput(); break
       case 'ArrowLeft': case 'ArrowRight':
         e.preventDefault()
         actions.step(e.key === 'ArrowRight' ? 1 : -1); break

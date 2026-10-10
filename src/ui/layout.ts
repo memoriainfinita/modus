@@ -61,11 +61,14 @@ function buildToolbar(): string {
       <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
       <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
+      <button id="btn-keyboard" class="mode-btn" title="Play with the computer keyboard (M): A-Ñ white keys, W E T Y U O P black, Z/X octave, C/V velocity, Tab sustain">⌨</button>
+      <span id="keyboard-status" class="auto-key-label"></span>
       <select id="key-select" class="ctrl-select">
         <option value="">Key: Auto</option>
         ${ALL_KEYS.map(k => `<option value="${k}">${k}</option>`).join('')}
       </select>
       <span id="auto-key-label" class="auto-key-label"></span>
+      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="Chord… (/)" title="Type a chord name and press Enter" autocomplete="off" spellcheck="false">
       <span class="toolbar-sep"></span>
       <div id="audio-progress" class="audio-progress" title="Soundfont status">
         <div id="audio-progress-fill" class="audio-progress-fill"></div>

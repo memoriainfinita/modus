@@ -167,15 +167,55 @@ function handleMidiMessage(e: MIDIMessageEvent) {
   if (!e.data || e.data.length < 3) return
   const [status, note, velocity] = e.data
 
-  if (isNoteOff(status, velocity)) {
-    sound.noteOff(note)
-    handleNoteOff(note)
-  } else if ((status & 0xF0) === 0x90) {
-    sound.noteOn(note, velocity)
-    handleNoteOn(note)
-  } else if (isSustain(status, note)) {
-    sound.sustain(velocity >= 64)
-  }
+  if (isNoteOff(status, velocity)) keyUp(note)
+  else if ((status & 0xF0) === 0x90) keyDown(note, velocity)
+  else if (isSustain(status, note)) sound.sustain(velocity >= 64)
+}
+
+// ─── Other inputs ────────────────────────────────────────────────────────────
+// The computer keyboard plays like a controller; the on-screen piano too, except in Hold,
+// where a click adds the note to the chord and a second click takes it out (a mouse can
+// press one key at a time, so it builds the chord note by note).
+
+/** A key pressed on any input: sound and the current mode. */
+export function keyDown(note: number, velocity: number) {
+  sound.noteOn(note, velocity)
+  handleNoteOn(note)
+}
+
+/** A key released on any input. */
+export function keyUp(note: number) {
+  sound.noteOff(note)
+  handleNoteOff(note)
+}
+
+/** Sustain pedal from any input. */
+export function setPedal(down: boolean) { sound.sustain(down) }
+
+/** On-screen piano press. */
+export function pointerDown(note: number, velocity: number) {
+  if (mode !== 'hold') { keyDown(note, velocity); return }
+  if (activeNotes.delete(note)) { onNoteChange(sortedNotes(activeNotes)); return }
+  sound.noteOn(note, velocity)
+  activeNotes.add(note)
+  onNoteChange(sortedNotes(activeNotes))
+}
+
+/** On-screen piano release: the sound stops; in Hold the note stays in the chord. */
+export function pointerUp(note: number) {
+  if (mode !== 'hold') { keyUp(note); return }
+  sound.noteOff(note)
+}
+
+/** Esc: drops the notes a mode is keeping (Hold chord, pending arpeggio). */
+export function releaseKeptNotes() {
+  if (mode === 'normal') return
+  const had = activeNotes.size > 0 || arpeggioNotes.length > 0
+  activeNotes.clear()
+  physicallyHeldNotes.clear()
+  arpeggioNotes = []
+  if (arpeggioTimer) { clearTimeout(arpeggioTimer); arpeggioTimer = null }
+  if (had) onNoteChange([])
 }
 
 function sortedNotes(s: Set<number>): number[] {
