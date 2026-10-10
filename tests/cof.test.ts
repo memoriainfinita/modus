@@ -63,7 +63,7 @@ describe('circle of fifths: degrees', () => {
   it('each diminished segment shows its own degree', () => {
     const t = degrees(render('C Major', { showDegrees: true }))
     expect(t).toContain('vii°')
-    expect(t).toContain('♭v°')   // F#° in C
+    expect(t).toContain('♯iv°')   // F#° in C, by its letter as the analysis panel reads it
     expect(t.filter(x => x === 'vii°')).toHaveLength(1)
   })
 

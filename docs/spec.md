@@ -163,7 +163,7 @@ Four columns, toggled with [St][An][CoF][Git].
 
 **Analysis:** the fields above.
 
-**Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: size, b/♯, minor/dim rings, degree labels, seventh labels. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring; degrees count from the tonic.
+**Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: size, b/♯, minor/dim rings, degree labels, seventh labels. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring. Degrees are the ones the analysis fields give (`analyzeProgression`), counted from the tonic: F#° in C is ♯iv°.
 
 **Guitar:** `UMT.getFretboardVoicings(chord, tuning)` kept only when playable — bass lowest, contiguous strings, four-fret span, open strings only in first position — ordered along the neck; ‹/› to browse. Tunings: Standard, Drop D, Open G, custom per string. String labels: off / tuning / notes. Fret spacing −/+. Rendered by notae.
 

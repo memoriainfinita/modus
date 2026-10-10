@@ -12,14 +12,15 @@ What is true now. What already happened lives in `state-history.md`.
 **Modus** — see and understand the harmony of what you play, in real time. Aimed at being a complete, professional, useful, universal and didactic app, for studying, transcribing songs, composing, teaching and making videos. No time or budget limits, no marketing or profit goals. GPL-3.0, part of the **memoriainfinita** ecosystem: UMT (developed for Modus, all theory) and notae (diagrams).
 
 - **Spec:** `docs/spec.md` (purpose, design, behaviour) · **UMT contract:** `docs/umt-contract.md` · Executed plans and earlier spec revisions in `.archive/` (local, gitignored)
-- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to `777f1e3`, notae to `81b58de`
+- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to `ac10838`, notae to `81b58de`
 
 ## Status
 
 - Working: detector, analysis, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
 - Tests 2026-10-10: TSC clean, 236 unit tests against the real UMT bundle, `pnpm test:e2e` 43/43 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox; not rerun after the key panel, which does not touch MIDI). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
-- UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
+- UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `ac10838` (audit phase 1: letters in notes and numerals) the same day: all tests pass unchanged. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
+- CoF degrees come from UMT since 2026-10-10 (they had their own semitone table). UMT reads a chromatic chord by the letter `spellChordInKey` picks, not the one written: Gb in C shows ♯IV (reported in the UMT notes)
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
 - Interface languages: English and Spanish (today English only). Docs, code and commits stay in English
