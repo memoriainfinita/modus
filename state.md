@@ -18,7 +18,7 @@ What is true now. What already happened lives in `state-history.md`.
 
 - Working: detector, analysis, history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-10: TSC clean, 225 unit tests against the real UMT bundle, `pnpm test:e2e` 38/38 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present
+- Tests 2026-10-10: TSC clean, 225 unit tests against the real UMT bundle, `pnpm test:e2e` 42/42 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
@@ -71,9 +71,6 @@ Items 1-3 need new UMT functions or UMT fixes: requested in `umt/docs/notas-desd
 ### Analysis, not yet ordered (agreed 2026-10-09)
 
 Input
-- [ ] Clicking the on-screen piano feeds the detector (today it only sounds the note, `diagrams/piano.ts:17`)
-- [ ] Computer keyboard as note input
-- [ ] Type a chord name in the detector and see it on every diagram
 - [ ] MIDI channel filtering
 
 Visualization
