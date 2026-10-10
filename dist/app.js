@@ -918,6 +918,14 @@ K:${abcKey}
   }
   var EMPTY_FRETBOARD = { name: "", frets: [null, null, null, null, null, null], tuning: ["E", "A", "D", "G", "B", "E"] };
   var guitarVoicingIdx = 0;
+  var onVoicingChange = () => {
+  };
+  function getGuitarVoicingIndex() {
+    return guitarVoicingIdx;
+  }
+  function setGuitarVoicingChange(cb) {
+    onVoicingChange = cb;
+  }
   var lastGuitarSymbol = null;
   var lastNoteNames = [];
   var guitarLabelMode = loadChoice("guitar-label-mode", ["none", "tuning", "notes"], "none");
@@ -1053,7 +1061,7 @@ K:${abcKey}
       });
     });
   }
-  function renderGuitar(container, chordSymbol, noteNames = []) {
+  function renderGuitar(container, chordSymbol, noteNames = [], voicingIndex) {
     lastNoteNames = noteNames;
     if (!chordSymbol) {
       guitarVoicingIdx = 0;
@@ -1071,6 +1079,7 @@ K:${abcKey}
       guitarVoicingIdx = 0;
       lastGuitarSymbol = chordSymbol;
     }
+    if (voicingIndex !== void 0) guitarVoicingIdx = voicingIndex;
     const openMidi = tuningToMidi(guitarStringTuning) ?? tuningToMidi(GUITAR_TUNINGS.standard.notae);
     const umtTuning = openMidi.map((m) => m - 69);
     const chord = tryParseChord(chordSymbol);
@@ -1096,49 +1105,58 @@ K:${abcKey}
       btn.addEventListener("click", () => {
         guitarVoicingIdx = (idx + parseInt(btn.dataset.dir) + total) % total;
         renderGuitar(container, lastGuitarSymbol, lastNoteNames);
+        onVoicingChange(guitarVoicingIdx);
       });
     });
     wireGuitarControls(container);
   }
 
-  // src/diagrams/neck.ts
-  var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
-  var NECK_FRETS = 12;
-  var neckSpacing = loadNumber("neck-spacing", 16, 10, 28);
-  function adjustNeckSpacing(delta) {
-    neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta));
-    save("neck-spacing", neckSpacing);
-  }
-  function renderNeck(container, noteNames, preferFlats = true) {
-    const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
-    const frets = OPEN_MIDI.map((open) => {
-      const pos = midi.map((n) => n - open).filter((f) => f >= 0 && f <= NECK_FRETS);
-      return pos.length ? pos : [null];
-    });
-    const sp = neckSpacing;
-    const style = {
-      ...DARK_FRETBOARD_STYLE,
-      numFrets: NECK_FRETS,
-      dotColor: "#3b82f6",
-      chordNameSize: 0,
-      chordNameY: 4,
-      chordNameGapH: 4,
-      stringSpacing: sp,
-      fretSpacing: Math.round(sp * 28 / 16),
-      dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
-      fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
-      showNoteNames: true,
-      preferFlats
-    };
+  // src/view/channel.ts
+  var VIEW_NAMES = ["chord", "staff", "cof", "piano", "guitar"];
+  var VIEW_BACKGROUNDS = { green: "#00ff00", magenta: "#ff00ff", black: "#000000", dark: "#1a1a2e" };
+  var NAME = "modus-view";
+  function open() {
     try {
-      container.innerHTML = Notae.renderFretboard(
-        { name: "", frets, tuning: ["E", "A", "D", "G", "B", "E"] },
-        { ...style, orientation: "horizontal" }
-      );
+      return new BroadcastChannel(NAME);
     } catch {
-      container.innerHTML = "";
+      return null;
     }
   }
+  function createViewPublisher() {
+    const channel = open();
+    let current2 = null;
+    let last = "";
+    channel?.addEventListener("message", (e) => {
+      if (e.data?.type === "hello" && current2) channel.postMessage({ type: "state", state: current2 });
+    });
+    return (state2) => {
+      current2 = state2;
+      const sig = JSON.stringify(state2);
+      if (sig === last) return;
+      last = sig;
+      channel?.postMessage({ type: "state", state: state2 });
+    };
+  }
+  function subscribeView(onState) {
+    const channel = open();
+    channel?.addEventListener("message", (e) => {
+      if (e.data?.type === "state") onState(e.data.state);
+    });
+    channel?.postMessage({ type: "hello" });
+  }
+  function viewUrl(view, bg, base = location.href) {
+    const url = new URL(base);
+    url.search = new URLSearchParams({ view, bg }).toString();
+    url.hash = "";
+    return url.toString();
+  }
+  var VIEW_WINDOW = {
+    chord: [640, 360],
+    staff: [800, 320],
+    cof: [520, 520],
+    piano: [960, 300],
+    guitar: [380, 460]
+  };
 
   // src/diagrams/cof.ts
   var CIRCLE_KEYS_FLAT = ["C", "G", "D", "A", "E", "B", "Gb", "Db", "Ab", "Eb", "Bb", "F"];
@@ -1181,6 +1199,7 @@ K:${abcKey}
     const TIP = "Click: play \xB7 double-click: set as key";
     const diatonicPos = activePos !== -1 ? /* @__PURE__ */ new Set([(activePos + 11) % 12, activePos, (activePos + 1) % 12]) : /* @__PURE__ */ new Set();
     let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`;
+    if (opts.backdrop) svg += `<circle cx="${size / 2}" cy="${size / 2}" r="${size * 0.43}" fill="${opts.backdrop}"/>`;
     keys.forEach((key, i) => {
       const angle = (i * 30 - 90) * Math.PI / 180;
       const nextAngle = ((i + 1) * 30 - 90) * Math.PI / 180;
@@ -1246,6 +1265,191 @@ K:${abcKey}
     container.querySelectorAll("[data-chord]").forEach((el) => {
       el.addEventListener("click", () => onSegmentClick(el.dataset.chord, el.dataset.key ?? null));
     });
+  }
+
+  // src/ui/html.ts
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+
+  // src/view/viewer.ts
+  var FUNCTION_NAMES = { T: "Tonic", S: "Subdominant", D: "Dominant" };
+  function fitSvg(svg) {
+    if (!svg) return;
+    if (!svg.getAttribute("viewBox")) {
+      const w = parseFloat(svg.getAttribute("width") ?? ""), h = parseFloat(svg.getAttribute("height") ?? "");
+      if (w > 0 && h > 0) svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    }
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
+    svg.style.width = "100%";
+    svg.style.height = "100%";
+  }
+  function cofOptions() {
+    return {
+      accidental: loadChoice("cof-accidental", ["flat", "sharp"], "flat"),
+      showMinor: loadBool("cof-show-minor", true),
+      showDegrees: loadBool("cof-show-degrees", false),
+      show7ths: loadBool("cof-show-7ths", false)
+    };
+  }
+  function renderChordView(el, s) {
+    if (!s.label) {
+      el.innerHTML = "";
+      return;
+    }
+    const color = s.symbol ? chordColor(s.symbol) : NEUTRAL_COLOR;
+    const detail = s.kind === "chord" && s.roman && s.roman !== "?" ? [s.roman, s.function ? FUNCTION_NAMES[s.function] : null].filter(Boolean).join(" \xB7 ") : "";
+    el.innerHTML = `
+    <div class="view-chord-name" style="color:${color}">${escapeHtml(s.label)}</div>
+    ${detail ? `<div class="view-chord-detail">${escapeHtml(detail)}</div>` : ""}`;
+  }
+  function render(view, el, s) {
+    if (view === "chord") return renderChordView(el, s);
+    if (view === "staff") {
+      el.innerHTML = "<div></div>";
+      const inner = el.firstElementChild;
+      renderStaff(inner, s.notes, 200, s.key, 1);
+      inner.style.height = "100%";
+      inner.style.width = "100%";
+    } else if (view === "cof") renderCircleOfFifths(el, s.key, s.symbol, () => {
+    }, 400, { ...cofOptions(), backdrop: "#1a1a2e" });
+    else if (view === "piano") renderPiano(el, s.notes, s.symbol);
+    else if (view === "guitar") renderGuitar(el, s.symbol, s.notes, s.guitarVoicing);
+    fitSvg(el.querySelector("svg"));
+  }
+  function runViewerFromUrl() {
+    const params = new URLSearchParams(location.search);
+    const view = params.get("view");
+    if (!view || !VIEW_NAMES.includes(view)) return false;
+    const bg = params.get("bg") ?? "green";
+    const background = VIEW_BACKGROUNDS[bg] ?? VIEW_BACKGROUNDS.green;
+    document.title = `Modus view: ${view}`;
+    document.body.classList.add("view-mode");
+    document.body.style.background = background;
+    document.getElementById("app").style.display = "none";
+    const el = document.createElement("div");
+    el.id = "view-content";
+    el.className = `view-${view}`;
+    document.body.appendChild(el);
+    subscribeView((s) => render(view, el, s));
+    window.addEventListener("storage", (e) => {
+      if (e.key && /^(guitar-|cof-)/.test(e.key)) location.reload();
+    });
+    return true;
+  }
+
+  // src/ui/export.ts
+  var CONTAINERS = {
+    staff: "#staff-container",
+    cof: "#cof-container",
+    guitar: "#guitar-container",
+    piano: "#piano-container"
+  };
+  var PAD = 4;
+  function diagramSvg(target) {
+    const source = document.querySelector(`${CONTAINERS[target]} svg`);
+    if (!source) return null;
+    const bb = source.getBBox();
+    if (!bb.width || !bb.height) return null;
+    const rect = source.getBoundingClientRect();
+    const vb = source.viewBox.baseVal;
+    const units = vb && vb.width ? vb.width : parseFloat(source.getAttribute("width") ?? "") || rect.width;
+    const screenScale = rect.width / units || 1;
+    const x = bb.x - PAD, y = bb.y - PAD, w = bb.width + 2 * PAD, h = bb.height + 2 * PAD;
+    const copy = source.cloneNode(true);
+    copy.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    copy.removeAttribute("style");
+    if (target === "cof" && vb?.width) {
+      const disc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      disc.setAttribute("cx", String(vb.width / 2));
+      disc.setAttribute("cy", String(vb.height / 2));
+      disc.setAttribute("r", String(vb.width * 0.43));
+      disc.setAttribute("fill", getComputedStyle(document.body).backgroundColor);
+      copy.insertBefore(disc, copy.firstChild);
+    }
+    copy.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
+    const width = Math.round(w * screenScale), height = Math.round(h * screenScale);
+    copy.setAttribute("width", String(width));
+    copy.setAttribute("height", String(height));
+    copy.style.color = getComputedStyle(source).color;
+    copy.style.fontFamily = getComputedStyle(source).fontFamily;
+    return { svg: new XMLSerializer().serializeToString(copy), width, height };
+  }
+  function download(blob, name) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
+  }
+  var fileName = (target, label, ext) => `modus-${target}${label ? "-" + label.replace(/[^\w#-]+/g, "_") : ""}.${ext}`;
+  async function exportDiagram(target, format, label, scale = 3) {
+    const d = diagramSvg(target);
+    if (!d) return false;
+    const svgBlob = new Blob([d.svg], { type: "image/svg+xml" });
+    if (format === "svg") {
+      download(svgBlob, fileName(target, label, "svg"));
+      return true;
+    }
+    const url = URL.createObjectURL(svgBlob);
+    try {
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = reject;
+        img.src = url;
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = d.width * scale;
+      canvas.height = d.height * scale;
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      const png = await new Promise((r) => canvas.toBlob(r, "image/png"));
+      if (!png) return false;
+      download(png, fileName(target, label, "png"));
+      return true;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  // src/diagrams/neck.ts
+  var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
+  var NECK_FRETS = 12;
+  var neckSpacing = loadNumber("neck-spacing", 16, 10, 28);
+  function adjustNeckSpacing(delta) {
+    neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta));
+    save("neck-spacing", neckSpacing);
+  }
+  function renderNeck(container, noteNames, preferFlats = true) {
+    const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
+    const frets = OPEN_MIDI.map((open2) => {
+      const pos = midi.map((n) => n - open2).filter((f) => f >= 0 && f <= NECK_FRETS);
+      return pos.length ? pos : [null];
+    });
+    const sp = neckSpacing;
+    const style = {
+      ...DARK_FRETBOARD_STYLE,
+      numFrets: NECK_FRETS,
+      dotColor: "#3b82f6",
+      chordNameSize: 0,
+      chordNameY: 4,
+      chordNameGapH: 4,
+      stringSpacing: sp,
+      fretSpacing: Math.round(sp * 28 / 16),
+      dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
+      fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
+      showNoteNames: true,
+      preferFlats
+    };
+    try {
+      container.innerHTML = Notae.renderFretboard(
+        { name: "", frets, tuning: ["E", "A", "D", "G", "B", "E"] },
+        { ...style, orientation: "horizontal" }
+      );
+    } catch {
+      container.innerHTML = "";
+    }
   }
 
   // src/theory/spelling.ts
@@ -1338,14 +1542,9 @@ K:${abcKey}
     return pc(ca.rootStep) === pc(cb.rootStep) && (ca.intervalsInSteps ?? []).join() === (cb.intervalsInSteps ?? []).join() && pc(ca.bassStep) === pc(cb.bassStep);
   }
 
-  // src/ui/html.ts
-  function escapeHtml(text) {
-    return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  }
-
   // src/diagrams/key-explorer.ts
-  var FUNCTION_NAMES = { T: "Tonic", S: "Subdominant", D: "Dominant", unknown: "Unknown function" };
-  var describe = (c) => [c.roman, c.secondary && `also ${c.secondary}`, FUNCTION_NAMES[c.function]].filter(Boolean).join(" \xB7 ");
+  var FUNCTION_NAMES2 = { T: "Tonic", S: "Subdominant", D: "Dominant", unknown: "Unknown function" };
+  var describe = (c) => [c.roman, c.secondary && `also ${c.secondary}`, FUNCTION_NAMES2[c.function]].filter(Boolean).join(" \xB7 ");
   function renderKeyExplorer(container, map, keyLabel, activeChord, onChordClick, opts) {
     container.style.fontSize = opts.fontScale + "px";
     if (!map) {
@@ -1358,7 +1557,7 @@ K:${abcKey}
     <div class="key-cell">
       <span class="key-roman">${escapeHtml(c.roman)}</span>
       ${button(c.symbol, "", describe(c))}
-      <span class="key-function key-fn-${c.function}" title="${FUNCTION_NAMES[c.function]}">${c.function === "unknown" ? "\xB7" : c.function}</span>
+      <span class="key-function key-fn-${c.function}" title="${FUNCTION_NAMES2[c.function]}">${c.function === "unknown" ? "\xB7" : c.function}</span>
     </div>`;
     let html = `<div class="key-main"><div class="key-title">${escapeHtml(keyLabel)}</div>`;
     html += `<div class="key-grid">${map.diatonic.map(cell).join("")}</div>`;
@@ -2083,9 +2282,9 @@ K:${abcKey}
     });
     exportBtn.title = "Print / export song to PDF";
     const pasteBtn = makeBtn("Paste", "#374151", () => {
-      const open = pasteArea.style.display === "none";
-      pasteArea.style.display = open ? "block" : "none";
-      if (open) pasteTA.focus();
+      const open2 = pasteArea.style.display === "none";
+      pasteArea.style.display = open2 ? "block" : "none";
+      if (open2) pasteTA.focus();
     });
     pasteBtn.title = "Paste a chord progression as text";
     header.append(songSelect, titleInput, newBtn, deleteBtn, templateWrap, transposeSelect, exportBtn, pasteBtn);
@@ -2780,6 +2979,7 @@ K:${abcKey}
   }
 
   // src/ui/layout.ts
+  var VIEW_LABELS = { chord: "Chord", staff: "Staff", cof: "Circle of Fifths", piano: "Piano", guitar: "Guitar" };
   var $ = (id) => document.getElementById(id);
   function loadPanels() {
     return {
@@ -2844,6 +3044,25 @@ K:${abcKey}
     ).join("")}
       </select>
       <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
+      <div class="view-menu-wrap">
+        <button id="btn-views" class="ctrl-btn" title="View windows for OBS, and diagram export (SVG, PNG)">\u29C9</button>
+        <div id="view-menu" class="view-menu">
+          <div class="view-menu-title">Open a view window</div>
+          ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${VIEW_LABELS[v]}</button>`).join("")}
+          <label class="view-menu-bg">Background
+            <select id="view-bg" class="ctrl-select">
+              ${Object.keys(VIEW_BACKGROUNDS).map((b) => `<option value="${b}">${b}</option>`).join("")}
+            </select>
+          </label>
+          <div class="view-menu-hint">In OBS: Window Capture of "Modus view: \u2026", then a Chroma Key filter. The window follows this one live.</div>
+          <div class="view-menu-title">Save the diagram on screen (transparent)</div>
+          ${["staff", "cof", "guitar", "piano"].map((t) => `
+            <div class="view-menu-export"><span>${VIEW_LABELS[t]}</span>
+              <button class="ctrl-btn" data-export="${t}" data-format="svg">SVG</button>
+              <button class="ctrl-btn" data-export="${t}" data-format="png">PNG</button>
+            </div>`).join("")}
+        </div>
+      </div>
       <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
     </div>`;
   }
@@ -3159,8 +3378,8 @@ K:${abcKey}
       },
       onNewSong: () => showSong(newSong()),
       onDeleteSong: () => {
-        const { deleted, open } = deleteSong(state.song.id);
-        showSong(open);
+        const { deleted, open: open2 } = deleteSong(state.song.id);
+        showSong(open2);
         if (deleted) showUndo(`Deleted "${deleted.title}"`, () => {
           restoreSong(deleted);
           showSong(deleted);
@@ -3293,6 +3512,7 @@ K:${abcKey}
       save("key-show-coltrane", keyShowColtrane);
     });
     wirePanelToggles(state.panels);
+    wireViewMenu();
     if (state.activeKey) {
       $2("key-select").value = state.activeKey;
     }
@@ -3350,6 +3570,54 @@ K:${abcKey}
   function renderDetector() {
     renderAnalysisPanel();
     renderDiagrams();
+    publishView();
+  }
+  var sendView = createViewPublisher();
+  function publishView() {
+    const d = state.detection;
+    sendView({
+      key: analysisKey(),
+      kind: d?.kind ?? null,
+      label: !d ? "" : d.kind === "note" ? d.pitchClass : d.kind === "interval" ? d.intervalName : selectedSymbol() ?? "",
+      symbol: selectedSymbol(),
+      notes: displayedNotes(),
+      roman: state.analysis?.roman ?? null,
+      function: state.analysis?.function ?? null,
+      guitarVoicing: getGuitarVoicingIndex()
+    });
+  }
+  var viewBackground = loadChoice("view-bg", Object.keys(VIEW_BACKGROUNDS), "green");
+  function wireViewMenu() {
+    const menu = $2("view-menu");
+    $2("btn-views").addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.classList.toggle("open");
+    });
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target)) menu.classList.remove("open");
+    });
+    const bgSel = $2("view-bg");
+    bgSel.value = viewBackground;
+    bgSel.addEventListener("change", () => {
+      viewBackground = bgSel.value;
+      save("view-bg", viewBackground);
+    });
+    menu.querySelectorAll("[data-view]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const view = btn.dataset.view;
+        const [w, h] = VIEW_WINDOW[view];
+        window.open(viewUrl(view, viewBackground), `modus-view-${view}`, `popup,width=${w},height=${h}`)?.focus();
+        menu.classList.remove("open");
+      });
+    });
+    menu.querySelectorAll("[data-export]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const ok = await exportDiagram(btn.dataset.export, btn.dataset.format, selectedSymbol() ?? analysisKey());
+        if (!ok) btn.classList.add("invalid");
+        else menu.classList.remove("open");
+      });
+    });
+    setGuitarVoicingChange(() => publishView());
   }
   var detectionFromMidi = false;
   function respellMidiDetection() {
@@ -3464,10 +3732,10 @@ K:${abcKey}
     $2("auto-key-label").textContent = !state.activeKey && autoKey ? `auto: ${autoKey}` : "";
   }
   var lastRenderSig = {};
-  function renderIfChanged(name, sig, render) {
+  function renderIfChanged(name, sig, render2) {
     if (lastRenderSig[name] === sig) return;
     lastRenderSig[name] = sig;
-    render();
+    render2();
   }
   var PIANO_VELOCITY = 90;
   var pianoNote = null;
@@ -3665,6 +3933,6 @@ K:${abcKey}
       b.classList.toggle("active-mode", b.dataset.mode === mode2);
     });
   }
-  init();
+  if (!runViewerFromUrl()) init();
 })();
 //# sourceMappingURL=app.js.map

@@ -135,6 +135,36 @@ await check('history marks the cadence between two chips: G7 → C is Authentic 
   assert(strip.slice(0, 3).join('|').replace(/\s+/g, ' ') === 'C I|Authentic|G7 V7', `strip: ${strip.slice(0, 3).join('|')}`)
 })
 
+await check('view window: the chord view follows the detector, alone on the chroma background', async () => {
+  await page.click('#btn-views')
+  const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="chord"]')])
+  await view.waitForFunction(() => window.UMT && window.Notae)
+  assert(await view.title() === 'Modus view: chord', `title: ${await view.title()}`)
+  assert(!(await view.locator('#app').isVisible()), 'the app shows in the view window')
+  const bg = await view.evaluate(() => getComputedStyle(document.body).backgroundColor)
+  assert(bg === 'rgb(0, 255, 0)', `background: ${bg}`)
+  await play([57, 60, 64, 67], 200)
+  const shown = await view.locator('.view-chord-name').innerText()
+  await off([57, 60, 64, 67])
+  await view.close()
+  assert(shown === 'Am7', `view shows ${shown}`)
+})
+
+await check('export: the staff as SVG and the circle as PNG', async () => {
+  const save = async (target, format) => {
+    await page.click('#btn-views')
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click(`#view-menu [data-export="${target}"][data-format="${format}"]`)])
+    const chunks = []
+    for await (const c of await dl.createReadStream()) chunks.push(c)
+    return { name: dl.suggestedFilename(), data: Buffer.concat(chunks) }
+  }
+  const svg = await save('staff', 'svg')
+  assert(svg.name.startsWith('modus-staff') && svg.name.endsWith('.svg'), `name: ${svg.name}`)
+  assert(svg.data.toString().startsWith('<svg') && svg.data.toString().includes('xmlns="http://www.w3.org/2000/svg"'), 'not a standalone SVG')
+  const png = await save('cof', 'png')
+  assert(png.name.endsWith('.png') && png.data.subarray(1, 4).toString() === 'PNG' && png.data.length > 5000, `png: ${png.name} ${png.data.length} bytes`)
+})
+
 await check('changing MIDI mode clears a held chord', async () => {
   await page.click('#btn-hold')
   await play([60, 64, 67])

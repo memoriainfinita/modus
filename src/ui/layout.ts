@@ -8,8 +8,11 @@ import { setGuitarControlsVisible } from '../diagrams/guitar'
 import { ANALYSIS_FIELD_KEYS, ANALYSIS_FIELD_LABELS, ANALYSIS_FIELD_TOOLTIPS } from '../detector/analysis-panel'
 import type { AnalysisFieldKey } from '../detector/analysis-panel'
 import { loadBool, save } from './storage'
+import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
 
 export type Panels = AppState['panels']
+
+const VIEW_LABELS: Record<string, string> = { chord: 'Chord', staff: 'Staff', cof: 'Circle of Fifths', piano: 'Piano', guitar: 'Guitar' }
 
 const $ = (id: string) => document.getElementById(id)!
 
@@ -85,6 +88,25 @@ function buildToolbar(): string {
         ).join('')}
       </select>
       <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
+      <div class="view-menu-wrap">
+        <button id="btn-views" class="ctrl-btn" title="View windows for OBS, and diagram export (SVG, PNG)">⧉</button>
+        <div id="view-menu" class="view-menu">
+          <div class="view-menu-title">Open a view window</div>
+          ${VIEW_NAMES.map(v => `<button class="ctrl-btn" data-view="${v}">${VIEW_LABELS[v]}</button>`).join('')}
+          <label class="view-menu-bg">Background
+            <select id="view-bg" class="ctrl-select">
+              ${Object.keys(VIEW_BACKGROUNDS).map(b => `<option value="${b}">${b}</option>`).join('')}
+            </select>
+          </label>
+          <div class="view-menu-hint">In OBS: Window Capture of "Modus view: …", then a Chroma Key filter. The window follows this one live.</div>
+          <div class="view-menu-title">Save the diagram on screen (transparent)</div>
+          ${(['staff', 'cof', 'guitar', 'piano'] as const).map(t => `
+            <div class="view-menu-export"><span>${VIEW_LABELS[t]}</span>
+              <button class="ctrl-btn" data-export="${t}" data-format="svg">SVG</button>
+              <button class="ctrl-btn" data-export="${t}" data-format="png">PNG</button>
+            </div>`).join('')}
+        </div>
+      </div>
       <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
     </div>`
 }

@@ -89,6 +89,7 @@ Zone 1 is the primary module. Key, Instruments, History and Song are collapsible
 - **Chord field (/):** type a chord name, Enter shows and plays it like a chord picked from history; an unknown name is marked red.
 - **Key selector:** 24 major/minor keys + Auto. On Auto, the detected key is shown next to it and drives the whole app. The choice belongs to the open song (see Zone 3).
 - **Audio status bar, play button (▶, same as Space), instrument selector, volume.**
+- **⧉ button:** view windows for OBS and diagram export (see View windows and export).
 - **? button:** shortcuts and mouse gestures.
 
 ### MIDI input
@@ -267,6 +268,16 @@ The instrument starts loading at page load; the first click resumes the AudioCon
 
 Notes requested before the instrument can sound (still loading, or suspended with no user gesture) are dropped, not queued, and the audio bar flashes.
 
+## View windows and export
+
+For recording and streaming (`view/`, `ui/export.ts`).
+
+**View windows.** The ⧉ menu opens a popup per view: Chord (name in its quality colour, degree and function below), Staff, Circle of Fifths, Piano, Guitar. Each is the same page with `?view=<name>&bg=<green|magenta|black|dark>`: it hides the app, draws only that element filling the window, starts no MIDI and plays nothing. Background green by default (`#00ff00`, OBS's chroma key default), chosen in the menu and remembered. Title `Modus view: <name>`, so OBS Window Capture keeps finding it. Opening a view again brings its window back.
+
+The main window sends what the detector shows over a `BroadcastChannel` (`modus-view`): key, chord, notes, degree, function, guitar voicing. A view that opens asks for the current state. Guitar tuning and CoF options are read from localStorage; when the main window changes them, the views reload. An OBS Browser Source cannot be the view: it is another browser, with no channel to the tab where one plays, and on Windows 10 the controller usually cannot be opened by two programs at once.
+
+**Export.** The same menu saves the staff, circle, guitar or piano on screen as SVG or PNG (3× the screen size), transparent background, cropped to the drawing, named `modus-<diagram>-<chord or key>`. The circle gets the page colour behind its rings (its minor ring is transparent).
+
 ## Customization
 
 Persisted to localStorage:
@@ -275,6 +286,7 @@ Persisted to localStorage:
 - Staff size
 - CoF size, b/♯, minor/dim rings, degrees, sevenths
 - Key panel font scale, triads / sevenths, sections shown
+- View window background
 - Guitar tuning (including custom strings), label mode, fret spacing
 - Fretboard spacing
 - MIDI device, input mode, instrument, volume (the key is stored with each song)

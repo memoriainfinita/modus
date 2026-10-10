@@ -76,6 +76,10 @@ Click a chord to play it and show it in the detector; the key stays. The chord o
 - **Piano** (notae) — 4 octaves C2–B5, click any key to play
 - **Horizontal fretboard** (notae) — all note positions across 12 frets, each dot labelled with its note (flats or sharps by key), spacing adjustable
 
+### Views for OBS, and export
+
+The ⧉ button opens a window with one element alone — the chord name with its degree, the staff, the circle of fifths, the piano or the guitar — filling the window on a chroma green (or magenta, black, dark) background, following what you play live. In OBS: Window Capture of "Modus view: chord" (or staff, cof…), then a Chroma Key filter. The same menu saves the staff, circle, guitar or piano as SVG or PNG with a transparent background.
+
 ### Audio
 
 Any note played on the MIDI controller sounds through the selected soundfont, with its velocity, for as long as the key or the sustain pedal holds it. Click piano keys, CoF segments, or history/song chips to play. 128 GM instruments selectable (grouped by family). Volume slider. Loading progress bar. The instrument starts loading when the page opens; a note that arrives before it can sound (still loading, or no click yet to unlock audio) makes the progress bar flash.

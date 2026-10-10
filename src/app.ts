@@ -5,7 +5,12 @@ import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './detector/anal
 import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback } from './audio/audio'
 import { renderStaff } from './diagrams/staff'
 import { renderPiano } from './diagrams/piano'
-import { renderGuitar } from './diagrams/guitar'
+import { renderGuitar, getGuitarVoicingIndex, setGuitarVoicingChange } from './diagrams/guitar'
+import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS } from './view/channel'
+import type { ViewName, ViewBackground } from './view/channel'
+import { runViewerFromUrl } from './view/viewer'
+import { exportDiagram } from './ui/export'
+import type { ExportTarget } from './ui/export'
 import { renderNeck, adjustNeckSpacing } from './diagrams/neck'
 import { renderCircleOfFifths } from './diagrams/cof'
 import { renderKeyExplorer } from './diagrams/key-explorer'
@@ -278,6 +283,7 @@ function wireLayoutEvents() {
   onKeyControl('btn-key-colt',  () => { keyShowColtrane = !keyShowColtrane; save('key-show-coltrane', keyShowColtrane) })
 
   wirePanelToggles(state.panels)
+  wireViewMenu()
 
   if (state.activeKey) {
     ($('key-select') as HTMLSelectElement).value = state.activeKey
@@ -357,6 +363,54 @@ function renderDiagrams() {
 function renderDetector() {
   renderAnalysisPanel()
   renderDiagrams()
+  publishView()
+}
+
+// ─── View windows (OBS) ──────────────────────────────────────────────────────
+
+const sendView = createViewPublisher()
+
+/** What the view windows show: the detector as it is now. */
+function publishView() {
+  const d = state.detection
+  sendView({
+    key: analysisKey(),
+    kind: d?.kind ?? null,
+    label: !d ? '' : d.kind === 'note' ? d.pitchClass : d.kind === 'interval' ? d.intervalName : (selectedSymbol() ?? ''),
+    symbol: selectedSymbol(),
+    notes: displayedNotes(),
+    roman: state.analysis?.roman ?? null,
+    function: state.analysis?.function ?? null,
+    guitarVoicing: getGuitarVoicingIndex(),
+  })
+}
+
+let viewBackground = loadChoice('view-bg', Object.keys(VIEW_BACKGROUNDS) as ViewBackground[], 'green')
+
+function wireViewMenu() {
+  const menu = $('view-menu')
+  $('btn-views').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open') })
+  document.addEventListener('click', e => { if (!menu.contains(e.target as Node)) menu.classList.remove('open') })
+  const bgSel = $('view-bg') as HTMLSelectElement
+  bgSel.value = viewBackground
+  bgSel.addEventListener('change', () => { viewBackground = bgSel.value as ViewBackground; save('view-bg', viewBackground) })
+  menu.querySelectorAll<HTMLButtonElement>('[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view as ViewName
+      const [w, h] = VIEW_WINDOW[view]
+      // One window per view: opening it again brings the same window back.
+      window.open(viewUrl(view, viewBackground), `modus-view-${view}`, `popup,width=${w},height=${h}`)?.focus()
+      menu.classList.remove('open')
+    })
+  })
+  menu.querySelectorAll<HTMLButtonElement>('[data-export]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ok = await exportDiagram(btn.dataset.export as ExportTarget, btn.dataset.format as 'svg' | 'png', selectedSymbol() ?? analysisKey())
+      if (!ok) btn.classList.add('invalid')
+      else menu.classList.remove('open')
+    })
+  })
+  setGuitarVoicingChange(() => publishView())
 }
 
 // MIDI input has no spelling of its own: it is written in the key, and rewritten when the
@@ -762,4 +816,5 @@ function setModeBtn(mode: MidiMode) {
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
-init()
+// A view window (?view=…) shows one element and nothing else: no MIDI, no audio.
+if (!runViewerFromUrl()) init()
