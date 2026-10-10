@@ -89,6 +89,7 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   padding: 1px 5px;
 }
 .size-ctrl-btn.active { background: #4f46e5; color: #fff; }
+.size-ctrl-btn:disabled { cursor: default; opacity: .45; }
 
 /* ─── Form controls (shared) ──────────────────────────────────── */
 .ctrl-select {
@@ -103,7 +104,7 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
 /* ─── Toolbar ─────────────────────────────────────────────────── */
 .toolbar {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
   padding: 8px 12px;
   background: #111128;
@@ -111,10 +112,11 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
   flex-wrap: wrap;
 }
 .midi-status { font-size: 12px; color: #6b7280; }
+#audio-instrument { max-width: 130px; }
 .auto-key-label { font-size: 11px; color: #6b7280; }
 .toolbar-sep { width: 1px; height: 18px; background: #3a3a5c; margin: 0 2px; }
 .audio-progress {
-  position: relative; width: 90px; height: 18px;
+  position: relative; width: 72px; height: 18px;
   background: #2d2d44; border-radius: 3px; overflow: hidden;
 }
 .audio-progress-fill {
@@ -660,7 +662,7 @@ body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; 
 /* ─── Input without a controller ───────────────────────────────── */
 /* Dots and labels drawn over lit piano keys must not catch the press meant for the key */
 #piano-container circle, #piano-container text { pointer-events: none; }
-.typed-chord { width: 9em; }
+.typed-chord { width: 7.5em; }
 .typed-chord.invalid { border-color: #ef4444; color: #fca5a5; }
 
 /* ─── View windows (OBS) ──────────────────────────────────────── */
@@ -708,3 +710,13 @@ body.presenting { overflow: hidden; }
   color: #6b7280; font-size: 28px; cursor: pointer; opacity: 0; transition: opacity .2s;
 }
 #presentation:hover .presentation-close, .presentation-close:focus-visible { opacity: 1; }
+
+/* ─── Velocity ────────────────────────────────────────────────── */
+#col-velocity { width: 170px; align-self: center; }
+#velocity-container { display: flex; flex-direction: column; gap: 3px; min-height: 40px; }
+.vel-row { display: grid; grid-template-columns: 34px 1fr 26px; gap: 6px; align-items: center; font-size: 11px; color: #9ca3af; }
+.vel-note { color: #d1d5db; }
+.vel-num { text-align: right; font-variant-numeric: tabular-nums; }
+.vel-bar { height: 8px; background: #252540; border-radius: 2px; overflow: hidden; }
+.vel-bar > span { display: block; height: 100%; background: #f59e0b; }
+.vel-empty { font-size: 10px; color: #6b7280; line-height: 1.4; }

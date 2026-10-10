@@ -368,6 +368,40 @@ await check('P presents the detector large, follows what is played, Esc leaves',
   assert(!(await page.locator('#btn-present').getAttribute('class')).includes('active-mode'), 'button lit')
 })
 
+await check('velocity: a bar per note, highest on top; none for a picked chord', async () => {
+  await page.evaluate(() => [[48, 40], [55, 90], [64, 120]].forEach(([n, v]) => window.__midi([0x90, n, v])))
+  await page.waitForTimeout(100)
+  const nums = await page.locator('#velocity-container .vel-num').allInnerTexts()
+  assert(nums.join() === '120,90,40', `velocities ${nums}`)
+  await off([48, 55, 64])
+  await page.locator('.history-chip').first().click()
+  assert(await page.locator('#velocity-container .vel-row').count() === 0, 'picked chord shows velocities')
+  await page.keyboard.press('Escape')
+})
+
+await check('input channel filter: other channels are not read', async () => {
+  await page.selectOption('#midi-in-ch', '2')
+  await page.evaluate(() => [60, 64, 67].forEach(n => window.__midi([0x90, n, 100])))   // channel 1
+  await page.waitForTimeout(100)
+  const ignored = await page.locator('#piano-container circle').count()
+  await page.evaluate(() => [60, 64, 67].forEach(n => window.__midi([0x80, n, 0])))
+  await page.evaluate(() => [62, 65, 69].forEach(n => window.__midi([0x91, n, 100])))   // channel 2
+  await page.waitForTimeout(100)
+  const read = await text('.chord-name-badge')
+  await page.evaluate(() => [62, 65, 69].forEach(n => window.__midi([0x81, n, 0])))
+  await page.selectOption('#midi-in-ch', '0')
+  assert(ignored === 0 && read === 'Dm', `ignored ${ignored}, read ${read}`)
+})
+
+await check('circle b / # work only without a key; with one, the key spells it', async () => {
+  await setKey('E Major')
+  assert(await page.locator('#btn-cof-flat').isDisabled(), 'b enabled with a key')
+  assert(await page.locator('#cof-container text', { hasText: /^F#$/ }).count() === 1, 'E major not in sharps')
+  await setKey('Bb Major')
+  assert(await page.locator('#cof-container text', { hasText: /^Gb$/ }).count() === 1, 'Bb major not in flats')
+  await setKey('')
+})
+
 await check('arrow keys walk the song and play each chord', async () => {
   await page.locator('.chord-chip', { hasText: 'Dm7' }).click()
   await page.keyboard.press('ArrowRight')

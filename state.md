@@ -18,7 +18,7 @@ What is true now. What already happened lives in `state-history.md`.
 
 - Working: detector, analysis, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-11: TSC clean, 259 unit tests against the real UMT bundle, `pnpm test:e2e` 49/49 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
+- Tests 2026-10-11: TSC clean, 263 unit tests against the real UMT bundle, `pnpm test:e2e` 52/52 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `ac10838` (audit phase 1: letters in notes and numerals) the same day: all tests pass unchanged. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - CoF degrees come from UMT since 2026-10-10 (they had their own semitone table). UMT reads a chromatic chord by the letter `spellChordInKey` picks, not the one written: Gb in C shows ♯IV (reported in the UMT notes)
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
@@ -73,15 +73,15 @@ Items 1-3 need new UMT functions or UMT fixes: requested in `umt/docs/notas-desd
 ### Analysis, not yet ordered (agreed 2026-10-09)
 
 Input
-- [ ] MIDI channel filtering
+- [x] MIDI input channel filter, 2026-10-11 (toolbar, after the device)
 
 Visualization
 - [x] Grand staff, 2026-10-11: grand by default, split at middle C by written letter; Treble / Bass alone on the clef button
 - [ ] Voice leading: how each voice moves from one chord to the next, on staff or piano
 - [~] Presentation mode, 2026-10-11 (⛶ / P): chord, staff, CoF, guitar, piano large and full screen, the ones the page shows. Open: history with its cadences in it, the key panel; checked headless in Chrome and Firefox, not yet on a projector
-- [ ] Velocity display
+- [x] Velocity display, 2026-10-11: Ve panel next to the piano, a bar and the number per note
 - [ ] More instruments: bass, ukulele, other tunings, as one string-instrument panel with two views (chord positions, whole neck) instead of today's separate Guitar and Fretboard panels. First check what notae draws
-- [ ] CoF b/# buttons only on Auto: with a key set, spelling comes from the key
+- [x] CoF spelling from the key, 2026-10-11: with a key in effect (also the one detected on Auto) the signature spells the circle; b/♯ only with none
 - [ ] Colour themes: background and diagram colours (dots, frets, piano keys, CoF segments)
 - [ ] Light mode
 - [ ] Modular layout (panels placed and resized freely): undecided whether it is wanted. Today's Notation / Instruments grouping is arbitrary (the CoF is not notation)

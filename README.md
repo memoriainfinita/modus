@@ -74,6 +74,7 @@ Click a chord to play it and show it in the detector; the key stays. The chord o
 ### Instruments panel
 
 - **Piano** (notae) — 4 octaves C2–B5, click any key to play
+- **Velocity** — how hard each note on screen was struck, as a bar and a number
 - **Horizontal fretboard** (notae) — all note positions across 12 frets, each dot labelled with its note (flats or sharps by key), spacing adjustable
 
 ### Views for OBS, and export
@@ -199,6 +200,7 @@ src/
     neck.ts               full-neck horizontal fretboard (notae)
     cof.ts                circle of fifths (custom SVG)
     key-explorer.ts       key panel rendering
+    velocity.ts           velocity bars of the notes on screen
     fretboard-style.ts    colours shared by guitar and neck
   history/
     history.ts            chord history log

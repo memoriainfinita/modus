@@ -23,6 +23,7 @@ export function loadPanels(): Panels {
     instruments:      loadBool('panel-instruments', true),
     colPiano:         loadBool('panel-colPiano', true),
     colNeck:          loadBool('panel-colNeck', true),
+    colVelocity:      loadBool('panel-colVelocity', true),
     history:          loadBool('panel-history', true),
     song:             loadBool('panel-song', true),
     cofControls:      loadBool('panel-cofControls', true),
@@ -63,6 +64,10 @@ function buildToolbar(): string {
     <div id="z1-toolbar" class="toolbar">
       <span id="midi-status" class="midi-status">MIDI: —</span>
       <select id="midi-device" class="ctrl-select"></select>
+      <select id="midi-in-ch" class="ctrl-select" title="Input channel: only notes on this channel are read (a keyboard split, or one track of a DAW)">
+        <option value="0">in: all ch</option>
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">in: ch ${i + 1}</option>`).join('')}
+      </select>
       <select id="midi-out" class="ctrl-select" title="MIDI out: what sounds goes to this port"><option value="">Out: off</option></select>
       <select id="midi-out-ch" class="ctrl-select" title="MIDI out channel">
         ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">ch ${i + 1}</option>`).join('')}
@@ -218,11 +223,13 @@ function buildInstrumentsPanel(panels: Panels): string {
         <div class="col-vis-row">
           <button class="col-vis-btn${panels.colPiano ? ' active' : ''}" data-col="colPiano" title="Piano">Pi</button>
           <button class="col-vis-btn${panels.colNeck  ? ' active' : ''}" data-col="colNeck"  title="Fretboard">Fr</button>
+          <button class="col-vis-btn${panels.colVelocity ? ' active' : ''}" data-col="colVelocity" title="Velocity of each note">Ve</button>
         </div>
         <button class="toggle-btn" data-panel="instruments">▼</button>
       </div>
       <div id="instruments-content">
         <div id="col-piano"><div id="piano-container"></div></div>
+        <div id="col-velocity"><div class="col-label">Velocity</div><div id="velocity-container"></div></div>
         <div id="col-neck">
           <div id="neck-container"></div>
           <div class="ctrl-row" style="justify-content:center;margin-top:4px">
@@ -255,6 +262,7 @@ export function applyPanelVisibility(panels: Panels) {
   const ic = $('instruments-content'); if (ic) ic.style.display = panels.instruments ? '' : 'none'
   const cp = $('col-piano'); if (cp) cp.style.display = panels.colPiano ? '' : 'none'
   const cn = $('col-neck');  if (cn) cn.style.display = panels.colNeck  ? '' : 'none'
+  const cv = $('col-velocity'); if (cv) cv.style.display = panels.colVelocity ? '' : 'none'
   const z2 = $('zone2-content'); if (z2) z2.style.display = panels.history ? '' : 'none'
   const z3 = $('zone3-content'); if (z3) z3.style.display = panels.song ? '' : 'none'
   const cc = $('cof-controls'); if (cc) cc.style.display = panels.cofControls ? '' : 'none'

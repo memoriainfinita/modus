@@ -1,5 +1,5 @@
 import './styles.css'
-import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes } from './input/midi'
+import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes, getVelocity, getInputChannel, setInputChannel } from './input/midi'
 import { wireComputerKeyboard, toggleComputerKeyboard, isComputerKeyboardOn, computerKeyboardStatus, setComputerKeyboardChange } from './input/computer-keyboard'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './detector/analyzer'
 import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
@@ -7,6 +7,9 @@ import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSet
 import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
 import { openPresentation, updatePresentation, closePresentation, isPresenting } from './view/presentation'
 import { renderPiano } from './diagrams/piano'
+import { renderVelocity } from './diagrams/velocity'
+import type { NoteVelocity } from './diagrams/velocity'
+import { noteNameToMidi } from './theory/notes'
 import { renderGuitar, getGuitarVoicingIndex, setGuitarVoicingChange } from './diagrams/guitar'
 import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS } from './view/channel'
 import type { ViewName, ViewBackground, ViewState } from './view/channel'
@@ -14,7 +17,7 @@ import { runViewerFromUrl } from './view/viewer'
 import { exportDiagram } from './ui/export'
 import type { ExportTarget } from './ui/export'
 import { renderNeck, adjustNeckSpacing } from './diagrams/neck'
-import { renderCircleOfFifths } from './diagrams/cof'
+import { renderCircleOfFifths, cofAccidentalFor } from './diagrams/cof'
 import { renderKeyExplorer } from './diagrams/key-explorer'
 import { buildKeyMap } from './theory/key-map'
 import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history/history'
@@ -223,10 +226,23 @@ function showSong(song: Song) {
 
 // ─── Layout events ───────────────────────────────────────────────────────────
 
+/** b / # light the spelling the circle uses; with a key they are off, the key decides. */
+function syncCofAccidentalButtons() {
+  const key = analysisKey()
+  const used = cofAccidentalFor(key, cofAccidental)
+  for (const [id, acc] of [['btn-cof-flat', 'flat'], ['btn-cof-sharp', 'sharp']] as const) {
+    const btn = $(id) as HTMLButtonElement
+    btn.classList.toggle('active', used === acc)
+    btn.disabled = !!key
+    btn.title = key ? `Spelled as in ${key}; b / # apply without a key`
+      : acc === 'flat' ? 'Show flat enharmonics (Gb, Db…)' : 'Show sharp enharmonics (F#, C#…)'
+  }
+}
+
+
 function wireLayoutEvents() {
   const updateCofButtons = () => {
-    $('btn-cof-flat').classList.toggle('active', cofAccidental === 'flat')
-    $('btn-cof-sharp').classList.toggle('active', cofAccidental === 'sharp')
+    syncCofAccidentalButtons()
     $('btn-cof-minor').style.opacity = cofShowMinor   ? '1' : '0.4'
     $('btn-cof-deg').style.opacity   = cofShowDegrees ? '1' : '0.4'
     $('btn-cof-7').style.opacity     = cofShow7ths    ? '1' : '0.4'
@@ -648,14 +664,27 @@ function updateComputerKeyboardButton() {
   $('keyboard-status').textContent = on ? computerKeyboardStatus() : ''
 }
 
+/** Velocities of the notes on screen when they were played; none for a chord picked from history, song or circle. */
+function noteVelocities(noteNames: string[]): NoteVelocity[] {
+  if (!detectionFromMidi) return []
+  return noteNames.flatMap(name => {
+    const midi = noteNameToMidi(name)
+    const velocity = midi === null ? null : getVelocity(midi)
+    return midi === null || velocity === null ? [] : [{ name, midi, velocity }]
+  })
+}
+
 function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const key = analysisKey()
   const notes = noteNames.join(' ')
-  const cofOpts = { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths }
+  syncCofAccidentalButtons()
+  const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths }
   renderIfChanged('staff', `${notes}|${key}|${staffScale}|${staffClef}`, () =>
     renderStaff($('staff-container'), noteNames, staffWidth, key, staffScale, staffClef))
   renderIfChanged('piano', `${notes}|${chordSymbol}`, () =>
     renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress))
+  const vel = noteVelocities(noteNames)
+  renderIfChanged('velocity', JSON.stringify(vel), () => renderVelocity($('velocity-container'), vel))
   renderIfChanged('neck', `${notes}|${keyPrefersSharps(key)}`, () =>
     renderNeck($('neck-container'), noteNames, !keyPrefersSharps(key)))
   renderIfChanged('guitar', `${chordSymbol}`, () =>
@@ -758,7 +787,9 @@ function refreshDeviceDropdown() {
   const target = resolveDevice()
   if (target) sel.value = target
 
-  $('midi-status').textContent = devices.length ? 'MIDI: connected' : 'MIDI: no devices'
+  // Connected is shown by the green alone: the toolbar has no room to spare
+  $('midi-status').textContent = devices.length ? 'MIDI' : 'MIDI: no devices'
+  $('midi-status').title = devices.length ? 'MIDI: connected' : 'MIDI: no devices'
   $('midi-status').style.color = devices.length ? '#4ade80' : '#6b7280'
 
   if (!deviceListenersAttached) {
@@ -766,6 +797,7 @@ function refreshDeviceDropdown() {
     window.addEventListener('midi-devices-changed', () => { refreshDeviceDropdown(); refreshOutputDropdown() })
     window.addEventListener('midi-device-disconnected', () => {
       $('midi-status').textContent = 'MIDI: disconnected'
+      $('midi-status').title = 'MIDI: disconnected'
       $('midi-status').style.color = '#f87171'
     })
   }
@@ -789,6 +821,9 @@ function refreshOutputDropdown() {
 }
 
 function wireMidiOut() {
+  const inCh = $('midi-in-ch') as HTMLSelectElement
+  inCh.value = String(getInputChannel())
+  inCh.addEventListener('change', () => setInputChannel(parseInt(inCh.value)))
   const sel = $('midi-out') as HTMLSelectElement
   const ch = $('midi-out-ch') as HTMLSelectElement
   const thruBtn = $('btn-thru')

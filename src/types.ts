@@ -103,6 +103,7 @@ export interface AppState {
     instruments: boolean
     colPiano: boolean
     colNeck: boolean
+    colVelocity: boolean
     history: boolean
     song: boolean
     cofControls: boolean

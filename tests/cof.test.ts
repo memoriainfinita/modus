@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 
-import { renderCircleOfFifths } from '../src/diagrams/cof'
+import { renderCircleOfFifths, cofAccidentalFor } from '../src/diagrams/cof'
 import type { CofOptions } from '../src/diagrams/cof'
 
 const OPTS: CofOptions = { accidental: 'flat', showMinor: true, showDegrees: false, show7ths: false }
@@ -81,5 +81,15 @@ describe('circle of fifths: clicks', () => {
     segment(el, 'Em').dispatchEvent(new MouseEvent('click'))
     segment(el, 'Bdim').dispatchEvent(new MouseEvent('click'))
     expect(onClick.mock.calls).toEqual([['G', 'G Major'], ['Em', 'E Minor'], ['Bdim', null]])
+  })
+})
+
+describe('cofAccidentalFor', () => {
+  it('with a key, the signature decides; the buttons only without one', () => {
+    expect(cofAccidentalFor('E Major', 'flat')).toBe('sharp')
+    expect(cofAccidentalFor('Bb Major', 'sharp')).toBe('flat')
+    expect(cofAccidentalFor('C Major', 'sharp')).toBe('flat')
+    expect(cofAccidentalFor('E Minor', 'flat')).toBe('sharp')
+    expect(cofAccidentalFor(null, 'sharp')).toBe('sharp')
   })
 })
