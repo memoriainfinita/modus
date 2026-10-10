@@ -1,7 +1,8 @@
 import { NOTE_SEMITONE } from '../theory/notes'
 
 const CIRCLE_KEYS_FLAT  = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F']
-const CIRCLE_KEYS_SHARP = ['C','G','D','A','E','B','F#','C#','G#','D#','Bb','F']
+// Sharps only where they name a standard key: G# and D# major would need double sharps.
+const CIRCLE_KEYS_SHARP = ['C','G','D','A','E','B','F#','C#','Ab','Eb','Bb','F']
 const CIRCLE_KEYS_MINOR_FLAT  = ['Am','Em','Bm','F#m','C#m','G#m','Ebm','Bbm','Fm','Cm','Gm','Dm']
 const CIRCLE_KEYS_MINOR_SHARP = ['Am','Em','Bm','F#m','C#m','G#m','D#m','A#m','Fm','Cm','Gm','Dm']
 const CIRCLE_DIM = ['B','F#','C#','G#','D#','A#','F','C','G','D','A','E']
@@ -92,7 +93,7 @@ export function renderCircleOfFifths(
     const fill = isTonic ? '#4f46e5' : isChordRoot ? '#0d9488' : isDiatonic ? '#252550' : '#2d2d44'
     const stroke = isChordRoot ? '#0d9488' : isDiatonic ? '#7c7ca0' : '#4a4a6a'
     // The dominant seventh sits one step clockwise of the relative major (V in major, VII in minor).
-    const suffix7 = opts.show7ths ? (relPos === 1 && !keyIsMinor ? '7' : 'maj7') : ''
+    const suffix7 = opts.show7ths ? (relPos === 1 ? '7' : 'maj7') : ''
     svg += `<path d="${ring(outerR, innerR, angle, nextAngle)}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
       data-chord="${key + suffix7}" data-key="${key} Major"><title>${TIP}</title></path>`
     svg += label(cx + labelR * Math.cos(midAngle), cy + labelR * Math.sin(midAngle), majorFont, '#e0e0e0',

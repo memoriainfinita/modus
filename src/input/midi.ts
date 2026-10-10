@@ -54,9 +54,12 @@ export async function initMidi(): Promise<{ ok: boolean; denied: boolean; unsupp
   }
 }
 
+// A browser may keep an unplugged port in `inputs` with state 'disconnected'; it is not a device.
 export function getDevices(): { id: string; name: string }[] {
   if (!midiAccess) return []
-  return Array.from(midiAccess.inputs.values()).map(i => ({ id: i.id, name: i.name ?? i.id }))
+  return Array.from(midiAccess.inputs.values())
+    .filter(i => i.state !== 'disconnected')
+    .map(i => ({ id: i.id, name: i.name ?? i.id }))
 }
 
 export function getSelectedDeviceId(): string | null { return selectedDeviceId }

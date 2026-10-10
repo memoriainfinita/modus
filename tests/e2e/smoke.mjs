@@ -29,6 +29,8 @@ const FAKE_MIDI = () => {
   const access = { inputs: new Map([['fake-1', input]]), outputs: new Map(), onstatechange: null }
   navigator.requestMIDIAccess = async () => access
   window.__midi = bytes => input.onmidimessage?.({ data: new Uint8Array(bytes) })
+  // Chrome-style hot-plug: the port stays in `inputs` and only its state changes.
+  window.__plug = connected => { input.state = connected ? 'connected' : 'disconnected'; access.onstatechange?.({ port: input }) }
 }
 
 const browser = await chromium.launch({ channel: 'chrome', headless: !process.env.HEADED })
@@ -152,6 +154,18 @@ await check('MIDI fill continues into the next measure', async () => {
   await off([62, 65, 69])
   await play([64, 67, 71], 400)                 // Em replaces Cmaj7, in the next measure
   await off([64, 67, 71])
+  const chips = await page.locator('.chord-chip-symbol').allInnerTexts()
+  assert(chips.join(' ') === 'Dm7 Dm Em', `chips: ${chips.join(' ')}`)
+  await page.keyboard.press('Escape')
+})
+
+await check('releasing a captured chord key by key does not fill the next slot', async () => {
+  await page.locator('.chord-chip').first().hover()
+  await page.locator('.chord-chip').first().locator('button', { hasText: '⊙' }).click()
+  await play([62, 65, 69, 72], 400)             // Dm7 again into the Dm7 slot
+  await off([62])                               // the bass lifts first; F A C (F) stays held
+  await page.waitForTimeout(400)
+  await off([65, 69, 72])
   const chips = await page.locator('.chord-chip-symbol').allInnerTexts()
   assert(chips.join(' ') === 'Dm7 Dm Em', `chips: ${chips.join(' ')}`)
   await page.keyboard.press('Escape')
@@ -287,6 +301,16 @@ await check('staff renders a key signature for F# Major', async () => {
   await play([66, 70, 73])
   assert(await page.locator('#staff-container svg').count() === 1, 'staff svg')
   await off([66, 70, 73])
+})
+
+await check('an unplugged port left in the list is not a device; replugged, it plays', async () => {
+  await page.evaluate(() => window.__plug(false))
+  assert((await text('#midi-status')).includes('disconnected'), `status: ${await text('#midi-status')}`)
+  assert(!(await page.locator('#midi-device').innerText()).includes('Fake'), 'unplugged device still listed')
+  await page.evaluate(() => window.__plug(true))
+  await play([60, 64, 67])
+  assert((await text('.chord-name-badge')) === 'C', 'no chord after replug')
+  await off([60, 64, 67])
 })
 
 await check('no errors after the walk', async () => {

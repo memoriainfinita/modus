@@ -44,7 +44,7 @@
   }
   function getDevices() {
     if (!midiAccess) return [];
-    return Array.from(midiAccess.inputs.values()).map((i) => ({ id: i.id, name: i.name ?? i.id }));
+    return Array.from(midiAccess.inputs.values()).filter((i) => i.state !== "disconnected").map((i) => ({ id: i.id, name: i.name ?? i.id }));
   }
   function getSelectedDeviceId() {
     return selectedDeviceId;
@@ -940,7 +940,7 @@ K:${abcKey}
 
   // src/diagrams/cof.ts
   var CIRCLE_KEYS_FLAT = ["C", "G", "D", "A", "E", "B", "Gb", "Db", "Ab", "Eb", "Bb", "F"];
-  var CIRCLE_KEYS_SHARP = ["C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "Bb", "F"];
+  var CIRCLE_KEYS_SHARP = ["C", "G", "D", "A", "E", "B", "F#", "C#", "Ab", "Eb", "Bb", "F"];
   var CIRCLE_KEYS_MINOR_FLAT = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "Ebm", "Bbm", "Fm", "Cm", "Gm", "Dm"];
   var CIRCLE_KEYS_MINOR_SHARP = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "D#m", "A#m", "Fm", "Cm", "Gm", "Dm"];
   var CIRCLE_DIM = ["B", "F#", "C#", "G#", "D#", "A#", "F", "C", "G", "D", "A", "E"];
@@ -993,7 +993,7 @@ K:${abcKey}
       const isChordRoot = !isMinorActiveChord && !isDimActiveChord && chordRootPc === pitchClass(key);
       const fill = isTonic ? "#4f46e5" : isChordRoot ? "#0d9488" : isDiatonic ? "#252550" : "#2d2d44";
       const stroke = isChordRoot ? "#0d9488" : isDiatonic ? "#7c7ca0" : "#4a4a6a";
-      const suffix7 = opts.show7ths ? relPos === 1 && !keyIsMinor ? "7" : "maj7" : "";
+      const suffix7 = opts.show7ths ? relPos === 1 ? "7" : "maj7" : "";
       svg += `<path d="${ring(outerR, innerR, angle, nextAngle)}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
       data-chord="${key + suffix7}" data-key="${key} Major"><title>${TIP}</title></path>`;
       svg += label(
@@ -2836,6 +2836,7 @@ K:${abcKey}
   }
   var CAPTURE_SETTLE_MS = 250;
   var captureTimer = null;
+  var captureArmed = true;
   function scheduleCapture(symbol, notes) {
     if (captureTimer) clearTimeout(captureTimer);
     captureTimer = setTimeout(() => {
@@ -2844,6 +2845,7 @@ K:${abcKey}
       if (!targetId) return;
       state.song = updateChord(state.song, targetId, symbol, notes);
       saveSong(state.song);
+      captureArmed = false;
       const next = findChordAfter(state.song, targetId)?.id ?? null;
       state.activeCursorId = next;
       state.captureTargetId = next;
@@ -2861,7 +2863,8 @@ K:${abcKey}
     const top = result?.kind === "chord" ? result.candidates[0] : null;
     const known = top && top !== "?" ? top : null;
     if (state.captureTargetId) {
-      if (known && result?.kind === "chord") scheduleCapture(known, result.notes);
+      if (notes.length < 3) captureArmed = true;
+      if (captureArmed && known && result?.kind === "chord") scheduleCapture(known, result.notes);
       else cancelCapture();
     }
     showDetection(result, known ? previousHistorySymbol(known) : null);
