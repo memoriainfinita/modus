@@ -8,6 +8,7 @@ const SHORTCUTS: { key: string; action: string }[] = [
   { key: 'C',     action: 'Clear history (undo in the toast)' },
   { key: 'Esc',   action: 'Drop a held chord, clear cursor, stop MIDI fill' },
   { key: 'M',     action: 'Play with the computer keyboard (M or Esc to stop)' },
+  { key: 'P',     action: 'Presentation: large, no controls, full screen (P or Esc to leave)' },
   { key: '/',     action: 'Type a chord name' },
   { key: '1–9',   action: 'Select chord candidate' },
   { key: '?',     action: 'Show / hide this panel' },
@@ -77,6 +78,7 @@ export interface KeyActions {
   escape: () => void
   selectCandidate: (index: number) => void
   toggleComputerKeyboard: () => void
+  togglePresentation: () => void
   focusChordInput: () => void
 }
 
@@ -96,6 +98,7 @@ export function wireKeyboard(actions: KeyActions) {
       case 'c': case 'C': actions.clearHistory(); break
       case '?': e.preventDefault(); toggleHelp(); break
       case 'm': case 'M': actions.toggleComputerKeyboard(); break
+      case 'p': case 'P': actions.togglePresentation(); break
       case '/': e.preventDefault(); actions.focusChordInput(); break
       case 'ArrowLeft': case 'ArrowRight':
         e.preventDefault()

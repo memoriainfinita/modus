@@ -85,3 +85,33 @@ describe('buildStaffAbc', () => {
     expect(buildStaffAbc(['C4'], 'Eb Major')).toContain('K:Eb\n')
   })
 })
+
+describe('buildStaffAbc on a grand staff', () => {
+  const voices = (abc: string) => {
+    const lines = abc.split('\n')
+    return { rh: lines[lines.indexOf('V:RH clef=treble') + 1], lh: lines[lines.indexOf('V:LH clef=bass') + 1] }
+  }
+
+  it('splits at middle C: C4 and up on the treble staff, the rest on the bass staff', () => {
+    expect(voices(buildStaffAbc(['C3', 'G3', 'C4', 'E4'], null, 'grand'))).toEqual({ rh: '[CE]1', lh: '[C,G,]1' })
+  })
+
+  it('splits by the written letter: B#3 sounds as C4 but is written below it', () => {
+    expect(voices(buildStaffAbc(['B#3', 'E4'], null, 'grand'))).toEqual({ rh: '[E]1', lh: '[^B,]1' })
+  })
+
+  it('an empty staff gets an invisible rest; nothing at all gets a rest on both', () => {
+    expect(voices(buildStaffAbc(['E4', 'G4'], null, 'grand')).lh).toBe('x')
+    expect(voices(buildStaffAbc([], null, 'grand'))).toEqual({ rh: 'z', lh: 'z' })
+  })
+
+  it('joins the staves with a brace and keeps one key signature', () => {
+    const abc = buildStaffAbc(['C4'], 'D Major', 'grand')
+    expect(abc).toContain('%%staves {RH LH}')
+    expect(abc).toContain('K:D\n')
+  })
+
+  it('bass clef alone puts the clef on the key line', () => {
+    expect(buildStaffAbc(['C3'], 'F Major', 'bass')).toContain('K:F clef=bass\n')
+  })
+})

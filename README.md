@@ -55,7 +55,7 @@ Each field can be toggled individually. Font scale adjustable with +/−.
 
 Four columns, each togglable independently ([St][An][CoF][Git]):
 
-- **Staff** (abcjs) — chord summary (name, notes, alternatives) always shown above; key signature follows the active key; size −/+
+- **Staff** (abcjs) — grand staff (treble and bass, split at middle C), or treble or bass alone; chord summary (name, notes, alternatives) always shown above; key signature follows the active key; size −/+
 - **Analysis** — all harmonic analysis fields, each field individually togglable; font scale +/−
 - **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels, size
 - **Guitar voicing** (notae) — Standard / Drop D / Open G / Custom tuning. Out of every fingering UMT finds, only playable ones are kept (chord bass lowest, no muted string in between, four-fret hand, open strings only in first position), ordered along the neck from the open shapes up; next/prev to browse. Custom tuning accepts note names per string and gets real voicings too
@@ -79,6 +79,8 @@ Click a chord to play it and show it in the detector; the key stays. The chord o
 ### Views for OBS, and export
 
 The ⧉ button opens a window with one element alone — the chord name with its degree, the staff, the circle of fifths, the piano or the guitar — filling the window on a chroma green (or magenta, black, dark) background, following what you play live. In OBS: Window Capture of "Modus view: chord" (or staff, cof…), then a Chroma Key filter. The same menu saves the staff, circle, guitar or piano as SVG or PNG with a transparent background.
+
+**Presentation** (⛶ or P) puts the chord name, staff, circle, guitar and piano large over the whole screen with no controls, for a class or a recording of the screen; Esc leaves.
 
 ### MIDI out
 
@@ -188,12 +190,15 @@ src/
     chord.ts              adapters over UMT chords: family/colour, name normalization, notes
     keys.ts               key names, normalization and key signatures (from UMT spelling)
     voicings.ts           playable guitar voicings, tuning names → MIDI
+    spelling.ts           display spelling in the key, over UMT
+    key-map.ts            the key panel's chords: diatonic, negative, parallel modes, Coltrane axis
   diagrams/
     staff.ts              staff (abcjs)
     piano.ts              piano (notae), click to play
     guitar.ts             guitar voicings and tuning controls (notae)
     neck.ts               full-neck horizontal fretboard (notae)
     cof.ts                circle of fifths (custom SVG)
+    key-explorer.ts       key panel rendering
     fretboard-style.ts    colours shared by guitar and neck
   history/
     history.ts            chord history log
@@ -201,6 +206,12 @@ src/
     model.ts              song structure: pure operations, transpose
     library.ts            saved songs: one localStorage key per song, index, migration
     view.ts               song structure rendering and interaction
+  view/
+    channel.ts            BroadcastChannel to the view windows, view names and backgrounds
+    viewer.ts             a view window (?view=): one element filling the window
+    presentation.ts       presentation mode over the main window
+  output/
+    midi-out.ts           MIDI out to a synth or DAW
   input/
     midi.ts               Web MIDI: device selection, note on/off, sustain, modes; the input path the other inputs share
     computer-keyboard.ts  the computer keyboard as a piano (M), by physical key
@@ -212,11 +223,12 @@ src/
     undo.ts               Undo toast for destructive actions
     html.ts               HTML escaping
     storage.ts            localStorage preferences with safe fallbacks
+    export.ts             SVG / PNG export of the diagrams
 tests/
   setup-umt.ts        loads the real UMT bundle (pinned devDependency) as the UMT global
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
-  library.test.ts
+  library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both
@@ -239,8 +251,9 @@ docs/
 | `S` | Send active history chip to song cursor |
 | `C` | Clear history (can be undone) |
 | `1`–`9` | Select alternative chord interpretation |
-| `Esc` | Drop a Hold / Arpeggio chord / cancel MIDI fill / close help / deselect |
+| `Esc` | Leave presentation / drop a Hold / Arpeggio chord / cancel MIDI fill / close help / deselect |
 | `M` | Computer keyboard as a piano (M or Esc to stop) |
+| `P` | Presentation: large, no controls, full screen (P or Esc to leave) |
 | `/` | Type a chord name |
 | `?` | Show / hide shortcuts and mouse gestures |
 

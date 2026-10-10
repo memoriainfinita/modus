@@ -140,7 +140,7 @@ await check('history marks the cadence between two chips: G7 → C is Authentic 
 await check('view window: the chord view follows the detector, alone on the chroma background', async () => {
   await page.click('#btn-views')
   const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="chord"]')])
-  await view.waitForFunction(() => window.UMT && window.Notae)
+  await view.waitForFunction(() => window.UMT && window.Notae && document.getElementById('view-content'))
   assert(await view.title() === 'Modus view: chord', `title: ${await view.title()}`)
   assert(!(await view.locator('#app').isVisible()), 'the app shows in the view window')
   const bg = await view.evaluate(() => getComputedStyle(document.body).backgroundColor)
@@ -339,6 +339,35 @@ await check('staff +/- changes its size', async () => {
   assert(smaller < before && Math.abs(await w() - before) < 1, `widths ${before} ${smaller}`)
 })
 
+await check('the clef button cycles grand, treble and bass staves', async () => {
+  const h = () => page.locator('#staff-container svg').evaluate(s => s.getBoundingClientRect().height)
+  assert(await text('#btn-staff-clef') === 'Grand', 'default grand')
+  const grand = await h()
+  await page.click('#btn-staff-clef')
+  assert(await text('#btn-staff-clef') === 'Treble', 'treble')
+  const treble = await h()
+  await page.click('#btn-staff-clef')
+  assert(await text('#btn-staff-clef') === 'Bass', 'bass')
+  await page.click('#btn-staff-clef')
+  assert(await text('#btn-staff-clef') === 'Grand' && grand > treble * 1.4, `heights ${grand} ${treble}`)
+})
+
+await check('P presents the detector large, follows what is played, Esc leaves', async () => {
+  await page.keyboard.press('p')
+  await page.waitForSelector('#presentation')
+  const tiles = await page.locator('#presentation .pres-tile').evaluateAll(els => els.map(e => e.dataset.view))
+  assert(tiles.join() === 'chord,staff,cof,guitar,piano', `tiles: ${tiles}`)
+  await play([60, 64, 67])
+  await page.waitForFunction(() => document.querySelector('#presentation .view-chord-name')?.textContent === 'C')
+  const size = await page.locator('#presentation .view-chord-name').evaluate(e => parseFloat(getComputedStyle(e).fontSize))
+  assert(size > 60, `chord name ${size}px`)
+  assert(await page.locator('#presentation .view-staff svg').count() === 1, 'staff tile')
+  await off([60, 64, 67])
+  await page.keyboard.press('Escape')
+  assert(await page.locator('#presentation').count() === 0, 'still presenting')
+  assert(!(await page.locator('#btn-present').getAttribute('class')).includes('active-mode'), 'button lit')
+})
+
 await check('arrow keys walk the song and play each chord', async () => {
   await page.locator('.chord-chip', { hasText: 'Dm7' }).click()
   await page.keyboard.press('ArrowRight')
@@ -359,11 +388,11 @@ await check('Del removes the selected song chord, Undo restores it', async () =>
   await page.keyboard.press('Escape')
 })
 
-await check('help panel lists the mouse gestures, no P shortcut', async () => {
+await check('help panel lists the mouse gestures; P is presentation, not play', async () => {
   await page.click('#btn-help')
   const help = await text('#shortcut-help')
   assert(help.includes('Double-click a major or minor circle segment'), 'gestures missing')
-  assert(!/\nP\n/.test(help), 'P still listed')
+  assert(/\nP\nPresentation/.test(help), 'P not listed as presentation')
   await page.keyboard.press('Escape')
 })
 
@@ -461,6 +490,8 @@ const badgeOrNone = async () => (await page.locator('.chord-name-badge').count()
 await check('on-screen piano, Normal: a key sounds in the detector while pressed', async () => {
   await page.click('#btn-normal')
   await setKey('')
+  // The grand staff makes the page taller: the piano may start below the fold
+  await pianoKey('C4').scrollIntoViewIfNeeded()
   const box = await pianoKey('C4').boundingBox()
   await page.mouse.move(box.x + box.width / 2, box.y + box.height - 5)
   await page.mouse.down()

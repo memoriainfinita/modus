@@ -90,6 +90,7 @@ Zone 1 is the primary module. Key, Instruments, History and Song are collapsible
 - **Chord field (/):** type a chord name, Enter shows and plays it like a chord picked from history; an unknown name is marked red.
 - **Key selector:** 24 major/minor keys + Auto. On Auto, the detected key is shown next to it and drives the whole app. The choice belongs to the open song (see Zone 3).
 - **Audio status bar, play button (▶, same as Space), instrument selector, volume.**
+- **⛶ button (P):** presentation mode (see View windows and export).
 - **⧉ button:** view windows for OBS and diagram export (see View windows and export).
 - **? button:** shortcuts and mouse gestures.
 
@@ -161,7 +162,7 @@ Each field has a show/hide toggle; font scale 8–20 px.
 
 Four columns, toggled with [St][An][CoF][Git].
 
-**Staff:** detected notes in ABC notation, treble clef, rendered by abcjs. Key signature from the active key, read from UMT's letter-spelled scale. Size −/+.
+**Staff:** detected notes in ABC notation, rendered by abcjs. Grand staff by default: notes from middle C up on the treble staff, the rest on the bass staff, split by the written letter (B♯3 sounds as C4 and goes below); an empty staff stays blank, nothing at all shows a rest on both. The clef button cycles Grand / Treble / Bass. Key signature from the active key, read from UMT's letter-spelled scale. Size −/+.
 
 **Analysis:** the fields above.
 
@@ -277,6 +278,8 @@ For recording and streaming (`view/`, `ui/export.ts`).
 
 The main window sends what the detector shows over a `BroadcastChannel` (`modus-view`): key, chord, notes, degree, function, guitar voicing. A view that opens asks for the current state. Guitar tuning and CoF options are read from localStorage; when the main window changes them, the views reload. An OBS Browser Source cannot be the view: it is another browser, with no channel to the tab where one plays, and on Windows 10 the controller usually cannot be opened by two programs at once.
 
+**Presentation** (⛶ or P; Esc, P or the × on hover to leave), for teaching and recording: the detector over the whole window, full screen when the browser allows it, no controls. The chord name large with degree and function, then staff, circle and guitar in a row, the piano below: whichever of them the page shows, drawn as the view windows draw them. MIDI, audio and shortcuts keep working; leaving the browser's full screen leaves it too.
+
 **Export.** The same menu saves the staff, circle, guitar or piano on screen as SVG or PNG (3× the screen size), transparent background, cropped to the drawing, named `modus-<diagram>-<chord or key>`. The circle gets the page colour behind its rings (its minor ring is transparent).
 
 ## Customization
@@ -284,7 +287,7 @@ The main window sends what the detector shows over a `BroadcastChannel` (`modus-
 Persisted to localStorage:
 - Panels: notation columns, instruments sub-panels, history, song, control rows
 - Analysis fields and font scale
-- Staff size
+- Staff size and clef
 - CoF size, b/♯, minor/dim rings, degrees, sevenths
 - Key panel font scale, triads / sevenths, sections shown
 - View window background
@@ -306,8 +309,9 @@ Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/A
 | `S` | Send the active history chip to the song cursor |
 | `C` | Clear history (Undo) |
 | `1`–`9` | Select the Nth alternative reading |
-| `Esc` | Close help; otherwise drop a Hold / Arpeggio chord, stop MIDI fill and clear the cursor |
+| `Esc` | Close help or leave presentation; otherwise drop a Hold / Arpeggio chord, stop MIDI fill and clear the cursor |
 | `M` | Computer keyboard as a piano (M or Esc to stop) |
+| `P` | Presentation mode (P or Esc to leave) |
 | `/` | Type a chord name |
 | `?` | Toggle shortcuts and gestures help |
 

@@ -4,7 +4,7 @@
 
 import { subscribeView, VIEW_BACKGROUNDS, VIEW_NAMES } from './channel'
 import type { ViewName, ViewBackground, ViewState } from './channel'
-import { renderStaff } from '../diagrams/staff'
+import { renderStaff, STAFF_CLEFS } from '../diagrams/staff'
 import { renderPiano } from '../diagrams/piano'
 import { renderGuitar } from '../diagrams/guitar'
 import { renderCircleOfFifths } from '../diagrams/cof'
@@ -48,14 +48,15 @@ function renderChordView(el: HTMLElement, s: ViewState) {
     ${detail ? `<div class="view-chord-detail">${escapeHtml(detail)}</div>` : ''}`
 }
 
-function render(view: ViewName, el: HTMLElement, s: ViewState) {
+/** Draws one element of the detector filling `el`: view windows and presentation mode. */
+export function renderView(view: ViewName, el: HTMLElement, s: ViewState) {
   if (view === 'chord') return renderChordView(el, s)
   if (view === 'staff') {
     // A short staff (clef, signature, chord). abcjs fixes the height of the element it
     // draws into, so it draws into an inner one that is then stretched.
     el.innerHTML = '<div></div>'
     const inner = el.firstElementChild as HTMLElement
-    renderStaff(inner, s.notes, 200, s.key, 1)
+    renderStaff(inner, s.notes, 200, s.key, 1, loadChoice('staff-clef', STAFF_CLEFS, 'grand'))
     inner.style.height = '100%'
     inner.style.width = '100%'
   }
@@ -83,11 +84,11 @@ export function runViewerFromUrl(): boolean {
   el.className = `view-${view}`
   document.body.appendChild(el)
 
-  subscribeView(s => render(view, el, s))
-  // Guitar tuning and CoF options live in localStorage: when the main window changes
+  subscribeView(s => renderView(view, el, s))
+  // Guitar tuning, CoF options and the staff clef live in localStorage: when the main window changes
   // them, the view reloads with them (songs are saved there too, and are ignored).
   window.addEventListener('storage', e => {
-    if (e.key && /^(guitar-|cof-)/.test(e.key)) location.reload()
+    if (e.key && /^(guitar-|cof-|staff-clef)/.test(e.key)) location.reload()
   })
   return true
 }
