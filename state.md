@@ -20,6 +20,7 @@ What is true now. What already happened lives in `state-history.md`.
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
 - Tests 2026-10-10: TSC clean, 215 unit tests against the real UMT bundle, `pnpm test:e2e` 36/36 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
+- Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
 - Interface languages: English and Spanish (today English only). Docs, code and commits stay in English
 
@@ -46,52 +47,53 @@ What is true now. What already happened lives in `state-history.md`.
 
 ## TODO
 
-Roadmap agreed 2026-10-09, not yet prioritized.
+### Analysis, in order (2026-10-10)
 
-### Songs and data
+1. [ ] Pitch spelling follows the key: MIDI input is spelled with flats today (G# in E major shows as Ab, on the staff with a wrong accidental). With it, `navigator.storage.persist()` so the browser does not evict preferences and songs
+2. [ ] Voicing analysis: inversion, close / open position, drop 2 / drop 3, doubled and omitted notes
+3. [ ] Scales and modes that fit a melody or a set of single notes
+4. [ ] Show what UMT computes and Modus does not: upper structures and slash-chord reading (`upper-structures`), neo-Riemannian P/L/R between consecutive chords, Forte number and interval vector
+5. [ ] Key and scale explorer: pick a key or mode, see its diatonic chords, functions and usual borrowings, without playing. The Coltrane axis and negative harmony move here from the per-chord panel (the axis depends only on the key)
+6. [ ] Next-chord suggestions, as didactics: what usually follows and why (function, cadences, UMT's named progressions)
+7. [ ] Progression analysis over the history: modulations, harmonic rhythm, cadences (`analyzeProgression` returns them, unused today)
+8. [ ] OBS view (a URL showing only the chord, staff or circle on a transparent or chroma background, for a browser source) and export of diagrams as SVG / PNG
+9. [ ] MIDI output: send what sounds to an external synth or DAW
 
-- [ ] Export / import songs to a file
-- [ ] Share a song or example by URL, encoded in the link (no server)
-- [ ] MIDI file import / export
-- [ ] Export to MusicXML and a chord-sheet PDF
-- [ ] Play the song at a tempo, with time signature (today only chord by chord with the arrows)
-- [ ] Whole-song analysis from `analyzeProgression`: modulations and harmonic rhythm (returned by UMT, unused today), key per section, cadences between sections
+### Analysis, not yet ordered (agreed 2026-10-09)
 
-### Input
-
+Input
 - [ ] Clicking the on-screen piano feeds the detector (today it only sounds the note, `diagrams/piano.ts:17`)
 - [ ] Computer keyboard as note input
-- [ ] Type a chord name in the detector and see it on every diagram (today only inside the song)
+- [ ] Type a chord name in the detector and see it on every diagram
 - [ ] MIDI channel filtering
 
-### Visualization
-
+Visualization
 - [ ] Grand staff, treble and bass clef (today treble only)
 - [ ] Voice leading: how each voice moves from one chord to the next, on staff or piano
-- [ ] Presentation mode for teaching and recording: large elements, no controls (today text is 10–13 px and the CoF is hard to read at a distance)
+- [ ] Presentation mode for teaching and recording: large elements, no controls (today text is 10-13 px and the CoF is hard to read at a distance)
 - [ ] Velocity display
-- [ ] More instruments in diagrams: bass, ukulele, other tunings. First check what notae draws
+- [ ] More instruments: bass, ukulele, other tunings, as one string-instrument panel with two views (chord positions, whole neck) instead of today's separate Guitar and Fretboard panels. First check what notae draws
+- [ ] CoF b/# buttons only on Auto: with a key set, spelling comes from the key
 - [ ] Colour themes: background and diagram colours (dots, frets, piano keys, CoF segments)
 - [ ] Light mode
-- [ ] Free colour picker for song sections (today a preset palette)
-- [ ] Modular layout (panels placed and resized freely): undecided whether it is wanted
+- [ ] Modular layout (panels placed and resized freely): undecided whether it is wanted. Today's Notation / Instruments grouping is arbitrary (the CoF is not notation)
 
-### Didactics
-
-- [ ] Explanations: each term the app shows (V7/V, borrowed from dorian…) can explain what it means
-- [ ] Key and scale explorer: pick a key or mode, see its diatonic chords, functions and usual borrowings, without playing
+Didactics
+- [ ] Explanations: each term the app shows (V7/V, borrowed from dorian...) can explain what it means
 - [ ] Reference progressions and examples (ii-V-I, cadences, modal interchange), loadable, with explanation
 - [ ] Ear training: the app plays a chord or cadence and the user identifies it
 - [ ] Built-in help and a first-run guided tour
 
-### Universal
-
+Universal
 - [ ] Interface in English and Spanish
 - [ ] Mobile and touch
 - [ ] Accessibility: full keyboard use and screen reader
 - [ ] Non-Western and microtonal systems, modes and tunings, through UMT
 - [ ] Works offline and installable: UMT, notae, abcjs, soundfont-player and the samples served with the app instead of from CDNs (also removes the `gleitz.github.io` risk)
 
-### Transcription
-
+Transcription
 - [ ] Audio player for the recording being transcribed: loop, slow down
+
+### Song builder, frozen
+
+Works and keeps its tests; no new features. Later: a separate app on UMT and notae, or kept as is. Parked until then: export / import to a file, share by URL, MIDI file import / export, MusicXML and chord-sheet PDF, playback at a tempo with time signature, chord durations within the measure, lyrics and notes per measure, undo / redo of edits, free colour for sections, metronome and recording takes into bars. Whole-song analysis moved to analysis item 7, over the history.

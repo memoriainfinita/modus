@@ -2,6 +2,11 @@
 
 What left `state.md`. Most recent first.
 
+### 2026-10-10 — Scope: the analysis is Modus; the song builder is frozen
+
+**What changed:** the roadmap was split. Analysis work is ordered (pitch spelling, voicing analysis, scales from a melody, unused UMT output, key explorer, next-chord suggestions, progression analysis over the history, OBS view and image export, MIDI output). The song builder keeps working with its tests but gets no new features; its roadmap items are parked (file export, sharing, MIDI and MusicXML files, PDF, tempo playback, durations, lyrics, undo / redo, metronome, takes). Whole-song analysis moved to the history.
+**Why:** Modus started as an analysis tool. The song builder came in later and is useful, but it is a composition / documentation app: every feature it needs (durations, lyrics, tempo, notation export) pulls Modus toward a score or chord-sheet editor and away from the analysis. Later it may become a separate app on UMT and notae.
+
 ### 2026-10-10 — UMT theory output fixed upstream (pin `870d3d8` → `debda14`)
 
 **What changed:** a sweep of every UMT call Modus makes (24 keys × 24 chords) found no API drift but wrong theory: figured bass of seventh chords ("" for C7, "10" for C7/Bb), raised degrees in minor read as lowered (G#dim7 in A minor as "bi°7", tonic), secondary dominants with the function of their degree, harmonic-minor V as "borrowed from major", no function for VII / ♭VII, D7 in C also "borrowed from lydian", substitution gaps (none for Dm7 or Fm in C). All fixed in UMT with tests; criteria recorded in UMT's `state.md` Patterns.

@@ -28,7 +28,7 @@ All theory comes from UMT, developed for Modus. What UMT lacks is added to UMT, 
 
 ## Structure
 
-The core is the **Detector**: input → chord detection → harmonic analysis, shown at once. A chord history and a song builder extend it, to work with progressions over time.
+The core is the **Detector**: input → chord detection → harmonic analysis, shown at once. A chord history extends it over time. The song builder is kept as it is (frozen since 2026-10-10): new work goes to the detector and the analysis.
 
 ## Design principles
 
