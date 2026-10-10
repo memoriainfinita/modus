@@ -1,6 +1,6 @@
 ---
 created: 2026-05-20
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 ---
 
 # Modus — state
@@ -18,7 +18,8 @@ What is true now. What already happened lives in `state-history.md`.
 
 - Working: detector, analysis, history, song builder, audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-09: TSC clean, 204 unit tests against the real UMT bundle, `pnpm test:e2e` 28/28 (installed Chrome + fake Web MIDI). Pending: real controller and Firefox
+- Tests 2026-10-10: TSC clean, 206 unit tests against the real UMT bundle, `pnpm test:e2e` 30/30 (installed Chrome + fake Web MIDI). Firefox and a real controller checked by hand. Pending by hand: unplugging the controller in Firefox (an unplugged port left in `inputs` is now filtered by state)
+- UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys): no throws, shapes as `docs/umt-contract.md`. Wrong in UMT: figured bass of seventh chords (C7 → "", C7/Bb → "10"); raised degrees in minor (G#dim7 in A minor → "bi°7", tonic). See TODO
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
 - Interface languages: English and Spanish (today English only). Docs, code and commits stay in English
 
@@ -47,8 +48,14 @@ Roadmap agreed 2026-10-09, not yet prioritized.
 
 ### Tests
 
-- [ ] Test with a real MIDI controller: capture (⊙) chaining with its 250 ms settle time, hold/arpeggio modes, device hot-plug, the audio flash when a note arrives before the first click; by ear: the velocity curve (linear, `velocityGain` in `audio/audio.ts`), note-off release and the sustain pedal
-- [ ] Test in Firefox (Web MIDI behind a per-site permission): connection, playback, layout. The README and the warning already list Firefox; this confirms it
+- [ ] Unplug and replug the controller in Firefox: status shows disconnected, then plays again
+
+### UMT fixes (in UMT, then bump the pin)
+
+- [ ] Figured bass of seventh chords: root 7, inversions 6/5, 4/3, 4/2
+- [ ] Raised degrees in minor: G#dim7 in A minor is vii°7 (D), F#dim is ♯vi°
+- [ ] Criteria to settle: secondary dominants' function (today the degree's: A7 in C is T); V and vii°7 of harmonic minor as diatonic in minor (today E in A minor is "borrowed from major"); VII / ♭VII function (today unknown)
+- [ ] Substitution gaps: Dm7 and Fm in C get none
 
 ### Songs and data
 
