@@ -37,6 +37,24 @@ describe('circle of fifths: active key', () => {
     expect(texts).toContain('A#m')
     expect(texts).not.toContain('Bbm')
   })
+
+  it('sharp mode keeps Ab and Eb: G# and D# major need double sharps', () => {
+    const texts = [...render(null, { accidental: 'sharp' }).querySelectorAll('text')].map(t => t.textContent)
+    expect(texts).toEqual(expect.arrayContaining(['F#', 'C#', 'Ab', 'Eb']))
+    expect(texts).not.toContain('G#')
+    expect(texts).not.toContain('D#')
+  })
+})
+
+describe('circle of fifths: sevenths', () => {
+  it('the dominant seventh sits on V in major and on VII in minor', () => {
+    expect(segment(render('C Major', { show7ths: true }), 'G7')).not.toBeNull()
+    expect(segment(render('C Major', { show7ths: true }), 'Fmaj7')).not.toBeNull()
+    const minor = render('A Minor', { show7ths: true })
+    expect(segment(minor, 'G7')).not.toBeNull()
+    expect(segment(minor, 'Cmaj7')).not.toBeNull()
+    expect(segment(minor, 'Fmaj7')).not.toBeNull()
+  })
 })
 
 describe('circle of fifths: degrees', () => {

@@ -356,6 +356,9 @@ function previousSongSymbol(chordId: string): string | null {
 // captured as the triad formed by its first three notes).
 const CAPTURE_SETTLE_MS = 250
 let captureTimer: ReturnType<typeof setTimeout> | null = null
+// After a fill, the keys must drop below a chord before the next one counts: releasing
+// a chord one key at a time passes through its subsets, which must not fill the next slot.
+let captureArmed = true
 
 function scheduleCapture(symbol: string, notes: string[]) {
   if (captureTimer) clearTimeout(captureTimer)
@@ -365,6 +368,7 @@ function scheduleCapture(symbol: string, notes: string[]) {
     if (!targetId) return
     state.song = updateChord(state.song, targetId, symbol, notes)
     saveSong(state.song)
+    captureArmed = false
     // Fill keeps going: the next slot (across measures and sections) waits for the next chord.
     const next = findChordAfter(state.song, targetId)?.id ?? null
     state.activeCursorId = next
@@ -383,7 +387,8 @@ function onNoteChange(notes: number[]) {
   const known = top && top !== '?' ? top : null
 
   if (state.captureTargetId) {
-    if (known && result?.kind === 'chord') scheduleCapture(known, result.notes)
+    if (notes.length < 3) captureArmed = true
+    if (captureArmed && known && result?.kind === 'chord') scheduleCapture(known, result.notes)
     else cancelCapture()
   }
 
