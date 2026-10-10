@@ -18,7 +18,7 @@ What is true now. What already happened lives in `state-history.md`.
 
 - Working: detector, analysis, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-10: TSC clean, 243 unit tests against the real UMT bundle, `pnpm test:e2e` 46/46 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox; not rerun after the key panel, which does not touch MIDI). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
+- Tests 2026-10-10: TSC clean, 254 unit tests against the real UMT bundle, `pnpm test:e2e` 47/47 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `ac10838` (audit phase 1: letters in notes and numerals) the same day: all tests pass unchanged. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - CoF degrees come from UMT since 2026-10-10 (they had their own semitone table). UMT reads a chromatic chord by the letter `spellChordInKey` picks, not the one written: Gb in C shows ♯IV (reported in the UMT notes)
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
@@ -61,7 +61,7 @@ Items 1-3 need new UMT functions or UMT fixes: requested in `umt/docs/notas-desd
 5. [ ] Next-chord suggestions, as didactics: what usually follows and why (function, cadences, UMT's named progressions)
 6. [~] Progression analysis over the history. Done 2026-10-10: cadence tags between chips. Waiting on UMT (requested): modulations (`detectModulations` picks the first key in chromatic order that fits a 3-chord window: C Am D7 in C reads E minor, not G major; minor keys are natural minor only) and harmonic rhythm (counts chord changes; the history never repeats a chord, so it is always 1, and it has no timing). Also open: romans and cadences after a modulation in the new key
 7. [x] Views for OBS and export, 2026-10-10. View windows (popups synced by BroadcastChannel) on a chroma background for Window Capture: not a Browser Source, which is another browser and cannot reach the playing tab. SVG / PNG export of staff, circle, guitar, piano. Checked headless in Chrome and Firefox; not yet in OBS itself
-8. [ ] MIDI output: send what sounds to an external synth or DAW
+8. [x] MIDI output, 2026-10-10: Out port and channel in the toolbar; previews and virtual inputs always, controller only with Thru; loop guard; notes released on any change. Not yet tried with a DAW or hardware synth
 
 ### Added 2026-10-10, not yet ordered
 

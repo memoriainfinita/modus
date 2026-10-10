@@ -63,6 +63,11 @@ function buildToolbar(): string {
     <div id="z1-toolbar" class="toolbar">
       <span id="midi-status" class="midi-status">MIDI: —</span>
       <select id="midi-device" class="ctrl-select"></select>
+      <select id="midi-out" class="ctrl-select" title="MIDI out: what sounds goes to this port"><option value="">Out: off</option></select>
+      <select id="midi-out-ch" class="ctrl-select" title="MIDI out channel">
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">ch ${i + 1}</option>`).join('')}
+      </select>
+      <button id="btn-thru" class="mode-btn" title="Thru: also send the controller's notes (off: the DAW usually hears the controller itself)">Thru</button>
       <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
       <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>

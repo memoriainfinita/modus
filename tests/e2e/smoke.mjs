@@ -18,7 +18,8 @@ const FAKE_MIDI = () => {
   let hotplug = true
   const port = (id, name) => ({ id, name, state: 'connected', onmidimessage: null })
   navigator.requestMIDIAccess = async () => {
-    const access = { inputs: new Map([...plugged].map(([id, name]) => [id, port(id, name)])), outputs: new Map(), onstatechange: null }
+    const synth = { id: 'synth-1', name: 'Fake Synth', state: 'connected', send: bytes => window.__sent.push([...bytes]) }
+    const access = { inputs: new Map([...plugged].map(([id, name]) => [id, port(id, name)])), outputs: new Map([['synth-1', synth]]), onstatechange: null }
     accesses.push(access)
     return access
   }
@@ -27,6 +28,7 @@ const FAKE_MIDI = () => {
     for (const a of accesses) a.inputs.get(id)?.onmidimessage?.({ data: new Uint8Array(bytes) })
   }
   window.__hotplug = on => { hotplug = on }
+  window.__sent = []   // what MIDI out sends to the fake synth
   window.__plug = (id, name) => {
     if (name) plugged.set(id, name); else plugged.delete(id)
     if (!hotplug) return
@@ -163,6 +165,29 @@ await check('export: the staff as SVG and the circle as PNG', async () => {
   assert(svg.data.toString().startsWith('<svg') && svg.data.toString().includes('xmlns="http://www.w3.org/2000/svg"'), 'not a standalone SVG')
   const png = await save('cof', 'png')
   assert(png.name.endsWith('.png') && png.data.subarray(1, 4).toString() === 'PNG' && png.data.length > 5000, `png: ${png.name} ${png.data.length} bytes`)
+})
+
+await check('MIDI out: previews and the computer keyboard go out; controller notes only with Thru', async () => {
+  await page.selectOption('#midi-out', 'synth-1')
+  await page.selectOption('#midi-out-ch', '2')
+  const sent = () => page.evaluate(() => window.__sent.splice(0))
+  await sent()
+  await page.locator('#cof-container [data-chord="F"]').click()
+  const preview = await sent()
+  assert(preview.some(b => b[0] === 0x91 && b[1] === 65), `preview: ${JSON.stringify(preview)}`)
+  await play([60, 64, 67], 100)
+  await off([60, 64, 67])
+  const controller = (await sent()).filter(b => (b[0] & 0xF0) === 0x90)
+  assert(controller.length === 0, `controller sent without Thru: ${JSON.stringify(controller)}`)
+  await page.click('#btn-thru')
+  await play([62], 100)
+  await off([62])
+  const thru = await sent()
+  assert(thru.some(b => b[0] === 0x91 && b[1] === 62) && thru.some(b => b[0] === 0x81 && b[1] === 62), `thru: ${JSON.stringify(thru)}`)
+  await page.click('#btn-thru')
+  await page.selectOption('#midi-out', '')
+  const off_ = await sent()
+  assert(off_.some(b => b[0] === 0xB1 && b[1] === 123), `no All Notes Off when switching off: ${JSON.stringify(off_)}`)
 })
 
 await check('changing MIDI mode clears a held chord', async () => {

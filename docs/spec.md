@@ -84,6 +84,7 @@ Zone 1 is the primary module. Key, Instruments, History and Song are collapsible
 ### Toolbar
 
 - **MIDI status and device selector:** updates on connect/disconnect (Firefox reports neither: the list is rescanned every 2 s while the page is visible, and on focus). The device the user picks, or the first one used, is preferred by name and taken back when it reappears; a fallback used meanwhile does not replace it.
+- **MIDI out (Out ▾, ch, Thru):** see MIDI out.
 - **Mode buttons:** Normal, Hold, Arpeggio (mutually exclusive). They apply to every input: controller, computer keyboard and on-screen piano.
 - **⌨ (M):** the computer keyboard as a piano; octave and velocity shown next to it.
 - **Chord field (/):** type a chord name, Enter shows and plays it like a chord picked from history; an unknown name is marked red.
@@ -309,6 +310,19 @@ Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/A
 | `M` | Computer keyboard as a piano (M or Esc to stop) |
 | `/` | Type a chord name |
 | `?` | Toggle shortcuts and gestures help |
+
+## MIDI out
+
+`output/midi-out.ts`. **Out ▾** picks a Web MIDI output (off by default; remembered by name, and an unplugged one stays chosen and listed as absent), **ch** its channel 1–16.
+
+| Sent | When |
+|---|---|
+| Previews (chips, CoF, key panel, arrows, Space, typed chord), velocity 90 | always; they cut and end as the internal sound does |
+| Clicked piano key | always; cuts nothing |
+| Computer keyboard and on-screen piano: note on/off with velocity, sustain (CC 64) | always |
+| Controller notes and pedal | only with **Thru** (off by default: a DAW usually hears the controller itself) |
+
+Every note sent is tracked: changing port or channel, turning Thru off and leaving the page release them (pedal up, note-offs, CC 123). An output on the same port the controller is read from sends nothing (it would come back as input) and the selector turns red. The internal sound keeps playing; the volume slider silences it.
 
 ## Out of scope
 
