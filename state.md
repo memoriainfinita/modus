@@ -61,6 +61,13 @@ Items 1-3 need new UMT functions or UMT fixes: requested in `umt/docs/notas-desd
 7. [ ] OBS view (a URL showing only the chord, staff or circle on a transparent or chroma background, for a browser source) and export of diagrams as SVG / PNG
 8. [ ] MIDI output: send what sounds to an external synth or DAW
 
+### Added 2026-10-10, not yet ordered
+
+- [ ] Metronome, didactic: any meter including additive ones (7/8 as 2+2+3) with accents per group, subdivisions and tuplets, polyrhythms (3:2, 4:3, 5:4), clave and Euclidean patterns, tap tempo, tempo trainer (+N BPM every N bars). Shown as a circular necklace (beats as dots, groups as arcs, current beat lit; a polyrhythm as concentric rings). Clicks synthesized with Web Audio, not the soundfont. Theory from UMT `rhythm.ts` and `clave-patterns.ts`, which the audit found wrong in places (claves, metric modulation): waits on UMT
+- [ ] Microphone input: first monophonic (tuner, the note sung or played; feeds the scales-from-notes item), then chords from audio. Without it, guitarists, singers and wind players are left out
+- [ ] Note names as Do-Re-Mi (with the Spanish interface) and movable-do solfege for didactics, from UMT `solfege.ts` (movable do is major-only today: waits on UMT)
+- [ ] Scales and modes shown on the fretboard and piano, with positions, from UMT `getFretboardScale` / `getFretboardScalePositions` (positions are per-fret windows, not CAGED, per the audit: waits on UMT). Belongs with the key explorer
+
 ### Analysis, not yet ordered (agreed 2026-10-09)
 
 Input
