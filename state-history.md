@@ -2,6 +2,11 @@
 
 What left `state.md`. Most recent first.
 
+### 2026-10-10 — UMT theory output fixed upstream (pin `870d3d8` → `debda14`)
+
+**What changed:** a sweep of every UMT call Modus makes (24 keys × 24 chords) found no API drift but wrong theory: figured bass of seventh chords ("" for C7, "10" for C7/Bb), raised degrees in minor read as lowered (G#dim7 in A minor as "bi°7", tonic), secondary dominants with the function of their degree, harmonic-minor V as "borrowed from major", no function for VII / ♭VII, D7 in C also "borrowed from lydian", substitution gaps (none for Dm7 or Fm in C). All fixed in UMT with tests; criteria recorded in UMT's `state.md` Patterns.
+**Why:** `tryUMT` swallows throws and the panel shows whatever UMT returns, so wrong theory reached the UI silently. Per the [theory] pattern, fixes went to UMT, not into Modus workarounds.
+
 ### 2026-10-09 — src/ organized by area; styles into src/
 
 **What changed:** `src/` grouped into detector, theory, diagrams, history, song, input, audio and ui. `diagrams.ts` split into one file per diagram. Note-name helpers moved from `midi.ts` to `theory/notes.ts`. `styles.css` moved from the root to `src/`, bundled by esbuild to `dist/app.css`.
