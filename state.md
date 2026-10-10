@@ -12,13 +12,13 @@ What is true now. What already happened lives in `state-history.md`.
 **Modus** — see and understand the harmony of what you play, in real time. Aimed at being a complete, professional, useful, universal and didactic app, for studying, transcribing songs, composing, teaching and making videos. No time or budget limits, no marketing or profit goals. GPL-3.0, part of the **memoriainfinita** ecosystem: UMT (developed for Modus, all theory) and notae (diagrams).
 
 - **Spec:** `docs/spec.md` (purpose, design, behaviour) · **UMT contract:** `docs/umt-contract.md` · Executed plans and earlier spec revisions in `.archive/` (local, gitignored)
-- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to `801e5ec`, notae to `8fb052d`
+- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to `801e5ec`, notae to `81b58de`
 
 ## Status
 
 - Working: detector, analysis, history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-10: TSC clean, 225 unit tests against the real UMT bundle, `pnpm test:e2e` 37/37 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present
+- Tests 2026-10-10: TSC clean, 225 unit tests against the real UMT bundle, `pnpm test:e2e` 38/38 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 10/10 (real Web MIDI through loopMIDI in Chrome and Firefox). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
