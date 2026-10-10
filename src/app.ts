@@ -4,11 +4,12 @@ import { wireComputerKeyboard, toggleComputerKeyboard, isComputerKeyboardOn, com
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './detector/analyzer'
 import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
 import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
-import { renderStaff } from './diagrams/staff'
+import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
+import { openPresentation, updatePresentation, closePresentation, isPresenting } from './view/presentation'
 import { renderPiano } from './diagrams/piano'
 import { renderGuitar, getGuitarVoicingIndex, setGuitarVoicingChange } from './diagrams/guitar'
 import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS } from './view/channel'
-import type { ViewName, ViewBackground } from './view/channel'
+import type { ViewName, ViewBackground, ViewState } from './view/channel'
 import { runViewerFromUrl } from './view/viewer'
 import { exportDiagram } from './ui/export'
 import type { ExportTarget } from './ui/export'
@@ -36,6 +37,7 @@ import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles } from
 
 const staffWidth = 380
 let staffScale = loadNumber('staff-scale', 2, 1, 3)
+let staffClef = loadChoice('staff-clef', STAFF_CLEFS, 'grand')
 let cofSize = loadNumber('cof-size', 160, 100, 400)
 let cofAccidental = loadChoice('cof-accidental', ['flat', 'sharp'] as const, 'flat')
 let cofShowMinor   = loadBool('cof-show-minor', true)
@@ -256,8 +258,17 @@ function wireLayoutEvents() {
   const resizeStaff = (delta: number) => {
     staffScale = Math.min(3, Math.max(1, staffScale + delta))
     save('staff-scale', staffScale)
-    renderStaff($('staff-container'), displayedNotes(), staffWidth, analysisKey(), staffScale)
+    renderStaff($('staff-container'), displayedNotes(), staffWidth, analysisKey(), staffScale, staffClef)
   }
+  const clefBtn = $('btn-staff-clef')
+  const showClef = () => { clefBtn.textContent = CLEF_LABELS[staffClef] }
+  showClef()
+  clefBtn.addEventListener('click', () => {
+    staffClef = STAFF_CLEFS[(STAFF_CLEFS.indexOf(staffClef) + 1) % STAFF_CLEFS.length]
+    save('staff-clef', staffClef)
+    showClef()
+    renderZone1Diagrams(displayedNotes(), selectedSymbol())
+  })
   $('btn-staff-minus').addEventListener('click', () => resizeStaff(-0.25))
   $('btn-staff-plus').addEventListener('click', () => resizeStaff(0.25))
 
@@ -344,6 +355,8 @@ function selectedSymbol(): string | null {
   return sym && sym !== '?' ? sym : null
 }
 
+const CLEF_LABELS: Record<typeof staffClef, string> = { grand: 'Grand', treble: 'Treble', bass: 'Bass' }
+
 function displayedNotes(): string[] {
   const d = state.detection
   if (!d) return []
@@ -381,8 +394,14 @@ const sendView = createViewPublisher()
 
 /** What the view windows show: the detector as it is now. */
 function publishView() {
+  const view = viewState()
+  sendView(view)
+  updatePresentation(view)
+}
+
+function viewState(): ViewState {
   const d = state.detection
-  sendView({
+  return {
     key: analysisKey(),
     kind: d?.kind ?? null,
     label: !d ? '' : d.kind === 'note' ? d.pitchClass : d.kind === 'interval' ? d.intervalName : (selectedSymbol() ?? ''),
@@ -391,7 +410,27 @@ function publishView() {
     roman: state.analysis?.roman ?? null,
     function: state.analysis?.function ?? null,
     guitarVoicing: getGuitarVoicingIndex(),
-  })
+  }
+}
+
+// ─── Presentation mode ───────────────────────────────────────────────────────
+
+/** Presents what the main page shows: hidden panels stay out. */
+function presentedViews(): ViewName[] {
+  const p = state.panels
+  const views: ViewName[] = ['chord']
+  if (p.notation && p.colStaff) views.push('staff')
+  if (p.notation && p.colCoF) views.push('cof')
+  if (p.notation && p.colGuitar) views.push('guitar')
+  if (p.instruments && p.colPiano) views.push('piano')
+  return views
+}
+
+function togglePresentation() {
+  if (isPresenting()) { closePresentation(); return }
+  $('view-menu').classList.remove('open')
+  openPresentation(presentedViews(), viewState(), () => $('btn-present').classList.remove('active-mode'))
+  $('btn-present').classList.add('active-mode')
 }
 
 let viewBackground = loadChoice('view-bg', Object.keys(VIEW_BACKGROUNDS) as ViewBackground[], 'green')
@@ -420,6 +459,7 @@ function wireViewMenu() {
     })
   })
   setGuitarVoicingChange(() => publishView())
+  $('btn-present').addEventListener('click', e => { e.stopPropagation(); togglePresentation() })
 }
 
 // MIDI input has no spelling of its own: it is written in the key, and rewritten when the
@@ -612,8 +652,8 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const key = analysisKey()
   const notes = noteNames.join(' ')
   const cofOpts = { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths }
-  renderIfChanged('staff', `${notes}|${key}|${staffScale}`, () =>
-    renderStaff($('staff-container'), noteNames, staffWidth, key, staffScale))
+  renderIfChanged('staff', `${notes}|${key}|${staffScale}|${staffClef}`, () =>
+    renderStaff($('staff-container'), noteNames, staffWidth, key, staffScale, staffClef))
   renderIfChanged('piano', `${notes}|${chordSymbol}`, () =>
     renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress))
   renderIfChanged('neck', `${notes}|${keyPrefersSharps(key)}`, () =>
@@ -796,7 +836,9 @@ function wireShortcuts() {
     },
     toggleComputerKeyboard: () => { initAudioOnGesture(); toggleComputerKeyboard(true) },
     focusChordInput: () => ($('typed-chord') as HTMLInputElement).focus(),
+    togglePresentation,
     escape: () => {
+      if (isPresenting()) { closePresentation(); return }
       releaseKeptNotes()
       cancelCapture()
       state.activeCursorId = null

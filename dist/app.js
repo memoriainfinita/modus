@@ -933,14 +933,10 @@
   if (typeof window !== "undefined") window.addEventListener("pagehide", () => allNotesOff());
 
   // src/diagrams/staff.ts
-  function buildStaffAbc(noteNames, keyStr) {
-    const { abcKey, accidentals } = keySignature(keyStr);
-    const header = `X:1
-M:none
-L:1
-K:${abcKey}
-`;
-    const abcNotes = noteNames.flatMap((n) => {
+  var STAFF_CLEFS = ["grand", "treble", "bass"];
+  var LETTERS = "CDEFGAB";
+  function parseNotes(noteNames, accidentals) {
+    return noteNames.flatMap((n) => {
       const m = n.match(/^([A-G])(#{0,2}|b{0,2})(-?\d+)$/);
       if (!m) return [];
       const [, letter, acc, octStr] = m;
@@ -948,13 +944,85 @@ K:${abcKey}
       const mark = acc === keyAcc ? "" : acc ? acc.replace(/#/g, "^").replace(/b/g, "_") : "=";
       const oct = parseInt(octStr);
       const pitch = oct >= 5 ? letter.toLowerCase() + "'".repeat(oct - 5) : oct === 4 ? letter : letter + ",".repeat(4 - oct);
-      return [mark + pitch];
+      return [{ mark, pitch, step: oct * 7 + LETTERS.indexOf(letter) }];
     });
-    return header + (abcNotes.length ? `[${abcNotes.join("")}]1` : "z");
   }
-  function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2) {
-    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr), { staffwidth: width - 20, scale });
+  var chordOf = (notes) => `[${notes.map((n) => n.mark + n.pitch).join("")}]1`;
+  var MIDDLE_C = 4 * 7;
+  function buildStaffAbc(noteNames, keyStr, clef = "treble") {
+    const { abcKey, accidentals } = keySignature(keyStr);
+    const notes = parseNotes(noteNames, accidentals);
+    if (clef !== "grand") {
+      const header = `X:1
+M:none
+L:1
+K:${abcKey}${clef === "bass" ? " clef=bass" : ""}
+`;
+      return header + (notes.length ? chordOf(notes) : "z");
+    }
+    const upper = notes.filter((n) => n.step >= MIDDLE_C);
+    const lower = notes.filter((n) => n.step < MIDDLE_C);
+    const empty = notes.length ? "x" : "z";
+    return `X:1
+M:none
+L:1
+%%staves {RH LH}
+K:${abcKey}
+V:RH clef=treble
+${upper.length ? chordOf(upper) : empty}
+V:LH clef=bass
+${lower.length ? chordOf(lower) : empty}`;
   }
+  function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2, clef = "treble") {
+    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr, clef), { staffwidth: width - 20, scale });
+  }
+
+  // src/view/channel.ts
+  var VIEW_NAMES = ["chord", "staff", "cof", "piano", "guitar"];
+  var VIEW_BACKGROUNDS = { green: "#00ff00", magenta: "#ff00ff", black: "#000000", dark: "#1a1a2e" };
+  var NAME = "modus-view";
+  function open() {
+    try {
+      return new BroadcastChannel(NAME);
+    } catch {
+      return null;
+    }
+  }
+  function createViewPublisher() {
+    const channel2 = open();
+    let current2 = null;
+    let last2 = "";
+    channel2?.addEventListener("message", (e) => {
+      if (e.data?.type === "hello" && current2) channel2.postMessage({ type: "state", state: current2 });
+    });
+    return (state2) => {
+      current2 = state2;
+      const sig = JSON.stringify(state2);
+      if (sig === last2) return;
+      last2 = sig;
+      channel2?.postMessage({ type: "state", state: state2 });
+    };
+  }
+  function subscribeView(onState) {
+    const channel2 = open();
+    channel2?.addEventListener("message", (e) => {
+      if (e.data?.type === "state") onState(e.data.state);
+    });
+    channel2?.postMessage({ type: "hello" });
+  }
+  function viewUrl(view, bg, base = location.href) {
+    const url = new URL(base);
+    url.search = new URLSearchParams({ view, bg }).toString();
+    url.hash = "";
+    return url.toString();
+  }
+  var VIEW_WINDOW = {
+    chord: [640, 360],
+    staff: [800, 420],
+    cof: [520, 520],
+    piano: [960, 300],
+    guitar: [380, 460]
+  };
 
   // src/diagrams/piano.ts
   function renderPiano(container, noteNames, chordSymbol, onPress) {
@@ -1240,53 +1308,6 @@ K:${abcKey}
     wireGuitarControls(container);
   }
 
-  // src/view/channel.ts
-  var VIEW_NAMES = ["chord", "staff", "cof", "piano", "guitar"];
-  var VIEW_BACKGROUNDS = { green: "#00ff00", magenta: "#ff00ff", black: "#000000", dark: "#1a1a2e" };
-  var NAME = "modus-view";
-  function open() {
-    try {
-      return new BroadcastChannel(NAME);
-    } catch {
-      return null;
-    }
-  }
-  function createViewPublisher() {
-    const channel2 = open();
-    let current2 = null;
-    let last = "";
-    channel2?.addEventListener("message", (e) => {
-      if (e.data?.type === "hello" && current2) channel2.postMessage({ type: "state", state: current2 });
-    });
-    return (state2) => {
-      current2 = state2;
-      const sig = JSON.stringify(state2);
-      if (sig === last) return;
-      last = sig;
-      channel2?.postMessage({ type: "state", state: state2 });
-    };
-  }
-  function subscribeView(onState) {
-    const channel2 = open();
-    channel2?.addEventListener("message", (e) => {
-      if (e.data?.type === "state") onState(e.data.state);
-    });
-    channel2?.postMessage({ type: "hello" });
-  }
-  function viewUrl(view, bg, base = location.href) {
-    const url = new URL(base);
-    url.search = new URLSearchParams({ view, bg }).toString();
-    url.hash = "";
-    return url.toString();
-  }
-  var VIEW_WINDOW = {
-    chord: [640, 360],
-    staff: [800, 320],
-    cof: [520, 520],
-    piano: [960, 300],
-    guitar: [380, 460]
-  };
-
   // src/diagrams/cof.ts
   var CIRCLE_KEYS_FLAT = ["C", "G", "D", "A", "E", "B", "Gb", "Db", "Ab", "Eb", "Bb", "F"];
   var CIRCLE_KEYS_SHARP = ["C", "G", "D", "A", "E", "B", "F#", "C#", "Ab", "Eb", "Bb", "F"];
@@ -1433,12 +1454,12 @@ K:${abcKey}
     <div class="view-chord-name" style="color:${color}">${escapeHtml(s.label)}</div>
     ${detail ? `<div class="view-chord-detail">${escapeHtml(detail)}</div>` : ""}`;
   }
-  function render(view, el, s) {
+  function renderView(view, el, s) {
     if (view === "chord") return renderChordView(el, s);
     if (view === "staff") {
       el.innerHTML = "<div></div>";
       const inner = el.firstElementChild;
-      renderStaff(inner, s.notes, 200, s.key, 1);
+      renderStaff(inner, s.notes, 200, s.key, 1, loadChoice("staff-clef", STAFF_CLEFS, "grand"));
       inner.style.height = "100%";
       inner.style.width = "100%";
     } else if (view === "cof") renderCircleOfFifths(el, s.key, s.symbol, () => {
@@ -1461,11 +1482,63 @@ K:${abcKey}
     el.id = "view-content";
     el.className = `view-${view}`;
     document.body.appendChild(el);
-    subscribeView((s) => render(view, el, s));
+    subscribeView((s) => renderView(view, el, s));
     window.addEventListener("storage", (e) => {
-      if (e.key && /^(guitar-|cof-)/.test(e.key)) location.reload();
+      if (e.key && /^(guitar-|cof-|staff-clef)/.test(e.key)) location.reload();
     });
     return true;
+  }
+
+  // src/view/presentation.ts
+  var overlay = null;
+  var tiles = [];
+  var last = "";
+  var onClose = () => {
+  };
+  function isPresenting() {
+    return overlay !== null;
+  }
+  function openPresentation(views, state2, close) {
+    if (overlay) return;
+    onClose = close;
+    overlay = document.createElement("div");
+    overlay.id = "presentation";
+    const diagrams = views.filter((v) => v !== "chord" && v !== "piano");
+    overlay.innerHTML = `
+    <button class="presentation-close" title="Leave presentation (Esc)">\xD7</button>
+    <div class="pres-tile pres-chord view-chord" data-view="chord"></div>
+    ${diagrams.length ? `<div class="pres-row">${diagrams.map((v) => `<div class="pres-tile view-${v}" data-view="${v}"></div>`).join("")}</div>` : ""}
+    ${views.includes("piano") ? '<div class="pres-tile pres-piano view-piano" data-view="piano"></div>' : ""}`;
+    document.body.appendChild(overlay);
+    document.body.classList.add("presenting");
+    tiles = Array.from(overlay.querySelectorAll(".pres-tile")).map((el) => ({ view: el.dataset.view, el }));
+    overlay.querySelector(".presentation-close").addEventListener("click", closePresentation);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    document.documentElement.requestFullscreen?.().catch(() => {
+    });
+    last = "";
+    updatePresentation(state2);
+  }
+  function updatePresentation(state2) {
+    if (!overlay) return;
+    const sig = JSON.stringify(state2);
+    if (sig === last) return;
+    last = sig;
+    for (const { view, el } of tiles) renderView(view, el, state2);
+  }
+  function closePresentation() {
+    if (!overlay) return;
+    overlay.remove();
+    overlay = null;
+    tiles = [];
+    document.body.classList.remove("presenting");
+    document.removeEventListener("fullscreenchange", onFullscreenChange);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {
+    });
+    onClose();
+  }
+  function onFullscreenChange() {
+    if (!document.fullscreenElement) closePresentation();
   }
 
   // src/ui/export.ts
@@ -2062,11 +2135,11 @@ K:${abcKey}
       sections: song.sections.map((s) => {
         if (s.id !== sectionId) return s;
         const kept = [...s.measures];
-        const last = kept[kept.length - 1];
-        const reuse = last && last.chords.length === 0;
+        const last2 = kept[kept.length - 1];
+        const reuse = last2 && last2.chords.length === 0;
         if (reuse) kept.pop();
         const added = measures.map((syms, i) => ({
-          id: i === 0 && reuse ? last.id : newId(),
+          id: i === 0 && reuse ? last2.id : newId(),
           chords: syms.map((symbol) => ({ id: newId(), symbol, valid: isValidChordSymbol(symbol) }))
         }));
         return { ...s, measures: [...kept, ...added] };
@@ -2914,6 +2987,7 @@ K:${abcKey}
     { key: "C", action: "Clear history (undo in the toast)" },
     { key: "Esc", action: "Drop a held chord, clear cursor, stop MIDI fill" },
     { key: "M", action: "Play with the computer keyboard (M or Esc to stop)" },
+    { key: "P", action: "Presentation: large, no controls, full screen (P or Esc to leave)" },
     { key: "/", action: "Type a chord name" },
     { key: "1\u20139", action: "Select chord candidate" },
     { key: "?", action: "Show / hide this panel" }
@@ -3000,6 +3074,10 @@ K:${abcKey}
         case "m":
         case "M":
           actions.toggleComputerKeyboard();
+          break;
+        case "p":
+        case "P":
+          actions.togglePresentation();
           break;
         case "/":
           e.preventDefault();
@@ -3179,6 +3257,7 @@ K:${abcKey}
       </select>
       <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
       <div class="view-menu-wrap">
+        <button id="btn-present" class="ctrl-btn" title="Presentation: large, no controls, full screen (P; Esc to leave)">\u26F6</button>
         <button id="btn-views" class="ctrl-btn" title="View windows for OBS, and diagram export (SVG, PNG)">\u29C9</button>
         <div id="view-menu" class="view-menu">
           <div class="view-menu-title">Open a view window</div>
@@ -3219,6 +3298,7 @@ K:${abcKey}
           <div id="chord-summary"></div>
           <div id="staff-container"></div>
           <div class="ctrl-row" style="justify-content:center">
+            <button id="btn-staff-clef" class="size-ctrl-btn" title="Staves: grand (treble and bass, split at middle C), treble only, bass only">Grand</button>
             <button id="btn-staff-minus" class="size-ctrl-btn" title="Smaller staff">\u2212</button>
             <button id="btn-staff-plus"  class="size-ctrl-btn" title="Larger staff">+</button>
           </div>
@@ -3370,6 +3450,7 @@ K:${abcKey}
   // src/app.ts
   var staffWidth = 380;
   var staffScale = loadNumber("staff-scale", 2, 1, 3);
+  var staffClef = loadChoice("staff-clef", STAFF_CLEFS, "grand");
   var cofSize = loadNumber("cof-size", 160, 100, 400);
   var cofAccidental = loadChoice("cof-accidental", ["flat", "sharp"], "flat");
   var cofShowMinor = loadBool("cof-show-minor", true);
@@ -3602,8 +3683,19 @@ K:${abcKey}
     const resizeStaff = (delta) => {
       staffScale = Math.min(3, Math.max(1, staffScale + delta));
       save("staff-scale", staffScale);
-      renderStaff($2("staff-container"), displayedNotes(), staffWidth, analysisKey(), staffScale);
+      renderStaff($2("staff-container"), displayedNotes(), staffWidth, analysisKey(), staffScale, staffClef);
     };
+    const clefBtn = $2("btn-staff-clef");
+    const showClef = () => {
+      clefBtn.textContent = CLEF_LABELS[staffClef];
+    };
+    showClef();
+    clefBtn.addEventListener("click", () => {
+      staffClef = STAFF_CLEFS[(STAFF_CLEFS.indexOf(staffClef) + 1) % STAFF_CLEFS.length];
+      save("staff-clef", staffClef);
+      showClef();
+      renderZone1Diagrams(displayedNotes(), selectedSymbol());
+    });
     $2("btn-staff-minus").addEventListener("click", () => resizeStaff(-0.25));
     $2("btn-staff-plus").addEventListener("click", () => resizeStaff(0.25));
     const reRenderNeck = () => renderNeck($2("neck-container"), displayedNotes(), !keyPrefersSharps(analysisKey()));
@@ -3698,6 +3790,7 @@ K:${abcKey}
     const sym = d.candidates[d.selectedIndex];
     return sym && sym !== "?" ? sym : null;
   }
+  var CLEF_LABELS = { grand: "Grand", treble: "Treble", bass: "Bass" };
   function displayedNotes() {
     const d = state.detection;
     if (!d) return [];
@@ -3724,8 +3817,13 @@ K:${abcKey}
   }
   var sendView = createViewPublisher();
   function publishView() {
+    const view = viewState();
+    sendView(view);
+    updatePresentation(view);
+  }
+  function viewState() {
     const d = state.detection;
-    sendView({
+    return {
       key: analysisKey(),
       kind: d?.kind ?? null,
       label: !d ? "" : d.kind === "note" ? d.pitchClass : d.kind === "interval" ? d.intervalName : selectedSymbol() ?? "",
@@ -3734,7 +3832,25 @@ K:${abcKey}
       roman: state.analysis?.roman ?? null,
       function: state.analysis?.function ?? null,
       guitarVoicing: getGuitarVoicingIndex()
-    });
+    };
+  }
+  function presentedViews() {
+    const p = state.panels;
+    const views = ["chord"];
+    if (p.notation && p.colStaff) views.push("staff");
+    if (p.notation && p.colCoF) views.push("cof");
+    if (p.notation && p.colGuitar) views.push("guitar");
+    if (p.instruments && p.colPiano) views.push("piano");
+    return views;
+  }
+  function togglePresentation() {
+    if (isPresenting()) {
+      closePresentation();
+      return;
+    }
+    $2("view-menu").classList.remove("open");
+    openPresentation(presentedViews(), viewState(), () => $2("btn-present").classList.remove("active-mode"));
+    $2("btn-present").classList.add("active-mode");
   }
   var viewBackground = loadChoice("view-bg", Object.keys(VIEW_BACKGROUNDS), "green");
   function wireViewMenu() {
@@ -3768,6 +3884,10 @@ K:${abcKey}
       });
     });
     setGuitarVoicingChange(() => publishView());
+    $2("btn-present").addEventListener("click", (e) => {
+      e.stopPropagation();
+      togglePresentation();
+    });
   }
   var detectionFromMidi = false;
   function respellMidiDetection() {
@@ -3882,10 +4002,10 @@ K:${abcKey}
     $2("auto-key-label").textContent = !state.activeKey && autoKey ? `auto: ${autoKey}` : "";
   }
   var lastRenderSig = {};
-  function renderIfChanged(name, sig, render2) {
+  function renderIfChanged(name, sig, render) {
     if (lastRenderSig[name] === sig) return;
     lastRenderSig[name] = sig;
-    render2();
+    render();
   }
   var PIANO_VELOCITY = 90;
   var pianoNote = null;
@@ -3917,7 +4037,7 @@ K:${abcKey}
     const key = analysisKey();
     const notes = noteNames.join(" ");
     const cofOpts = { accidental: cofAccidental, showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
-    renderIfChanged("staff", `${notes}|${key}|${staffScale}`, () => renderStaff($2("staff-container"), noteNames, staffWidth, key, staffScale));
+    renderIfChanged("staff", `${notes}|${key}|${staffScale}|${staffClef}`, () => renderStaff($2("staff-container"), noteNames, staffWidth, key, staffScale, staffClef));
     renderIfChanged("piano", `${notes}|${chordSymbol}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress));
     renderIfChanged("neck", `${notes}|${keyPrefersSharps(key)}`, () => renderNeck($2("neck-container"), noteNames, !keyPrefersSharps(key)));
     renderIfChanged("guitar", `${chordSymbol}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames));
@@ -4062,7 +4182,12 @@ K:${abcKey}
         toggleComputerKeyboard(true);
       },
       focusChordInput: () => $2("typed-chord").focus(),
+      togglePresentation,
       escape: () => {
+        if (isPresenting()) {
+          closePresentation();
+          return;
+        }
         releaseKeptNotes();
         cancelCapture();
         state.activeCursorId = null;

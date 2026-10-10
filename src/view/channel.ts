@@ -63,5 +63,5 @@ export function viewUrl(view: ViewName, bg: ViewBackground, base = location.href
 
 /** Window size each view opens with; the diagram fills whatever size it is given. */
 export const VIEW_WINDOW: Record<ViewName, [number, number]> = {
-  chord: [640, 360], staff: [800, 320], cof: [520, 520], piano: [960, 300], guitar: [380, 460],
+  chord: [640, 360], staff: [800, 420], cof: [520, 520], piano: [960, 300], guitar: [380, 460],
 }

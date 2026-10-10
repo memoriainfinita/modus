@@ -94,6 +94,7 @@ function buildToolbar(): string {
       </select>
       <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
       <div class="view-menu-wrap">
+        <button id="btn-present" class="ctrl-btn" title="Presentation: large, no controls, full screen (P; Esc to leave)">⛶</button>
         <button id="btn-views" class="ctrl-btn" title="View windows for OBS, and diagram export (SVG, PNG)">⧉</button>
         <div id="view-menu" class="view-menu">
           <div class="view-menu-title">Open a view window</div>
@@ -135,6 +136,7 @@ function buildNotationPanel(panels: Panels, fieldsVisible: Record<AnalysisFieldK
           <div id="chord-summary"></div>
           <div id="staff-container"></div>
           <div class="ctrl-row" style="justify-content:center">
+            <button id="btn-staff-clef" class="size-ctrl-btn" title="Staves: grand (treble and bass, split at middle C), treble only, bass only">Grand</button>
             <button id="btn-staff-minus" class="size-ctrl-btn" title="Smaller staff">−</button>
             <button id="btn-staff-plus"  class="size-ctrl-btn" title="Larger staff">+</button>
           </div>
