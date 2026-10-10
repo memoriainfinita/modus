@@ -145,6 +145,8 @@ pnpm build            # one-shot build
 pnpm exec tsc --noEmit  # type check (esbuild does not typecheck)
 pnpm test             # unit tests (vitest, against the real UMT bundle)
 pnpm test:e2e         # browser walk-through: installed Chrome + fake MIDI input (needs network)
+pnpm test:e2e:midi    # real Web MIDI in Chrome and Firefox through loopMIDI ("loopMIDI Port" must exist;
+                      # Firefox: pnpm exec playwright-core install firefox)
 ```
 
 UMT and notae are loaded from jsDelivr pinned to a commit hash in `index.html`. Bump the hash deliberately after a release of either library.
@@ -194,6 +196,8 @@ tests/
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts
   e2e/smoke.mjs       pnpm test:e2e
+  e2e/real-midi.mjs   pnpm test:e2e:midi
+  e2e/serve.mjs       static server shared by both
 docs/
   spec.md             purpose, design and behaviour
   umt-contract.md     UMT API signatures Modus relies on

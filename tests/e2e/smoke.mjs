@@ -2,26 +2,10 @@
 // fake Web MIDI input, and walks the main flows. Needs network (UMT, notae, abcjs and the
 // soundfont come from CDNs). Run: pnpm test:e2e  (HEADED=1 to watch it)
 
-import { createServer } from 'node:http'
-import { readFile } from 'node:fs/promises'
-import { extname, join, normalize } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
+import { serve } from './serve.mjs'
 
-const ROOT = fileURLToPath(new URL('../..', import.meta.url))
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.map': 'application/json' }
-
-const server = createServer(async (req, res) => {
-  const path = normalize(join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname)))
-  if (!path.startsWith(ROOT)) { res.writeHead(403).end(); return }
-  try {
-    const file = path.endsWith('\\') || path.endsWith('/') ? join(path, 'index.html') : path
-    const body = await readFile(file)
-    res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' }).end(body)
-  } catch { res.writeHead(404).end() }
-})
-await new Promise(r => server.listen(0, '127.0.0.1', r))
-const URL_ = `http://127.0.0.1:${server.address().port}/`
+const { server, url: URL_ } = await serve()
 
 // Fake Web MIDI: one input whose name needs escaping; window.__midi(bytes, id) plays into it.
 // window.__plug(id, name | null) plugs or unplugs a port. Chrome style (default): every
@@ -55,7 +39,7 @@ const FAKE_MIDI = () => {
   }
 }
 
-const browser = await chromium.launch({ channel: 'chrome', headless: !process.env.HEADED })
+const browser = await chromium.launch({ channel: 'chrome', headless: !process.env.HEADED, args: ['--mute-audio'] })  // muted: the app plays every chord
 const results = []
 let page
 
