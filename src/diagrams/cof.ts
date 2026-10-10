@@ -1,4 +1,5 @@
 import { pitchClassOf } from '../theory/notes'
+import { romanInKey } from '../detector/analyzer'
 
 const CIRCLE_KEYS_FLAT  = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F']
 // Sharps only where they name a standard key: G# and D# major would need double sharps.
@@ -7,10 +8,6 @@ const CIRCLE_KEYS_MINOR_FLAT  = ['Am','Em','Bm','F#m','C#m','G#m','Ebm','Bbm','F
 const CIRCLE_KEYS_MINOR_SHARP = ['Am','Em','Bm','F#m','C#m','G#m','D#m','A#m','Fm','Cm','Gm','Dm']
 const CIRCLE_DIM = ['B','F#','C#','G#','D#','A#','F','C','G','D','A','E']
 
-// Roman numeral by semitones above the tonic. In a minor key the natural-minor degrees
-// (III, VI, VII) carry no accidental.
-const DEGREE_IN_MAJOR = ['I','♭II','II','♭III','III','IV','♭V','V','♭VI','VI','♭VII','VII']
-const DEGREE_IN_MINOR = ['I','♭II','II','III','♯III','IV','♭V','V','VI','♯VI','VII','♯VII']
 
 const pitchClass = pitchClassOf
 const rootOf = (symbol: string): string => symbol.match(/^([A-G][b#]*)/)?.[1] ?? ''
@@ -41,8 +38,9 @@ export function renderCircleOfFifths(
   const activePos = tonicPc === -1 ? -1
     : keyIsMinor ? minorKeys.findIndex(m => pitchClass(rootOf(m)) === tonicPc)
     : keys.findIndex(k => pitchClass(k) === tonicPc)
-  const degreeTable = keyIsMinor ? DEGREE_IN_MINOR : DEGREE_IN_MAJOR
-  const degreeOf = (root: string) => tonicPc === -1 ? '' : degreeTable[(pitchClass(root) - tonicPc + 12) % 12]
+  // Degrees as the analysis panel reads them (UMT, by letter: F#° in C is #iv°), drawn with ♭ ♯.
+  const degreeOf = (chord: string) =>
+    (romanInKey(chord, activeKey)?.degree ?? '').replace(/^([b#]+)/, acc => acc.replace(/b/g, '♭').replace(/#/g, '♯'))
 
   const chordRootPc = activeChord ? pitchClass(rootOf(activeChord)) : -1
   const isDimActiveChord = activeChord ? /^[A-G][b#]*(dim|°|m7b5|ø)/.test(activeChord) : false
@@ -112,7 +110,7 @@ export function renderCircleOfFifths(
       pointer-events="all" style="cursor:pointer" data-chord="${minorChord}" data-key="${minorRoot} Minor"><title>${TIP}</title></path>`
     const minorFill = isMinorTonic || isMinorChordHere ? '#e0e0e0' : isDiatonic ? '#c4b5fd' : '#9ca3af'
     svg += label(cx + minorR * Math.cos(midAngle), cy + minorR * Math.sin(midAngle), minorFont, minorFill,
-      minorChord, showDeg ? degreeOf(minorRoot).toLowerCase() : null, '#818cf8')
+      minorChord, showDeg ? degreeOf(minorKeys[i]) : null, '#818cf8')
 
     // Diminished ring: the leading-tone chord of the major key on this segment
     const dimRoot = CIRCLE_DIM[i]
@@ -125,7 +123,7 @@ export function renderCircleOfFifths(
     const dimText = opts.show7ths ? `${dimRoot}ø7` : `${dimRoot}°`
     svg += label(cx + dimLabR * Math.cos(midAngle), cy + dimLabR * Math.sin(midAngle), dimFont,
       isDimChordHere ? '#e0e0e0' : isDiatonicDim ? '#a78bfa' : '#6b7280',
-      dimText, showDeg ? `${degreeOf(dimRoot).toLowerCase()}°` : null, '#818cf8')
+      dimText, showDeg ? degreeOf(`${dimRoot}dim`) : null, '#818cf8')
   })
 
   svg += '</svg>'

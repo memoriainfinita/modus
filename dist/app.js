@@ -1136,8 +1136,6 @@ K:${abcKey}
   var CIRCLE_KEYS_MINOR_FLAT = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "Ebm", "Bbm", "Fm", "Cm", "Gm", "Dm"];
   var CIRCLE_KEYS_MINOR_SHARP = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "D#m", "A#m", "Fm", "Cm", "Gm", "Dm"];
   var CIRCLE_DIM = ["B", "F#", "C#", "G#", "D#", "A#", "F", "C", "G", "D", "A", "E"];
-  var DEGREE_IN_MAJOR = ["I", "\u266DII", "II", "\u266DIII", "III", "IV", "\u266DV", "V", "\u266DVI", "VI", "\u266DVII", "VII"];
-  var DEGREE_IN_MINOR = ["I", "\u266DII", "II", "III", "\u266FIII", "IV", "\u266DV", "V", "VI", "\u266FVI", "VII", "\u266FVII"];
   var pitchClass = pitchClassOf;
   var rootOf = (symbol) => symbol.match(/^([A-G][b#]*)/)?.[1] ?? "";
   function renderCircleOfFifths(container, activeKey, activeChord, onSegmentClick, size = 160, opts = { accidental: "flat", showMinor: true, showDegrees: false, show7ths: false }) {
@@ -1147,8 +1145,7 @@ K:${abcKey}
     const keyIsMinor = keyMode?.toLowerCase() === "minor";
     const tonicPc = keyRoot ? pitchClass(keyRoot) : -1;
     const activePos = tonicPc === -1 ? -1 : keyIsMinor ? minorKeys.findIndex((m) => pitchClass(rootOf(m)) === tonicPc) : keys.findIndex((k) => pitchClass(k) === tonicPc);
-    const degreeTable = keyIsMinor ? DEGREE_IN_MINOR : DEGREE_IN_MAJOR;
-    const degreeOf = (root) => tonicPc === -1 ? "" : degreeTable[(pitchClass(root) - tonicPc + 12) % 12];
+    const degreeOf = (chord) => (romanInKey(chord, activeKey)?.degree ?? "").replace(/^([b#]+)/, (acc) => acc.replace(/b/g, "\u266D").replace(/#/g, "\u266F"));
     const chordRootPc = activeChord ? pitchClass(rootOf(activeChord)) : -1;
     const isDimActiveChord = activeChord ? /^[A-G][b#]*(dim|°|m7b5|ø)/.test(activeChord) : false;
     const isMinorActiveChord = !isDimActiveChord && activeChord ? /^[A-G][b#]*m(?!aj)/.test(activeChord) : false;
@@ -1213,7 +1210,7 @@ K:${abcKey}
         minorFont,
         minorFill,
         minorChord,
-        showDeg ? degreeOf(minorRoot).toLowerCase() : null,
+        showDeg ? degreeOf(minorKeys[i]) : null,
         "#818cf8"
       );
       const dimRoot = CIRCLE_DIM[i];
@@ -1230,7 +1227,7 @@ K:${abcKey}
         dimFont,
         isDimChordHere ? "#e0e0e0" : isDiatonicDim ? "#a78bfa" : "#6b7280",
         dimText,
-        showDeg ? `${degreeOf(dimRoot).toLowerCase()}\xB0` : null,
+        showDeg ? degreeOf(`${dimRoot}dim`) : null,
         "#818cf8"
       );
     });
