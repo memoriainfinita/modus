@@ -79,9 +79,9 @@ Zone 1 is the primary module. Instruments, History and Song are collapsible.
 
 ### Toolbar
 
-- **MIDI status and device selector:** updates on connect/disconnect; device persisted.
+- **MIDI status and device selector:** updates on connect/disconnect (Firefox reports neither: the list is rescanned every 2 s while the page is visible, and on focus). The device the user picks, or the first one used, is preferred by name and taken back when it reappears; a fallback used meanwhile does not replace it.
 - **Mode buttons:** Normal, Hold, Arpeggio (mutually exclusive).
-- **Key selector:** 24 major/minor keys + Auto. On Auto, the detected key is shown next to it and drives the whole app.
+- **Key selector:** 24 major/minor keys + Auto. On Auto, the detected key is shown next to it and drives the whole app. The choice belongs to the open song (see Zone 3).
 - **Audio status bar, play button (▶, same as Space), instrument selector, volume.**
 - **? button:** shortcuts and mouse gestures.
 
@@ -197,10 +197,10 @@ type Section = {
   id: string; name: string; color: SectionColor
   measures: Measure[]; collapsed: boolean; repeatCount: number
 }
-type Song = { schemaVersion: 1; title: string; sections: Section[] }
+type Song = { schemaVersion: 2; id: string; title: string; key: string | null; updatedAt: number; sections: Section[] }
 ```
 
-Persisted to localStorage under `modus-song` (falls back to the old `harmony-companion-song`). Schema version other than 1 → empty song. Empty chord slots are never persisted.
+Several songs, each under its own localStorage key `modus-song:<id>`; the index `modus-songs` lists them and holds the open one. Each song keeps its key (`null` = Auto): opening a song restores it, picking a key stores it in the open song. The single schema-1 song of earlier versions (`modus-song`, or the older `harmony-companion-song`) is migrated once as the first song, with the key that was selected (`active-key`); the old keys are left in place. An unreadable song is skipped. Empty chord slots are never persisted.
 
 ### Chord chip
 
@@ -219,7 +219,7 @@ In key: standard colour. Borrowed: amber. Invalid: red, `?`. No key: `—`.
 
 **Sections:** rename, colour, collapse, repeat count (×N), duplicate, reorder by dragging the header, delete (Undo).
 
-**Song:** title, New (Undo), quick-add templates (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro), Transpose (⇄, +1 to +11 semitones; with a key set, spelling follows the transposed key; stored voicings move too), Export (⎙, browser print), Paste (`|` separates measures; without bars, one chord per measure).
+**Song:** song list (most recently changed first; opening one resets the cursor, MIDI fill and any pending Undo), title, New (a new empty song on Auto; the current one stays in the list; nothing happens on an empty untitled song), Delete (Undo; opens the most recent remaining song, or a new one), quick-add templates (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro), Transpose (⇄, +1 to +11 semitones; with a key set, spelling follows the transposed key; stored voicings move too), Export (⎙, browser print), Paste (`|` separates measures; without bars, one chord per measure).
 
 ### Cursor
 
@@ -276,4 +276,4 @@ Only what contradicts the principles:
 - Cloud sync and accounts
 - Analytics and monetization
 
-Everything else that was out of scope in v1 (several songs, MIDI files, mobile, light mode, microtonal, channel filtering, velocity display, free section colours) is on the roadmap.
+Everything else that was out of scope in v1 (MIDI files, mobile, light mode, microtonal, channel filtering, velocity display, free section colours) is on the roadmap.
