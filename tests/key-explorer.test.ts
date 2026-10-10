@@ -46,6 +46,8 @@ describe('buildKeyMap: negative harmony, parallel modes, Coltrane axis', () => {
     const aeolian = m.parallel.find(p => p.mode === 'aeolian')!
     expect(aeolian.chords.map(c => c.symbol)).toEqual(expect.arrayContaining(['Fm7', 'Abmaj7', 'Bb7']))
     expect(aeolian.chords.find(c => c.symbol === 'Abmaj7')!.roman).toBe('bVImaj7')
+    // F#m7b5 of C lydian: its degree takes the letter F, not G
+    expect(m.parallel[0].chords.find(c => c.symbol === 'F#m7b5')!.roman).toBe('#ivø7')
   })
 
   it('Coltrane axis spelled in the key', () => {

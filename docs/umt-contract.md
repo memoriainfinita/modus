@@ -16,6 +16,7 @@ UMT.Harmony.detectChords(notes: Note[]): string[]
 // Chord object: name, rootStep, intervalsInSteps (semitones above root), bassStep, preferFlats
 // There is NO `quality` field — chord family is derived from intervalsInSteps (theory/chord.ts)
 // chord.getNotes() → Note[] with name incl. octave, slash bass first: "C/E" → E3 C4 E4 G4
+// Each note by its interval above the written root (since ac10838): D#m → D# F# A#, Cm7b5 → Gb; E#, Cb, double accidentals possible
 
 // Full harmonic analysis — returns .analysis (NOT .analyses)
 UMT.Harmony.analyzeProgression(chords: Chord[], key: string): {
@@ -27,6 +28,8 @@ UMT.Harmony.analyzeProgression(chords: Chord[], key: string): {
 // isDiatonic, isBorrowed, borrowedFrom, isSecondary, secondaryTarget, cadenceWithNext
 // roman for D7 in C is "II7"; secondaryTarget is "V7/V" (lower case for minor targets: "V7/ii").
 // Secondary leading-tone chords too: F#dim7 in C → secondaryTarget "vii°7/V"
+// The degree of a chromatic root comes from the letter spellChordInKey gives it (since ac10838): F#dim7 in C → "#iv°7".
+// The letter of the symbol passed in is not used: Gb in C reads "#IV", Bbdim "#vi°" (reported to UMT)
 // function: every secondary and the tritone sub of V are 'D'; VII in minor 'D', bVII in major 'S'
 // Natural minor: V, V7, vii°, vii°7 with the raised 7th are isDiatonic (G#dim7 in A minor → "vii°7")
 // A secondary is never also isBorrowed (D7 in C is V7/V, not lydian)
@@ -65,7 +68,7 @@ UMT.parseChordSymbol(symbol: string): Chord  // accepts 6/9, m6/9, 6/9/<bass>
 UMT.spellPitchInKey(stepsFromA4: number, key: string): string  // "G#4" for MIDI 68 in "E Major"; flats for an unknown key
 UMT.spellChord(chord: Chord, rootName?: string): string[]       // tones by interval, getNotes() order: Cm7b5 → C4 Eb4 Gb4 Bb4
 UMT.spellChordInKey(chord: Chord, key: string): Chord           // Ab7 in A Major → G#7; unknown key → same chord
-// Chord.getNotes() spells tritones by heuristic (Cm7b5 gives F#): Modus names chord notes with spellChord
+// Chord.getNotes() and spellChord agree since ac10838; Modus names chord notes with spellChord
 ```
 
 ## MIDI → UMT Note conversion
