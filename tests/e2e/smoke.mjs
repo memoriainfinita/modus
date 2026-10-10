@@ -303,6 +303,16 @@ await check('a note that keeps the chord does not rebuild the circle or guitar',
   assert(rebuilt, 'circle not rebuilt on chord change')
 })
 
+await check('MIDI input is written in the key: G#m in E Major, rewritten on a key change', async () => {
+  await setKey('E Major')
+  await on([68, 71, 75])
+  await page.waitForTimeout(100)
+  assert((await text('.chord-name-badge')) === 'G#m', `E Major: ${await text('.chord-name-badge')}`)
+  await setKey('C Minor')
+  assert((await text('.chord-name-badge')) === 'Abm', `C Minor: ${await text('.chord-name-badge')}`)
+  await off([68, 71, 75])
+})
+
 await check('staff renders a key signature for F# Major', async () => {
   await setKey('F# Major')
   await play([66, 70, 73])

@@ -21,6 +21,9 @@ declare const UMT: {
     detect: (notes: any[]) => { key: string; confidence: number }[]
   }
   getSubstitutions: (chord: any, key: string) => any[]
+  spellPitchInKey: (stepsFromA4: number, key: string) => string
+  spellChord: (chord: any, rootName?: string) => string[]
+  spellChordInKey: (chord: any, key: string) => any
 }
 
 declare const Notae: {

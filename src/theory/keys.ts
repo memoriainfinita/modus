@@ -2,7 +2,7 @@
 // Keys are strings like "C Major" / "F# Minor" (the format UMT uses). The signature is
 // read from UMT's scale spelling, which names each degree on its own letter.
 
-import { NOTE_SEMITONE } from './notes'
+import { pitchClassOf } from './notes'
 
 /** Major-key root per pitch class, as the key selector offers it. */
 export const MAJOR_ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
@@ -14,8 +14,8 @@ export const ALL_KEYS: string[] = MAJOR_ROOTS.flatMap((root, pc) => [`${root} Ma
 
 function parseKey(key: string): { pc: number; minor: boolean } | null {
   const [root, mode] = key.split(' ')
-  const pc = NOTE_SEMITONE[root]
-  if (pc === undefined) return null
+  const pc = pitchClassOf(root ?? '')
+  if (pc === -1) return null
   return { pc, minor: mode?.toLowerCase() === 'minor' }
 }
 

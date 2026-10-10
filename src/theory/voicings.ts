@@ -2,7 +2,7 @@
 // fingering that covers the chord's notes within a stretch (hundreds per chord); this keeps
 // the ones a guitarist would actually play and orders them along the neck.
 
-import { NOTE_SEMITONE } from './notes'
+import { pitchClassOf } from './notes'
 
 export interface Voicing {
   frets: number[]   // per string low→high: -1 muted, 0 open, n fretted
@@ -25,8 +25,8 @@ export function tuningToMidi(names: string[]): number[] | null {
   if (names.length !== STANDARD_OPEN_MIDI.length) return null
   const midi: number[] = []
   for (let i = 0; i < names.length; i++) {
-    const pc = NOTE_SEMITONE[normalizeNoteName(names[i]) ?? '']
-    if (pc === undefined) return null
+    const pc = pitchClassOf(normalizeNoteName(names[i]) ?? '')
+    if (pc === -1) return null
     const ref = STANDARD_OPEN_MIDI[i]
     const below = ref - ((ref - pc) % 12 + 12) % 12
     midi.push(ref - below <= 6 ? below : below + 12)

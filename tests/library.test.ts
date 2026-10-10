@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { addSection } from '../src/song/model'
 import { listSongs, loadActiveSong, saveSong, openSong, newSong, deleteSong, restoreSong } from '../src/song/library'
 
@@ -72,6 +72,19 @@ describe('song library: several songs', () => {
     const { open } = deleteSong(only.id)
     expect(open.id).not.toBe(only.id)
     expect(listSongs().map(m => m.id)).toEqual([open.id])
+  })
+
+  it('persistent storage is asked once, only when a song has content', async () => {
+    const persist = vi.fn(async () => true)
+    Object.defineProperty(navigator, 'storage', { configurable: true, value: { persist, persisted: async () => false } })
+    newSong()                                           // blank: no request
+    await Promise.resolve()
+    expect(persist).not.toHaveBeenCalled()
+    saveSong({ ...loadActiveSong(), title: 'Mine' })
+    saveSong({ ...loadActiveSong(), title: 'Mine again' })
+    await new Promise(r => setTimeout(r, 0))
+    expect(persist).toHaveBeenCalledTimes(1)
+    Reflect.deleteProperty(navigator, 'storage')
   })
 
   it('a renamed song shows its new title in the list', () => {

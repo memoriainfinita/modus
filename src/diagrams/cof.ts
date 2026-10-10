@@ -1,4 +1,4 @@
-import { NOTE_SEMITONE } from '../theory/notes'
+import { pitchClassOf } from '../theory/notes'
 
 const CIRCLE_KEYS_FLAT  = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F']
 // Sharps only where they name a standard key: G# and D# major would need double sharps.
@@ -12,8 +12,8 @@ const CIRCLE_DIM = ['B','F#','C#','G#','D#','A#','F','C','G','D','A','E']
 const DEGREE_IN_MAJOR = ['I','♭II','II','♭III','III','IV','♭V','V','♭VI','VI','♭VII','VII']
 const DEGREE_IN_MINOR = ['I','♭II','II','III','♯III','IV','♭V','V','VI','♯VI','VII','♯VII']
 
-const pitchClass = (note: string): number => NOTE_SEMITONE[note] ?? -1
-const rootOf = (symbol: string): string => symbol.match(/^([A-G][b#]?)/)?.[1] ?? ''
+const pitchClass = pitchClassOf
+const rootOf = (symbol: string): string => symbol.match(/^([A-G][b#]*)/)?.[1] ?? ''
 
 export type CofOptions = { accidental: 'sharp' | 'flat', showMinor: boolean, showDegrees: boolean, show7ths: boolean, fontScale?: number }
 
@@ -45,8 +45,8 @@ export function renderCircleOfFifths(
   const degreeOf = (root: string) => tonicPc === -1 ? '' : degreeTable[(pitchClass(root) - tonicPc + 12) % 12]
 
   const chordRootPc = activeChord ? pitchClass(rootOf(activeChord)) : -1
-  const isDimActiveChord = activeChord ? /^[A-G][b#]?(dim|°|m7b5|ø)/.test(activeChord) : false
-  const isMinorActiveChord = !isDimActiveChord && activeChord ? /^[A-G][b#]?m(?!aj)/.test(activeChord) : false
+  const isDimActiveChord = activeChord ? /^[A-G][b#]*(dim|°|m7b5|ø)/.test(activeChord) : false
+  const isMinorActiveChord = !isDimActiveChord && activeChord ? /^[A-G][b#]*m(?!aj)/.test(activeChord) : false
 
   const cx = size / 2, cy = size / 2
   const outerR    = size * 0.425

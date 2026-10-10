@@ -39,7 +39,7 @@ export function isKnownChord(symbol: string | null | undefined): symbol is strin
 
 /** UMT.detectChords names a plain major triad "CM" ("CM/E" when inverted). Show it as "C". */
 export function normalizeChordName(name: string): string {
-  return name.replace(/^([A-G][b#]?)M(?=\/|$)/, '$1')
+  return name.replace(/^([A-G][b#]*)M(?=\/|$)/, '$1')
 }
 
 /** Broad chord family from the UMT interval set (12-TET steps above the root). */
@@ -64,14 +64,14 @@ export function chordColor(symbol: string | null | undefined): string {
   return family ? CHORD_FAMILY_COLORS[family] : NEUTRAL_COLOR
 }
 
-/** Note names with octave (e.g. "C4") of the chord as UMT spells it; [] when unparseable. */
+/** Note names with octave (e.g. "C4") of the chord, each named by its interval above the root (Cm7b5: C Eb Gb Bb); [] when unparseable. */
 export function chordNoteNames(symbol: string | null | undefined): string[] {
   const chord = tryParseChord(symbol)
   if (!chord) return []
-  try { return (chord.getNotes?.() ?? []).map((n: any) => n.name).filter(Boolean) } catch { return [] }
+  return tryUMT<string[]>('chord tones', () => UMT.spellChord(chord), []).filter(Boolean)
 }
 
 /** Root pitch name of a chord symbol, e.g. "Bb" for "Bbm7/F". */
 export function chordRoot(symbol: string | null | undefined): string | null {
-  return symbol?.match(/^([A-G][b#]?)/)?.[1] ?? null
+  return symbol?.match(/^([A-G][b#]*)/)?.[1] ?? null
 }

@@ -3,6 +3,7 @@ import { romanInKey } from '../detector/analyzer'
 import { playChord, playNoteNames } from '../audio/audio'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
+import { spellChordSymbol } from '../theory/spelling'
 
 const MAX_ENTRIES = 200
 // Chip accent by harmonic function (T/S/D), not by chord quality
@@ -83,7 +84,9 @@ export function renderHistory(
   const strip = document.createElement('div')
   strip.className = 'history-strip'
 
-  entries.forEach(entry => {
+  entries.forEach(stored => {
+    // Written in the current key: the entry keeps the spelling it was captured with
+    const entry = { ...stored, symbol: spellChordSymbol(stored.symbol, activeKey) }
     const analysis = romanInKey(entry.symbol, activeKey)
     const roman = analysis?.roman ?? '—'
     const fn = analysis?.function ?? 'unknown'
