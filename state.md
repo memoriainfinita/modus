@@ -12,14 +12,14 @@ What is true now. What already happened lives in `state-history.md`.
 **Modus** — see and understand the harmony of what you play, in real time. Aimed at being a complete, professional, useful, universal and didactic app, for studying, transcribing songs, composing, teaching and making videos. No time or budget limits, no marketing or profit goals. GPL-3.0, part of the **memoriainfinita** ecosystem: UMT (developed for Modus, all theory) and notae (diagrams).
 
 - **Spec:** `docs/spec.md` (purpose, design, behaviour) · **UMT contract:** `docs/umt-contract.md` · Executed plans and earlier spec revisions in `.archive/` (local, gitignored)
-- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to `870d3d8`, notae to `8fb052d`
+- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to `debda14`, notae to `8fb052d`
 
 ## Status
 
 - Working: detector, analysis, history, song builder, audio, CoF, guitar voicings, piano/fretboard. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
 - Tests 2026-10-10: TSC clean, 206 unit tests against the real UMT bundle, `pnpm test:e2e` 30/30 (installed Chrome + fake Web MIDI). Firefox and a real controller checked by hand. Pending by hand: unplugging the controller in Firefox (an unplugged port left in `inputs` is now filtered by state)
-- UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys): no throws, shapes as `docs/umt-contract.md`. Wrong in UMT: figured bass of seventh chords (C7 → "", C7/Bb → "10"); raised degrees in minor (G#dim7 in A minor → "bi°7", tonic). See TODO
+- UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
 - Interface languages: English and Spanish (today English only). Docs, code and commits stay in English
 
@@ -49,13 +49,6 @@ Roadmap agreed 2026-10-09, not yet prioritized.
 ### Tests
 
 - [ ] Unplug and replug the controller in Firefox: status shows disconnected, then plays again
-
-### UMT fixes (in UMT, then bump the pin)
-
-- [ ] Figured bass of seventh chords: root 7, inversions 6/5, 4/3, 4/2
-- [ ] Raised degrees in minor: G#dim7 in A minor is vii°7 (D), F#dim is ♯vi°
-- [ ] Criteria to settle: secondary dominants' function (today the degree's: A7 in C is T); V and vii°7 of harmonic minor as diatonic in minor (today E in A minor is "borrowed from major"); VII / ♭VII function (today unknown)
-- [ ] Substitution gaps: Dm7 and Fm in C get none
 
 ### Songs and data
 

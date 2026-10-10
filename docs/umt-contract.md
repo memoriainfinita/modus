@@ -1,6 +1,6 @@
 # Modus — UMT API contract
 
-Verified by reading the UMT TypeScript source and, on 2026-10-02, by running the pinned bundle in Node. Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
+Verified by reading the UMT TypeScript source and, on 2026-10-10, by running the pinned bundle in Node. Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
 
 ```ts
 // Convert note string to UMT Note object
@@ -26,6 +26,10 @@ UMT.Harmony.analyzeProgression(chords: Chord[], key: string): {
 // ChordAnalysis has: roman, degree, function ('T'|'S'|'D'|'unknown'),
 // isDiatonic, isBorrowed, borrowedFrom, isSecondary, secondaryTarget, cadenceWithNext
 // roman for D7 in C is "II7"; secondaryTarget is "V7/V" (lower case for minor targets: "V7/ii").
+// Secondary leading-tone chords too: F#dim7 in C → secondaryTarget "vii°7/V"
+// function: every secondary and the tritone sub of V are 'D'; VII in minor 'D', bVII in major 'S'
+// Natural minor: V, V7, vii°, vii°7 with the raised 7th are isDiatonic (G#dim7 in A minor → "vii°7")
+// A secondary is never also isBorrowed (D7 in C is V7/V, not lydian)
 // Modus shows secondaryTarget in the Roman field (romanInKey in detector/analyzer.ts)
 // modulations and harmonicRhythm are not used by Modus yet
 
@@ -33,6 +37,7 @@ UMT.Harmony.analyzeProgression(chords: Chord[], key: string): {
 UMT.parseScaleSymbol(symbol: string): Scale   // e.g. "F# Major"; .getNotes() → Note[] (8, root repeated)
 
 UMT.FiguredBass.fromChord(chord: Chord, bassNote: Note): string
+// Triads "", "6", "6/4"; seventh chords "7", "6/5", "4/3", "4/2"
 
 // Key detection (Krumhansl-Schmuckler)
 UMT.KeyDetection.detect(notes: Note[]): { key: string; confidence: number }[]
@@ -40,6 +45,8 @@ UMT.KeyDetection.detect(notes: Note[]): { key: string; confidence: number }[]
 
 // Substitutions — standalone function, NOT Harmony.getSubstitutions
 UMT.getSubstitutions(chord: Chord, key: string): SubstitutionResult[]
+// { chord, type: 'tritone'|'sus4'|'deceptive'|'diatonic'|'modal', explanation }
+// Diatonic subs only in major / natural minor keys; 'modal' = minor subdominant family in major
 
 // Other confirmed methods
 UMT.Harmony.analyzeCadence(c1: Chord, c2: Chord, key: string): string
