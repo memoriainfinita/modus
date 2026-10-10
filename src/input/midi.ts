@@ -79,12 +79,11 @@ export function getDevices(): Device[] { return devicesOf(midiAccess) }
 // it, so the controller is used again as soon as it comes back.
 const PREFERRED_KEY = 'midi-device'
 
+// The older 'midi-device-id' key is not read: it stored every switch, fallbacks included.
 function loadPreferred(): Partial<Device> {
   try {
     const raw = localStorage.getItem(PREFERRED_KEY)
-    if (raw) return JSON.parse(raw)
-    const legacyId = localStorage.getItem('midi-device-id')
-    return legacyId ? { id: legacyId } : {}
+    return raw ? JSON.parse(raw) : {}
   } catch { return {} }
 }
 
@@ -101,15 +100,17 @@ export function chooseDevice(id: string) {
 }
 
 /**
- * Picks the device to listen to: the preferred one if present (by id, else by name, as a
- * browser may give a replugged port a new id), else the current one, else the first.
+ * Picks the device to listen to: the preferred one if present, else the current one, else
+ * the first. The preferred one is found by name: Chrome numbers ports by position
+ * ("input-0"), so a port that appears ahead of it takes its id. The id only breaks a tie
+ * between ports with the same name.
  * With no devices the last selection is kept, so the caller can report it disconnected.
  */
 export function resolveDevice(): string | null {
   const devices = getDevices()
   const preferred = loadPreferred()
-  const target = devices.find(d => d.id === preferred.id)
-    ?? devices.find(d => d.name === preferred.name)
+  const sameName = devices.filter(d => d.name === preferred.name)
+  const target = sameName.find(d => d.id === preferred.id) ?? sameName[0]
     ?? devices.find(d => d.id === selectedDeviceId)
     ?? devices[0]
   if (!target) return null

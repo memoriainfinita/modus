@@ -33,6 +33,7 @@ const FAKE_MIDI = () => {
     for (const a of accesses) {
       const p = a.inputs.get(id) ?? port(id, name)
       p.state = name ? 'connected' : 'disconnected'
+      if (name) p.name = name
       a.inputs.set(id, p)
       a.onstatechange?.({ port: p })
     }
@@ -331,6 +332,13 @@ await check('with another port present, the controller is used again when it com
   await play([62, 65, 69])
   assert((await text('.chord-name-badge')) === 'Dm', 'controller silent after replug')
   await off([62, 65, 69])
+})
+
+await check('the controller is found by name when another port takes its id (Chrome numbers by position)', async () => {
+  await page.evaluate(() => { window.__plug('fake-1', null); window.__plug('fake-1', 'Other Port'); window.__plug('fake-2', '<b>Fake</b> Keys') })
+  assert(await device() === 'fake-2', `selected: ${await device()}`)
+  await page.evaluate(k => { window.__plug('fake-2', null); window.__plug('fake-1', null); window.__plug('fake-1', k) }, KEYS)
+  assert(await device() === 'fake-1', `restored: ${await device()}`)
 })
 
 await check('Firefox style (no statechange): unplug and replug are found by rescanning', async () => {
