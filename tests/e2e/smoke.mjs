@@ -313,6 +313,16 @@ await check('MIDI input is written in the key: G#m in E Major, rewritten on a ke
   await off([68, 71, 75])
 })
 
+await check('the piano lights every spelled note: C# E# G# in F# Major', async () => {
+  await setKey('F# Major')
+  await on([61, 65, 68])
+  await page.waitForTimeout(100)
+  assert((await text('.chord-name-badge')) === 'C#', `chord: ${await text('.chord-name-badge')}`)
+  const lit = await page.locator('#piano-container circle').count()
+  assert(lit === 3, `lit keys: ${lit}`)
+  await off([61, 65, 68])
+})
+
 await check('staff renders a key signature for F# Major', async () => {
   await setKey('F# Major')
   await play([66, 70, 73])
