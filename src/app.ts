@@ -2,7 +2,8 @@ import './styles.css'
 import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes } from './input/midi'
 import { wireComputerKeyboard, toggleComputerKeyboard, isComputerKeyboardOn, computerKeyboardStatus, setComputerKeyboardChange } from './input/computer-keyboard'
 import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './detector/analyzer'
-import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback } from './audio/audio'
+import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
+import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
 import { renderStaff } from './diagrams/staff'
 import { renderPiano } from './diagrams/piano'
 import { renderGuitar, getGuitarVoicingIndex, setGuitarVoicingChange } from './diagrams/guitar'
@@ -102,13 +103,21 @@ function init() {
     }
     if (!result.unsupported) {
       refreshDeviceDropdown()
+      refreshOutputDropdown()
       // Sync mode buttons with restored mode from localStorage
       setModeBtn(getMode())
     }
   })
 
   setNoteChangeCallback(onNoteChange)
-  setSoundCallbacks({ noteOn: liveNoteOn, noteOff: liveNoteOff, sustain: setSustain })
+  // Every input sounds inside and, as MIDI out allows, on the external port
+  setSoundCallbacks({
+    noteOn: (n, v, src) => { liveNoteOn(n, v); outLiveOn(n, v, src) },
+    noteOff: (n, src) => { liveNoteOff(n); outLiveOff(n, src) },
+    sustain: (down, src) => { setSustain(down); outSustain(down, src) },
+  })
+  setPreviewListener(outPreview)
+  wireMidiOut()
   setHistoryChangeCallback(onHistoryChange)
 
   setAudioMissedCallback(() => {
@@ -714,12 +723,47 @@ function refreshDeviceDropdown() {
 
   if (!deviceListenersAttached) {
     deviceListenersAttached = true
-    window.addEventListener('midi-devices-changed', () => refreshDeviceDropdown())
+    window.addEventListener('midi-devices-changed', () => { refreshDeviceDropdown(); refreshOutputDropdown() })
     window.addEventListener('midi-device-disconnected', () => {
       $('midi-status').textContent = 'MIDI: disconnected'
       $('midi-status').style.color = '#f87171'
     })
   }
+}
+
+// ─── MIDI out ────────────────────────────────────────────────────────────────
+
+function refreshOutputDropdown() {
+  const sel = $('midi-out') as HTMLSelectElement
+  const { port } = getOutputSettings()
+  const outputs = getOutputs()
+  const present = port && outputs.find(o => o.name === port.name)
+  sel.innerHTML = '<option value="">Out: off</option>' +
+    outputs.map(o => `<option value="${escapeHtml(o.id)}">Out: ${escapeHtml(o.name)}</option>`).join('') +
+    // A chosen port that is unplugged stays chosen and comes back when it reappears
+    (port && !present ? `<option value="__missing" disabled>Out: ${escapeHtml(port.name)} (absent)</option>` : '')
+  sel.value = present ? present.id : port ? '__missing' : ''
+  const loops = outputLoops()
+  sel.classList.toggle('invalid', loops)
+  sel.title = loops ? 'Same port as the input: nothing is sent, it would come back as input' : 'MIDI out: what sounds goes to this port'
+}
+
+function wireMidiOut() {
+  const sel = $('midi-out') as HTMLSelectElement
+  const ch = $('midi-out-ch') as HTMLSelectElement
+  const thruBtn = $('btn-thru')
+  const { channel, thru } = getOutputSettings()
+  ch.value = String(channel)
+  thruBtn.classList.toggle('active-mode', thru)
+  sel.addEventListener('change', () => { chooseOutput(sel.value || null); refreshOutputDropdown() })
+  ch.addEventListener('change', () => setOutputChannel(parseInt(ch.value)))
+  thruBtn.addEventListener('click', () => {
+    const on = !getOutputSettings().thru
+    setThru(on)
+    thruBtn.classList.toggle('active-mode', on)
+  })
+  // The input device decides whether the output loops back
+  $('midi-device').addEventListener('change', () => setTimeout(refreshOutputDropdown))   // after the input switches
 }
 
 function showMidiBanner(msg: string) {

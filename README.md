@@ -80,6 +80,10 @@ Click a chord to play it and show it in the detector; the key stays. The chord o
 
 The ⧉ button opens a window with one element alone — the chord name with its degree, the staff, the circle of fifths, the piano or the guitar — filling the window on a chroma green (or magenta, black, dark) background, following what you play live. In OBS: Window Capture of "Modus view: chord" (or staff, cof…), then a Chroma Key filter. The same menu saves the staff, circle, guitar or piano as SVG or PNG with a transparent background.
 
+### MIDI out
+
+Send what sounds to an external synth or DAW: pick the port (**Out**) and channel. Previews, the computer keyboard and the on-screen piano are sent; the controller's own notes only with **Thru**, since the DAW usually hears it already. Notes are always released when you switch port or leave the page. With loopMIDI, Modus can feed a DAW track directly.
+
 ### Audio
 
 Any note played on the MIDI controller sounds through the selected soundfont, with its velocity, for as long as the key or the sustain pedal holds it. Click piano keys, CoF segments, or history/song chips to play. 128 GM instruments selectable (grouped by family). Volume slider. Loading progress bar. The instrument starts loading when the page opens; a note that arrives before it can sound (still loading, or no click yet to unlock audio) makes the progress bar flash.

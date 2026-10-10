@@ -184,6 +184,9 @@ body {
 .ctrl-btn:hover {
   border-color: #6b7280;
 }
+.ctrl-select.invalid {
+  border-color: #ef4444;
+}
 .volume-slider {
   width: 72px;
   height: 4px;

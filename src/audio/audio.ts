@@ -147,8 +147,13 @@ function stopNode(node: any) {
 // previous one, so walking a progression does not pile chords up.
 let previewNodes: any[] = []
 
+/** Hears every preview (notes, seconds, whether it cuts the previous one): MIDI out. */
+let onPreview: (midis: number[], seconds: number, cut: boolean) => void = () => {}
+export function setPreviewListener(cb: typeof onPreview) { onPreview = cb }
+
 function playPreview(midis: number[], duration: number) {
   if (!midis.length) return
+  onPreview(midis, duration, true)
   const inst = playableInstrument()
   if (!inst) return
   whenRunning(() => {
@@ -161,6 +166,7 @@ function playPreview(midis: number[], duration: number) {
 export function playNoteByName(noteName: string, duration = 1.5) {
   const midi = noteNameToMidi(noteName)
   if (midi === null) return
+  onPreview([midi], duration, false)
   const inst = playableInstrument()
   if (!inst) return
   whenRunning(() => inst.play(midi, audioCtx!.currentTime, { duration, gain: 1 }))

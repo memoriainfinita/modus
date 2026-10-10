@@ -1,8 +1,8 @@
 "use strict";
 (() => {
   // src/input/midi.ts
-  function isNoteOff(status, velocity2) {
-    return (status & 240) === 128 || (status & 240) === 144 && velocity2 === 0;
+  function isNoteOff(status2, velocity2) {
+    return (status2 & 240) === 128 || (status2 & 240) === 144 && velocity2 === 0;
   }
   var midiAccess = null;
   var selectedDeviceId = null;
@@ -24,8 +24,8 @@
     sound = cb;
   }
   var SUSTAIN_CC = 64;
-  function isSustain(status, controller) {
-    return (status & 240) === 176 && controller === SUSTAIN_CC;
+  function isSustain(status2, controller) {
+    return (status2 & 240) === 176 && controller === SUSTAIN_CC;
   }
   async function initMidi() {
     if (!navigator.requestMIDIAccess) {
@@ -57,6 +57,12 @@
   function getDevices() {
     return devicesOf(midiAccess);
   }
+  function getMidiAccess() {
+    return midiAccess;
+  }
+  function getSelectedInputName() {
+    return getDevices().find((d) => d.id === selectedDeviceId)?.name ?? null;
+  }
   var PREFERRED_KEY = "midi-device";
   function loadPreferred() {
     try {
@@ -80,11 +86,11 @@
   }
   function resolveDevice() {
     const devices = getDevices();
-    const preferred = loadPreferred();
-    const sameName = devices.filter((d) => d.name === preferred.name);
-    const target = sameName.find((d) => d.id === preferred.id) ?? sameName[0] ?? devices.find((d) => d.id === selectedDeviceId) ?? devices[0];
+    const preferred2 = loadPreferred();
+    const sameName = devices.filter((d) => d.name === preferred2.name);
+    const target = sameName.find((d) => d.id === preferred2.id) ?? sameName[0] ?? devices.find((d) => d.id === selectedDeviceId) ?? devices[0];
     if (!target) return null;
-    if (!preferred.id && !preferred.name) savePreferred(target);
+    if (!preferred2.id && !preferred2.name) savePreferred(target);
     attachToDevice(target.id);
     return target.id;
   }
@@ -103,13 +109,16 @@
     }, RESCAN_MS);
     window.addEventListener("focus", () => void rescan());
   }
-  var signature = (devices) => devices.map((d) => d.name).sort().join("\n");
+  var signature = (access) => [
+    ...devicesOf(access).map((d) => "in:" + d.name),
+    ...Array.from(access?.outputs.values() ?? []).filter((o) => o.state !== "disconnected").map((o) => "out:" + (o.name ?? o.id))
+  ].sort().join("\n");
   async function rescan() {
     if (rescanning || !midiAccess) return;
     rescanning = true;
     try {
       const fresh = await navigator.requestMIDIAccess();
-      if (signature(devicesOf(fresh)) === signature(getDevices())) return;
+      if (signature(fresh) === signature(midiAccess)) return;
       useAccess(fresh);
       refreshDeviceList();
     } catch {
@@ -125,21 +134,21 @@
   }
   function handleMidiMessage(e) {
     if (!e.data || e.data.length < 3) return;
-    const [status, note, velocity2] = e.data;
-    if (isNoteOff(status, velocity2)) keyUp(note);
-    else if ((status & 240) === 144) keyDown(note, velocity2);
-    else if (isSustain(status, note)) sound.sustain(velocity2 >= 64);
+    const [status2, note, velocity2] = e.data;
+    if (isNoteOff(status2, velocity2)) keyUp(note, "controller");
+    else if ((status2 & 240) === 144) keyDown(note, velocity2, "controller");
+    else if (isSustain(status2, note)) sound.sustain(velocity2 >= 64, "controller");
   }
-  function keyDown(note, velocity2) {
-    sound.noteOn(note, velocity2);
+  function keyDown(note, velocity2, source = "virtual") {
+    sound.noteOn(note, velocity2, source);
     handleNoteOn(note);
   }
-  function keyUp(note) {
-    sound.noteOff(note);
+  function keyUp(note, source = "virtual") {
+    sound.noteOff(note, source);
     handleNoteOff(note);
   }
   function setPedal(down) {
-    sound.sustain(down);
+    sound.sustain(down, "virtual");
   }
   function pointerDown(note, velocity2) {
     if (mode !== "hold") {
@@ -150,7 +159,7 @@
       onNoteChange(sortedNotes(activeNotes));
       return;
     }
-    sound.noteOn(note, velocity2);
+    sound.noteOn(note, velocity2, "virtual");
     activeNotes.add(note);
     onNoteChange(sortedNotes(activeNotes));
   }
@@ -159,7 +168,7 @@
       keyUp(note);
       return;
     }
-    sound.noteOff(note);
+    sound.noteOff(note, "virtual");
   }
   function releaseKeptNotes() {
     if (mode === "normal") return;
@@ -755,8 +764,14 @@
     }
   }
   var previewNodes = [];
+  var onPreview = () => {
+  };
+  function setPreviewListener(cb) {
+    onPreview = cb;
+  }
   function playPreview(midis, duration) {
     if (!midis.length) return;
+    onPreview(midis, duration, true);
     const inst = playableInstrument();
     if (!inst) return;
     whenRunning(() => {
@@ -802,6 +817,120 @@
     sustainedNotes.forEach(stopLive);
     sustainedNotes.clear();
   }
+
+  // src/output/midi-out.ts
+  var PREVIEW_VELOCITY = 90;
+  var preferred = loadJSON("midi-out", null) ?? {};
+  var channel = loadNumber("midi-out-channel", 1, 1, 16);
+  var thru = loadBool("midi-out-thru", false);
+  var sounding2 = /* @__PURE__ */ new Set();
+  var previewNotes = [];
+  var previewTimer = null;
+  var pedalDown2 = false;
+  function getOutputs() {
+    const access = getMidiAccess();
+    if (!access) return [];
+    return Array.from(access.outputs.values()).filter((o) => o.state !== "disconnected").map((o) => ({ id: o.id, name: o.name ?? o.id }));
+  }
+  function currentOutput() {
+    const access = getMidiAccess();
+    if (!access || !preferred.name) return null;
+    const outs = Array.from(access.outputs.values()).filter((o) => o.state !== "disconnected" && o.name === preferred.name);
+    return outs.find((o) => o.id === preferred.id) ?? outs[0] ?? null;
+  }
+  function outputLoops() {
+    const input = getSelectedInputName();
+    return !!preferred.name && !!input && preferred.name === input;
+  }
+  function send(bytes) {
+    if (outputLoops()) return;
+    try {
+      currentOutput()?.send(bytes);
+    } catch {
+    }
+  }
+  var status = (kind) => kind | channel - 1;
+  function noteOn(note, velocity2) {
+    send([status(144), note, Math.max(1, Math.min(127, velocity2))]);
+    sounding2.add(note);
+  }
+  function noteOff(note) {
+    send([status(128), note, 0]);
+    sounding2.delete(note);
+  }
+  function allNotesOff() {
+    if (previewTimer) {
+      clearTimeout(previewTimer);
+      previewTimer = null;
+    }
+    previewNotes = [];
+    if (pedalDown2) {
+      send([status(176), 64, 0]);
+      pedalDown2 = false;
+    }
+    for (const n of [...sounding2]) noteOff(n);
+    send([status(176), 123, 0]);
+  }
+  function outLiveOn(note, velocity2, source) {
+    if (source === "controller" && !thru) return;
+    if (previewNotes.includes(note)) previewNotes = previewNotes.filter((n) => n !== note);
+    noteOn(note, velocity2);
+  }
+  function outLiveOff(note, source) {
+    if (source === "controller" && !thru) return;
+    if (sounding2.has(note)) noteOff(note);
+  }
+  function outSustain(down, source) {
+    if (source === "controller" && !thru) return;
+    pedalDown2 = down;
+    send([status(176), 64, down ? 127 : 0]);
+  }
+  function outPreview(notes, seconds, cut) {
+    if (!notes.length) return;
+    if (cut) {
+      if (previewTimer) {
+        clearTimeout(previewTimer);
+        previewTimer = null;
+      }
+      for (const n of previewNotes) if (sounding2.has(n)) noteOff(n);
+      previewNotes = [];
+    }
+    for (const n of notes) {
+      if (sounding2.has(n)) noteOff(n);
+      noteOn(n, PREVIEW_VELOCITY);
+    }
+    const these = notes;
+    previewNotes = [.../* @__PURE__ */ new Set([...previewNotes, ...notes])];
+    const end = () => {
+      for (const n of these) if (previewNotes.includes(n) && sounding2.has(n)) noteOff(n);
+      previewNotes = previewNotes.filter((n) => !these.includes(n));
+    };
+    if (cut) previewTimer = setTimeout(() => {
+      previewTimer = null;
+      end();
+    }, seconds * 1e3);
+    else setTimeout(end, seconds * 1e3);
+  }
+  function getOutputSettings() {
+    return { port: preferred.name ? { id: preferred.id ?? "", name: preferred.name } : null, channel, thru };
+  }
+  function chooseOutput(id) {
+    allNotesOff();
+    const port = id ? getOutputs().find((o) => o.id === id) ?? null : null;
+    preferred = port ?? {};
+    save("midi-out", port);
+  }
+  function setOutputChannel(ch) {
+    allNotesOff();
+    channel = Math.min(16, Math.max(1, Math.round(ch)));
+    save("midi-out-channel", channel);
+  }
+  function setThru(on) {
+    if (!on) allNotesOff();
+    thru = on;
+    save("midi-out-thru", thru);
+  }
+  if (typeof window !== "undefined") window.addEventListener("pagehide", () => allNotesOff());
 
   // src/diagrams/staff.ts
   function buildStaffAbc(noteNames, keyStr) {
@@ -871,10 +1000,10 @@ K:${abcKey}
     return m ? m[1].toUpperCase() + m[2] : null;
   }
   function isPlayable(v, openMidi, bassPc) {
-    const sounding2 = v.frets.map((f, i) => f >= 0 ? i : -1).filter((i) => i >= 0);
-    if (sounding2.length < MIN_STRINGS) return false;
-    if (sounding2[sounding2.length - 1] - sounding2[0] + 1 !== sounding2.length) return false;
-    const lowest = openMidi[sounding2[0]] + v.frets[sounding2[0]];
+    const sounding3 = v.frets.map((f, i) => f >= 0 ? i : -1).filter((i) => i >= 0);
+    if (sounding3.length < MIN_STRINGS) return false;
+    if (sounding3[sounding3.length - 1] - sounding3[0] + 1 !== sounding3.length) return false;
+    const lowest = openMidi[sounding3[0]] + v.frets[sounding3[0]];
     if (lowest % 12 !== bassPc) return false;
     const fretted = v.frets.filter((f) => f > 0);
     if (fretted.length === 0) return true;
@@ -1123,26 +1252,26 @@ K:${abcKey}
     }
   }
   function createViewPublisher() {
-    const channel = open();
+    const channel2 = open();
     let current2 = null;
     let last = "";
-    channel?.addEventListener("message", (e) => {
-      if (e.data?.type === "hello" && current2) channel.postMessage({ type: "state", state: current2 });
+    channel2?.addEventListener("message", (e) => {
+      if (e.data?.type === "hello" && current2) channel2.postMessage({ type: "state", state: current2 });
     });
     return (state2) => {
       current2 = state2;
       const sig = JSON.stringify(state2);
       if (sig === last) return;
       last = sig;
-      channel?.postMessage({ type: "state", state: state2 });
+      channel2?.postMessage({ type: "state", state: state2 });
     };
   }
   function subscribeView(onState) {
-    const channel = open();
-    channel?.addEventListener("message", (e) => {
+    const channel2 = open();
+    channel2?.addEventListener("message", (e) => {
       if (e.data?.type === "state") onState(e.data.state);
     });
-    channel?.postMessage({ type: "hello" });
+    channel2?.postMessage({ type: "hello" });
   }
   function viewUrl(view, bg, base = location.href) {
     const url = new URL(base);
@@ -3019,6 +3148,11 @@ K:${abcKey}
     <div id="z1-toolbar" class="toolbar">
       <span id="midi-status" class="midi-status">MIDI: \u2014</span>
       <select id="midi-device" class="ctrl-select"></select>
+      <select id="midi-out" class="ctrl-select" title="MIDI out: what sounds goes to this port"><option value="">Out: off</option></select>
+      <select id="midi-out-ch" class="ctrl-select" title="MIDI out channel">
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">ch ${i + 1}</option>`).join("")}
+      </select>
+      <button id="btn-thru" class="mode-btn" title="Thru: also send the controller's notes (off: the DAW usually hears the controller itself)">Thru</button>
       <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
       <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
@@ -3296,11 +3430,27 @@ K:${abcKey}
       }
       if (!result.unsupported) {
         refreshDeviceDropdown();
+        refreshOutputDropdown();
         setModeBtn(getMode());
       }
     });
     setNoteChangeCallback(onNoteChange2);
-    setSoundCallbacks({ noteOn: liveNoteOn, noteOff: liveNoteOff, sustain: setSustain });
+    setSoundCallbacks({
+      noteOn: (n, v, src) => {
+        liveNoteOn(n, v);
+        outLiveOn(n, v, src);
+      },
+      noteOff: (n, src) => {
+        liveNoteOff(n);
+        outLiveOff(n, src);
+      },
+      sustain: (down, src) => {
+        setSustain(down);
+        outSustain(down, src);
+      }
+    });
+    setPreviewListener(outPreview);
+    wireMidiOut();
     setHistoryChangeCallback(onHistoryChange);
     setAudioMissedCallback(() => {
       const el = document.getElementById("audio-progress");
@@ -3311,17 +3461,17 @@ K:${abcKey}
     });
     let progressTimer = null;
     let progressValue = 0;
-    setAudioStatusCallback((status) => {
+    setAudioStatusCallback((status2) => {
       const el = document.getElementById("audio-status");
       const fill = document.getElementById("audio-progress-fill");
       if (!el || !fill) return;
       const labels = { idle: "\u266A idle", loading: "\u266A loading\u2026", suspended: "\u266A click to activate", ready: "\u266A ready", error: "\u266A error" };
-      el.textContent = labels[status] ?? status;
+      el.textContent = labels[status2] ?? status2;
       if (progressTimer) {
         clearInterval(progressTimer);
         progressTimer = null;
       }
-      if (status === "loading") {
+      if (status2 === "loading") {
         progressValue = 0;
         fill.style.background = "";
         fill.style.transition = "none";
@@ -3331,15 +3481,15 @@ K:${abcKey}
           fill.style.transition = "width 0.1s linear";
           fill.style.width = progressValue.toFixed(1) + "%";
         }, 100);
-      } else if (status === "suspended") {
+      } else if (status2 === "suspended") {
         fill.style.background = "#f59e0b";
         fill.style.transition = "width 0.3s ease-out";
         fill.style.width = "100%";
-      } else if (status === "ready") {
+      } else if (status2 === "ready") {
         fill.style.background = "#22c55e";
         fill.style.transition = "width 0.2s ease-out";
         fill.style.width = "100%";
-      } else if (status === "error") {
+      } else if (status2 === "error") {
         fill.style.background = "#ef4444";
         fill.style.transition = "width 0.2s ease-out";
         fill.style.width = "100%";
@@ -3845,12 +3995,46 @@ K:${abcKey}
     $2("midi-status").style.color = devices.length ? "#4ade80" : "#6b7280";
     if (!deviceListenersAttached) {
       deviceListenersAttached = true;
-      window.addEventListener("midi-devices-changed", () => refreshDeviceDropdown());
+      window.addEventListener("midi-devices-changed", () => {
+        refreshDeviceDropdown();
+        refreshOutputDropdown();
+      });
       window.addEventListener("midi-device-disconnected", () => {
         $2("midi-status").textContent = "MIDI: disconnected";
         $2("midi-status").style.color = "#f87171";
       });
     }
+  }
+  function refreshOutputDropdown() {
+    const sel = $2("midi-out");
+    const { port } = getOutputSettings();
+    const outputs = getOutputs();
+    const present = port && outputs.find((o) => o.name === port.name);
+    sel.innerHTML = '<option value="">Out: off</option>' + outputs.map((o) => `<option value="${escapeHtml(o.id)}">Out: ${escapeHtml(o.name)}</option>`).join("") + // A chosen port that is unplugged stays chosen and comes back when it reappears
+    (port && !present ? `<option value="__missing" disabled>Out: ${escapeHtml(port.name)} (absent)</option>` : "");
+    sel.value = present ? present.id : port ? "__missing" : "";
+    const loops = outputLoops();
+    sel.classList.toggle("invalid", loops);
+    sel.title = loops ? "Same port as the input: nothing is sent, it would come back as input" : "MIDI out: what sounds goes to this port";
+  }
+  function wireMidiOut() {
+    const sel = $2("midi-out");
+    const ch = $2("midi-out-ch");
+    const thruBtn = $2("btn-thru");
+    const { channel: channel2, thru: thru2 } = getOutputSettings();
+    ch.value = String(channel2);
+    thruBtn.classList.toggle("active-mode", thru2);
+    sel.addEventListener("change", () => {
+      chooseOutput(sel.value || null);
+      refreshOutputDropdown();
+    });
+    ch.addEventListener("change", () => setOutputChannel(parseInt(ch.value)));
+    thruBtn.addEventListener("click", () => {
+      const on = !getOutputSettings().thru;
+      setThru(on);
+      thruBtn.classList.toggle("active-mode", on);
+    });
+    $2("midi-device").addEventListener("change", () => setTimeout(refreshOutputDropdown));
   }
   function showMidiBanner(msg) {
     const el = $2("midi-banner");

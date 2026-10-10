@@ -16,11 +16,14 @@ let arpeggioTimer: ReturnType<typeof setTimeout> | null = null
 
 type NoteChangeCallback = (notes: number[]) => void
 
-/** What the controller does to the sound, independent of what the mode keeps on screen. */
+/** Where a note comes from: the MIDI controller, or the computer keyboard and on-screen piano. */
+export type NoteSource = 'controller' | 'virtual'
+
+/** What the inputs do to the sound, independent of what the mode keeps on screen. */
 export type SoundCallbacks = {
-  noteOn: (note: number, velocity: number) => void
-  noteOff: (note: number) => void
-  sustain: (down: boolean) => void
+  noteOn: (note: number, velocity: number, source: NoteSource) => void
+  noteOff: (note: number, source: NoteSource) => void
+  sustain: (down: boolean, source: NoteSource) => void
 }
 
 let onNoteChange: NoteChangeCallback = () => {}
@@ -74,6 +77,14 @@ function devicesOf(access: MIDIAccess | null): Device[] {
 }
 
 export function getDevices(): Device[] { return devicesOf(midiAccess) }
+
+/** The current MIDI access (inputs and outputs), null before permission. */
+export function getMidiAccess(): MIDIAccess | null { return midiAccess }
+
+/** Name of the port the controller is read from, null when none. */
+export function getSelectedInputName(): string | null {
+  return getDevices().find(d => d.id === selectedDeviceId)?.name ?? null
+}
 
 // The device the user picked. A fallback chosen because it went missing does not replace
 // it, so the controller is used again as soon as it comes back.
@@ -139,14 +150,17 @@ function startRescan() {
   window.addEventListener('focus', () => void rescan())
 }
 
-const signature = (devices: Device[]) => devices.map(d => d.name).sort().join('\n')
+const signature = (access: MIDIAccess | null) => [
+  ...devicesOf(access).map(d => 'in:' + d.name),
+  ...Array.from(access?.outputs.values() ?? []).filter(o => o.state !== 'disconnected').map(o => 'out:' + (o.name ?? o.id)),
+].sort().join('\n')
 
 async function rescan() {
   if (rescanning || !midiAccess) return
   rescanning = true
   try {
     const fresh = await navigator.requestMIDIAccess()
-    if (signature(devicesOf(fresh)) === signature(getDevices())) return
+    if (signature(fresh) === signature(midiAccess)) return
     useAccess(fresh)
     refreshDeviceList()
   } catch { /* access withdrawn: keep what we have */ } finally {
@@ -167,9 +181,9 @@ function handleMidiMessage(e: MIDIMessageEvent) {
   if (!e.data || e.data.length < 3) return
   const [status, note, velocity] = e.data
 
-  if (isNoteOff(status, velocity)) keyUp(note)
-  else if ((status & 0xF0) === 0x90) keyDown(note, velocity)
-  else if (isSustain(status, note)) sound.sustain(velocity >= 64)
+  if (isNoteOff(status, velocity)) keyUp(note, 'controller')
+  else if ((status & 0xF0) === 0x90) keyDown(note, velocity, 'controller')
+  else if (isSustain(status, note)) sound.sustain(velocity >= 64, 'controller')
 }
 
 // ─── Other inputs ────────────────────────────────────────────────────────────
@@ -178,25 +192,25 @@ function handleMidiMessage(e: MIDIMessageEvent) {
 // press one key at a time, so it builds the chord note by note).
 
 /** A key pressed on any input: sound and the current mode. */
-export function keyDown(note: number, velocity: number) {
-  sound.noteOn(note, velocity)
+export function keyDown(note: number, velocity: number, source: NoteSource = 'virtual') {
+  sound.noteOn(note, velocity, source)
   handleNoteOn(note)
 }
 
 /** A key released on any input. */
-export function keyUp(note: number) {
-  sound.noteOff(note)
+export function keyUp(note: number, source: NoteSource = 'virtual') {
+  sound.noteOff(note, source)
   handleNoteOff(note)
 }
 
 /** Sustain pedal from any input. */
-export function setPedal(down: boolean) { sound.sustain(down) }
+export function setPedal(down: boolean) { sound.sustain(down, 'virtual') }
 
 /** On-screen piano press. */
 export function pointerDown(note: number, velocity: number) {
   if (mode !== 'hold') { keyDown(note, velocity); return }
   if (activeNotes.delete(note)) { onNoteChange(sortedNotes(activeNotes)); return }
-  sound.noteOn(note, velocity)
+  sound.noteOn(note, velocity, 'virtual')
   activeNotes.add(note)
   onNoteChange(sortedNotes(activeNotes))
 }
@@ -204,7 +218,7 @@ export function pointerDown(note: number, velocity: number) {
 /** On-screen piano release: the sound stops; in Hold the note stays in the chord. */
 export function pointerUp(note: number) {
   if (mode !== 'hold') { keyUp(note); return }
-  sound.noteOff(note)
+  sound.noteOff(note, 'virtual')
 }
 
 /** Esc: drops the notes a mode is keeping (Hold chord, pending arpeggio). */

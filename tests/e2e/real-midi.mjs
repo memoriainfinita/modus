@@ -1,7 +1,8 @@
 // End-to-end test through real Web MIDI: Node writes to the "loopMIDI Port" virtual port
 // and the installed Chrome and Playwright's Firefox read it as a device. Covers what the
 // fake in smoke.mjs cannot: the browser's own MIDI stack and permission.
-// Needs loopMIDI running with a port named "loopMIDI Port", and Playwright's Firefox
+// Needs loopMIDI running with a port named "loopMIDI Port" (the MIDI out check also needs
+// another input, such as a controller, and is skipped without one), and Playwright's Firefox
 // (pnpm exec playwright-core install firefox). Run: pnpm test:e2e:midi
 //
 // Firefox only grants Web MIDI through a site-permission add-on, so a fresh profile gets
@@ -24,6 +25,10 @@ if (!midi.info().outputs.some(o => o.name === PORT_NAME)) {
   process.exit(1)
 }
 const out = await midi.openMidiOut(PORT_NAME)
+// What Modus's MIDI out sends to the loopMIDI port comes back here
+const received = []
+const loopIn = await midi.openMidiIn(PORT_NAME)
+loopIn.connect(msg => received.push([...msg]))
 const { server, url } = await serve()
 const origin = url.replace(/\/$/, '')
 const results = []
@@ -96,6 +101,25 @@ async function run(browserName, makeContext) {
     await release([64, 67, 71])
   })
 
+  // MIDI out to loopMIDI needs the input on another port, or Modus refuses the loop. Any
+  // other input does (nothing is played on it); without one the check is skipped.
+  const otherInput = await page.locator('#midi-device option').evaluateAll((opts, name) =>
+    opts.find(o => o.textContent !== name)?.value ?? null, PORT_NAME)
+  if (otherInput) {
+    await check('MIDI out: a circle click arrives at the loopMIDI port on the chosen channel', async () => {
+      await page.selectOption('#midi-device', otherInput)
+      await page.selectOption('#midi-out', { label: `Out: ${PORT_NAME}` })
+      await page.selectOption('#midi-out-ch', '5')
+      received.length = 0
+      await page.locator('#cof-container [data-chord="F"]').click()
+      await sleep(300)
+      assert(received.some(m => m[0] === 0x94 && m[1] === 65 && m[2] > 0), `received: ${JSON.stringify(received)}`)
+      await page.selectOption('#midi-out', '')
+      await sleep(200)
+      assert(received.some(m => m[0] === 0xB4 && m[1] === 123), 'no All Notes Off when switching off')
+    })
+  } else results.push(['skip', `${browserName}: MIDI out (no input besides ${PORT_NAME})`])
+
   await check('no page errors', async () => assert(errors.length === 0, errors.join(' | ')))
   await dispose()
 }
@@ -104,6 +128,7 @@ await run('chrome', chromeContext)
 await run('firefox', firefoxContext)
 
 out.close()
+loopIn.close()
 midi.close()
 server.close()
 
