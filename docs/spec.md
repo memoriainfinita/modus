@@ -374,6 +374,12 @@ Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/A
 
 Every note sent is tracked: changing port or channel, turning Thru off and leaving the page release them (pedal up, note-offs, CC 123). An output on the same port the controller is read from sends nothing (it would come back as input) and the selector turns red. The internal sound keeps playing; the volume slider silences it.
 
+## Accessibility
+
+Everything can be used from the keyboard and read by a screen reader (`ui/a11y.ts`):
+- **Keyboard:** Tab reaches every control, the circle's segments, the history and song chips and each panel's title; Enter or Space presses them (Enter twice on a circle segment sets its key, as a double click does; Delete on a history chip removes it). On a focused panel title the arrows move the panel a cell and Shift + arrows resize it, said aloud. The app's shortcuts leave Enter and Space to the button that has the focus. The help panel is a dialog: Esc closes it and the focus goes back where it was. Every focused element shows an outline in the theme's cursor colour
+- **Screen reader:** a polite live region says what the detector shows once it holds for 350 ms: the chord's long name with its degree and function ("G major, V, Dominant"), a note, an interval. The toolbar is a toolbar and the panels a main region; each panel is a section named by its title. Buttons that only carry an icon are named by their tooltip; the menu buttons say whether their menu is open. The staff, piano and strings drawings are images named by what they show ("Staff: C4 E4 G4", "Strings: C x 3 2 0 1 0"); the computer keyboard (M) plays the piano for someone who cannot point
+
 ## Offline and installation
 
 Everything the page loads is served with it: UMT, notae, abcjs and soundfont-player in `vendor/`, and the samples of the default instrument (acoustic grand piano, FluidR3_GM). `scripts/vendor.mjs` (`pnpm vendor`) copies them at the versions pinned there; the files are tracked, as `dist/` is. Any other instrument comes from the soundfont's host (`gleitz.github.io`) the first time it is played.

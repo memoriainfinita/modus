@@ -3,6 +3,7 @@ import type { Lang, NoteNaming } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
 import { carryHistoryOverReload } from '../history/history'
 import { escapeHtml } from '../ui/html'
+import { keyBelongsToControl } from '../ui/a11y'
 import { getThemeChoice, saveThemeChoice, THEME_CHOICES } from '../ui/theme'
 import type { ThemeChoice } from '../ui/theme'
 
@@ -21,6 +22,8 @@ const SHORTCUTS: { key: string | StringKey; action: StringKey }[] = [
   { key: '/',         action: 'shortcut.type' },
   { key: '1–9',       action: 'shortcut.candidate' },
   { key: '?',         action: 'shortcut.help' },
+  { key: 'Tab',       action: 'shortcut.tab' },
+  { key: 'kbd.panelArrows', action: 'shortcut.panelArrows' },
 ]
 
 // What the mouse does that no label says.
@@ -38,11 +41,14 @@ function reloadWith(apply: () => void) {
 }
 
 let helpVisible = false
+let returnFocus: HTMLElement | null = null
 
 export function closeHelp(): boolean {
   if (!helpVisible) return false
   helpVisible = false
   document.getElementById('shortcut-help')?.remove()
+  returnFocus?.focus()
+  returnFocus = null
   document.removeEventListener('mousedown', closeHelpOnOutsideClick)
   return true
 }
@@ -53,10 +59,13 @@ export function toggleHelp() {
   const popup = document.createElement('div')
   popup.id = 'shortcut-help'
   popup.className = 'shortcut-help-popup'
+  popup.setAttribute('role', 'dialog')
+  popup.setAttribute('aria-label', t('help.heading'))
+  returnFocus = document.activeElement as HTMLElement | null
   popup.innerHTML = `
     <div class="shortcut-help-header">
       <span>${t('help.heading')}</span>
-      <button class="shortcut-help-close">×</button>
+      <button class="shortcut-help-close" aria-label="${t('help.close')}">×</button>
     </div>
     ${SHORTCUTS.map(s => `
       <div class="shortcut-row">
@@ -123,6 +132,7 @@ export function wireKeyboard(actions: KeyActions) {
     const t = e.target
     if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return
     if (t instanceof HTMLElement && t.isContentEditable) return
+    if (keyBelongsToControl(e)) return
 
     switch (e.key) {
       case 'h': case 'H': actions.toggleHold(); break

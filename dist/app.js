@@ -977,6 +977,25 @@
     "mic.hint": "Turn the microphone on and sing or play.",
     "mic.listening": "Listening\u2026",
     "mic.error": "No microphone ({error}): allow it in the browser and try again.",
+    "help.close": "Close",
+    "a11y.toolbar": "Controls",
+    "a11y.panels": "Panels",
+    "a11y.panelKeys": "{name} panel: arrows move it, Shift + arrows resize it",
+    "a11y.moved": "{name}: column {x}, row {y}, {w} columns wide, {h} rows tall",
+    "a11y.midiDevice": "MIDI input device",
+    "a11y.key": "Key",
+    "a11y.chord": "{chord}, {roman}, {fn}",
+    "a11y.chordNoKey": "{chord}",
+    "a11y.note": "Note {note}",
+    "a11y.staff": "Staff: {notes}",
+    "a11y.piano": "Piano: {notes}",
+    "a11y.strings": "Strings: {chord}",
+    "a11y.cof": "Circle of fifths: Enter plays a chord, Enter twice sets its key",
+    "a11y.nothing": "nothing played",
+    "a11y.chip": "{chord}, {roman}: Enter shows and plays it, Delete removes it",
+    "shortcut.tab": "Reach any control, chip or circle segment; Enter or Space presses it",
+    "kbd.panelArrows": "Arrows on a panel title",
+    "shortcut.panelArrows": "Move the panel; with Shift, resize it",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "The cornerstone of jazz harmony: subdominant (ii7), dominant (V7), tonic (Imaj7). The root falls a fifth each time, and the seventh of each chord falls a step to the third of the next.",
     "prog.ii-V-i": "ii-V-i (minor)",
@@ -1516,6 +1535,25 @@
     "mic.hint": "Activa el micr\xF3fono y canta o toca.",
     "mic.listening": "Escuchando\u2026",
     "mic.error": "Sin micr\xF3fono ({error}): perm\xEDtelo en el navegador y vuelve a probar.",
+    "help.close": "Cerrar",
+    "a11y.toolbar": "Controles",
+    "a11y.panels": "Paneles",
+    "a11y.panelKeys": "Panel {name}: las flechas lo mueven, May\xFAs + flechas cambian su tama\xF1o",
+    "a11y.moved": "{name}: columna {x}, fila {y}, {w} columnas de ancho, {h} filas de alto",
+    "a11y.midiDevice": "Dispositivo de entrada MIDI",
+    "a11y.key": "Tonalidad",
+    "a11y.chord": "{chord}, {roman}, {fn}",
+    "a11y.chordNoKey": "{chord}",
+    "a11y.note": "Nota {note}",
+    "a11y.staff": "Pentagrama: {notes}",
+    "a11y.piano": "Piano: {notes}",
+    "a11y.strings": "Cuerdas: {chord}",
+    "a11y.cof": "C\xEDrculo de quintas: Intro toca un acorde, Intro dos veces fija su tonalidad",
+    "a11y.nothing": "nada tocado",
+    "a11y.chip": "{chord}, {roman}: Intro lo muestra y lo toca, Supr lo quita",
+    "shortcut.tab": "Llegar a cualquier control, ficha o segmento del c\xEDrculo; Intro o Espacio lo pulsa",
+    "kbd.panelArrows": "Flechas en el t\xEDtulo de un panel",
+    "shortcut.panelArrows": "Mover el panel; con May\xFAs, cambiar su tama\xF1o",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "La base de la armon\xEDa del jazz: subdominante (ii7), dominante (V7), t\xF3nica (Imaj7). La ra\xEDz baja una quinta cada vez, y la s\xE9ptima de cada acorde baja un grado a la tercera del siguiente.",
     "prog.ii-V-i": "ii-V-i (menor)",
@@ -2534,6 +2572,11 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     };
   }
 
+  // src/ui/html.ts
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+
   // src/diagrams/guitar.ts
   var guitarControlsVisible = loadBool("panel-guitarControls", true);
   function setGuitarControlsVisible(v) {
@@ -2738,7 +2781,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     }
     if (voicingIndex !== void 0) guitarVoicingIdx = voicingIndex;
     if (stringsView === "neck") {
-      container.innerHTML = `<div>${neckSvg(noteNames, open2, preferFlats)}</div>` + guitarControls(0, 0);
+      container.innerHTML = `<div role="img" aria-label="${escapeHtml(t("a11y.strings", { chord: chordSymbol ? chordLabel(chordSymbol) : t("a11y.nothing") }))}">${neckSvg(noteNames, open2, preferFlats)}</div>` + guitarControls(0, 0);
       localizeDrawnNoteNames(container.firstElementChild);
       wireGuitarControls(container);
       return;
@@ -2764,7 +2807,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       { name: chordLabel(chordSymbol), ...voicings[idx], tuning: guitarStringTuning },
       shapeStyle()
     ), "");
-    container.innerHTML = `<div>${svg}</div>` + guitarControls(total, idx);
+    container.innerHTML = `<div role="img" aria-label="${escapeHtml(t("a11y.strings", { chord: `${chordLabel(chordSymbol)} ${voicings[idx].frets.map((f) => f < 0 ? "x" : f).join(" ")}` }))}">${svg}</div>` + guitarControls(total, idx);
     localizeDrawnNoteNames(container.firstElementChild);
     container.querySelectorAll(".guitar-nav").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -2774,11 +2817,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       });
     });
     wireGuitarControls(container);
-  }
-
-  // src/ui/html.ts
-  function escapeHtml(text) {
-    return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   }
 
   // src/detector/analysis-panel.ts
@@ -2872,6 +2910,63 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     svg.removeAttribute("height");
     svg.style.width = "100%";
     svg.style.height = "100%";
+  }
+
+  // src/ui/a11y.ts
+  var live = null;
+  var pending = null;
+  var lastSaid = "";
+  function announce(text, delay = 350) {
+    if (typeof document === "undefined") return;
+    if (!live) {
+      live = document.createElement("div");
+      live.id = "sr-live";
+      live.className = "sr-only";
+      live.setAttribute("aria-live", "polite");
+      live.setAttribute("aria-atomic", "true");
+      document.body.appendChild(live);
+    }
+    if (pending) clearTimeout(pending);
+    pending = setTimeout(() => {
+      pending = null;
+      if (text === lastSaid) return;
+      lastSaid = text;
+      live.textContent = text;
+    }, delay);
+  }
+  var HAS_WORD = /\p{L}{2,}/u;
+  function labelIconButtons(root) {
+    root.querySelectorAll('button[title]:not([aria-label]), [role="button"][title]:not([aria-label])').forEach((b) => {
+      if (!HAS_WORD.test(b.textContent ?? "")) b.setAttribute("aria-label", b.title);
+    });
+  }
+  function watchIconButtons(root) {
+    labelIconButtons(root);
+    new MutationObserver(() => labelIconButtons(root)).observe(root, { childList: true, subtree: true });
+  }
+  function makeActivatable(el, label) {
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+    if (label) el.setAttribute("aria-label", label);
+    el.addEventListener("keydown", (e) => {
+      const k = e.key;
+      if (k !== "Enter" && k !== " ") return;
+      e.preventDefault();
+      e.stopPropagation();
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+  }
+  function syncExpanded(button, menu) {
+    const sync = () => button.setAttribute("aria-expanded", String(menu.classList.contains("open")));
+    sync();
+    new MutationObserver(sync).observe(menu, { attributes: true, attributeFilter: ["class"] });
+  }
+  function keyBelongsToControl(e) {
+    const t2 = e.target;
+    if (!(t2 instanceof Element)) return false;
+    if ((e.key === " " || e.key === "Enter") && t2.closest('button, a[href], [role="button"], summary')) return true;
+    if (e.key.startsWith("Arrow") && t2.classList.contains("module-header")) return true;
+    return false;
   }
 
   // src/view/channel.ts
@@ -3124,7 +3219,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     setGrid(shown ? addCell(grid2, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid2, id));
   }
   function renderLayout(panels, fieldsVisible) {
-    $("app").innerHTML = buildToolbar() + `<div id="midi-banner"></div><div id="grid" class="grid">${MODULE_IDS.map((id) => moduleFrame(id, panels, fieldsVisible)).join("")}</div>`;
+    $("app").innerHTML = buildToolbar() + `<div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, panels, fieldsVisible)).join("")}</main>`;
     applyGrid();
     wireGrid();
     wireLayoutMenu();
@@ -3155,9 +3250,9 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   function buildToolbar() {
     return `
-    <div id="z1-toolbar" class="toolbar">
+    <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t("a11y.toolbar")}">
       <span id="midi-status" class="midi-status">MIDI: \u2014</span>
-      <select id="midi-device" class="ctrl-select"></select>
+      <select id="midi-device" class="ctrl-select" aria-label="${t("a11y.midiDevice")}"></select>
       <select id="midi-in-ch" class="ctrl-select" title="${t("midi.inChannel.title")}">
         <option value="0">${t("midi.inChannel.all")}</option>
         ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.inChannel.one", { n: i + 1 })}</option>`).join("")}
@@ -3173,7 +3268,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       <button id="btn-keyboard" class="mode-btn" title="${t("keyboard.title")}">\u2328</button>
       <button id="btn-mic" class="mode-btn" title="${t("mic.title")}">\u{1F3A4}</button>
       <span id="keyboard-status" class="auto-key-label"></span>
-      <select id="key-select" class="ctrl-select">
+      <select id="key-select" class="ctrl-select" aria-label="${t("a11y.key")}">
         <option value="">${t("key.auto")}</option>
         ${ALL_KEYS.map((k) => `<option value="${k}">${keyLabel(k)}</option>`).join("")}
       </select>
@@ -3194,12 +3289,12 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       </select>
       <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t("audio.volume.title")}" class="volume-slider">
       <div class="view-menu-wrap">
-        <button id="btn-layout" class="ctrl-btn" title="${t("layout.title")}">\u25A6</button>
+        <button id="btn-layout" class="ctrl-btn" title="${t("layout.title")}" aria-haspopup="true" aria-expanded="false">\u25A6</button>
         <div id="layout-menu" class="view-menu"></div>
       </div>
       <div class="view-menu-wrap">
         <button id="btn-present" class="ctrl-btn" title="${t("present.title")}">\u26F6</button>
-        <button id="btn-views" class="ctrl-btn" title="${t("views.title")}">\u29C9</button>
+        <button id="btn-views" class="ctrl-btn" title="${t("views.title")}" aria-haspopup="true" aria-expanded="false">\u29C9</button>
         <div id="view-menu" class="view-menu">
           <div class="view-menu-title">${t("views.open")}</div>
           ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join("")}
@@ -3299,9 +3394,9 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   function moduleFrame(id, _panels, fieldsVisible) {
     return `
-    <section id="mod-${id}" class="module module-${id}" data-module="${id}">
-      <header class="module-header" title="${t("module.drag")}">
-        <span class="module-title">${t(`module.${id}`)}</span>
+    <section id="mod-${id}" class="module module-${id}" data-module="${id}" aria-labelledby="mod-${id}-title">
+      <header class="module-header" title="${t("module.drag")}" tabindex="0" aria-label="${t("a11y.panelKeys", { name: t(`module.${id}`) })}">
+        <span class="module-title" id="mod-${id}-title">${t(`module.${id}`)}</span>
         <span class="module-tools">${headerTools(id)}</span>
         <button class="module-close" data-close="${id}" title="${t("module.hide")}">\xD7</button>
       </header>
@@ -3328,6 +3423,20 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   var narrow = () => matchMedia("(max-width: 720px)").matches;
   function wireGrid() {
     const gridEl = $("grid");
+    gridEl.addEventListener("keydown", (e) => {
+      const header = e.target;
+      if (!header.classList?.contains("module-header") || !e.key.startsWith("Arrow") || narrow()) return;
+      const id = header.closest(".module").dataset.module;
+      const cell = grid2.find((c) => c.id === id);
+      if (!cell) return;
+      e.preventDefault();
+      const dx = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+      const dy = e.key === "ArrowUp" ? -1 : e.key === "ArrowDown" ? 1 : 0;
+      const next = e.shiftKey ? { ...cell, w: cell.w + dx, h: cell.h + dy } : { ...cell, x: cell.x + dx, y: cell.y + dy };
+      setGrid(placeCell(grid2, next), true);
+      const now = grid2.find((c) => c.id === id);
+      announce(t("a11y.moved", { name: t(`module.${id}`), x: now.x + 1, y: now.y + 1, w: now.w, h: now.h }), 0);
+    });
     gridEl.addEventListener("click", (e) => {
       const close = e.target.closest("[data-close]");
       if (close) showModule(close.dataset.close, false);
@@ -3678,7 +3787,10 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     container.innerHTML = svg;
     container.querySelectorAll("[data-chord]").forEach((el) => {
       el.addEventListener("click", () => onSegmentClick(el.dataset.chord, el.dataset.key ?? null));
+      makeActivatable(el, chordLabel(el.dataset.chord));
     });
+    container.querySelector("svg")?.setAttribute("aria-label", t("a11y.cof"));
+    container.querySelector("svg")?.setAttribute("role", "group");
   }
 
   // src/view/viewer.ts
@@ -4217,11 +4329,21 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       chip.addEventListener("dragend", () => {
         chip.style.opacity = "1";
       });
-      chip.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
+      const remove = () => {
         const before = entries;
         removeEntry(entry.id);
         showUndo(t("history.removed", { chord: chordLabel(entry.symbol) }), () => restoreEntries(before));
+      };
+      chip.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        remove();
+      });
+      makeActivatable(chip, t("a11y.chip", { chord: chordLabel(entry.symbol), roman }));
+      chip.addEventListener("keydown", (e) => {
+        if (e.key !== "Delete" && e.key !== "Backspace") return;
+        e.preventDefault();
+        e.stopPropagation();
+        remove();
       });
       strip.appendChild(chip);
       if (modulation) {
@@ -5191,6 +5313,8 @@ ${explainCadence(cadence)}` : "");
     wrap.appendChild(controls);
     wrap.addEventListener("mouseenter", () => controls.style.display = "flex");
     wrap.addEventListener("mouseleave", () => controls.style.display = "none");
+    makeActivatable(wrap);
+    wrap.addEventListener("focus", () => controls.style.display = "flex");
     wrap.addEventListener("click", () => {
       h.onChordClick(chord.id, chord.symbol, chord.notes);
       if (chord.notes?.length) playNoteNames(chord.notes);
@@ -5309,7 +5433,9 @@ ${explainCadence(cadence)}` : "");
     { key: "P", action: "shortcut.present" },
     { key: "/", action: "shortcut.type" },
     { key: "1\u20139", action: "shortcut.candidate" },
-    { key: "?", action: "shortcut.help" }
+    { key: "?", action: "shortcut.help" },
+    { key: "Tab", action: "shortcut.tab" },
+    { key: "kbd.panelArrows", action: "shortcut.panelArrows" }
   ];
   var GESTURES = [
     "gesture.click",
@@ -5328,10 +5454,13 @@ ${explainCadence(cadence)}` : "");
     location.reload();
   }
   var helpVisible = false;
+  var returnFocus = null;
   function closeHelp() {
     if (!helpVisible) return false;
     helpVisible = false;
     document.getElementById("shortcut-help")?.remove();
+    returnFocus?.focus();
+    returnFocus = null;
     document.removeEventListener("mousedown", closeHelpOnOutsideClick);
     return true;
   }
@@ -5344,10 +5473,13 @@ ${explainCadence(cadence)}` : "");
     const popup = document.createElement("div");
     popup.id = "shortcut-help";
     popup.className = "shortcut-help-popup";
+    popup.setAttribute("role", "dialog");
+    popup.setAttribute("aria-label", t("help.heading"));
+    returnFocus = document.activeElement;
     popup.innerHTML = `
     <div class="shortcut-help-header">
       <span>${t("help.heading")}</span>
-      <button class="shortcut-help-close">\xD7</button>
+      <button class="shortcut-help-close" aria-label="${t("help.close")}">\xD7</button>
     </div>
     ${SHORTCUTS.map((s) => `
       <div class="shortcut-row">
@@ -5392,6 +5524,7 @@ ${explainCadence(cadence)}` : "");
       const t2 = e.target;
       if (t2 instanceof HTMLInputElement || t2 instanceof HTMLTextAreaElement || t2 instanceof HTMLSelectElement) return;
       if (t2 instanceof HTMLElement && t2.isContentEditable) return;
+      if (keyBelongsToControl(e)) return;
       switch (e.key) {
         case "h":
         case "H":
@@ -6138,6 +6271,9 @@ ${explainCadence(c.cadence)}` : ""}`;
     document.addEventListener("click", initAudioOnGesture, { once: true });
     preloadAudio();
     buildLayout();
+    watchIconButtons($2("app"));
+    syncExpanded($2("btn-layout"), $2("layout-menu"));
+    syncExpanded($2("btn-views"), $2("view-menu"));
     wireShortcuts();
     wireComputerKeyboard();
     setComputerKeyboardChange(updateComputerKeyboardButton);
@@ -6502,7 +6638,26 @@ ${explainCadence(c.cadence)}` : ""}`;
     const el = document.getElementById("explain-container");
     if (el) renderExplanation(el, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev));
   }
+  function announceDetection() {
+    const d = state.detection;
+    if (!d) return;
+    if (d.kind === "note") {
+      announce(t("a11y.note", { note: noteLabel(d.noteName) }));
+      return;
+    }
+    if (d.kind === "interval") {
+      announce(d.intervalName);
+      return;
+    }
+    const sym = selectedSymbol();
+    if (!sym) return;
+    const chord = tryParseChord(sym);
+    const name = chord ? tryUMT("chord names", () => UMT.chordLongName(chord, getLang()), chordLabel(sym)) : chordLabel(sym);
+    const a = state.analysis;
+    announce(a && a.roman !== "?" ? t("a11y.chord", { chord: name, roman: a.roman, fn: t(`fn.${a.function}`) }) : name);
+  }
   function renderDetector() {
+    announceDetection();
     renderAnalysisPanel();
     renderExplain();
     renderProgressionPanel();
@@ -6736,6 +6891,12 @@ ${explainCadence(c.cadence)}` : ""}`;
     const prev = showPrevChord && chordSymbol ? prevVoicing : null;
     renderIfChanged("staff", `${notes}|${key}|${staffClef}|${prev?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev));
     renderIfChanged("piano", `${notes}|${chordSymbol}|${prev?.join(" ")}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress, prev));
+    const spoken = noteNames.map(noteLabel).join(" ") || t("a11y.nothing");
+    for (const [id, key2] of [["staff-container", "a11y.staff"], ["piano-container", "a11y.piano"]]) {
+      const el = $2(id);
+      el.setAttribute("role", "img");
+      el.setAttribute("aria-label", t(key2, { notes: spoken }));
+    }
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
     const neck = getStringsView() === "neck" ? `${notes}|${keyPrefersSharps(key)}` : "";
