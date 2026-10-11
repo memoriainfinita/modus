@@ -70,6 +70,8 @@ export interface RomanInfo {
   borrowedFrom?: string
   isSecondary: boolean
   secondaryTarget?: string    // e.g. "V7/ii"
+  degreeNumber?: number       // 1–7
+  substitutionCandidate?: string
 }
 
 // History and song chips ask for the same (chord, key) pairs on every render.
@@ -101,6 +103,8 @@ function toRomanInfo(a: any): RomanInfo {
     borrowedFrom: a.borrowedFrom,
     isSecondary: a.isSecondary ?? false,
     secondaryTarget: a.secondaryTarget,
+    degreeNumber: a.degree,
+    substitutionCandidate: a.substitutionCandidate,
   }
 }
 
@@ -180,7 +184,8 @@ export function presentUpperStructures(noteNames: string[], chord: any): string[
 export function neoRiemannianPath(from: any, to: any): string | null {
   const id = (c: any) => c ? `${((c.rootStep % 12) + 12) % 12}:${c.intervalsInSteps.join(',')}` : ''
   const target = id(to)
-  const isTriad = (c: any) => !!tryUMT('neo-Riemannian', () => UMT.NeoRiemannian.P(c), null)
+  // P, L and R are moves between triads: three notes only (UMT also reads G7 or Cadd9 as their triad)
+  const isTriad = (c: any) => c.intervalsInSteps?.length === 3 && !!tryUMT('neo-Riemannian', () => UMT.NeoRiemannian.P(c), null)
   if (!target || !isTriad(from) || !isTriad(to)) return null
   if (id(from) === target) return null
   let frontier: { chord: any; path: string }[] = [{ chord: from, path: '' }]
@@ -240,7 +245,7 @@ export function buildHarmonicAnalysis(
   const prevChord = tryParseChord(prevChordSymbol)
   if (prevChord) result.transformation = neoRiemannianPath(prevChord, chord)
   const vl = analyzeVoiceLeading(prevNotes, noteNames, activeKey, prevChordSymbol, chordSymbol)
-  if (vl) { result.voiceLeading = describeVoiceLeading(vl); result.voiceRules = vl.issues }
+  if (vl) { result.voiceLeading = describeVoiceLeading(vl); result.voiceRules = vl.issues; result.voiceRuleKeys = vl.issueKeys }
 
   if (!activeKey) return result
 
@@ -252,10 +257,12 @@ export function buildHarmonicAnalysis(
     if (cad && cad !== 'No standard cadence') result.cadence = cad
   }
 
-  result.substitutions = tryUMT('substitutions', () => UMT.getSubstitutions(chord, activeKey).map((s: any) => {
+  const subs = tryUMT('substitutions', () => UMT.getSubstitutions(chord, activeKey) as any[], [])
+  result.substitutions = subs.map((s: any) => {
     const name = chordLabel(s.chord?.name ?? s.name ?? String(s))
     return s.type ? `${name} (${substitutionTypeLabel(s.type)})` : name
-  }), [])
+  })
+  result.substitutionTypes = [...new Set(subs.flatMap((s: any) => s.type ? [s.type as string] : []))]
 
   return result
 }
@@ -266,7 +273,7 @@ function emptyAnalysis(chordName: string): HarmonicAnalysis {
     isDiatonic: false, isBorrowed: false, isSecondary: false,
     figuredBass: '', suggestedScales: [], substitutions: [],
     cadence: null, voicing: null, upperStructures: [], transformation: null,
-    voiceLeading: null, voiceRules: null,
+    substitutionTypes: [], voiceLeading: null, voiceRules: null, voiceRuleKeys: [],
   }
 }
 

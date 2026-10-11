@@ -27,6 +27,7 @@ import { mountSong, markActiveChord, removeChordWithUndo } from './song/view'
 import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis, Song, SongChord } from './types'
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
+import { explainDetection, renderExplanation } from './detector/explain'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames, isKnownChord, readTypedChord } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
@@ -456,8 +457,14 @@ function renderDiagrams() {
   renderZone1Diagrams(displayedNotes(), selectedSymbol())
 }
 
+function renderExplain() {
+  const el = document.getElementById('explain-container')
+  if (el) renderExplanation(el, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev))
+}
+
 function renderDetector() {
   renderAnalysisPanel()
+  renderExplain()
   renderDiagrams()
   publishView()
 }

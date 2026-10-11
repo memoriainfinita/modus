@@ -1637,4 +1637,28 @@ body.view-mode {
 .staff-prev {
   opacity: .4;
 }
+#explain-container {
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-y: auto;
+}
+.explain-list {
+  margin: 0;
+}
+.explain-list dt {
+  font-weight: 600;
+  color: var(--accent-text);
+  margin-top: .55em;
+}
+.explain-list dt:first-child {
+  margin-top: 0;
+}
+.explain-list dd {
+  margin: .1em 0 0;
+  color: var(--text-soft);
+}
+.explain-empty {
+  color: var(--text-muted);
+  margin: 0;
+}
 /*# sourceMappingURL=app.css.map */
