@@ -30,6 +30,7 @@ import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-pa
 import { explainDetection, renderExplanation } from './detector/explain'
 import { renderProgressions } from './ui/progressions'
 import { renderEar, type EarQuestion } from './ui/ear'
+import { renderPlayer } from './ui/player'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames, isKnownChord, readTypedChord } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
@@ -125,6 +126,8 @@ function init() {
   renderDetector()
   const ear = document.getElementById('ear-container')
   if (ear) renderEar(ear, { show: showEarAnswer })
+  const player = document.getElementById('player-container')
+  if (player) renderPlayer(player)
 
   initMidi().then(result => {
     if (result.denied) {

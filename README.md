@@ -66,6 +66,7 @@ Every element is a panel on a grid: drag it by its title, resize it from its cor
 - **Staff** (abcjs) — grand staff (treble and bass, split at middle C), or treble or bass alone; key signature follows the active key; ⇠ writes the previous chord before it, faded, to see the voices move (on the piano it lights the previous keys)
 - **Analysis** — all harmonic analysis fields, each field individually togglable; font scale +/−
 - **Progressions** — every named progression of UMT (ii-V-I, blues, rhythm changes, Coltrane changes, Andalusian cadence…) in the key, bar by bar with numerals and cadences and a sentence on what it is; click a chord to hear and analyse it, ▶ to play the whole progression
+- **Player** — a recording to transcribe, opened from a file: waveform, click to go anywhere, A–B loop, 50–125 % speed without changing the pitch, back 5 s
 - **Ear training** — the app plays an interval, a chord or a cadence without showing it; you name it, it keeps the score and shows the answer on the staff, piano and analysis
 - **Explanation** — what each term of the analysis means for the chord on screen: "D7 is V7/V: a secondary dominant, the dominant of G…", the borrowed mode and its foreign notes, the cadence, the inversion, the voice-leading rules broken
 - **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels
@@ -239,6 +240,7 @@ src/
     fit.ts                an SVG scaled to its panel
     progressions.ts       the Progressions panel: UMT's named progressions in the key
     ear.ts                the Ear training panel: intervals, chords, cadences
+    player.ts             the Player panel: a recording, its waveform, loop and speed
     undo.ts               Undo toast for destructive actions
     html.ts               HTML escaping
     storage.ts            localStorage preferences with safe fallbacks
@@ -250,7 +252,7 @@ tests/
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
   library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
-  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts
+  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both

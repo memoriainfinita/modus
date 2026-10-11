@@ -698,6 +698,7 @@
     "module.explain": "Explanation",
     "module.progressions": "Progressions",
     "module.ear": "Ear training",
+    "module.player": "Player",
     "module.key": "Key",
     "module.piano": "Piano",
     "module.velocity": "Velocity",
@@ -945,6 +946,16 @@
     "ear.chord.m7": "minor 7th",
     "ear.chord.m7b5": "half-diminished",
     "ear.chord.dim7": "diminished 7th",
+    "player.open": "Open\u2026",
+    "player.open.title": "Open a recording (or drop it on the panel). It stays on this computer and is not kept: open it again after a reload",
+    "player.none": "No recording: open one to transcribe it",
+    "player.wave.title": "Click to go to that point",
+    "player.back.title": "Back 5 seconds (not before A)",
+    "player.play.title": "Play / pause",
+    "player.speed.title": "Speed, without changing the pitch",
+    "player.a.title": "Loop start: here",
+    "player.b.title": "Loop end: here; from B it goes back to A",
+    "player.clear.title": "No loop",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "The cornerstone of jazz harmony: subdominant (ii7), dominant (V7), tonic (Imaj7). The root falls a fifth each time, and the seventh of each chord falls a step to the third of the next.",
     "prog.ii-V-i": "ii-V-i (minor)",
@@ -1221,6 +1232,7 @@
     "module.explain": "Explicaci\xF3n",
     "module.progressions": "Progresiones",
     "module.ear": "Entrenamiento auditivo",
+    "module.player": "Reproductor",
     "module.key": "Tonalidad",
     "module.piano": "Piano",
     "module.velocity": "Velocidad",
@@ -1462,6 +1474,16 @@
     "ear.chord.m7": "menor s\xE9ptima",
     "ear.chord.m7b5": "semidisminuido",
     "ear.chord.dim7": "s\xE9ptima disminuida",
+    "player.open": "Abrir\u2026",
+    "player.open.title": "Abrir una grabaci\xF3n (o soltarla en el panel). Se queda en este ordenador y no se guarda: \xE1brela de nuevo tras recargar",
+    "player.none": "Sin grabaci\xF3n: abre una para transcribirla",
+    "player.wave.title": "Clic para ir a ese punto",
+    "player.back.title": "Atr\xE1s 5 segundos (no antes de A)",
+    "player.play.title": "Reproducir / pausa",
+    "player.speed.title": "Velocidad, sin cambiar la altura",
+    "player.a.title": "Inicio del bucle: aqu\xED",
+    "player.b.title": "Fin del bucle: aqu\xED; desde B vuelve a A",
+    "player.clear.title": "Sin bucle",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "La base de la armon\xEDa del jazz: subdominante (ii7), dominante (V7), t\xF3nica (Imaj7). La ra\xEDz baja una quinta cada vez, y la s\xE9ptima de cada acorde baja un grado a la tercera del siguiente.",
     "prog.ii-V-i": "ii-V-i (menor)",
@@ -2933,6 +2955,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     "velocity",
     "progressions",
     "ear",
+    "player",
     "history",
     "song"
   ];
@@ -2948,6 +2971,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     velocity: { w: 2, h: 5 },
     progressions: { w: 12, h: 4 },
     ear: { w: 6, h: 5 },
+    player: { w: 6, h: 5 },
     history: { w: 12, h: 3 },
     song: { w: 12, h: 12 }
   };
@@ -2967,6 +2991,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["piano", 0, 22, 12, 5],
       ["progressions", 0, 27, 12, 4],
       ["ear", 0, 31, 6, 5],
+      ["player", 6, 31, 6, 5],
       ["history", 0, 36, 12, 3],
       ["song", 0, 39, 12, 12]
     ]),
@@ -2991,15 +3016,16 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["guitar", 8, 4, 4, 10],
       ["piano", 0, 14, 12, 6]
     ]),
-    // Writing down a recording: the song and the history in reach of what is heard
+    // Writing down a recording: the player on top, the song and the history in reach of what is heard
     transcription: grid([
-      ["chord", 0, 0, 3, 3],
-      ["staff", 0, 3, 3, 8],
-      ["analysis", 3, 0, 3, 11],
-      ["piano", 6, 0, 6, 5],
-      ["guitar", 6, 5, 6, 6],
-      ["history", 0, 11, 12, 3],
-      ["song", 0, 14, 12, 14]
+      ["player", 0, 0, 12, 5],
+      ["chord", 0, 5, 3, 3],
+      ["staff", 0, 8, 3, 8],
+      ["analysis", 3, 5, 3, 11],
+      ["piano", 6, 5, 6, 5],
+      ["guitar", 6, 10, 6, 6],
+      ["history", 0, 16, 12, 3],
+      ["song", 0, 19, 12, 14]
     ]),
     // On camera or screen capture: the chord and the instruments, no controls in view
     recording: grid([
@@ -3215,6 +3241,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         return '<div id="progressions-container"></div>';
       case "ear":
         return '<div id="ear-container"></div>';
+      case "player":
+        return '<div id="player-container"></div>';
       case "piano":
         return '<div id="piano-container" class="fit"></div>';
       case "velocity":
@@ -5617,6 +5645,195 @@ ${explainCadence(c.cadence)}` : ""}`;
     }));
   }
 
+  // src/ui/player.ts
+  var SPEEDS = ["0.5", "0.6", "0.75", "0.9", "1", "1.1", "1.25"];
+  function formatTime(s, tenths = false) {
+    if (!isFinite(s) || s < 0) s = 0;
+    const d = Math.floor(s * 10 + 1e-6);
+    const m = Math.floor(d / 600);
+    const sec = Math.floor(d % 600 / 10);
+    return `${m}:${String(sec).padStart(2, "0")}${tenths ? `.${d % 10}` : ""}`;
+  }
+  function computePeaks(samples2, columns) {
+    const per = Math.max(1, Math.floor(samples2.length / columns));
+    const peaks = [];
+    for (let c = 0; c < columns; c++) {
+      let max = 0;
+      const end = Math.min(samples2.length, (c + 1) * per);
+      for (let i = c * per; i < end; i++) {
+        const v = Math.abs(samples2[i]);
+        if (v > max) max = v;
+      }
+      peaks.push(max);
+    }
+    return peaks;
+  }
+  function loopTarget(time, a, b, duration) {
+    if (a === null) return null;
+    const end = b !== null && b > a ? b : duration;
+    return time >= end ? a : null;
+  }
+  var audio = typeof Audio === "undefined" ? null : new Audio();
+  var fileName2 = "";
+  var samples = null;
+  var loopA = null;
+  var loopB = null;
+  var speed = loadChoice("player-speed", SPEEDS, "1");
+  var frame = 0;
+  if (audio) {
+    audio.preload = "auto";
+    audio.preservesPitch = true;
+  }
+  async function openFile(file, container) {
+    if (!audio) return;
+    if (audio.src) URL.revokeObjectURL(audio.src);
+    audio.src = URL.createObjectURL(file);
+    audio.playbackRate = Number(speed);
+    fileName2 = file.name;
+    loopA = loopB = null;
+    samples = null;
+    renderPlayer(container);
+    try {
+      const ctx = new OfflineAudioContext(1, 1, 44100);
+      const buffer = await ctx.decodeAudioData(await file.arrayBuffer());
+      samples = buffer.getChannelData(0);
+    } catch {
+      samples = null;
+    }
+    drawWave(container);
+  }
+  function drawWave(container) {
+    const canvas = container.querySelector(".player-wave");
+    if (!canvas || !audio) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(1, Math.round(canvas.clientWidth * dpr)), h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    const g = canvas.getContext("2d");
+    if (!g) return;
+    g.clearRect(0, 0, w, h);
+    const dur = audio.duration;
+    const x = (s) => isFinite(dur) && dur > 0 ? s / dur * w : 0;
+    if (loopA !== null) {
+      g.globalAlpha = 0.25;
+      g.fillStyle = color("accent");
+      const end = loopB !== null && loopB > loopA ? loopB : dur;
+      g.fillRect(x(loopA), 0, x(end) - x(loopA), h);
+      g.globalAlpha = 1;
+    }
+    if (samples) {
+      const peaks = computePeaks(samples, w);
+      g.fillStyle = color("text-muted");
+      peaks.forEach((p, i) => {
+        const ph = Math.max(1, p * h * 0.9);
+        g.fillRect(i, (h - ph) / 2, 1, ph);
+      });
+    }
+    g.fillStyle = color("cursor");
+    g.fillRect(Math.round(x(audio.currentTime)), 0, Math.max(1, dpr), h);
+  }
+  function tick(container) {
+    cancelAnimationFrame(frame);
+    if (!audio || audio.paused) return;
+    const back = loopTarget(audio.currentTime, loopA, loopB, audio.duration);
+    if (back !== null) audio.currentTime = back;
+    const time = container.querySelector(".player-time");
+    if (time) time.textContent = `${formatTime(audio.currentTime, true)} / ${formatTime(audio.duration)}`;
+    drawWave(container);
+    frame = requestAnimationFrame(() => tick(container));
+  }
+  function renderPlayer(container) {
+    const loaded = !!audio?.src;
+    const dis = loaded ? "" : " disabled";
+    const mark = (s) => s === null ? "" : ` ${formatTime(s, true)}`;
+    container.innerHTML = `
+    <div class="player-head">
+      <label class="ctrl-btn player-open" title="${escapeHtml(t("player.open.title"))}">${escapeHtml(t("player.open"))}<input type="file" accept="audio/*" hidden></label>
+      <span class="player-name">${escapeHtml(fileName2 || t("player.none"))}</span>
+    </div>
+    <canvas class="player-wave" title="${escapeHtml(t("player.wave.title"))}"></canvas>
+    <div class="player-ctrl">
+      <button class="ctrl-btn" data-act="back" title="${escapeHtml(t("player.back.title"))}"${dis}>\u27F25</button>
+      <button class="ctrl-btn" data-act="play" title="${escapeHtml(t("player.play.title"))}"${dis}>${audio && !audio.paused ? "\u23F8" : "\u25B6"}</button>
+      <span class="player-time">${formatTime(audio?.currentTime ?? 0, true)} / ${formatTime(audio?.duration ?? 0)}</span>
+      <select class="player-speed" title="${escapeHtml(t("player.speed.title"))}">
+        ${SPEEDS.map((s) => `<option value="${s}"${s === speed ? " selected" : ""}>${Math.round(Number(s) * 100)}%</option>`).join("")}
+      </select>
+      <button class="size-ctrl-btn${loopA !== null ? " active" : ""}" data-act="a" title="${escapeHtml(t("player.a.title"))}"${dis}>A${mark(loopA)}</button>
+      <button class="size-ctrl-btn${loopB !== null ? " active" : ""}" data-act="b" title="${escapeHtml(t("player.b.title"))}"${dis}>B${mark(loopB)}</button>
+      <button class="size-ctrl-btn" data-act="clear" title="${escapeHtml(t("player.clear.title"))}"${loopA === null ? " disabled" : ""}>\xD7</button>
+    </div>`;
+    const input = container.querySelector("input[type=file]");
+    input.addEventListener("change", () => {
+      const f = input.files?.[0];
+      if (f) openFile(f, container);
+    });
+    container.ondragover = (e) => {
+      e.preventDefault();
+    };
+    container.ondrop = (e) => {
+      const f = e.dataTransfer?.files?.[0];
+      if (!f || !f.type.startsWith("audio")) return;
+      e.preventDefault();
+      openFile(f, container);
+    };
+    container.querySelector(".player-speed").addEventListener("change", (e) => {
+      speed = e.target.value;
+      save("player-speed", speed);
+      if (audio) audio.playbackRate = Number(speed);
+    });
+    container.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => {
+      if (!audio?.src) return;
+      const act = b.dataset.act;
+      if (act === "play") {
+        if (audio.paused) audio.play().then(() => tick(container)).catch(() => {
+        });
+        else audio.pause();
+      } else if (act === "back") audio.currentTime = Math.max(loopA ?? 0, audio.currentTime - 5);
+      else if (act === "a") {
+        loopA = audio.currentTime;
+        if (loopB !== null && loopB <= loopA) loopB = null;
+      } else if (act === "b") {
+        if (loopA === null) loopA = 0;
+        loopB = audio.currentTime > loopA ? audio.currentTime : null;
+      } else if (act === "clear") loopA = loopB = null;
+      renderPlayer(container);
+    }));
+    const canvas = container.querySelector(".player-wave");
+    canvas.addEventListener("click", (e) => {
+      if (!audio?.src || !isFinite(audio.duration)) return;
+      const r = canvas.getBoundingClientRect();
+      audio.currentTime = Math.max(0, Math.min(audio.duration, (e.clientX - r.left) / r.width * audio.duration));
+      renderPlayer(container);
+    });
+    if (audio) {
+      audio.onloadedmetadata = () => renderPlayer(container);
+      audio.onpause = () => {
+        cancelAnimationFrame(frame);
+        renderPlayer(container);
+      };
+      audio.onended = () => {
+        if (loopA !== null) {
+          audio.currentTime = loopA;
+          audio.play().catch(() => {
+          });
+          return;
+        }
+        cancelAnimationFrame(frame);
+        renderPlayer(container);
+      };
+      audio.onplay = () => tick(container);
+    }
+    requestAnimationFrame(() => drawWave(container));
+    if (observed !== container && typeof ResizeObserver !== "undefined") {
+      observed = container;
+      new ResizeObserver(() => drawWave(container)).observe(container);
+    }
+  }
+  var observed = null;
+
   // src/app.ts
   var STAFF_WIDTH = 380;
   var COF_SIZE = 300;
@@ -5690,6 +5907,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     renderDetector();
     const ear = document.getElementById("ear-container");
     if (ear) renderEar(ear, { show: showEarAnswer });
+    const player = document.getElementById("player-container");
+    if (player) renderPlayer(player);
     initMidi().then((result) => {
       if (result.denied) {
         showMidiBanner(t("midi.denied"));
