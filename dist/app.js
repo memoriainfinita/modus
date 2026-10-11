@@ -447,7 +447,7 @@
   }
 
   // src/ui/theme.ts
-  var THEME_CHOICES = ["system", "dark", "light"];
+  var THEME_CHOICES = ["system", "dark", "light", "contrast", "paper"];
   var KEY = "theme";
   function getThemeChoice() {
     return loadChoice(KEY, THEME_CHOICES, "system");
@@ -918,6 +918,8 @@
     "help.theme.system": "As the system",
     "help.theme.dark": "Dark",
     "help.theme.light": "Light",
+    "help.theme.contrast": "High contrast",
+    "help.theme.paper": "Paper",
     "help.language": "Interface",
     "help.noteNames": "Note names",
     "help.noteNames.letters": "C D E",
@@ -1241,6 +1243,8 @@
     "help.theme.system": "Como el sistema",
     "help.theme.dark": "Oscuro",
     "help.theme.light": "Claro",
+    "help.theme.contrast": "Alto contraste",
+    "help.theme.paper": "Papel",
     "help.language": "Interfaz",
     "help.noteNames": "Nombres de nota",
     "help.noteNames.letters": "C D E",
@@ -2776,9 +2780,9 @@ ${lower.length ? chordOf(lower) : empty}`;
   // src/history/history.ts
   var MAX_ENTRIES = 200;
   var FUNCTION_COLORS = {
-    "T": "var(--history-t)",
-    "S": "var(--history-s)",
-    "D": "var(--history-d)",
+    "T": "var(--fn-t)",
+    "S": "var(--fn-s)",
+    "D": "var(--fn-d)",
     "unknown": "var(--text-dim)"
   };
   var entries = [];

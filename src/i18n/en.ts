@@ -328,6 +328,8 @@ export const en = {
   'help.theme.system': 'As the system',
   'help.theme.dark': 'Dark',
   'help.theme.light': 'Light',
+  'help.theme.contrast': 'High contrast',
+  'help.theme.paper': 'Paper',
   'help.language': 'Interface',
   'help.noteNames': 'Note names',
   'help.noteNames.letters': 'C D E',

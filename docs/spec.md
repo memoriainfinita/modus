@@ -36,7 +36,7 @@ The core is the **Detector**: input → chord detection → harmonic analysis, s
 
 **Two ways to look.** The full view is for studying; a presentation view (planned) is for teaching and recording: large elements, no controls.
 
-**Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`src/styles.css`). Dark and light themes (see Theme); colour themes are planned.
+**Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`src/styles.css`). Dark and light themes and two colour themes (see Theme).
 
 **User-configurable.** Every panel can be toggled; sizes and visible fields persist in localStorage.
 
@@ -304,12 +304,12 @@ The interface is in English or Spanish: the browser's first language when it is 
 
 ## Theme
 
-Dark or light, or as the system (the default), chosen in the ? panel; the change applies in place, without a reload. With "as the system" the page follows the operating system while it is open.
+Dark, light, high contrast (black ground, bright marks, for a projector or a far screen), paper (warm light ground, ink colours), or as the system (the default: dark or light), chosen in the ? panel; the change applies in place, without a reload. With "as the system" the page follows the operating system while it is open.
 
-- Every colour is a token in `src/styles.css`: one block for dark (`:root`), one for light (`[data-theme="light"]`), both with the same tokens (checked by a test, as is that the rest of the stylesheet writes no colour)
+- Every colour is a token in `src/styles.css`: one block per theme (`:root` is dark, `[data-theme="light"]` and so on), all with the same tokens; a new theme is one more block and its name in `ui/theme.ts` (checked by a test, as is that the rest of the stylesheet writes no colour)
 - The page takes the tokens through `var()`. The SVG diagrams (circle, piano, guitar, fretboard) write their colours into the drawing: they read the tokens through `ui/theme.ts` and are drawn again when the theme changes, so exported SVG and PNG carry the theme's colours
 - A script in `index.html` sets `<html data-theme>` before the first paint: no flash of the other theme
-- Harmony colours (chord quality, function, sections) are the same hues in both themes; labels that would not read on light are darker there
+- Harmony colours (chord quality, function, sections) keep their hues in every theme: brighter in high contrast, ink tones in paper; labels that would not read on a light ground are darker there. The history chips take the key panel's function colours (T green, S amber, D red)
 - View windows stay dark whatever the theme: their light text and dark glow are made for chroma and the dark background. Presentation mode follows the theme
 - The song's print view is always black on white
 

@@ -4,9 +4,10 @@
 
 import { loadChoice, save } from './storage'
 
-export type Theme = 'dark' | 'light'
+// Dark and light, and colour themes on either ground: high contrast (dark) and paper (light)
+export type Theme = 'dark' | 'light' | 'contrast' | 'paper'
 export type ThemeChoice = 'system' | Theme
-export const THEME_CHOICES: readonly ThemeChoice[] = ['system', 'dark', 'light']
+export const THEME_CHOICES: readonly ThemeChoice[] = ['system', 'dark', 'light', 'contrast', 'paper']
 
 const KEY = 'theme'
 
