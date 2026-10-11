@@ -33,6 +33,9 @@ export type DetectionResult = SingleNoteResult | IntervalResult | ChordResult | 
 export interface HarmonicAnalysis {
   chordName: string
   roman: string             // e.g. "ii7", "bVII"
+  degree?: string           // the plain degree (II7 where roman reads V7/V)
+  degreeNumber?: number     // 1–7, the scale degree the root stands on
+  substitutionCandidate?: string // UMT's reading of a chromatic chord: "tritone sub of V"
   function: 'T' | 'S' | 'D' | 'unknown'
   isDiatonic: boolean
   isBorrowed: boolean
@@ -42,12 +45,14 @@ export interface HarmonicAnalysis {
   figuredBass: string
   suggestedScales: string[]
   substitutions: string[]       // e.g. ["Db7 (tritone sub)", "Fmaj7 (diatonic)"]
+  substitutionTypes: string[]   // UMT's types, each once: "tritone", "diatonic"…
   cadence: string | null    // null = no standard cadence vs prev chord
   voicing: string | null        // e.g. "1st inversion · open · drop 2 · doubled R · no 5"
   upperStructures: string[]     // upper-structure triads present over a dominant: "II UST (D: 9 #11 13)"
   transformation: string | null // neo-Riemannian P / L / R from the previous triad, e.g. "R", "PL"
   voiceLeading: string | null   // each voice from the chord before: "C→B ↓1  E =  G =  — outer voices oblique · …"
   voiceRules: string[] | null   // four-part rules broken from the chord before; null when it cannot be read
+  voiceRuleKeys: string[]       // the same rules by key ("parallel5"), each once
 }
 
 /** What any set of notes on screen is, chord or not: set class and the scales that hold it. */

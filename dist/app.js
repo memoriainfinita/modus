@@ -430,9 +430,9 @@
     return ((LETTER_SEMITONE[m[1]] + accidentalSemitones(m[2])) % 12 + 12) % 12;
   }
   function midiToNoteName(midiNote) {
-    const pc2 = midiNote % 12;
+    const pc3 = midiNote % 12;
     const octave = Math.floor(midiNote / 12) - 1;
-    return PITCH_NAMES_FLAT[pc2] + octave;
+    return PITCH_NAMES_FLAT[pc3] + octave;
   }
   function noteNameToMidi(name) {
     const m = name.match(/^([A-G])([#b]*)(-?\d+)$/);
@@ -568,15 +568,15 @@
   // src/theory/keys.ts
   var MAJOR_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
   var MINOR_ROOTS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
-  var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc2) => [`${root} Major`, `${MINOR_ROOTS[pc2]} Minor`]);
+  var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc3) => [`${root} Major`, `${MINOR_ROOTS[pc3]} Minor`]);
   function parseKey(key) {
     const [root, mode2] = key.split(" ");
-    const pc2 = pitchClassOf(root ?? "");
-    if (pc2 === -1) return null;
-    return { pc: pc2, minor: mode2?.toLowerCase() === "minor" };
+    const pc3 = pitchClassOf(root ?? "");
+    if (pc3 === -1) return null;
+    return { pc: pc3, minor: mode2?.toLowerCase() === "minor" };
   }
-  function keyName(pc2, minor) {
-    const p = (pc2 % 12 + 12) % 12;
+  function keyName(pc3, minor) {
+    const p = (pc3 % 12 + 12) % 12;
     return minor ? `${MINOR_ROOTS[p]} Minor` : `${MAJOR_ROOTS[p]} Major`;
   }
   function normalizeKey(key) {
@@ -695,6 +695,7 @@
     "module.analysis": "Analysis",
     "module.cof": "Circle of fifths",
     "module.guitar": "Strings",
+    "module.explain": "Explanation",
     "module.key": "Key",
     "module.piano": "Piano",
     "module.velocity": "Velocity",
@@ -842,6 +843,80 @@
     "vl.issue.leadingTone": "leading tone does not rise to the tonic ({voices})",
     "vl.issue.doubledLeadingTone": "leading tone doubled ({voices})",
     "vl.issue.seventh": "seventh does not fall by step ({voices})",
+    "ex.empty": "Play or pick a chord: each term the analysis shows is explained here, in its key.",
+    "ex.nth.1": "1st",
+    "ex.nth.2": "2nd",
+    "ex.nth.3": "3rd",
+    "ex.nth.4": "4th",
+    "ex.nth.5": "5th",
+    "ex.nth.6": "6th",
+    "ex.nth.7": "7th",
+    "ex.deg.1": "tonic",
+    "ex.deg.2": "supertonic",
+    "ex.deg.3": "mediant",
+    "ex.deg.4": "subdominant",
+    "ex.deg.5": "dominant",
+    "ex.deg.6": "submediant",
+    "ex.deg.7": "leading tone",
+    "ex.deg.subtonic": "subtonic",
+    "ex.lowered": "lowered",
+    "ex.raised": "raised",
+    "ex.roman": "{chord} is {roman} in {key}: the chord on the {nth} degree, the {name}.",
+    "ex.romanAltered": "{chord} is {roman} in {key}: the chord on the {dir} {nth} degree ({acc}{n}), a note outside the scale.",
+    "ex.case.term": "I \xB7 ii \xB7 vii\xB0 \xB7 \xF8 \xB7 +",
+    "ex.case": "Upper-case numerals are major chords, lower-case minor; \xB0 diminished, \xF8 half-diminished, + augmented; a 7 adds the seventh.",
+    "ex.fn.T": "Tonic function: the chord of rest, where a phrase arrives. The tonic has it, and the chords that share two of its notes.",
+    "ex.fn.S": "Subdominant function: moves away from rest and prepares the dominant. The usual chords are on the 4th and 2nd degrees.",
+    "ex.fn.D": "Dominant function: tension that asks to resolve to the tonic, above all through the leading tone, a semitone below it. The chords on the 5th and 7th degrees have it.",
+    "ex.diatonic": "Diatonic: every note of {chord} is in the scale of {key}.",
+    "ex.secondaryV": "{chord} is {roman}: a secondary dominant, the dominant of {target} ({targetRoman}). For a moment it treats {target} as a tonic, with a note from outside the key, and it usually resolves to it.",
+    "ex.secondaryVii": "{chord} is {roman}: a secondary leading-tone chord, the vii\xB0 of {target} ({targetRoman}). Its root is a semitone below {target}, which it treats for a moment as a tonic, and it usually resolves to it.",
+    "ex.borrowed": "{chord} is borrowed from {mode} (modal interchange): it is not in {key}, but it is in the mode on the same tonic. Its notes from outside the key ({notes}) give it its colour.",
+    "ex.tritoneSub": "{chord} is a tritone substitute for the dominant: its root is a tritone from the dominant's, both share the same tritone (third and seventh, swapped), and its root falls a semitone to the tonic.",
+    "ex.chromatic": "{chord} is chromatic in {key}: it has notes from outside the key ({notes}) and is neither a secondary dominant nor a chord from a mode on the same tonic.",
+    "ex.cad.authentic": "From the dominant to the tonic, the strongest close: the leading tone rises to the tonic. With both chords in root position and the tonic on top it is a perfect authentic cadence.",
+    "ex.cad.plagal": "From the subdominant to the tonic, the \xABamen\xBB of hymns: softer than the authentic.",
+    "ex.cad.minorPlagal": "From iv, the subdominant of the minor, to the tonic: the 6th degree falls a semitone to the 5th.",
+    "ex.cad.deceptive": "The dominant goes to the 6th degree instead of the tonic: the close it promised is avoided and the phrase goes on.",
+    "ex.cad.half": "The phrase stops on the dominant, open, like a question waiting for its answer.",
+    "ex.cad.phrygianHalf": "iv in first inversion to V, in a minor key: the bass falls a semitone, from the 6th degree to the 5th.",
+    "ex.cad.phrygian": "\u266DII to the tonic: the root falls a semitone, the colour of the phrygian mode.",
+    "ex.cad.backdoor": "\u266DVII7 to the tonic: a dominant a whole step below it that rises to it, instead of falling a fifth.",
+    "ex.cad.picardy": "A passage in minor closes on the major tonic.",
+    "ex.sub.tritone": "A dominant a tritone away shares the same tritone and resolves to the same chord, its root a semitone above it.",
+    "ex.sub.diatonic": "A chord of the key that shares two notes and the function: vi or iii for I, ii for IV, vii\xB0 for V.",
+    "ex.sub.deceptive": "The dominant goes to vi, which shares two notes with the tonic, instead of to I.",
+    "ex.sub.chromatic-mediant": "A chord a third away and of the same kind, with one note in common at most: a bright, unexpected change.",
+    "ex.sub.sus4": "The dominant with the fourth instead of the third: it keeps the tension without the leading tone.",
+    "ex.sub.modal": "The same degree from the mode on the same tonic, such as iv for IV from the minor.",
+    "ex.plr": "{chord} comes from {prev} by {path}: neo-Riemannian moves between triads, each keeping two notes and moving the other one by step.",
+    "ex.plr.P": "P (parallel): the same root, major \u2194 minor; the third moves a semitone ({a} \u2194 {b}).",
+    "ex.plr.R": "R (relative): a major chord \u2194 its relative minor; one note moves a whole step ({a} \u2194 {b}).",
+    "ex.plr.L": "L (leading-tone exchange): one note moves a semitone; a major chord \u2194 the minor a third above ({a} \u2194 {b}).",
+    "ex.fig.intro": "Figured bass: the intervals over the bass, as continuo players read them.",
+    "ex.fig.root": "Root position: the root in the bass (5/3, written as nothing).",
+    "ex.fig.6": "First inversion: the third in the bass (6/3, written 6).",
+    "ex.fig.64": "Second inversion: the fifth in the bass.",
+    "ex.fig.7": "A seventh chord in root position.",
+    "ex.fig.65": "A seventh chord in first inversion: the third in the bass.",
+    "ex.fig.43": "A seventh chord in second inversion: the fifth in the bass.",
+    "ex.fig.42": "A seventh chord in third inversion: the seventh in the bass.",
+    "ex.voicing.close": "Close position: the upper voices fit within an octave.",
+    "ex.voicing.open": "Open position: the upper voices span more than an octave.",
+    "ex.voicing.drop": "Drop voicing: from a close chord, the 2nd voice from the top (drop 2), the 3rd (drop 3) or both 2nd and 4th (drop 2+4) go down an octave.",
+    "ex.upper": "Upper structure: a triad on top of a dominant's shell (its third and seventh); its notes are the dominant's tensions.",
+    "ex.vl.parallel5": "Two voices a fifth apart move to another fifth: they blend into one and the part loses a voice. Avoided in four-part writing; common in rock and in parallel harmony.",
+    "ex.vl.parallel8": "Two voices an octave apart move to another octave: they double each other and the part loses a voice.",
+    "ex.vl.hidden5": "The outer voices reach a fifth moving the same way, with a leap on top: it sounds almost like parallel fifths.",
+    "ex.vl.hidden8": "The outer voices reach an octave moving the same way, with a leap on top: it sounds almost like parallel octaves.",
+    "ex.vl.crossing": "A lower voice goes above a higher one: the lines become hard to follow.",
+    "ex.vl.overlap": "A voice moves past where the voice next to it just was: the ear may follow the wrong line.",
+    "ex.vl.leap": "A leap wider than an octave, or an augmented fourth, is hard to sing and is avoided.",
+    "ex.vl.leadingTone": "The leading tone of the dominant asks to rise a semitone to the tonic.",
+    "ex.vl.doubledLeadingTone": "The leading tone is not doubled: both would want to rise to the tonic, giving octaves.",
+    "ex.vl.seventh": "The seventh of a dominant seventh asks to fall by step.",
+    "ex.interval": "{n} semitones. Its inversion, with the lower note an octave up, is a {inv}: together they make an octave.",
+    "ex.cadence.title": "{cadence}: {text}",
     // Key panel
     "keyPanel.sevenths.title": "Seventh chords instead of triads",
     "keyPanel.neg": "Neg",
@@ -1083,6 +1158,7 @@
     "module.analysis": "An\xE1lisis",
     "module.cof": "C\xEDrculo de quintas",
     "module.guitar": "Cuerdas",
+    "module.explain": "Explicaci\xF3n",
     "module.key": "Tonalidad",
     "module.piano": "Piano",
     "module.velocity": "Velocidad",
@@ -1224,6 +1300,80 @@
     "vl.issue.leadingTone": "la sensible no sube a la t\xF3nica ({voices})",
     "vl.issue.doubledLeadingTone": "sensible doblada ({voices})",
     "vl.issue.seventh": "la s\xE9ptima no baja por grado conjunto ({voices})",
+    "ex.empty": "Toca o elige un acorde: aqu\xED se explica cada t\xE9rmino del an\xE1lisis, en su tonalidad.",
+    "ex.nth.1": "1.\xBA",
+    "ex.nth.2": "2.\xBA",
+    "ex.nth.3": "3.\xBA",
+    "ex.nth.4": "4.\xBA",
+    "ex.nth.5": "5.\xBA",
+    "ex.nth.6": "6.\xBA",
+    "ex.nth.7": "7.\xBA",
+    "ex.deg.1": "t\xF3nica",
+    "ex.deg.2": "supert\xF3nica",
+    "ex.deg.3": "mediante",
+    "ex.deg.4": "subdominante",
+    "ex.deg.5": "dominante",
+    "ex.deg.6": "superdominante",
+    "ex.deg.7": "sensible",
+    "ex.deg.subtonic": "subt\xF3nica",
+    "ex.lowered": "rebajado",
+    "ex.raised": "elevado",
+    "ex.roman": "{chord} es {roman} en {key}: el acorde sobre el {nth} grado, la {name}.",
+    "ex.romanAltered": "{chord} es {roman} en {key}: el acorde sobre el {nth} grado {dir} ({acc}{n}), una nota de fuera de la escala.",
+    "ex.case.term": "I \xB7 ii \xB7 vii\xB0 \xB7 \xF8 \xB7 +",
+    "ex.case": "Los n\xFAmeros romanos en may\xFAscula son acordes mayores, en min\xFAscula menores; \xB0 disminuido, \xF8 semidisminuido, + aumentado; un 7 a\xF1ade la s\xE9ptima.",
+    "ex.fn.T": "Funci\xF3n de t\xF3nica: el acorde de reposo, donde llega la frase. La tiene la t\xF3nica, y los acordes que comparten dos de sus notas.",
+    "ex.fn.S": "Funci\xF3n de subdominante: se aleja del reposo y prepara la dominante. Los acordes habituales est\xE1n sobre el 4.\xBA y el 2.\xBA grado.",
+    "ex.fn.D": "Funci\xF3n de dominante: tensi\xF3n que pide resolver en la t\xF3nica, sobre todo por la sensible, un semitono por debajo. La tienen los acordes sobre el 5.\xBA y el 7.\xBA grado.",
+    "ex.diatonic": "Diat\xF3nico: todas las notas de {chord} est\xE1n en la escala de {key}.",
+    "ex.secondaryV": "{chord} es {roman}: dominante secundaria, la dominante de {target} ({targetRoman}). Trata por un momento a {target} como t\xF3nica, con una nota de fuera de la tonalidad, y suele resolver en \xE9l.",
+    "ex.secondaryVii": "{chord} es {roman}: acorde de sensible secundario, el vii\xB0 de {target} ({targetRoman}). Su ra\xEDz est\xE1 un semitono por debajo de {target}, al que trata por un momento como t\xF3nica, y suele resolver en \xE9l.",
+    "ex.borrowed": "{chord} es un pr\xE9stamo de {mode} (intercambio modal): no est\xE1 en {key}, pero s\xED en el modo sobre la misma t\xF3nica. Sus notas de fuera de la tonalidad ({notes}) le dan su color.",
+    "ex.tritoneSub": "{chord} es un sustituto tritonal de la dominante: su ra\xEDz est\xE1 a un tritono de la de la dominante, los dos comparten el mismo tritono (tercera y s\xE9ptima, intercambiadas) y su ra\xEDz baja un semitono a la t\xF3nica.",
+    "ex.chromatic": "{chord} es crom\xE1tico en {key}: tiene notas de fuera de la tonalidad ({notes}) y no es dominante secundaria ni acorde de un modo sobre la misma t\xF3nica.",
+    "ex.cad.authentic": "De la dominante a la t\xF3nica, el cierre m\xE1s fuerte: la sensible sube a la t\xF3nica. Con los dos acordes en estado fundamental y la t\xF3nica arriba es perfecta.",
+    "ex.cad.plagal": "De la subdominante a la t\xF3nica, el \xABam\xE9n\xBB de los himnos: m\xE1s suave que la aut\xE9ntica.",
+    "ex.cad.minorPlagal": "Del iv, la subdominante de la menor, a la t\xF3nica: el 6.\xBA grado baja un semitono al 5.\xBA.",
+    "ex.cad.deceptive": "La dominante va al 6.\xBA grado en vez de a la t\xF3nica: evita el cierre que promet\xEDa y la frase sigue.",
+    "ex.cad.half": "La frase se detiene en la dominante, abierta, como una pregunta que espera respuesta.",
+    "ex.cad.phrygianHalf": "iv en primera inversi\xF3n a V, en tonalidad menor: el bajo baja un semitono, del 6.\xBA grado al 5.\xBA.",
+    "ex.cad.phrygian": "\u266DII a la t\xF3nica: la ra\xEDz baja un semitono, el color del modo frigio.",
+    "ex.cad.backdoor": "\u266DVII7 a la t\xF3nica: un dominante un tono por debajo que sube a ella, en vez de bajar una quinta.",
+    "ex.cad.picardy": "Un pasaje en menor cierra en la t\xF3nica mayor.",
+    "ex.sub.tritone": "Un dominante a un tritono comparte el mismo tritono y resuelve en el mismo acorde, con la ra\xEDz un semitono por encima.",
+    "ex.sub.diatonic": "Un acorde de la tonalidad que comparte dos notas y la funci\xF3n: vi o iii por I, ii por IV, vii\xB0 por V.",
+    "ex.sub.deceptive": "La dominante va a vi, que comparte dos notas con la t\xF3nica, en vez de a I.",
+    "ex.sub.chromatic-mediant": "Un acorde a distancia de tercera y de la misma especie, con una nota com\xFAn como mucho: un cambio brillante e inesperado.",
+    "ex.sub.sus4": "La dominante con la cuarta en vez de la tercera: mantiene la tensi\xF3n sin la sensible.",
+    "ex.sub.modal": "El mismo grado tomado del modo sobre la misma t\xF3nica, como iv por IV desde la menor.",
+    "ex.plr": "{chord} llega desde {prev} por {path}: movimientos neorriemannianos entre tr\xEDadas, cada uno mantiene dos notas y mueve la otra por grado conjunto.",
+    "ex.plr.P": "P (paralelo): la misma ra\xEDz, mayor \u2194 menor; la tercera se mueve un semitono ({a} \u2194 {b}).",
+    "ex.plr.R": "R (relativo): un acorde mayor \u2194 su relativo menor; una nota se mueve un tono ({a} \u2194 {b}).",
+    "ex.plr.L": "L (intercambio de sensible): una nota se mueve un semitono; un acorde mayor \u2194 el menor una tercera por encima ({a} \u2194 {b}).",
+    "ex.fig.intro": "Bajo cifrado: los intervalos sobre el bajo, como los le\xEDa el continuo.",
+    "ex.fig.root": "Estado fundamental: la ra\xEDz en el bajo (5/3, que no se escribe).",
+    "ex.fig.6": "Primera inversi\xF3n: la tercera en el bajo (6/3, se escribe 6).",
+    "ex.fig.64": "Segunda inversi\xF3n: la quinta en el bajo.",
+    "ex.fig.7": "Acorde de s\xE9ptima en estado fundamental.",
+    "ex.fig.65": "Acorde de s\xE9ptima en primera inversi\xF3n: la tercera en el bajo.",
+    "ex.fig.43": "Acorde de s\xE9ptima en segunda inversi\xF3n: la quinta en el bajo.",
+    "ex.fig.42": "Acorde de s\xE9ptima en tercera inversi\xF3n: la s\xE9ptima en el bajo.",
+    "ex.voicing.close": "Posici\xF3n cerrada: las voces superiores caben en una octava.",
+    "ex.voicing.open": "Posici\xF3n abierta: las voces superiores abarcan m\xE1s de una octava.",
+    "ex.voicing.drop": "Voicing drop: desde un acorde cerrado, la 2.\xAA voz desde arriba (drop 2), la 3.\xAA (drop 3) o la 2.\xAA y la 4.\xAA (drop 2+4) bajan una octava.",
+    "ex.upper": "Estructura superior: una tr\xEDada sobre el esqueleto de un dominante (su tercera y su s\xE9ptima); sus notas son las tensiones del dominante.",
+    "ex.vl.parallel5": "Dos voces a distancia de quinta pasan a otra quinta: se funden en una y la escritura pierde una voz. Se evita a cuatro voces; es habitual en el rock y en la armon\xEDa paralela.",
+    "ex.vl.parallel8": "Dos voces a distancia de octava pasan a otra octava: se doblan y la escritura pierde una voz.",
+    "ex.vl.hidden5": "Las voces extremas llegan a una quinta en el mismo sentido, con salto arriba: suena casi como quintas paralelas.",
+    "ex.vl.hidden8": "Las voces extremas llegan a una octava en el mismo sentido, con salto arriba: suena casi como octavas paralelas.",
+    "ex.vl.crossing": "Una voz grave pasa por encima de una aguda: las l\xEDneas cuestan de seguir.",
+    "ex.vl.overlap": "Una voz pasa m\xE1s all\xE1 de donde estaba la voz de al lado: el o\xEDdo puede seguir la l\xEDnea equivocada.",
+    "ex.vl.leap": "Un salto mayor de una octava, o de cuarta aumentada, cuesta de cantar y se evita.",
+    "ex.vl.leadingTone": "La sensible de la dominante pide subir un semitono a la t\xF3nica.",
+    "ex.vl.doubledLeadingTone": "La sensible no se dobla: las dos querr\xEDan subir a la t\xF3nica y dar\xEDan octavas.",
+    "ex.vl.seventh": "La s\xE9ptima de una s\xE9ptima de dominante pide bajar por grado conjunto.",
+    "ex.interval": "{n} semitonos. Su inversi\xF3n, con la nota grave una octava arriba, es {inv}: juntas suman una octava.",
+    "ex.cadence.title": "{cadence}: {text}",
     "keyPanel.sevenths.title": "Cuatr\xEDadas en lugar de tr\xEDadas",
     "keyPanel.neg": "Neg",
     "keyPanel.neg.title": "Mostrar u ocultar la armon\xEDa negativa",
@@ -1514,7 +1664,7 @@
       const text = t(`vl.issue.${k}`, { voices: issue.voices.map((v) => voiceName(v, a.length)).join(t("vl.and")) });
       if (seen.has(text)) return [];
       seen.add(text);
-      return [text];
+      return [{ text, key: k }];
     });
   }
   function analyzeVoiceLeading(fromNames, toNames, key, fromSymbol = null, toSymbol = null) {
@@ -1522,12 +1672,14 @@
     const moves = pairVoices(fromNames, toNames);
     if (!moves.length) return null;
     const paired = moves.filter((m) => m.semitones !== null);
+    const issues = ruleIssues(fromNames, toNames, key, fromSymbol, toSymbol);
     return {
       moves,
       total: paired.reduce((s, m) => s + Math.abs(m.semitones), 0),
       common: paired.filter((m) => m.semitones === 0).length,
       outer: outerMotion(moves),
-      issues: ruleIssues(fromNames, toNames, key, fromSymbol, toSymbol)
+      issues: issues.map((i) => i.text),
+      issueKeys: [...new Set(issues.map((i) => i.key))]
     };
   }
   var pc = (name) => noteLabel(name.replace(/-?\d+$/, ""));
@@ -1609,7 +1761,9 @@
       isBorrowed: a.isBorrowed ?? false,
       borrowedFrom: a.borrowedFrom,
       isSecondary: a.isSecondary ?? false,
-      secondaryTarget: a.secondaryTarget
+      secondaryTarget: a.secondaryTarget,
+      degreeNumber: a.degree,
+      substitutionCandidate: a.substitutionCandidate
     };
   }
   function analyzeChordProgression(chords, key) {
@@ -1664,7 +1818,7 @@
   function neoRiemannianPath(from, to) {
     const id = (c) => c ? `${(c.rootStep % 12 + 12) % 12}:${c.intervalsInSteps.join(",")}` : "";
     const target = id(to);
-    const isTriad = (c) => !!tryUMT("neo-Riemannian", () => UMT.NeoRiemannian.P(c), null);
+    const isTriad = (c) => c.intervalsInSteps?.length === 3 && !!tryUMT("neo-Riemannian", () => UMT.NeoRiemannian.P(c), null);
     if (!target || !isTriad(from) || !isTriad(to)) return null;
     if (id(from) === target) return null;
     let frontier = [{ chord: from, path: "" }];
@@ -1712,6 +1866,7 @@
     if (vl) {
       result.voiceLeading = describeVoiceLeading(vl);
       result.voiceRules = vl.issues;
+      result.voiceRuleKeys = vl.issueKeys;
     }
     if (!activeKey) return result;
     const a = romanInKey(chordSymbol, activeKey);
@@ -1720,10 +1875,12 @@
       const cad = tryUMT("cadence", () => UMT.Harmony.analyzeCadence(prevChord, chord, activeKey), null);
       if (cad && cad !== "No standard cadence") result.cadence = cad;
     }
-    result.substitutions = tryUMT("substitutions", () => UMT.getSubstitutions(chord, activeKey).map((s) => {
+    const subs = tryUMT("substitutions", () => UMT.getSubstitutions(chord, activeKey), []);
+    result.substitutions = subs.map((s) => {
       const name = chordLabel(s.chord?.name ?? s.name ?? String(s));
       return s.type ? `${name} (${substitutionTypeLabel(s.type)})` : name;
-    }), []);
+    });
+    result.substitutionTypes = [...new Set(subs.flatMap((s) => s.type ? [s.type] : []))];
     return result;
   }
   function emptyAnalysis(chordName) {
@@ -1741,8 +1898,10 @@
       voicing: null,
       upperStructures: [],
       transformation: null,
+      substitutionTypes: [],
       voiceLeading: null,
-      voiceRules: null
+      voiceRules: null,
+      voiceRuleKeys: []
     };
   }
   function getAutoKey(history) {
@@ -2133,10 +2292,10 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     if (names.length !== reference.length) return null;
     const midi = [];
     for (let i = 0; i < names.length; i++) {
-      const pc2 = pitchClassOf(normalizeNoteName(names[i]) ?? "");
-      if (pc2 === -1) return null;
+      const pc3 = pitchClassOf(normalizeNoteName(names[i]) ?? "");
+      if (pc3 === -1) return null;
       const ref = reference[i];
-      const below = ref - ((ref - pc2) % 12 + 12) % 12;
+      const below = ref - ((ref - pc3) % 12 + 12) % 12;
       midi.push(ref - below <= 6 ? below : below + 12);
     }
     return midi;
@@ -2646,6 +2805,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     "chord",
     "staff",
     "analysis",
+    "explain",
     "cof",
     "guitar",
     "key",
@@ -2658,6 +2818,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     chord: { w: 4, h: 3 },
     staff: { w: 4, h: 8 },
     analysis: { w: 3, h: 11 },
+    explain: { w: 4, h: 11 },
     cof: { w: 3, h: 7 },
     guitar: { w: 3, h: 9 },
     key: { w: 12, h: 11 },
@@ -2677,7 +2838,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["cof", 6, 0, 3, 7],
       ["guitar", 9, 0, 3, 11],
       ["velocity", 6, 7, 3, 4],
-      ["key", 0, 11, 12, 11],
+      ["key", 0, 11, 8, 11],
+      ["explain", 8, 11, 4, 11],
       ["piano", 0, 22, 12, 5],
       ["history", 0, 27, 12, 3],
       ["song", 0, 30, 12, 12]
@@ -2689,7 +2851,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["cof", 8, 0, 4, 8],
       ["staff", 0, 3, 4, 9],
       ["history", 8, 8, 4, 4],
-      ["key", 0, 12, 12, 11],
+      ["key", 0, 12, 8, 11],
+      ["explain", 8, 12, 4, 11],
       ["piano", 0, 23, 12, 5]
     ]),
     // Teaching on a projector (made to be presented with P): few panels, large
@@ -2918,6 +3081,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         return '<div id="guitar-container"></div>';
       case "key":
         return '<div id="key-container"></div>';
+      case "explain":
+        return '<div id="explain-container"></div>';
       case "piano":
         return '<div id="piano-container" class="fit"></div>';
       case "velocity":
@@ -3453,8 +3618,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     return midi === null ? name : spellMidi(midi, key) || name;
   }
   function spellPitchClassInKey(name, key) {
-    const pc2 = pitchClassOf(name);
-    return pc2 === -1 ? name : spellMidi(60 + pc2, key).replace(/-?\d+$/, "") || name;
+    const pc3 = pitchClassOf(name);
+    return pc3 === -1 ? name : spellMidi(60 + pc3, key).replace(/-?\d+$/, "") || name;
   }
   function spellChordSymbol(symbol, key) {
     if (!key || symbol === "?") return symbol;
@@ -3540,8 +3705,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     if (a === b) return true;
     const ca = tryParseChord(a), cb = tryParseChord(b);
     if (!ca || !cb) return false;
-    const pc2 = (s) => s === void 0 ? -1 : (s % 12 + 12) % 12;
-    return pc2(ca.rootStep) === pc2(cb.rootStep) && (ca.intervalsInSteps ?? []).join() === (cb.intervalsInSteps ?? []).join() && pc2(ca.bassStep) === pc2(cb.bassStep);
+    const pc3 = (s) => s === void 0 ? -1 : (s % 12 + 12) % 12;
+    return pc3(ca.rootStep) === pc3(cb.rootStep) && (ca.intervalsInSteps ?? []).join() === (cb.intervalsInSteps ?? []).join() && pc3(ca.bassStep) === pc3(cb.bassStep);
   }
 
   // src/diagrams/key-explorer.ts
@@ -3614,6 +3779,127 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     });
     document.body.appendChild(el);
     current = { el, timer: window.setTimeout(dismiss, UNDO_MS) };
+  }
+
+  // src/detector/explain.ts
+  var nth = (n) => t(`ex.nth.${n}`);
+  var pc2 = (name) => pitchClassOf(name.replace(/-?\d+$/, ""));
+  function notesOutside(symbol, key) {
+    const scale = new Set(tryUMT("scale", () => UMT.parseScaleSymbol(key).getNotes().slice(0, 7).map((n) => pc2(n.name)), []));
+    return chordNoteNames(symbol).filter((n) => !scale.has(pc2(n))).map((n) => noteLabel(n.replace(/-?\d+$/, "")));
+  }
+  function romanEntry(symbol, key, a) {
+    const roman = a.degree ?? a.roman;
+    const n = a.degreeNumber;
+    if (!roman || roman === "?" || !n || n < 1 || n > 7) return null;
+    const vars = { chord: chordLabel(symbol), roman, key: keyLabel(key), nth: nth(n) };
+    const acc = roman.match(/^([b#♭♯])/)?.[1];
+    if (acc) {
+      const flat = acc === "b" || acc === "\u266D";
+      return { term: roman, text: t("ex.romanAltered", { ...vars, dir: t(flat ? "ex.lowered" : "ex.raised"), acc: flat ? "\u266D" : "\u266F", n }) };
+    }
+    const minor = /minor$/i.test(key);
+    const subtonic = n === 7 && minor && /^VII/.test(roman);
+    const name = subtonic ? t("ex.deg.subtonic") : t(`ex.deg.${n}`);
+    return { term: roman, text: t("ex.roman", { ...vars, name }) };
+  }
+  function secondaryTarget(target, key) {
+    const map = buildKeyMap(key, false);
+    const plain = (r) => r.replace(/[°ø+7]/g, "").toLowerCase();
+    return map?.diatonic.find((c) => plain(c.roman) === plain(target))?.symbol ?? null;
+  }
+  function colourEntries(symbol, key, a) {
+    const chord = chordLabel(symbol);
+    const k = keyLabel(key);
+    if (a.isSecondary && a.secondaryTarget) {
+      const [kind, target] = a.secondaryTarget.split("/");
+      const targetChord = target ? secondaryTarget(target, key) : null;
+      const vars = { chord, roman: a.secondaryTarget, target: targetChord ? chordLabel(targetChord) : target, targetRoman: target };
+      return [{ term: a.secondaryTarget, text: t(kind.startsWith("vii") ? "ex.secondaryVii" : "ex.secondaryV", vars) }];
+    }
+    if (a.isDiatonic) return [{ term: t("analysis.yes"), text: t("ex.diatonic", { chord, key: k }) }];
+    const notes = notesOutside(symbol, key).join(" ");
+    if (a.isBorrowed && a.borrowedFrom) {
+      const mode2 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
+      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode2, key: k, notes }) }];
+    }
+    if (a.substitutionCandidate?.startsWith("tritone")) return [{ term: substitutionTypeLabel("tritone"), text: t("ex.tritoneSub", { chord }) }];
+    return [{ term: t("analysis.chromatic"), text: t("ex.chromatic", { chord, key: k, notes }) }];
+  }
+  var CADENCES = [
+    ["Authentic", "authentic"],
+    ["Minor Plagal", "minorPlagal"],
+    ["Plagal", "plagal"],
+    ["Deceptive", "deceptive"],
+    ["Phrygian Half", "phrygianHalf"],
+    ["Phrygian", "phrygian"],
+    ["Backdoor", "backdoor"],
+    ["Half", "half"],
+    ["Picardy", "picardy"]
+  ];
+  function explainCadence(cadence) {
+    const k = CADENCES.find(([start]) => cadence.startsWith(start))?.[1];
+    return k ? t(`ex.cad.${k}`) : null;
+  }
+  var FIGURES = {
+    "": "ex.fig.root",
+    "5/3": "ex.fig.root",
+    "6": "ex.fig.6",
+    "6/3": "ex.fig.6",
+    "6/4": "ex.fig.64",
+    "7": "ex.fig.7",
+    "6/5": "ex.fig.65",
+    "4/3": "ex.fig.43",
+    "4/2": "ex.fig.42",
+    "2": "ex.fig.42"
+  };
+  function voicingEntries(noteNames, symbol) {
+    if (noteNames.length < 3) return [];
+    const chord = tryParseChord(symbol);
+    const v = tryUMT("voicing", () => UMT.analyzeVoicing(noteNames.map((n) => UMT.parseNote(n)), chord), null);
+    if (!v) return [];
+    const out = [{ term: t(`voicing.${v.position}`), text: t(`ex.voicing.${v.position}`) }];
+    if (v.drop) out.push({ term: v.drop, text: t("ex.voicing.drop") });
+    return out;
+  }
+  var PLR_EXAMPLES = { P: ["C", "Cm"], R: ["C", "Am"], L: ["C", "Em"] };
+  var SUBSTITUTION_TYPES = ["tritone", "diatonic", "deceptive", "chromatic-mediant", "sus4", "modal"];
+  function explainDetection(detection, a, key, prevSymbol) {
+    if (detection?.kind === "interval") {
+      return [{ term: detection.intervalName, text: t("ex.interval", { n: detection.semitones % 12 || 12, inv: detection.inversionName }) }];
+    }
+    if (detection?.kind !== "chord" || !a) return [];
+    const symbol = detection.candidates[detection.selectedIndex];
+    const out = [];
+    if (key) {
+      const roman = romanEntry(symbol, key, a);
+      if (roman) out.push(roman, { term: t("ex.case.term"), text: t("ex.case") });
+      if (a.function !== "unknown") out.push({ term: t(`fn.${a.function}`), text: t(`ex.fn.${a.function}`) });
+      out.push(...colourEntries(symbol, key, a));
+    }
+    const fig = FIGURES[a.figuredBass ?? ""];
+    if (fig) out.push({ term: a.figuredBass || "5/3", text: `${t(fig)} ${t("ex.fig.intro")}` });
+    out.push(...voicingEntries(detection.notes, symbol));
+    if (a.cadence) {
+      const text = explainCadence(a.cadence);
+      if (text) out.push({ term: cadenceLabel(a.cadence), text });
+    }
+    if (a.transformation && prevSymbol) {
+      out.push({ term: a.transformation, text: t("ex.plr", { chord: chordLabel(symbol), prev: chordLabel(prevSymbol), path: a.transformation }) });
+      for (const op of new Set(a.transformation.split(""))) {
+        const [x, y] = PLR_EXAMPLES[op];
+        out.push({ term: op, text: t(`ex.plr.${op}`, { a: chordLabel(x), b: chordLabel(y) }) });
+      }
+    }
+    for (const type of a.substitutionTypes) {
+      if (SUBSTITUTION_TYPES.includes(type)) out.push({ term: substitutionTypeLabel(type), text: t(`ex.sub.${type}`) });
+    }
+    if (a.upperStructures.length) out.push({ term: a.upperStructures.join(", "), text: t("ex.upper") });
+    for (const k of a.voiceRuleKeys) out.push({ term: t(`vl.issue.${k}`, { voices: "" }).replace(/\s*\(\)$/, ""), text: t(`ex.vl.${k}`) });
+    return out;
+  }
+  function renderExplanation(container, items) {
+    container.innerHTML = items.length ? `<dl class="explain-list">${items.map((i) => `<dt>${escapeHtml(i.term)}</dt><dd>${escapeHtml(i.text)}</dd>`).join("")}</dl>` : `<p class="explain-empty">${escapeHtml(t("ex.empty"))}</p>`;
   }
 
   // src/history/history.ts
@@ -3745,7 +4031,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         const tag = document.createElement("span");
         tag.className = "history-cadence";
         tag.textContent = cadenceLabel(cadence, true);
-        tag.title = `${cadenceLabel(cadence)}: ${chordLabel(shown[i + 1].symbol)} \u2192 ${chordLabel(entry.symbol)}`;
+        tag.title = `${cadenceLabel(cadence)}: ${chordLabel(shown[i + 1].symbol)} \u2192 ${chordLabel(entry.symbol)}` + (explainCadence(cadence) ? `
+${explainCadence(cadence)}` : "");
         strip.appendChild(tag);
       }
     });
@@ -5341,8 +5628,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     const names = detection.kind === "note" ? [detection.noteName] : detection.notes;
     const midis = detection.kind === "note" ? [detection.midiNumber] : notes;
     names.forEach((name, i) => {
-      const pc2 = name.replace(/-?\d+$/, "");
-      if (struck.includes(midis[i]) && !melody.includes(pc2)) melody.push(pc2);
+      const pc3 = name.replace(/-?\d+$/, "");
+      if (struck.includes(midis[i]) && !melody.includes(pc3)) melody.push(pc3);
     });
   }
   function refreshAnalysis() {
@@ -5362,8 +5649,13 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   function renderDiagrams() {
     renderZone1Diagrams(displayedNotes(), selectedSymbol());
   }
+  function renderExplain() {
+    const el = document.getElementById("explain-container");
+    if (el) renderExplanation(el, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev));
+  }
   function renderDetector() {
     renderAnalysisPanel();
+    renderExplain();
     renderDiagrams();
     publishView();
   }

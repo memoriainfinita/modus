@@ -92,11 +92,13 @@ await check('C E G detected as C, roman I in C Major', async () => {
   await off([60, 64, 67])
 })
 
-await check('D7 in C Major reads V7/V, secondary → V', async () => {
+await check('D7 in C Major reads V7/V, secondary → V; the explanation says what that means', async () => {
   await play([62, 66, 69, 72])
   const a = await text('#analysis-content')
   assert(a.includes('V7/V'), `analysis: ${a}`)
   assert(a.includes('→ V'), 'secondary row')
+  const ex = await text('#explain-container')
+  assert(ex.includes('a secondary dominant, the dominant of G (V)'), `explanation: ${ex}`)
   await off([62, 66, 69, 72])
 })
 

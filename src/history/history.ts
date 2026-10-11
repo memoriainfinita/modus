@@ -5,6 +5,7 @@ import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
 import { spellChordSymbol } from '../theory/spelling'
 import { t, chordLabel, keyLabel, cadenceLabel } from '../i18n/i18n'
+import { explainCadence } from '../detector/explain'
 
 const MAX_ENTRIES = 200
 // Chip accent by harmonic function (T/S/D), not by chord quality: the key panel's colours
@@ -170,7 +171,8 @@ export function renderHistory(
       tag.className = 'history-cadence'
       // The short name on the strip ("Authentic"), the full one in the tooltip
       tag.textContent = cadenceLabel(cadence, true)
-      tag.title = `${cadenceLabel(cadence)}: ${chordLabel(shown[i + 1].symbol)} → ${chordLabel(entry.symbol)}`
+      tag.title = `${cadenceLabel(cadence)}: ${chordLabel(shown[i + 1].symbol)} → ${chordLabel(entry.symbol)}` +
+        (explainCadence(cadence) ? `\n${explainCadence(cadence)}` : '')
       strip.appendChild(tag)
     }
   })

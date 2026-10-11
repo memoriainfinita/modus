@@ -22,6 +22,7 @@ export interface VoiceLeading {
   common: number              // voices that hold their note
   outer: OuterMotion | null   // bass against top; null below two voices
   issues: string[]            // the rules of four-part writing broken, written for the panel
+  issueKeys: string[]         // the same by key ("parallel5"), each once
 }
 
 type Voice = { name: string; midi: number }
@@ -98,7 +99,7 @@ export function voiceName(index: number, count: number): string {
  * The rules of four-part writing (UMT `checkVoiceLeading`, strict), only when both chords
  * have as many voices: UMT pairs voices by position.
  */
-function ruleIssues(fromNames: string[], toNames: string[], key: string | null, fromSymbol: string | null, toSymbol: string | null): string[] {
+function ruleIssues(fromNames: string[], toNames: string[], key: string | null, fromSymbol: string | null, toSymbol: string | null): { text: string; key: string }[] {
   const a = voices(fromNames), b = voices(toNames)
   if (a.length !== b.length || a.length < 2) return []
   const parse = (v: Voice[]) => v.map(x => UMT.parseNote(x.name))
@@ -111,7 +112,7 @@ function ruleIssues(fromNames: string[], toNames: string[], key: string | null, 
     const text = t(`vl.issue.${k}`, { voices: issue.voices.map(v => voiceName(v, a.length)).join(t('vl.and')) })
     if (seen.has(text)) return []
     seen.add(text)
-    return [text]
+    return [{ text, key: k }]
   })
 }
 
@@ -121,12 +122,14 @@ export function analyzeVoiceLeading(fromNames: string[] | null, toNames: string[
   const moves = pairVoices(fromNames, toNames)
   if (!moves.length) return null
   const paired = moves.filter(m => m.semitones !== null)
+  const issues = ruleIssues(fromNames, toNames, key, fromSymbol, toSymbol)
   return {
     moves,
     total: paired.reduce((s, m) => s + Math.abs(m.semitones!), 0),
     common: paired.filter(m => m.semitones === 0).length,
     outer: outerMotion(moves),
-    issues: ruleIssues(fromNames, toNames, key, fromSymbol, toSymbol),
+    issues: issues.map(i => i.text),
+    issueKeys: [...new Set(issues.map(i => i.key))],
   }
 }
 

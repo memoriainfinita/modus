@@ -52,7 +52,7 @@ Without Web MIDI a dismissible warning says a controller cannot connect. Song bu
 
 Single page, dark or light (see Theme): the toolbar on top, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
 
-Panels: Chord (name, notes, alternatives), Staff, Analysis, Circle of fifths, Strings, Key, Piano, Velocity, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
+Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
 
 The ▦ menu in the toolbar:
 - **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (few panels, large, made to be presented with P), Transcription (history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
@@ -141,7 +141,7 @@ Key reference: the key selector (or the detected key on Auto).
 | Fits | `findScalesForNotes`: scales holding every note on screen, the key's tonic first, fewest added notes first; the chromatic scale left out. For single notes and intervals, the melody played note by note: the pitch classes struck since the last chord, Esc or a pause over 6 s, shown in brackets |
 | Substitutions | `getSubstitutions` |
 | Cadence | `Harmony.analyzeCadence` against the previous chord |
-| P/L/R | Neo-Riemannian moves from the previous triad: the shortest chain of UMT's `NeoRiemannian.P / L / R`, up to three (C → Am: R) |
+| P/L/R | Neo-Riemannian moves from the previous triad: the shortest chain of UMT's `NeoRiemannian.P / L / R`, up to three (C → Am: R); both chords of three notes |
 | Voices | Voice leading from the previous chord, when its notes are known (played, or a history or song chord captured from MIDI): each voice bass first (`B→C ↑1`, `G =` held, `+ F` enters, `− D` drops out), then the outer voices' motion (parallel, similar, contrary, oblique, held), the semitones moved in all and the notes held. Voices are read in pitch order; with as many notes in both chords the nth goes to the nth; otherwise bass to bass, top to top, and the inner voices pair in order with the least motion (`detector/voice-leading.ts`) |
 | Rules | Four-part rules broken from the previous chord, from `Harmony.checkVoiceLeading` (strict) with the key and both chords: parallel fifths and octaves, hidden fifths and octaves in the outer voices, crossing, overlap, wide leaps, a leading tone of V that does not rise to the tonic, a doubled leading tone, a seventh that does not fall by step. Only when both chords have as many notes (UMT pairs voices by position). UMT's false relations are left out: it marks any chromatic neighbour in another voice as possible |
 | Upper structures | Upper-structure triads over a dominant (`getUpperStructures`) whose three notes all sound: `II UST (D: 9 #11 13)` |
@@ -149,6 +149,12 @@ Key reference: the key selector (or the detected key on Auto).
 | Key detection | `KeyDetection.detect` over the history note pool |
 
 Each field has a show/hide toggle; font scale 8–20 px. The panel grows when a value wraps.
+
+### Explanation
+
+A panel that says, of the chord on screen and in its key, what each term of the analysis means (`detector/explain.ts`): the degree it stands on and its name (tonic … leading tone; subtonic for the whole-step 7th of a minor key; a lowered or raised degree is a note outside the scale), how numerals are written, the function, and then whichever applies: diatonic, a secondary dominant or leading-tone chord with the chord it tonicizes (D7 in C: the dominant of G), borrowed from a named mode with its notes from outside the key, a tritone substitute, or chromatic. Then the figured bass, close / open position and drop voicings, the cadence from the chord before, each P / L / R move with an example, each substitution type UMT offers, upper structures and each voice-leading rule broken. An interval gets its size and its inversion. Nothing is decided here: the sentences come from the same analysis the panel shows. The cadence tags of the history carry the same explanation as a tooltip.
+
+P / L / R are read only between triads of three notes: UMT's `NeoRiemannian` also reads G7 or Cadd9 as their triad.
 
 ### Staff, circle and strings
 
