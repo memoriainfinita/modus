@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  chordFamily, chordColor, CHORD_FAMILY_COLORS, NEUTRAL_COLOR,
+  chordFamily, chordColor, neutralColor,
   normalizeChordName, isKnownChord, tryParseChord, chordNoteNames, chordRoot,
 } from '../src/theory/chord'
 
@@ -32,13 +32,13 @@ describe('chordFamily', () => {
 
 describe('chordColor', () => {
   it('colours by family', () => {
-    expect(chordColor('G7')).toBe(CHORD_FAMILY_COLORS.dominant)
-    expect(chordColor('Am')).toBe(CHORD_FAMILY_COLORS.minor)
+    expect(chordColor('G7')).toBe('#ef4444')
+    expect(chordColor('Am')).toBe('#3b82f6')
   })
 
   it('falls back to the neutral colour', () => {
-    expect(chordColor('?')).toBe(NEUTRAL_COLOR)
-    expect(chordColor(null)).toBe(NEUTRAL_COLOR)
+    expect(chordColor('?')).toBe(neutralColor())
+    expect(chordColor(null)).toBe('#6b7280')
   })
 })
 

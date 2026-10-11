@@ -35,6 +35,7 @@ import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps } from './theory/keys'
 import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles } from './ui/layout'
+import { applyTheme, onThemeChange, followSystemTheme } from './ui/theme'
 import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang } from './i18n/i18n'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
@@ -89,6 +90,13 @@ function translatePage() {
 
 function init() {
   translatePage()
+  applyTheme()
+  followSystemTheme()
+  // The SVG diagrams carry their colours: drawn again in the new theme; the rest follows the CSS
+  onThemeChange(() => {
+    for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k]
+    renderDetector()
+  })
   if (!navigator.requestMIDIAccess) {
     $('browser-warning').style.display = 'block'
   }
@@ -168,15 +176,15 @@ function init() {
         fill.style.width = progressValue.toFixed(1) + '%'
       }, 100)
     } else if (status === 'suspended') {
-      fill.style.background = '#f59e0b'
+      fill.style.background = 'var(--warn)'
       fill.style.transition = 'width 0.3s ease-out'
       fill.style.width = '100%'
     } else if (status === 'ready') {
-      fill.style.background = '#22c55e'
+      fill.style.background = 'var(--ok-strong)'
       fill.style.transition = 'width 0.2s ease-out'
       fill.style.width = '100%'
     } else if (status === 'error') {
-      fill.style.background = '#ef4444'
+      fill.style.background = 'var(--danger)'
       fill.style.transition = 'width 0.2s ease-out'
       fill.style.width = '100%'
     } else {
@@ -834,7 +842,7 @@ function refreshDeviceDropdown() {
   // Connected is shown by the green alone: the toolbar has no room to spare
   $('midi-status').textContent = devices.length ? 'MIDI' : t('midi.noDevices')
   $('midi-status').title = devices.length ? t('midi.connected') : t('midi.noDevices')
-  $('midi-status').style.color = devices.length ? '#4ade80' : '#6b7280'
+  $('midi-status').style.color = devices.length ? 'var(--ok)' : 'var(--text-dim)'
 
   if (!deviceListenersAttached) {
     deviceListenersAttached = true
@@ -842,7 +850,7 @@ function refreshDeviceDropdown() {
     window.addEventListener('midi-device-disconnected', () => {
       $('midi-status').textContent = t('midi.disconnected')
       $('midi-status').title = t('midi.disconnected')
-      $('midi-status').style.color = '#f87171'
+      $('midi-status').style.color = 'var(--danger-soft)'
     })
   }
 }

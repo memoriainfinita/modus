@@ -1,6 +1,7 @@
 import { noteNameToMidi } from '../theory/notes'
 import { loadNumber, save } from '../ui/storage'
-import { DARK_FRETBOARD_STYLE } from './fretboard-style'
+import { fretboardColors } from './fretboard-style'
+import { color } from '../ui/theme'
 import { localizeDrawnNoteNames } from '../i18n/i18n'
 
 const OPEN_MIDI = [40, 45, 50, 55, 59, 64]  // E2 A2 D3 G3 B3 E4
@@ -22,9 +23,9 @@ export function renderNeck(container: HTMLElement, noteNames: string[], preferFl
 
   const sp = neckSpacing
   const style = {
-    ...DARK_FRETBOARD_STYLE,
+    ...fretboardColors(),
     numFrets: NECK_FRETS,
-    dotColor: '#3b82f6',
+    dotColor: color('neck-dot'),
     chordNameSize: 0,
     chordNameY: 4,
     chordNameGapH: 4,
