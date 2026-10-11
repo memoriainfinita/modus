@@ -118,17 +118,17 @@ export interface ProgressionStep {
 /**
  * A progression in playing order, as UMT reads it: modulations (three chords or more in
  * a new key; fewer is a tonicization), each chord's numeral in its local key, and the
- * cadence from each chord to the next. An unreadable symbol is left out of the reading
+ * cadence from each chord to the next; `style: 'blues'` reads I7, IV7 and V7 as the key's own. An unreadable symbol is left out of the reading
  * and gets no numeral; no cadence is read across it.
  */
-export function analyzeChordProgression(chords: string[], key: string | null): ProgressionStep[] {
+export function analyzeChordProgression(chords: string[], key: string | null, style?: 'blues'): ProgressionStep[] {
   const none = (k: string | null) => chords.map(() => ({ key: k, info: null, cadence: null }))
   if (!key) return none(null)
   const parsed = chords.map(tryParseChord)
   const readable = parsed.flatMap((c, i) => c ? [i] : [])
   if (!readable.length) return none(key)
   const analysis = tryUMT<any[]>('progression',
-    () => UMT.Harmony.analyzeProgression(readable.map(i => parsed[i]), key, WRITTEN).analysis, [])
+    () => UMT.Harmony.analyzeProgression(readable.map(i => parsed[i]), key, { ...WRITTEN, style }).analysis, [])
   const steps: ProgressionStep[] = none(key)
   let local: string | null = key
   readable.forEach((orig, j) => {
@@ -184,8 +184,7 @@ export function presentUpperStructures(noteNames: string[], chord: any): string[
 export function neoRiemannianPath(from: any, to: any): string | null {
   const id = (c: any) => c ? `${((c.rootStep % 12) + 12) % 12}:${c.intervalsInSteps.join(',')}` : ''
   const target = id(to)
-  // P, L and R are moves between triads: three notes only (UMT also reads G7 or Cadd9 as their triad)
-  const isTriad = (c: any) => c.intervalsInSteps?.length === 3 && !!tryUMT('neo-Riemannian', () => UMT.NeoRiemannian.P(c), null)
+  const isTriad = (c: any) => !!tryUMT('neo-Riemannian', () => UMT.NeoRiemannian.P(c), null)
   if (!target || !isTriad(from) || !isTriad(to)) return null
   if (id(from) === target) return null
   let frontier: { chord: any; path: string }[] = [{ chord: from, path: '' }]

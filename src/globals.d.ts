@@ -12,7 +12,7 @@ declare const UMT: {
   Harmony: {
     detectChords: (notes: any[]) => string[]
     detectChordsScored: (notes: any[]) => { name: string; root: string; bass: string; quality: string; score: number; rootInBass: boolean; omitted: string[]; tensions: string[] }[]
-    analyzeProgression: (chords: any[], key: string, opts?: { spelling?: 'key' | 'written'; durations?: number[]; beatsPerBar?: number }) => { analysis: any[]; modulations: any[]; harmonicRhythm: number; harmonicRhythmUnit?: 'per-bar' | 'per-chord' }
+    analyzeProgression: (chords: any[], key: string, opts?: { spelling?: 'key' | 'written'; durations?: number[]; beatsPerBar?: number; style?: 'blues' }) => { analysis: any[]; modulations: any[]; harmonicRhythm: number; harmonicRhythmUnit?: 'per-bar' | 'per-chord' }
     analyzeCadence: (c1: any, c2: any, key: string) => string
     getSuggestedScales: (chord: any) => { scale: string; hint?: string }[]
     getColtraneAxis: (key: string) => { root: string; majorThirds: [string, string, string] }

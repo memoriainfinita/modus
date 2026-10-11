@@ -49,3 +49,15 @@ describe('realizeProgression', () => {
     expect([...PROGRESSION_IDS].sort()).toEqual(Object.keys(UMT.PROGRESSIONS).sort())
   })
 })
+
+describe('blues', () => {
+  it('the 12-bar blues reads I7, IV7, V7 as the key\'s own, not secondary dominants', () => {
+    const p = realizeProgression('blues-12', 'C Major')
+    expect(p.map(c => c.roman)).toEqual(['I7', 'I7', 'I7', 'I7', 'IV7', 'IV7', 'I7', 'I7', 'V7', 'IV7', 'I7', 'V7'])
+    expect(p.map(c => c.fn).slice(0, 5)).toEqual(['T', 'T', 'T', 'T', 'S'])
+  })
+
+  it('the jazz blues turnaround stays in the key', () => {
+    expect(realizeProgression('blues-jazz', 'Bb Major').some(c => c.modulation)).toBe(false)
+  })
+})

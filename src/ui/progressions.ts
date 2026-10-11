@@ -23,6 +23,9 @@ const MINOR: readonly ProgressionId[] = ['ii-V-i', 'blues-minor', 'andalusian']
 
 const BAR_MS = 2400   // a bar of 4/4 at 100 bpm
 
+/** Blues forms: their I7, IV7 and V7 are the key's own, not secondary dominants (UMT's blues style). */
+const BLUES: readonly ProgressionId[] = ['blues-12', 'blues-jazz', 'bird-blues']
+
 /** One chord of the progression as the panel lays it out. */
 export interface ProgressionChord { symbol: string; bar: number; roman: string; fn: string; cadence: string | null; modulation: string | null }
 
@@ -45,7 +48,7 @@ export function realizeProgression(id: ProgressionId, key: string): ProgressionC
   const bars = entry.romanNumerals.flatMap((tokens, bar) => tokens.trim().split(/\s+/).map(() => bar))
   const chords = tryUMT('progressions', () => UMT.getProgression(id, key).map(c => c.name as string), [] as string[])
   if (chords.length !== bars.length) return []
-  const steps = analyzeChordProgression(chords, key)
+  const steps = analyzeChordProgression(chords, key, BLUES.includes(id) ? 'blues' : undefined)
   return chords.map((symbol, i) => ({
     symbol, bar: bars[i],
     roman: steps[i].info?.roman ?? '—',

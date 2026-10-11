@@ -2064,7 +2064,7 @@
       substitutionCandidate: a.substitutionCandidate
     };
   }
-  function analyzeChordProgression(chords, key) {
+  function analyzeChordProgression(chords, key, style) {
     const none = (k) => chords.map(() => ({ key: k, info: null, cadence: null }));
     if (!key) return none(null);
     const parsed = chords.map(tryParseChord);
@@ -2072,7 +2072,7 @@
     if (!readable.length) return none(key);
     const analysis = tryUMT(
       "progression",
-      () => UMT.Harmony.analyzeProgression(readable.map((i) => parsed[i]), key, WRITTEN).analysis,
+      () => UMT.Harmony.analyzeProgression(readable.map((i) => parsed[i]), key, { ...WRITTEN, style }).analysis,
       []
     );
     const steps = none(key);
@@ -2116,7 +2116,7 @@
   function neoRiemannianPath(from, to) {
     const id = (c) => c ? `${(c.rootStep % 12 + 12) % 12}:${c.intervalsInSteps.join(",")}` : "";
     const target = id(to);
-    const isTriad = (c) => c.intervalsInSteps?.length === 3 && !!tryUMT("neo-Riemannian", () => UMT.NeoRiemannian.P(c), null);
+    const isTriad = (c) => !!tryUMT("neo-Riemannian", () => UMT.NeoRiemannian.P(c), null);
     if (!target || !isTriad(from) || !isTriad(to)) return null;
     if (id(from) === target) return null;
     let frontier = [{ chord: from, path: "" }];
@@ -5859,6 +5859,7 @@ ${explainCadence(cadence)}` : "");
   ];
   var MINOR = ["ii-V-i", "blues-minor", "andalusian"];
   var BAR_MS = 2400;
+  var BLUES = ["blues-12", "blues-jazz", "bird-blues"];
   function progressionKey(id, key) {
     const minor = MINOR.includes(id);
     if (key) {
@@ -5874,7 +5875,7 @@ ${explainCadence(cadence)}` : "");
     const bars = entry.romanNumerals.flatMap((tokens, bar) => tokens.trim().split(/\s+/).map(() => bar));
     const chords = tryUMT("progressions", () => UMT.getProgression(id, key).map((c) => c.name), []);
     if (chords.length !== bars.length) return [];
-    const steps = analyzeChordProgression(chords, key);
+    const steps = analyzeChordProgression(chords, key, BLUES.includes(id) ? "blues" : void 0);
     return chords.map((symbol, i) => ({
       symbol,
       bar: bars[i],
