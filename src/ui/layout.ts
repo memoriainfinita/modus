@@ -1,5 +1,6 @@
-// Static page structure: toolbar, notation and instrument panels, zone headers, and which
-// panels and columns are shown. Behaviour is wired in app.ts.
+// Page structure: the toolbar and the panels on the layout grid (layout/grid.ts). Every
+// panel is built once and shown where the layout puts it, or hidden; moving and resizing
+// snap to the grid. Behaviour inside the panels is wired in app.ts.
 
 import type { AppState } from '../types'
 import { ALL_KEYS } from '../theory/keys'
@@ -7,10 +8,16 @@ import { GM_INSTRUMENT_GROUPS, getCurrentInstrument, getVolume } from '../audio/
 import { setGuitarControlsVisible } from '../diagrams/guitar'
 import { ANALYSIS_FIELD_KEYS, fieldLabel, fieldTooltip } from '../detector/analysis-panel'
 import type { AnalysisFieldKey } from '../detector/analysis-panel'
-import { loadBool, save } from './storage'
+import { loadBool, loadJSON, save } from './storage'
+import { escapeHtml } from './html'
+import { fitSvg } from './fit'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
 import type { ViewName, ViewBackground } from '../view/channel'
 import { t, keyLabel } from '../i18n/i18n'
+import { COLS, placeCell, addCell, removeCell, parseGrid } from '../layout/grid'
+import type { Cell, Grid } from '../layout/grid'
+import { MODULE_IDS, MODULE_SIZE, PRESETS, PRESET_IDS } from '../layout/presets'
+import type { ModuleId, PresetId } from '../layout/presets'
 
 export type Panels = AppState['panels']
 
@@ -18,46 +25,86 @@ const viewLabel = (v: ViewName) => t(`view.${v}`)
 
 const $ = (id: string) => document.getElementById(id)!
 
-/** Panel visibility as last left (Notation always opens). */
+/** Which panels show their control rows, as last left. */
 export function loadPanels(): Panels {
   return {
-    notation: true,  // always open on load (not persisted)
-    instruments:      loadBool('panel-instruments', true),
-    colPiano:         loadBool('panel-colPiano', true),
-    colNeck:          loadBool('panel-colNeck', true),
-    colVelocity:      loadBool('panel-colVelocity', true),
-    history:          loadBool('panel-history', true),
-    song:             loadBool('panel-song', true),
     cofControls:      loadBool('panel-cofControls', true),
     guitarControls:   loadBool('panel-guitarControls', true),
     analysisControls: loadBool('panel-analysisControls', true),
-    colStaff:         loadBool('panel-colStaff', true),
-    colAnalysis:      loadBool('panel-colAnalysis', true),
-    key:              loadBool('panel-key', true),
-    colCoF:           loadBool('panel-colCoF', true),
-    colGuitar:        loadBool('panel-colGuitar', true),
   }
 }
 
-export function renderLayout(panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>) {
-  $('zone1').innerHTML =
-    buildToolbar() +
-    buildNotationPanel(panels, fieldsVisible) +
-    buildKeyPanel() +
-    buildInstrumentsPanel(panels) +
-    '<div id="midi-banner"></div>'
-  buildZoneHeaders()
+// ─── Layout state ────────────────────────────────────────────────────────────
+
+let grid: Grid = parseGrid(loadJSON<unknown>('layout', null), MODULE_IDS) ?? PRESETS.standard
+const savedLayouts: Record<string, Grid> = loadSavedLayouts()
+const layoutListeners: (() => void)[] = []
+
+function loadSavedLayouts(): Record<string, Grid> {
+  const raw = loadJSON<unknown>('layouts', {})
+  const out: Record<string, Grid> = {}
+  if (raw && typeof raw === 'object') {
+    for (const [name, value] of Object.entries(raw)) {
+      const g = parseGrid(value, MODULE_IDS)
+      if (g && name.trim()) out[name] = g
+    }
+  }
+  return out
 }
 
-/** Panel ▲▼ and column buttons flip their flag, persist it and re-apply visibility. */
+export function currentGrid(): Grid { return grid }
+export function isModuleShown(id: ModuleId): boolean { return grid.some(c => c.id === id) }
+
+/** Calls back after the layout changes: panels moved, resized, shown or hidden. */
+export function onLayoutChange(f: () => void) { layoutListeners.push(f) }
+
+function setGrid(next: Grid, persist = true) {
+  grid = next
+  applyGrid()
+  if (persist) save('layout', grid)
+  layoutListeners.forEach(f => f())
+}
+
+export function applyPreset(id: PresetId) { setGrid(PRESETS[id].map(c => ({ ...c }))) }
+
+export function showModule(id: ModuleId, shown: boolean) {
+  if (shown === isModuleShown(id)) return
+  setGrid(shown ? addCell(grid, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid, id))
+}
+
+// ─── Page ────────────────────────────────────────────────────────────────────
+
+export function renderLayout(panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>) {
+  $('app').innerHTML =
+    buildToolbar() +
+    '<div id="midi-banner"></div>' +
+    `<div id="grid" class="grid">${MODULE_IDS.map(id => moduleFrame(id, panels, fieldsVisible)).join('')}</div>`
+  applyGrid()
+  wireGrid()
+  wireLayoutMenu()
+  watchFittedDiagrams()
+}
+
+/** Control-row ▲▼ buttons flip their flag, persist it and re-apply visibility. */
 export function wirePanelToggles(panels: Panels) {
-  document.querySelectorAll<HTMLButtonElement>('.col-vis-btn, .toggle-btn').forEach(btn => {
+  document.querySelectorAll<HTMLButtonElement>('.toggle-btn[data-panel]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const panel = (btn.dataset.col ?? btn.dataset.panel) as keyof Panels
+      const panel = btn.dataset.panel as keyof Panels
       panels[panel] = !panels[panel]
-      if (panel !== 'notation') save(`panel-${panel}`, panels[panel])
+      save(`panel-${panel}`, panels[panel])
       applyPanelVisibility(panels)
     })
+  })
+}
+
+export function applyPanelVisibility(panels: Panels) {
+  const cc = document.getElementById('cof-controls'); if (cc) cc.style.display = panels.cofControls ? '' : 'none'
+  setGuitarControlsVisible(panels.guitarControls)
+  const gcw = document.getElementById('guitar-ctrl-wrap'); if (gcw) gcw.style.display = panels.guitarControls ? '' : 'none'
+  const ac = document.getElementById('analysis-controls'); if (ac) ac.style.display = panels.analysisControls ? '' : 'none'
+  ;(['cofControls', 'guitarControls', 'analysisControls'] as const).forEach(key => {
+    const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-panel="${key}"]`)
+    if (btn) btn.textContent = panels[key] ? '▲' : '▼'
   })
 }
 
@@ -101,6 +148,10 @@ function buildToolbar(): string {
       </select>
       <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t('audio.volume.title')}" class="volume-slider">
       <div class="view-menu-wrap">
+        <button id="btn-layout" class="ctrl-btn" title="${t('layout.title')}">▦</button>
+        <div id="layout-menu" class="view-menu"></div>
+      </div>
+      <div class="view-menu-wrap">
         <button id="btn-present" class="ctrl-btn" title="${t('present.title')}">⛶</button>
         <button id="btn-views" class="ctrl-btn" title="${t('views.title')}">⧉</button>
         <div id="view-menu" class="view-menu">
@@ -124,164 +175,228 @@ function buildToolbar(): string {
     </div>`
 }
 
-function buildNotationPanel(panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
-  return `
-    <div id="notation-panel" class="zone-panel">
-      <div class="panel-header">
-        <span>${t('notation.title')}</span>
-        <div class="col-vis-row">
-          <button class="col-vis-btn${panels.colStaff ? ' active' : ''}" data-col="colStaff" title="${t('col.staff.title')}">${t('col.staff')}</button>
-          <button class="col-vis-btn${panels.colAnalysis ? ' active' : ''}" data-col="colAnalysis" title="${t('col.analysis.title')}">${t('col.analysis')}</button>
-          <button class="col-vis-btn${panels.colCoF ? ' active' : ''}" data-col="colCoF" title="${t('col.cof.title')}">${t('col.cof')}</button>
-          <button class="col-vis-btn${panels.colGuitar ? ' active' : ''}" data-col="colGuitar" title="${t('col.guitar.title')}">${t('col.guitar')}</button>
-        </div>
-        <button class="toggle-btn" data-panel="notation">▼</button>
-      </div>
-      <div id="notation-content">
-        <div class="col-auto" id="col-staff">
-          <div class="col-label">${t('staff.label')}</div>
-          <div id="chord-summary"></div>
-          <div id="staff-container"></div>
-          <div class="ctrl-row" style="justify-content:center">
-            <button id="btn-staff-clef" class="size-ctrl-btn" title="${t('staff.clef.title')}"></button>
-            <button id="btn-staff-minus" class="size-ctrl-btn" title="${t('staff.smaller')}">−</button>
-            <button id="btn-staff-plus"  class="size-ctrl-btn" title="${t('staff.larger')}">+</button>
-          </div>
-        </div>
-        <div class="col-analysis" id="col-analysis">
-          <div class="col-header">
-            <div class="col-label">${t('analysis.label')}</div>
-            <button class="toggle-btn small" data-panel="analysisControls">▼</button>
-          </div>
-          <div id="analysis-content"></div>
-          <div id="analysis-controls">
-            <div class="ctrl-row">
-              <button id="btn-analysis-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
-              <button id="btn-analysis-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
-            </div>
-            <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
-              ${ANALYSIS_FIELD_KEYS.map(f =>
-                `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? ' active' : ''}"
-                  title="${fieldTooltip(f)}">${fieldLabel(f)}</button>`
-              ).join('')}
-            </div>
-          </div>
-        </div>
-        <div class="col-auto" id="col-cof">
-          <div class="col-header">
-            <div class="col-label">${t('cof.label')}</div>
-            <button class="toggle-btn small" data-panel="cofControls">▼</button>
-          </div>
-          <div id="cof-container"></div>
-          <div id="cof-controls">
-            <div class="ctrl-row">
-              <button id="btn-cof-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
-              <button id="btn-cof-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
-            </div>
-            <div class="ctrl-row">
-              <button id="btn-cof-flat"   class="size-ctrl-btn" title="${t('cof.flat.title')}">b</button>
-              <button id="btn-cof-sharp"  class="size-ctrl-btn" title="${t('cof.sharp.title')}">#</button>
-              <button id="btn-cof-minor"  class="size-ctrl-btn" title="${t('cof.minor.title')}">m</button>
-              <button id="btn-cof-deg"    class="size-ctrl-btn" title="${t('cof.degrees.title')}">°</button>
-              <button id="btn-cof-7"      class="size-ctrl-btn" title="${t('cof.sevenths.title')}">7</button>
-            </div>
-          </div>
-        </div>
-        <div class="col-auto" id="col-guitar">
-          <div class="col-header">
-            <div class="col-label">${t('guitar.label')}</div>
-            <button class="toggle-btn small" data-panel="guitarControls">▼</button>
-          </div>
-          <div id="guitar-container"></div>
-        </div>
-      </div>
-    </div>`
+// ─── Panels ──────────────────────────────────────────────────────────────────
+
+const toggle = (panel: keyof Panels) => `<button class="toggle-btn small" data-panel="${panel}" title="${t('module.controls')}">▼</button>`
+
+/** What a panel's header carries besides its title and ×. */
+function headerTools(id: ModuleId): string {
+  if (id === 'analysis') return toggle('analysisControls')
+  if (id === 'cof') return toggle('cofControls')
+  if (id === 'guitar') return toggle('guitarControls')
+  if (id === 'key') return `
+    <button id="btn-key-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
+    <button id="btn-key-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
+    <button id="btn-key-7"     class="size-ctrl-btn" title="${t('keyPanel.sevenths.title')}">7</button>
+    <button id="btn-key-neg"   class="size-ctrl-btn" title="${t('keyPanel.neg.title')}">${t('keyPanel.neg')}</button>
+    <button id="btn-key-par"   class="size-ctrl-btn" title="${t('keyPanel.par.title')}">${t('keyPanel.par')}</button>
+    <button id="btn-key-colt"  class="size-ctrl-btn" title="${t('keyPanel.colt.title')}">${t('keyPanel.colt')}</button>`
+  return ''
 }
 
-function buildKeyPanel(): string {
-  return `
-    <div id="key-panel" class="zone-panel">
-      <div class="panel-header">
-        <span>${t('keyPanel.title')}</span>
+function moduleBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
+  switch (id) {
+    case 'chord': return '<div id="chord-summary"></div>'
+    case 'staff': return `
+      <div id="staff-container" class="fit"></div>
+      <div class="ctrl-row module-controls" style="justify-content:center">
+        <button id="btn-staff-clef" class="size-ctrl-btn" title="${t('staff.clef.title')}"></button>
+      </div>`
+    case 'analysis': return `
+      <div id="analysis-content"></div>
+      <div id="analysis-controls" class="module-controls">
         <div class="ctrl-row">
-          <button id="btn-key-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
-          <button id="btn-key-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
-          <button id="btn-key-7"     class="size-ctrl-btn" title="${t('keyPanel.sevenths.title')}">7</button>
-          <button id="btn-key-neg"   class="size-ctrl-btn" title="${t('keyPanel.neg.title')}">${t('keyPanel.neg')}</button>
-          <button id="btn-key-par"   class="size-ctrl-btn" title="${t('keyPanel.par.title')}">${t('keyPanel.par')}</button>
-          <button id="btn-key-colt"  class="size-ctrl-btn" title="${t('keyPanel.colt.title')}">${t('keyPanel.colt')}</button>
+          <button id="btn-analysis-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
+          <button id="btn-analysis-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
         </div>
-        <button class="toggle-btn" data-panel="key">▼</button>
-      </div>
-      <div id="key-container"></div>
-    </div>`
+        <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
+          ${ANALYSIS_FIELD_KEYS.map(f =>
+            `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? ' active' : ''}"
+              title="${fieldTooltip(f)}">${fieldLabel(f)}</button>`
+          ).join('')}
+        </div>
+      </div>`
+    case 'cof': return `
+      <div id="cof-container" class="fit"></div>
+      <div id="cof-controls" class="module-controls">
+        <div class="ctrl-row">
+          <button id="btn-cof-flat"   class="size-ctrl-btn" title="${t('cof.flat.title')}">b</button>
+          <button id="btn-cof-sharp"  class="size-ctrl-btn" title="${t('cof.sharp.title')}">#</button>
+          <button id="btn-cof-minor"  class="size-ctrl-btn" title="${t('cof.minor.title')}">m</button>
+          <button id="btn-cof-deg"    class="size-ctrl-btn" title="${t('cof.degrees.title')}">°</button>
+          <button id="btn-cof-7"      class="size-ctrl-btn" title="${t('cof.sevenths.title')}">7</button>
+        </div>
+      </div>`
+    case 'guitar': return '<div id="guitar-container"></div>'
+    case 'key': return '<div id="key-container"></div>'
+    case 'piano': return '<div id="piano-container" class="fit"></div>'
+    case 'neck': return '<div id="neck-container" class="fit"></div>'
+    case 'velocity': return '<div id="velocity-container"></div>'
+    case 'history': return '<div id="zone2-content"></div>'
+    case 'song': return '<div id="zone3-content"></div>'
+  }
 }
 
-function buildInstrumentsPanel(panels: Panels): string {
+function moduleFrame(id: ModuleId, _panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
   return `
-    <div id="instruments-panel" class="zone-panel">
-      <div class="panel-header">
-        <span>${t('instruments.title')}</span>
-        <div class="col-vis-row">
-          <button class="col-vis-btn${panels.colPiano ? ' active' : ''}" data-col="colPiano" title="${t('col.piano.title')}">${t('col.piano')}</button>
-          <button class="col-vis-btn${panels.colNeck  ? ' active' : ''}" data-col="colNeck"  title="${t('col.neck.title')}">${t('col.neck')}</button>
-          <button class="col-vis-btn${panels.colVelocity ? ' active' : ''}" data-col="colVelocity" title="${t('col.velocity.title')}">${t('col.velocity')}</button>
-        </div>
-        <button class="toggle-btn" data-panel="instruments">▼</button>
-      </div>
-      <div id="instruments-content">
-        <div id="col-piano"><div id="piano-container"></div></div>
-        <div id="col-velocity"><div class="col-label">${t('velocity.label')}</div><div id="velocity-container"></div></div>
-        <div id="col-neck">
-          <div id="neck-container"></div>
-          <div class="ctrl-row" style="justify-content:center;margin-top:4px">
-            <button id="btn-neck-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
-            <button id="btn-neck-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
-          </div>
-        </div>
-      </div>
-    </div>`
+    <section id="mod-${id}" class="module module-${id}" data-module="${id}">
+      <header class="module-header" title="${t('module.drag')}">
+        <span class="module-title">${t(`module.${id}`)}</span>
+        <span class="module-tools">${headerTools(id)}</span>
+        <button class="module-close" data-close="${id}" title="${t('module.hide')}">×</button>
+      </header>
+      <div class="module-body">${moduleBody(id, fieldsVisible)}</div>
+      <div class="module-resize" title="${t('module.resize')}"></div>
+    </section>`
 }
 
-function buildZoneHeaders() {
-  $('zone2').innerHTML = `
-    <div class="zone-header">
-      <span class="zone-title">${t('history.title')}</span>
-      <button class="toggle-btn" data-panel="history">▼</button>
-    </div>
-    <div id="zone2-content"></div>`
+const byPosition = (a: Cell, b: Cell) => a.y - b.y || a.x - b.x
 
-  $('zone3').innerHTML = `
-    <div class="zone-header">
-      <span class="zone-title">${t('song.title')}</span>
-      <button class="toggle-btn" data-panel="song">▼</button>
-    </div>
-    <div id="zone3-content"></div>`
+/** Puts each panel in its cells; on a narrow screen they stack in the same order. */
+function applyGrid() {
+  const order = [...grid].sort(byPosition).map(c => c.id)
+  for (const id of MODULE_IDS) {
+    const el = document.getElementById(`mod-${id}`)
+    if (!el) continue
+    const c = grid.find(cell => cell.id === id)
+    el.classList.toggle('module-hidden', !c)
+    if (!c) continue
+    el.style.gridColumn = `${c.x + 1} / span ${c.w}`
+    el.style.gridRow = `${c.y + 1} / span ${c.h}`
+    el.style.order = String(order.indexOf(id))
+    el.style.setProperty('--h', String(c.h))
+  }
+  renderLayoutMenu()
 }
 
-export function applyPanelVisibility(panels: Panels) {
-  const nc = $('notation-content'); if (nc) nc.style.display = panels.notation ? 'flex' : 'none'
-  const ic = $('instruments-content'); if (ic) ic.style.display = panels.instruments ? '' : 'none'
-  const cp = $('col-piano'); if (cp) cp.style.display = panels.colPiano ? '' : 'none'
-  const cn = $('col-neck');  if (cn) cn.style.display = panels.colNeck  ? '' : 'none'
-  const cv = $('col-velocity'); if (cv) cv.style.display = panels.colVelocity ? '' : 'none'
-  const z2 = $('zone2-content'); if (z2) z2.style.display = panels.history ? '' : 'none'
-  const z3 = $('zone3-content'); if (z3) z3.style.display = panels.song ? '' : 'none'
-  const cc = $('cof-controls'); if (cc) cc.style.display = panels.cofControls ? '' : 'none'
-  setGuitarControlsVisible(panels.guitarControls)
-  const gcw = document.getElementById('guitar-ctrl-wrap'); if (gcw) gcw.style.display = panels.guitarControls ? '' : 'none'
-  const ac = $('analysis-controls'); if (ac) ac.style.display = panels.analysisControls ? '' : 'none'
-  const kp = $('key-container'); if (kp) kp.style.display = panels.key ? '' : 'none'
-  const cs = $('col-staff');    if (cs) cs.style.display = panels.colStaff ? '' : 'none'
-  const ca = $('col-analysis'); if (ca) ca.style.display = panels.colAnalysis ? '' : 'none'
-  const ccof = $('col-cof');    if (ccof) ccof.style.display = panels.colCoF ? '' : 'none'
-  const cg = $('col-guitar');   if (cg) cg.style.display = panels.colGuitar ? '' : 'none'
-  document.querySelectorAll<HTMLButtonElement>('.col-vis-btn').forEach(btn => {
-    const col = btn.dataset.col as keyof Panels
-    if (col) btn.classList.toggle('active', !!panels[col])
+// ─── Moving and resizing ─────────────────────────────────────────────────────
+
+const narrow = () => matchMedia('(max-width: 720px)').matches
+
+function wireGrid() {
+  const gridEl = $('grid')
+  gridEl.addEventListener('click', e => {
+    const close = (e.target as HTMLElement).closest<HTMLElement>('[data-close]')
+    if (close) showModule(close.dataset.close as ModuleId, false)
   })
-  ;(['notation', 'instruments', 'history', 'song', 'cofControls', 'guitarControls', 'analysisControls', 'key'] as const).forEach(key => {
-    const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-panel="${key}"]`)
-    if (btn) btn.textContent = panels[key] ? '▲' : '▼'
+  gridEl.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || narrow() || document.body.classList.contains('presenting')) return
+    const target = e.target as HTMLElement
+    const resize = target.closest('.module-resize')
+    const header = target.closest('.module-header')
+    if (!resize && (!header || target.closest('button, select, input'))) return
+    const el = target.closest<HTMLElement>('.module')!
+    const start = grid.find(c => c.id === el.dataset.module)
+    if (!start) return
+    e.preventDefault()
+    const handle = (resize ?? header) as HTMLElement
+    handle.setPointerCapture(e.pointerId)
+    const cs = getComputedStyle(gridEl)
+    const gap = parseFloat(cs.columnGap) || 0
+    const inner = gridEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+    const stepX = (inner - gap * (COLS - 1)) / COLS + gap
+    const stepY = (parseFloat(cs.gridAutoRows) || 30) + (parseFloat(cs.rowGap) || 0)
+    const base = grid
+    let last = ''
+    el.classList.add('module-moving')
+    const move = (ev: PointerEvent) => {
+      const dx = Math.round((ev.clientX - e.clientX) / stepX)
+      const dy = Math.round((ev.clientY - e.clientY) / stepY)
+      const cell = resize ? { ...start, w: start.w + dx, h: start.h + dy } : { ...start, x: start.x + dx, y: start.y + dy }
+      const sig = `${cell.x},${cell.y},${cell.w},${cell.h}`
+      if (sig === last) return
+      last = sig
+      setGrid(placeCell(base, cell), false)
+    }
+    const up = () => {
+      handle.removeEventListener('pointermove', move)
+      handle.removeEventListener('pointerup', up)
+      handle.removeEventListener('pointercancel', up)
+      el.classList.remove('module-moving')
+      save('layout', grid)
+    }
+    handle.addEventListener('pointermove', move)
+    handle.addEventListener('pointerup', up)
+    handle.addEventListener('pointercancel', up)
   })
+}
+
+// Diagrams fill their panel: each SVG drawn into a .fit container scales to it.
+function watchFittedDiagrams() {
+  const fitAll = (el: HTMLElement) => {
+    // abcjs fixes the height of the element it draws into and leaves part of its canvas empty
+    el.style.height = ''
+    const svgs = el.id === 'guitar-container' ? el.querySelectorAll(':scope > div:first-child svg') : el.querySelectorAll(':scope > svg')
+    svgs.forEach(svg => fitSvg(svg as SVGSVGElement, el.id === 'staff-container'))
+  }
+  const containers = [...document.querySelectorAll<HTMLElement>('.fit, #guitar-container')]
+  const observer = new MutationObserver(records => {
+    const touched = new Set(records.map(r => (r.target as HTMLElement).closest<HTMLElement>('.fit, #guitar-container')))
+    touched.forEach(el => el && fitAll(el))
+  })
+  containers.forEach(el => observer.observe(el, { childList: true, subtree: true }))
+}
+
+// ─── Layout menu ─────────────────────────────────────────────────────────────
+
+function renderLayoutMenu() {
+  const menu = document.getElementById('layout-menu')
+  if (!menu) return
+  const names = Object.keys(savedLayouts).sort((a, b) => a.localeCompare(b))
+  menu.innerHTML = `
+    <div class="view-menu-title">${t('layout.presets')}</div>
+    <div class="layout-presets">
+      ${PRESET_IDS.map(p => `<button class="ctrl-btn" data-preset="${p}" title="${t(`layout.preset.${p}.title`)}">${t(`layout.preset.${p}`)}</button>`).join('')}
+    </div>
+    ${names.length ? `<div class="view-menu-title">${t('layout.saved')}</div>` : ''}
+    ${names.map(n => `
+      <div class="layout-saved-row">
+        <button class="ctrl-btn" data-saved="${escapeHtml(n)}">${escapeHtml(n)}</button>
+        <button class="ctrl-btn" data-delete="${escapeHtml(n)}" title="${t('layout.delete')}">×</button>
+      </div>`).join('')}
+    <div class="layout-save-row">
+      <input id="layout-name" class="ctrl-select" placeholder="${t('layout.name')}" maxlength="40">
+      <button id="layout-save" class="ctrl-btn">${t('layout.save')}</button>
+    </div>
+    <div class="view-menu-title">${t('layout.panels')}</div>
+    <div class="layout-modules">
+      ${MODULE_IDS.map(id => `
+        <label class="layout-module"><input type="checkbox" data-module="${id}"${isModuleShown(id) ? ' checked' : ''}> ${t(`module.${id}`)}</label>`).join('')}
+    </div>
+    <div class="view-menu-hint">${t('layout.hint')}</div>`
+}
+
+function wireLayoutMenu() {
+  const menu = $('layout-menu')
+  $('btn-layout').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open') })
+  document.addEventListener('click', e => { if (!menu.contains(e.target as Node) && e.target !== $('btn-layout')) menu.classList.remove('open') })
+  menu.addEventListener('click', e => {
+    e.stopPropagation()
+    const el = e.target as HTMLElement
+    const preset = el.closest<HTMLElement>('[data-preset]')?.dataset.preset as PresetId | undefined
+    const saved = el.closest<HTMLElement>('[data-saved]')?.dataset.saved
+    const del = el.closest<HTMLElement>('[data-delete]')?.dataset.delete
+    if (preset) applyPreset(preset)
+    else if (saved !== undefined && savedLayouts[saved]) setGrid(savedLayouts[saved].map(c => ({ ...c })))
+    else if (del !== undefined) {
+      delete savedLayouts[del]
+      save('layouts', savedLayouts)
+      renderLayoutMenu()
+    }
+    else if (el.id === 'layout-save') saveCurrentAs()
+  })
+  menu.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target as HTMLElement).id === 'layout-name') saveCurrentAs() })
+  menu.addEventListener('change', e => {
+    const box = (e.target as HTMLElement).closest<HTMLInputElement>('input[data-module]')
+    if (box) showModule(box.dataset.module as ModuleId, box.checked)
+  })
+}
+
+function saveCurrentAs() {
+  const input = document.getElementById('layout-name') as HTMLInputElement | null
+  const name = input?.value.trim()
+  if (!name) { input?.classList.add('invalid'); return }
+  savedLayouts[name] = grid.map(c => ({ ...c }))
+  save('layouts', savedLayouts)
+  renderLayoutMenu()
 }

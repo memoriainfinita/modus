@@ -1,6 +1,6 @@
 import { tryParseChord, tryUMT } from '../theory/chord'
 import { playableVoicings, tuningToMidi, normalizeNoteName } from '../theory/voicings'
-import { loadBool, loadChoice, loadJSON, loadNumber, save } from '../ui/storage'
+import { loadBool, loadChoice, loadJSON, save } from '../ui/storage'
 import { fretboardColors } from './fretboard-style'
 import { t, chordLabel, localizeDrawnNoteNames } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
@@ -22,7 +22,8 @@ let guitarLabelMode = loadChoice('guitar-label-mode', ['none', 'tuning', 'notes'
 type GuitarTuningKey = 'standard' | 'dropD' | 'openG' | 'custom'
 let guitarTuningKey = loadChoice<GuitarTuningKey>('guitar-tuning', ['standard', 'dropD', 'openG', 'custom'], 'standard')
 let guitarTunerExpanded = false
-let guitarSpacing = loadNumber('guitar-spacing', 19, 12, 32)
+// Drawn at one spacing and scaled to its panel
+const guitarSpacing = 19
 
 const GUITAR_TUNINGS: Record<string, { notae: string[]; label: StringKey }> = {
   standard: { notae: ['E','A','D','G','B','E'], label: 'guitar.tuning.standard' },
@@ -84,8 +85,6 @@ function guitarControls(total: number, idx: number): string {
     <div id="guitar-ctrl-wrap" style="display:${guitarControlsVisible ? 'flex' : 'none'}">
       <div class="guitar-ctrl-row">
         ${nav || '<span class="guitar-nav-placeholder">—</span>'}
-        <button class="guitar-size-btn guitar-ctrl" data-action="size-minus" title="${t('guitar.smaller')}">−</button>
-        <button class="guitar-size-btn guitar-ctrl" data-action="size-plus"  title="${t('guitar.larger')}">+</button>
       </div>
       <div class="guitar-ctrl-row-wrap">
         ${btn('label-none',   t('guitar.labels.off'), guitarLabelMode === 'none',    t('guitar.labels.off.title'))}
@@ -112,12 +111,6 @@ function wireGuitarControls(container: HTMLElement) {
         save('guitar-label-mode', guitarLabelMode)
       } else if (action === 'toggle-tuner') {
         guitarTunerExpanded = !guitarTunerExpanded
-      } else if (action === 'size-minus') {
-        guitarSpacing = Math.max(12, guitarSpacing - 3)
-        save('guitar-spacing', guitarSpacing)
-      } else if (action === 'size-plus') {
-        guitarSpacing = Math.min(32, guitarSpacing + 3)
-        save('guitar-spacing', guitarSpacing)
       }
       renderGuitar(container, lastGuitarSymbol, lastNoteNames)
     })

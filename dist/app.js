@@ -671,8 +671,40 @@
     "gm.percussive": "Percussive",
     "gm.soundFx": "Sound FX",
     // Toolbar: views, presentation, help
-    "present.title": "Presentation: large, no controls, full screen (P; Esc to leave)",
-    "present.close": "Leave presentation (Esc)",
+    "present.title": "Presentation: this layout without controls, full screen (P; Esc to leave)",
+    "layout.title": "Layout: ready-made and saved layouts, which panels show",
+    "layout.presets": "Layouts",
+    "layout.preset.standard": "Standard",
+    "layout.preset.standard.title": "Every panel, as the page was",
+    "layout.preset.study": "Study",
+    "layout.preset.study.title": "Key and analysis large, what is played beside them",
+    "layout.preset.class": "Class",
+    "layout.preset.class.title": "Few panels, large: for a projector, with P",
+    "layout.preset.transcription": "Transcription",
+    "layout.preset.transcription.title": "History and song next to the piano and fretboard",
+    "layout.preset.recording": "Recording",
+    "layout.preset.recording.title": "Chord, staff, guitar and piano for a camera or screen capture",
+    "layout.saved": "Saved",
+    "layout.delete": "Delete this layout",
+    "layout.name": "Name",
+    "layout.save": "Save this one",
+    "layout.panels": "Panels",
+    "layout.hint": "Drag a panel by its title, resize it from its corner: it snaps to the grid.",
+    "module.chord": "Chord",
+    "module.staff": "Staff",
+    "module.analysis": "Analysis",
+    "module.cof": "Circle of fifths",
+    "module.guitar": "Guitar",
+    "module.key": "Key",
+    "module.piano": "Piano",
+    "module.neck": "Fretboard",
+    "module.velocity": "Velocity",
+    "module.history": "History",
+    "module.song": "Song",
+    "module.drag": "Drag to move",
+    "module.hide": "Hide this panel (the \u25A6 menu shows it again)",
+    "module.resize": "Drag to resize",
+    "module.controls": "Show / hide the controls",
     "views.title": "View windows for OBS, and diagram export (SVG, PNG)",
     "views.open": "Open a view window",
     "views.background": "Background",
@@ -692,24 +724,10 @@
     "ctrl.smaller": "Smaller",
     "ctrl.larger": "Larger",
     // Notation panel
-    "notation.title": "Notation",
-    "col.staff": "St",
-    "col.analysis": "An",
-    "col.cof": "CoF",
-    "col.guitar": "Git",
-    "col.staff.title": "Staff",
-    "col.analysis.title": "Analysis",
-    "col.cof.title": "Circle of Fifths",
-    "col.guitar.title": "Guitar",
-    "staff.label": "Staff",
     "staff.clef.title": "Staves: grand (treble and bass, split at middle C), treble only, bass only",
     "staff.clef.grand": "Grand",
     "staff.clef.treble": "Treble",
     "staff.clef.bass": "Bass",
-    "staff.smaller": "Smaller staff",
-    "staff.larger": "Larger staff",
-    "analysis.label": "Analysis",
-    "cof.label": "CoF",
     "cof.flat.title": "Show flat enharmonics (Gb, Db\u2026)",
     "cof.sharp.title": "Show sharp enharmonics (F#, C#\u2026)",
     "cof.spelledInKey": "Spelled as in {key}; b / # apply without a key",
@@ -718,7 +736,6 @@
     "cof.sevenths.title": "Show 7th chords (maj7, m7, \xF87)",
     "cof.segment.tip": "Click: play \xB7 double-click: set as key",
     "cof.segment.play": "Click: play",
-    "guitar.label": "Guitar",
     // Analysis fields: button label, tooltip, row label
     "field.roman": "Roman",
     "field.roman.title": "Roman numeral",
@@ -797,7 +814,6 @@
     "voicing.doubled": "doubled {notes}",
     "voicing.missing": "no {notes}",
     // Key panel
-    "keyPanel.title": "Key",
     "keyPanel.sevenths.title": "Seventh chords instead of triads",
     "keyPanel.neg": "Neg",
     "keyPanel.neg.title": "Show/hide negative harmony",
@@ -819,14 +835,6 @@
     "keyPanel.from": "from {mode}",
     "keyPanel.characteristic": "carries its characteristic note",
     // Instruments panel
-    "instruments.title": "Instruments",
-    "col.piano": "Pi",
-    "col.neck": "Fr",
-    "col.velocity": "Ve",
-    "col.piano.title": "Piano",
-    "col.neck.title": "Fretboard",
-    "col.velocity.title": "Velocity of each note",
-    "velocity.label": "Velocity",
     "velocity.empty": "Play to see how hard each note is struck",
     "velocity.bar": "{note}: velocity {v} of 127",
     // Guitar
@@ -834,8 +842,6 @@
     "guitar.prev": "Previous voicing",
     "guitar.next": "Next voicing",
     "guitar.string": "String {n}",
-    "guitar.smaller": "Smaller diagram",
-    "guitar.larger": "Larger diagram",
     "guitar.labels.off": "Off",
     "guitar.labels.off.title": "Hide string labels",
     "guitar.labels.tuning.title": "Show open string notes (tuning)",
@@ -847,7 +853,6 @@
     "guitar.tuning.custom": "Custom",
     "guitar.tuner.title": "Edit string tuning",
     // History
-    "history.title": "History",
     "history.clear": "Clear",
     "history.clear.title": "Clear history (C) \u2014 can be undone",
     "history.cleared": "History cleared ({n})",
@@ -856,7 +861,6 @@
     "history.chip.actions": "click to play, drag to song, right-click to remove",
     "history.modulation": "Modulation to {key}: from here the numerals are read in it",
     // Song
-    "song.title": "Song Structure",
     "song.untitled": "Untitled",
     "song.saved.title": "Saved songs",
     "song.new": "New",
@@ -937,7 +941,7 @@
     "shortcut.clear": "Clear history (undo in the toast)",
     "shortcut.escape": "Drop a held chord, clear cursor, stop MIDI fill",
     "shortcut.keyboard": "Play with the computer keyboard (M or Esc to stop)",
-    "shortcut.present": "Presentation: large, no controls, full screen (P or Esc to leave)",
+    "shortcut.present": "Presentation: this layout without controls, full screen (P or Esc to leave)",
     "shortcut.type": "Type a chord name",
     "shortcut.candidate": "Select chord candidate",
     "shortcut.help": "Show / hide this panel",
@@ -947,7 +951,8 @@
     "gesture.drag": "Drag a history chip onto a song measure to insert it; drag song chords and section headers to reorder.",
     "gesture.fill": "\u2299 on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.",
     "gesture.remove": "Right-click a history chip to remove it. Removals and Clear can be undone from the toast.",
-    "gesture.piano": "Click the on-screen piano to play: in Hold each click adds or removes a note of the chord."
+    "gesture.piano": "Click the on-screen piano to play: in Hold each click adds or removes a note of the chord.",
+    "gesture.layout": "Drag a panel by its title to move it, by its corner to resize it; \xD7 hides it, the \u25A6 menu shows it again."
   };
 
   // src/i18n/es.ts
@@ -1009,8 +1014,40 @@
     "gm.ethnic": "\xC9tnicos",
     "gm.percussive": "Percusi\xF3n",
     "gm.soundFx": "Efectos de sonido",
-    "present.title": "Presentaci\xF3n: grande, sin controles, a pantalla completa (P; Esc para salir)",
-    "present.close": "Salir de la presentaci\xF3n (Esc)",
+    "present.title": "Presentaci\xF3n: esta disposici\xF3n sin controles, a pantalla completa (P; Esc para salir)",
+    "layout.title": "Disposici\xF3n: predefinidas y guardadas, qu\xE9 paneles se ven",
+    "layout.presets": "Disposiciones",
+    "layout.preset.standard": "Est\xE1ndar",
+    "layout.preset.standard.title": "Todos los paneles, como era la p\xE1gina",
+    "layout.preset.study": "Estudio",
+    "layout.preset.study.title": "Tonalidad y an\xE1lisis grandes, lo que se toca al lado",
+    "layout.preset.class": "Clase",
+    "layout.preset.class.title": "Pocos paneles, grandes: para un proyector, con P",
+    "layout.preset.transcription": "Transcripci\xF3n",
+    "layout.preset.transcription.title": "Historial y canci\xF3n junto al piano y el m\xE1stil",
+    "layout.preset.recording": "Grabaci\xF3n",
+    "layout.preset.recording.title": "Acorde, pentagrama, guitarra y piano para una c\xE1mara o captura de pantalla",
+    "layout.saved": "Guardadas",
+    "layout.delete": "Borrar esta disposici\xF3n",
+    "layout.name": "Nombre",
+    "layout.save": "Guardar esta",
+    "layout.panels": "Paneles",
+    "layout.hint": "Arrastra un panel por su t\xEDtulo y cambia su tama\xF1o desde la esquina: se ajusta a la rejilla.",
+    "module.chord": "Acorde",
+    "module.staff": "Pentagrama",
+    "module.analysis": "An\xE1lisis",
+    "module.cof": "C\xEDrculo de quintas",
+    "module.guitar": "Guitarra",
+    "module.key": "Tonalidad",
+    "module.piano": "Piano",
+    "module.neck": "M\xE1stil",
+    "module.velocity": "Velocidad",
+    "module.history": "Historial",
+    "module.song": "Canci\xF3n",
+    "module.drag": "Arrastra para mover",
+    "module.hide": "Ocultar este panel (el men\xFA \u25A6 lo vuelve a mostrar)",
+    "module.resize": "Arrastra para cambiar el tama\xF1o",
+    "module.controls": "Mostrar / ocultar los controles",
     "views.title": "Ventanas de vista para OBS y exportar diagramas (SVG, PNG)",
     "views.open": "Abrir una ventana de vista",
     "views.background": "Fondo",
@@ -1028,24 +1065,10 @@
     "help.title": "Atajos, gestos e idioma (?)",
     "ctrl.smaller": "M\xE1s peque\xF1o",
     "ctrl.larger": "M\xE1s grande",
-    "notation.title": "Notaci\xF3n",
-    "col.staff": "Pe",
-    "col.analysis": "An",
-    "col.cof": "C\xEDr",
-    "col.guitar": "Gui",
-    "col.staff.title": "Pentagrama",
-    "col.analysis.title": "An\xE1lisis",
-    "col.cof.title": "C\xEDrculo de quintas",
-    "col.guitar.title": "Guitarra",
-    "staff.label": "Pentagrama",
     "staff.clef.title": "Pentagramas: doble (clave de sol y de fa, separados en el Do central), solo clave de sol, solo clave de fa",
     "staff.clef.grand": "Doble",
     "staff.clef.treble": "Sol",
     "staff.clef.bass": "Fa",
-    "staff.smaller": "Pentagrama m\xE1s peque\xF1o",
-    "staff.larger": "Pentagrama m\xE1s grande",
-    "analysis.label": "An\xE1lisis",
-    "cof.label": "Quintas",
     "cof.flat.title": "Enarm\xF3nicos con bemoles (Solb, Reb\u2026)",
     "cof.sharp.title": "Enarm\xF3nicos con sostenidos (Fa#, Do#\u2026)",
     "cof.spelledInKey": "Escrito como en {key}; b / # sirven sin tonalidad",
@@ -1054,7 +1077,6 @@
     "cof.sevenths.title": "Mostrar cuatr\xEDadas (maj7, m7, \xF87)",
     "cof.segment.tip": "Clic: tocar \xB7 doble clic: usar como tonalidad",
     "cof.segment.play": "Clic: tocar",
-    "guitar.label": "Guitarra",
     "field.roman": "Grado",
     "field.roman.title": "Grado en n\xFAmeros romanos",
     "field.roman.row": "Grado",
@@ -1128,7 +1150,6 @@
     "voicing.open": "abierta",
     "voicing.doubled": "doblada {notes}",
     "voicing.missing": "sin {notes}",
-    "keyPanel.title": "Tonalidad",
     "keyPanel.sevenths.title": "Cuatr\xEDadas en lugar de tr\xEDadas",
     "keyPanel.neg": "Neg",
     "keyPanel.neg.title": "Mostrar u ocultar la armon\xEDa negativa",
@@ -1149,22 +1170,12 @@
     "keyPanel.parallel.title": "Acordes de cada modo sobre la misma t\xF3nica que usan una nota fuera de la tonalidad (Harmony.getBorrowedChords). En negrita, los que llevan la nota propia del modo",
     "keyPanel.from": "de {mode}",
     "keyPanel.characteristic": "lleva su nota caracter\xEDstica",
-    "instruments.title": "Instrumentos",
-    "col.piano": "Pi",
-    "col.neck": "M\xE1",
-    "col.velocity": "Ve",
-    "col.piano.title": "Piano",
-    "col.neck.title": "M\xE1stil",
-    "col.velocity.title": "Velocidad de cada nota",
-    "velocity.label": "Velocidad",
     "velocity.empty": "Toca para ver con qu\xE9 fuerza suena cada nota",
     "velocity.bar": "{note}: velocidad {v} de 127",
     "guitar.none": "Sin posiciones",
     "guitar.prev": "Posici\xF3n anterior",
     "guitar.next": "Posici\xF3n siguiente",
     "guitar.string": "Cuerda {n}",
-    "guitar.smaller": "Diagrama m\xE1s peque\xF1o",
-    "guitar.larger": "Diagrama m\xE1s grande",
     "guitar.labels.off": "No",
     "guitar.labels.off.title": "Ocultar los nombres de las cuerdas",
     "guitar.labels.tuning.title": "Mostrar las notas al aire (afinaci\xF3n)",
@@ -1175,7 +1186,6 @@
     "guitar.tuning.openG": "Open G",
     "guitar.tuning.custom": "Personal",
     "guitar.tuner.title": "Cambiar la afinaci\xF3n de cada cuerda",
-    "history.title": "Historial",
     "history.clear": "Borrar",
     "history.clear.title": "Borrar el historial (C); se puede deshacer",
     "history.cleared": "Historial borrado ({n})",
@@ -1183,7 +1193,6 @@
     "history.chip.inKey": "{roman} en {key}",
     "history.chip.actions": "clic para tocar, arrastra a la canci\xF3n, clic derecho para quitar",
     "history.modulation": "Modulaci\xF3n a {key}: desde aqu\xED los grados se leen en ella",
-    "song.title": "Estructura de la canci\xF3n",
     "song.untitled": "Sin t\xEDtulo",
     "song.saved.title": "Canciones guardadas",
     "song.new": "Nueva",
@@ -1262,7 +1271,7 @@
     "shortcut.clear": "Borrar el historial (se deshace en el aviso)",
     "shortcut.escape": "Soltar un acorde mantenido, quitar el cursor, parar el relleno MIDI",
     "shortcut.keyboard": "Tocar con el teclado del ordenador (M o Esc para parar)",
-    "shortcut.present": "Presentaci\xF3n: grande, sin controles, a pantalla completa (P o Esc para salir)",
+    "shortcut.present": "Presentaci\xF3n: esta disposici\xF3n sin controles, a pantalla completa (P o Esc para salir)",
     "shortcut.type": "Escribir un acorde",
     "shortcut.candidate": "Elegir otra lectura del acorde",
     "shortcut.help": "Mostrar u ocultar este panel",
@@ -1272,7 +1281,8 @@
     "gesture.drag": "Arrastra un acorde del historial a un comp\xE1s de la canci\xF3n para insertarlo; arrastra acordes y cabeceras de secci\xF3n para reordenarlos.",
     "gesture.fill": "\u2299 en un acorde de la canci\xF3n activa el relleno MIDI: cada acorde que tocas ocupa un hueco y pasa al siguiente, hasta el final o Esc.",
     "gesture.remove": "Clic derecho en un acorde del historial para quitarlo. Lo quitado y el borrado se deshacen desde el aviso.",
-    "gesture.piano": "Clic en el piano de la pantalla para tocar: en Mantener cada clic a\xF1ade o quita una nota del acorde."
+    "gesture.piano": "Clic en el piano de la pantalla para tocar: en Mantener cada clic a\xF1ade o quita una nota del acorde.",
+    "gesture.layout": "Arrastra un panel por su t\xEDtulo para moverlo y por la esquina para cambiar su tama\xF1o; \xD7 lo oculta y el men\xFA \u25A6 lo vuelve a mostrar."
   };
 
   // src/i18n/i18n.ts
@@ -1873,82 +1883,6 @@ ${lower.length ? chordOf(lower) : empty}`;
     ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr, clef), { staffwidth: width - 20, scale });
   }
 
-  // src/view/channel.ts
-  var VIEW_NAMES = ["chord", "staff", "cof", "piano", "guitar"];
-  var VIEW_BACKGROUNDS = { green: "#00ff00", magenta: "#ff00ff", black: "#000000", dark: "#1a1a2e" };
-  var NAME = "modus-view";
-  function open() {
-    try {
-      return new BroadcastChannel(NAME);
-    } catch {
-      return null;
-    }
-  }
-  function createViewPublisher() {
-    const channel2 = open();
-    let current2 = null;
-    let last2 = "";
-    channel2?.addEventListener("message", (e) => {
-      if (e.data?.type === "hello" && current2) channel2.postMessage({ type: "state", state: current2 });
-    });
-    return (state2) => {
-      current2 = state2;
-      const sig = JSON.stringify(state2);
-      if (sig === last2) return;
-      last2 = sig;
-      channel2?.postMessage({ type: "state", state: state2 });
-    };
-  }
-  function subscribeView(onState) {
-    const channel2 = open();
-    channel2?.addEventListener("message", (e) => {
-      if (e.data?.type === "state") onState(e.data.state);
-    });
-    channel2?.postMessage({ type: "hello" });
-  }
-  function viewUrl(view, bg, base = location.href) {
-    const url = new URL(base);
-    url.search = new URLSearchParams({ view, bg }).toString();
-    url.hash = "";
-    return url.toString();
-  }
-  var VIEW_WINDOW = {
-    chord: [640, 360],
-    staff: [800, 420],
-    cof: [520, 520],
-    piano: [960, 300],
-    guitar: [380, 460]
-  };
-
-  // src/diagrams/piano.ts
-  function renderPiano(container, noteNames, chordSymbol, onPress) {
-    const color2 = chordSymbol ? chordColor(chordSymbol) : neutralColor();
-    const colors = noteNames.map(() => color2);
-    container.innerHTML = Notae.renderPiano({
-      name: "",
-      keys: noteNames,
-      colors,
-      range: { from: "C2", to: "B5" }
-    }, {
-      pianoWhiteKeyColor: color("piano-white"),
-      pianoWhiteKeyStrokeColor: color("piano-white-stroke"),
-      pianoBlackKeyColor: color("piano-black"),
-      pianoBlackKeyStrokeColor: color("piano-black-stroke"),
-      stringLabelColor: color("piano-label"),
-      pianoBlackKeyLabelColor: color("piano-black-label")
-    });
-    container.querySelectorAll("rect[data-note]").forEach((el) => {
-      const midi = noteNameToMidi(el.dataset.note);
-      if (midi === null) return;
-      el.style.cursor = "pointer";
-      el.addEventListener("pointerdown", (e) => {
-        if (e.button !== 0) return;
-        e.preventDefault();
-        onPress?.(midi);
-      });
-    });
-  }
-
   // src/theory/voicings.ts
   var STANDARD_OPEN_MIDI = [40, 45, 50, 55, 59, 64];
   var MAX_SPAN = 3;
@@ -2038,7 +1972,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   var guitarLabelMode = loadChoice("guitar-label-mode", ["none", "tuning", "notes"], "none");
   var guitarTuningKey = loadChoice("guitar-tuning", ["standard", "dropD", "openG", "custom"], "standard");
   var guitarTunerExpanded = false;
-  var guitarSpacing = loadNumber("guitar-spacing", 19, 12, 32);
+  var guitarSpacing = 19;
   var GUITAR_TUNINGS = {
     standard: { notae: ["E", "A", "D", "G", "B", "E"], label: "guitar.tuning.standard" },
     dropD: { notae: ["D", "A", "D", "G", "B", "E"], label: "guitar.tuning.dropD" },
@@ -2092,8 +2026,6 @@ ${lower.length ? chordOf(lower) : empty}`;
     <div id="guitar-ctrl-wrap" style="display:${guitarControlsVisible ? "flex" : "none"}">
       <div class="guitar-ctrl-row">
         ${nav || '<span class="guitar-nav-placeholder">\u2014</span>'}
-        <button class="guitar-size-btn guitar-ctrl" data-action="size-minus" title="${t("guitar.smaller")}">\u2212</button>
-        <button class="guitar-size-btn guitar-ctrl" data-action="size-plus"  title="${t("guitar.larger")}">+</button>
       </div>
       <div class="guitar-ctrl-row-wrap">
         ${btn("label-none", t("guitar.labels.off"), guitarLabelMode === "none", t("guitar.labels.off.title"))}
@@ -2119,12 +2051,6 @@ ${lower.length ? chordOf(lower) : empty}`;
           save("guitar-label-mode", guitarLabelMode);
         } else if (action === "toggle-tuner") {
           guitarTunerExpanded = !guitarTunerExpanded;
-        } else if (action === "size-minus") {
-          guitarSpacing = Math.max(12, guitarSpacing - 3);
-          save("guitar-spacing", guitarSpacing);
-        } else if (action === "size-plus") {
-          guitarSpacing = Math.min(32, guitarSpacing + 3);
-          save("guitar-spacing", guitarSpacing);
         }
         renderGuitar(container, lastGuitarSymbol, lastNoteNames);
       });
@@ -2216,6 +2142,745 @@ ${lower.length ? chordOf(lower) : empty}`;
       });
     });
     wireGuitarControls(container);
+  }
+
+  // src/ui/html.ts
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+
+  // src/detector/analysis-panel.ts
+  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "secondary", "subs", "upper", "forte"];
+  var fieldLabel = (f) => t(`field.${f}`);
+  var fieldTooltip = (f) => t(`field.${f}.title`);
+  var rowLabel = (f) => t(`field.${f}.row`);
+  function renderChordSummary(detection, onAltSelect2) {
+    const el = document.getElementById("chord-summary");
+    if (!el) return;
+    if (!detection || detection.kind !== "chord") {
+      el.innerHTML = "";
+      return;
+    }
+    const symbol = detection.candidates[detection.selectedIndex];
+    const chordName = escapeHtml(chordLabel(symbol));
+    const color2 = chordColor(symbol);
+    const notes = escapeHtml(detection.notes.map((n) => noteLabel(n.replace(/(-?\d+)$/, ""))).join(" \xB7 "));
+    const alts = detection.candidates.slice(1, 7);
+    el.innerHTML = `
+    <div class="chord-summary-row">
+      <span class="chord-name-badge" style="background:${color2}22;border-left:3px solid ${color2}">${chordName}</span>
+      <span class="chord-notes">${notes}</span>
+      ${alts.map(
+      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(chordLabel(c))}</button>`
+    ).join("")}
+    </div>`;
+    el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
+      btn.addEventListener("click", () => onAltSelect2(parseInt(btn.dataset.idx)));
+    });
+  }
+  function renderZone1Analysis(detection, analysis, noteSet2, fieldsVisible, scale, onAltSelect2) {
+    renderChordSummary(detection, onAltSelect2);
+    const el = document.getElementById("analysis-content");
+    if (!el) return;
+    el.style.fontSize = scale + "px";
+    const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => fieldsVisible[f]).length;
+    el.style.minHeight = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
+    const colEl = document.getElementById("col-analysis");
+    if (colEl) {
+      const w = Math.round(scale * 19) + "px";
+      colEl.style.width = w;
+      colEl.style.flex = `0 0 ${w}`;
+    }
+    const row = (label, val) => `<div class="analysis-row">
+      <span class="analysis-label">${label}</span>
+      <span class="analysis-value">${escapeHtml(val)}</span>
+    </div>`;
+    const fieldRow = (f, val) => fieldsVisible[f] ? row(rowLabel(f), val ?? "\u2014") : "";
+    let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
+    let secondary = null, subs = null;
+    let voicing = null, plr = null, upper = null;
+    let extra = "";
+    if (detection?.kind === "note") {
+      extra = row(t("analysis.note"), `${noteLabel(detection.noteName)} \xB7 MIDI ${detection.midiNumber}`);
+    } else if (detection?.kind === "interval") {
+      extra = row(t("analysis.interval"), `${detection.intervalName} \xB7 ${t("analysis.semitones", { n: detection.semitones })}`) + row(t("analysis.inversion"), detection.inversionName);
+    } else if (detection?.kind === "chord" && analysis) {
+      roman = analysis.roman;
+      func_ = t(`fn.${analysis.function}`);
+      figuredBass = analysis.figuredBass || "\u2014";
+      diatonic = analysis.isDiatonic ? t("analysis.yes") : analysis.isBorrowed ? t("analysis.borrowed", { mode: analysis.borrowedFrom ?? "?" }) : t("analysis.chromatic");
+      scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
+      cadence = analysis.cadence ? cadenceLabel(analysis.cadence) : "\u2014";
+      if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget?.split("/")[1] ?? "?"}`;
+      if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
+      voicing = analysis.voicing;
+      plr = analysis.transformation;
+      if (analysis.upperStructures.length) upper = analysis.upperStructures.join(", ");
+    }
+    const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.map(noteLabel).join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
+    el.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
+  }
+
+  // src/ui/fit.ts
+  function fitSvg(svg, crop = false) {
+    if (!svg) return;
+    if (!svg.getAttribute("viewBox")) {
+      const w = parseFloat(svg.getAttribute("width") ?? ""), h = parseFloat(svg.getAttribute("height") ?? "");
+      if (w > 0 && h > 0) svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    }
+    if (crop) {
+      const bb = svg.getBBox?.();
+      const pad = 4;
+      if (bb && bb.width && bb.height) svg.setAttribute("viewBox", `${bb.x - pad} ${bb.y - pad} ${bb.width + 2 * pad} ${bb.height + 2 * pad}`);
+    }
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
+    svg.style.width = "100%";
+    svg.style.height = "100%";
+  }
+
+  // src/view/channel.ts
+  var VIEW_NAMES = ["chord", "staff", "cof", "piano", "guitar"];
+  var VIEW_BACKGROUNDS = { green: "#00ff00", magenta: "#ff00ff", black: "#000000", dark: "#1a1a2e" };
+  var NAME = "modus-view";
+  function open() {
+    try {
+      return new BroadcastChannel(NAME);
+    } catch {
+      return null;
+    }
+  }
+  function createViewPublisher() {
+    const channel2 = open();
+    let current2 = null;
+    let last = "";
+    channel2?.addEventListener("message", (e) => {
+      if (e.data?.type === "hello" && current2) channel2.postMessage({ type: "state", state: current2 });
+    });
+    return (state2) => {
+      current2 = state2;
+      const sig = JSON.stringify(state2);
+      if (sig === last) return;
+      last = sig;
+      channel2?.postMessage({ type: "state", state: state2 });
+    };
+  }
+  function subscribeView(onState) {
+    const channel2 = open();
+    channel2?.addEventListener("message", (e) => {
+      if (e.data?.type === "state") onState(e.data.state);
+    });
+    channel2?.postMessage({ type: "hello" });
+  }
+  function viewUrl(view, bg, base = location.href) {
+    const url = new URL(base);
+    url.search = new URLSearchParams({ view, bg }).toString();
+    url.hash = "";
+    return url.toString();
+  }
+  var VIEW_WINDOW = {
+    chord: [640, 360],
+    staff: [800, 420],
+    cof: [520, 520],
+    piano: [960, 300],
+    guitar: [380, 460]
+  };
+
+  // src/layout/grid.ts
+  var COLS = 12;
+  var MIN_W = 2;
+  var MIN_H = 2;
+  function clampCell(c) {
+    const w = Math.min(COLS, Math.max(MIN_W, Math.round(c.w)));
+    const h = Math.max(MIN_H, Math.round(c.h));
+    const x = Math.min(COLS - w, Math.max(0, Math.round(c.x)));
+    const y = Math.max(0, Math.round(c.y));
+    return { id: c.id, x, y, w, h };
+  }
+  function overlaps(a, b) {
+    return a.id !== b.id && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  }
+  var byPosition = (a, b) => a.y - b.y || a.x - b.x;
+  function compact(grid3, first) {
+    const fixed = grid3.find((c) => c.id === first);
+    const placed = fixed ? [clampCell(fixed)] : [];
+    const rest = grid3.filter((c) => c.id !== first).map(clampCell).sort(byPosition);
+    for (const c of rest) {
+      const cell = { ...c };
+      const sameColumns = (p) => p.x < cell.x + cell.w && cell.x < p.x + p.w;
+      cell.y = Math.max(0, ...placed.filter((p) => sameColumns(p) && p.y + p.h <= c.y).map((p) => p.y + p.h));
+      const hits = () => placed.filter((p) => overlaps(cell, p));
+      for (let h = hits(); h.length; h = hits()) cell.y = Math.max(...h.map((p) => p.y + p.h));
+      placed.push(cell);
+    }
+    return placed.sort(byPosition);
+  }
+  function placeCell(grid3, cell) {
+    const others = grid3.filter((c) => c.id !== cell.id);
+    const moved = compact([...others, clampCell(cell)], cell.id);
+    return compact(moved);
+  }
+  function addCell(grid3, cell) {
+    const bottom = grid3.reduce((m, c) => Math.max(m, c.y + c.h), 0);
+    return compact([...grid3.filter((c) => c.id !== cell.id), clampCell({ ...cell, y: bottom })]);
+  }
+  function removeCell(grid3, id) {
+    return compact(grid3.filter((c) => c.id !== id));
+  }
+  function gridRows(grid3) {
+    return grid3.reduce((m, c) => Math.max(m, c.y + c.h), 0);
+  }
+  function parseGrid(value, known) {
+    if (!Array.isArray(value)) return null;
+    const seen = /* @__PURE__ */ new Set();
+    const cells = value.flatMap((v) => {
+      if (!v || typeof v !== "object") return [];
+      const { id, x, y, w, h } = v;
+      if (typeof id !== "string" || !known.includes(id) || seen.has(id)) return [];
+      if (![x, y, w, h].every((n) => typeof n === "number" && Number.isFinite(n))) return [];
+      seen.add(id);
+      return [clampCell({ id, x, y, w, h })];
+    });
+    return cells.length ? compact(cells) : null;
+  }
+
+  // src/layout/presets.ts
+  var MODULE_IDS = [
+    "chord",
+    "staff",
+    "analysis",
+    "cof",
+    "guitar",
+    "key",
+    "piano",
+    "neck",
+    "velocity",
+    "history",
+    "song"
+  ];
+  var MODULE_SIZE = {
+    chord: { w: 4, h: 3 },
+    staff: { w: 4, h: 8 },
+    analysis: { w: 3, h: 11 },
+    cof: { w: 3, h: 7 },
+    guitar: { w: 3, h: 9 },
+    key: { w: 12, h: 11 },
+    piano: { w: 7, h: 5 },
+    neck: { w: 4, h: 4 },
+    velocity: { w: 2, h: 5 },
+    history: { w: 12, h: 3 },
+    song: { w: 12, h: 12 }
+  };
+  var PRESET_IDS = ["standard", "study", "class", "transcription", "recording"];
+  var grid = (specs) => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }));
+  var PRESETS = {
+    // Everything, as the page was before panels could move
+    standard: grid([
+      ["chord", 0, 0, 3, 3],
+      ["staff", 0, 3, 3, 8],
+      ["analysis", 3, 0, 3, 11],
+      ["cof", 6, 0, 3, 7],
+      ["guitar", 9, 0, 3, 11],
+      ["velocity", 6, 7, 3, 4],
+      ["key", 0, 11, 12, 11],
+      ["piano", 0, 22, 8, 5],
+      ["neck", 8, 22, 4, 5],
+      ["history", 0, 27, 12, 3],
+      ["song", 0, 30, 12, 12]
+    ]),
+    // Harmony at the desk: the key and the analysis large, what is played next to them
+    study: grid([
+      ["chord", 0, 0, 4, 3],
+      ["analysis", 4, 0, 4, 12],
+      ["cof", 8, 0, 4, 8],
+      ["staff", 0, 3, 4, 9],
+      ["history", 8, 8, 4, 4],
+      ["key", 0, 12, 12, 11],
+      ["piano", 0, 23, 12, 5]
+    ]),
+    // Teaching on a projector (made to be presented with P): few panels, large
+    class: grid([
+      ["chord", 0, 0, 12, 4],
+      ["staff", 0, 4, 4, 10],
+      ["cof", 4, 4, 4, 10],
+      ["guitar", 8, 4, 4, 10],
+      ["piano", 0, 14, 12, 6]
+    ]),
+    // Writing down a recording: the song and the history in reach of what is heard
+    transcription: grid([
+      ["chord", 0, 0, 3, 3],
+      ["staff", 0, 3, 3, 8],
+      ["analysis", 3, 0, 3, 11],
+      ["piano", 6, 0, 6, 5],
+      ["neck", 6, 5, 6, 6],
+      ["history", 0, 11, 12, 3],
+      ["song", 0, 14, 12, 14]
+    ]),
+    // On camera or screen capture: the chord and the instruments, no controls in view
+    recording: grid([
+      ["chord", 0, 0, 6, 4],
+      ["staff", 6, 0, 6, 9],
+      ["guitar", 0, 4, 6, 9],
+      ["piano", 0, 13, 12, 6]
+    ])
+  };
+
+  // src/ui/layout.ts
+  var viewLabel = (v) => t(`view.${v}`);
+  var $ = (id) => document.getElementById(id);
+  function loadPanels() {
+    return {
+      cofControls: loadBool("panel-cofControls", true),
+      guitarControls: loadBool("panel-guitarControls", true),
+      analysisControls: loadBool("panel-analysisControls", true)
+    };
+  }
+  var grid2 = parseGrid(loadJSON("layout", null), MODULE_IDS) ?? PRESETS.standard;
+  var savedLayouts = loadSavedLayouts();
+  var layoutListeners = [];
+  function loadSavedLayouts() {
+    const raw = loadJSON("layouts", {});
+    const out = {};
+    if (raw && typeof raw === "object") {
+      for (const [name, value] of Object.entries(raw)) {
+        const g = parseGrid(value, MODULE_IDS);
+        if (g && name.trim()) out[name] = g;
+      }
+    }
+    return out;
+  }
+  function currentGrid() {
+    return grid2;
+  }
+  function isModuleShown(id) {
+    return grid2.some((c) => c.id === id);
+  }
+  function onLayoutChange(f) {
+    layoutListeners.push(f);
+  }
+  function setGrid(next, persist = true) {
+    grid2 = next;
+    applyGrid();
+    if (persist) save("layout", grid2);
+    layoutListeners.forEach((f) => f());
+  }
+  function applyPreset(id) {
+    setGrid(PRESETS[id].map((c) => ({ ...c })));
+  }
+  function showModule(id, shown) {
+    if (shown === isModuleShown(id)) return;
+    setGrid(shown ? addCell(grid2, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid2, id));
+  }
+  function renderLayout(panels, fieldsVisible) {
+    $("app").innerHTML = buildToolbar() + `<div id="midi-banner"></div><div id="grid" class="grid">${MODULE_IDS.map((id) => moduleFrame(id, panels, fieldsVisible)).join("")}</div>`;
+    applyGrid();
+    wireGrid();
+    wireLayoutMenu();
+    watchFittedDiagrams();
+  }
+  function wirePanelToggles(panels) {
+    document.querySelectorAll(".toggle-btn[data-panel]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const panel = btn.dataset.panel;
+        panels[panel] = !panels[panel];
+        save(`panel-${panel}`, panels[panel]);
+        applyPanelVisibility(panels);
+      });
+    });
+  }
+  function applyPanelVisibility(panels) {
+    const cc = document.getElementById("cof-controls");
+    if (cc) cc.style.display = panels.cofControls ? "" : "none";
+    setGuitarControlsVisible(panels.guitarControls);
+    const gcw = document.getElementById("guitar-ctrl-wrap");
+    if (gcw) gcw.style.display = panels.guitarControls ? "" : "none";
+    const ac = document.getElementById("analysis-controls");
+    if (ac) ac.style.display = panels.analysisControls ? "" : "none";
+    ["cofControls", "guitarControls", "analysisControls"].forEach((key) => {
+      const btn = document.querySelector(`.toggle-btn[data-panel="${key}"]`);
+      if (btn) btn.textContent = panels[key] ? "\u25B2" : "\u25BC";
+    });
+  }
+  function buildToolbar() {
+    return `
+    <div id="z1-toolbar" class="toolbar">
+      <span id="midi-status" class="midi-status">MIDI: \u2014</span>
+      <select id="midi-device" class="ctrl-select"></select>
+      <select id="midi-in-ch" class="ctrl-select" title="${t("midi.inChannel.title")}">
+        <option value="0">${t("midi.inChannel.all")}</option>
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.inChannel.one", { n: i + 1 })}</option>`).join("")}
+      </select>
+      <select id="midi-out" class="ctrl-select" title="${t("midi.out.title")}"><option value="">${t("midi.out.off")}</option></select>
+      <select id="midi-out-ch" class="ctrl-select" title="${t("midi.outChannel.title")}">
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.outChannel.one", { n: i + 1 })}</option>`).join("")}
+      </select>
+      <button id="btn-thru" class="mode-btn" title="${t("midi.thru.title")}">${t("midi.thru")}</button>
+      <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t("mode.normal.title")}">${t("mode.normal")}</button>
+      <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t("mode.hold.title")}">${t("mode.hold")}</button>
+      <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t("mode.arpeggio.title")}">${t("mode.arpeggio")}</button>
+      <button id="btn-keyboard" class="mode-btn" title="${t("keyboard.title")}">\u2328</button>
+      <span id="keyboard-status" class="auto-key-label"></span>
+      <select id="key-select" class="ctrl-select">
+        <option value="">${t("key.auto")}</option>
+        ${ALL_KEYS.map((k) => `<option value="${k}">${keyLabel(k)}</option>`).join("")}
+      </select>
+      <span id="auto-key-label" class="auto-key-label"></span>
+      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t("typed.placeholder")}" title="${t("typed.title")}" autocomplete="off" spellcheck="false">
+      <span class="toolbar-sep"></span>
+      <div id="audio-progress" class="audio-progress" title="${t("audio.title")}">
+        <div id="audio-progress-fill" class="audio-progress-fill"></div>
+        <span id="audio-status" class="audio-status">${t("audio.idle")}</span>
+      </div>
+      <button id="btn-play-chord" class="ctrl-btn" title="${t("audio.play.title")}">\u25B6</button>
+      <select id="audio-instrument" class="ctrl-select" title="${t("audio.instrument.title")}">
+        ${GM_INSTRUMENT_GROUPS.map(
+      (g) => `<optgroup label="${t(g.label)}">${g.instruments.map(
+        (i) => `<option value="${i}"${i === getCurrentInstrument() ? " selected" : ""}>${i.replace(/_/g, " ")}</option>`
+      ).join("")}</optgroup>`
+    ).join("")}
+      </select>
+      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t("audio.volume.title")}" class="volume-slider">
+      <div class="view-menu-wrap">
+        <button id="btn-layout" class="ctrl-btn" title="${t("layout.title")}">\u25A6</button>
+        <div id="layout-menu" class="view-menu"></div>
+      </div>
+      <div class="view-menu-wrap">
+        <button id="btn-present" class="ctrl-btn" title="${t("present.title")}">\u26F6</button>
+        <button id="btn-views" class="ctrl-btn" title="${t("views.title")}">\u29C9</button>
+        <div id="view-menu" class="view-menu">
+          <div class="view-menu-title">${t("views.open")}</div>
+          ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join("")}
+          <label class="view-menu-bg">${t("views.background")}
+            <select id="view-bg" class="ctrl-select">
+              ${Object.keys(VIEW_BACKGROUNDS).map((b) => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join("")}
+            </select>
+          </label>
+          <div class="view-menu-hint">${t("views.hint")}</div>
+          <div class="view-menu-title">${t("views.save")}</div>
+          ${["staff", "cof", "guitar", "piano"].map((v) => `
+            <div class="view-menu-export"><span>${viewLabel(v)}</span>
+              <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
+              <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
+            </div>`).join("")}
+        </div>
+      </div>
+      <button id="btn-help" class="help-btn" title="${t("help.title")}">?</button>
+    </div>`;
+  }
+  var toggle = (panel) => `<button class="toggle-btn small" data-panel="${panel}" title="${t("module.controls")}">\u25BC</button>`;
+  function headerTools(id) {
+    if (id === "analysis") return toggle("analysisControls");
+    if (id === "cof") return toggle("cofControls");
+    if (id === "guitar") return toggle("guitarControls");
+    if (id === "key") return `
+    <button id="btn-key-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
+    <button id="btn-key-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
+    <button id="btn-key-7"     class="size-ctrl-btn" title="${t("keyPanel.sevenths.title")}">7</button>
+    <button id="btn-key-neg"   class="size-ctrl-btn" title="${t("keyPanel.neg.title")}">${t("keyPanel.neg")}</button>
+    <button id="btn-key-par"   class="size-ctrl-btn" title="${t("keyPanel.par.title")}">${t("keyPanel.par")}</button>
+    <button id="btn-key-colt"  class="size-ctrl-btn" title="${t("keyPanel.colt.title")}">${t("keyPanel.colt")}</button>`;
+    return "";
+  }
+  function moduleBody(id, fieldsVisible) {
+    switch (id) {
+      case "chord":
+        return '<div id="chord-summary"></div>';
+      case "staff":
+        return `
+      <div id="staff-container" class="fit"></div>
+      <div class="ctrl-row module-controls" style="justify-content:center">
+        <button id="btn-staff-clef" class="size-ctrl-btn" title="${t("staff.clef.title")}"></button>
+      </div>`;
+      case "analysis":
+        return `
+      <div id="analysis-content"></div>
+      <div id="analysis-controls" class="module-controls">
+        <div class="ctrl-row">
+          <button id="btn-analysis-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
+          <button id="btn-analysis-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
+        </div>
+        <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
+          ${ANALYSIS_FIELD_KEYS.map(
+          (f) => `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? " active" : ""}"
+              title="${fieldTooltip(f)}">${fieldLabel(f)}</button>`
+        ).join("")}
+        </div>
+      </div>`;
+      case "cof":
+        return `
+      <div id="cof-container" class="fit"></div>
+      <div id="cof-controls" class="module-controls">
+        <div class="ctrl-row">
+          <button id="btn-cof-flat"   class="size-ctrl-btn" title="${t("cof.flat.title")}">b</button>
+          <button id="btn-cof-sharp"  class="size-ctrl-btn" title="${t("cof.sharp.title")}">#</button>
+          <button id="btn-cof-minor"  class="size-ctrl-btn" title="${t("cof.minor.title")}">m</button>
+          <button id="btn-cof-deg"    class="size-ctrl-btn" title="${t("cof.degrees.title")}">\xB0</button>
+          <button id="btn-cof-7"      class="size-ctrl-btn" title="${t("cof.sevenths.title")}">7</button>
+        </div>
+      </div>`;
+      case "guitar":
+        return '<div id="guitar-container"></div>';
+      case "key":
+        return '<div id="key-container"></div>';
+      case "piano":
+        return '<div id="piano-container" class="fit"></div>';
+      case "neck":
+        return '<div id="neck-container" class="fit"></div>';
+      case "velocity":
+        return '<div id="velocity-container"></div>';
+      case "history":
+        return '<div id="zone2-content"></div>';
+      case "song":
+        return '<div id="zone3-content"></div>';
+    }
+  }
+  function moduleFrame(id, _panels, fieldsVisible) {
+    return `
+    <section id="mod-${id}" class="module module-${id}" data-module="${id}">
+      <header class="module-header" title="${t("module.drag")}">
+        <span class="module-title">${t(`module.${id}`)}</span>
+        <span class="module-tools">${headerTools(id)}</span>
+        <button class="module-close" data-close="${id}" title="${t("module.hide")}">\xD7</button>
+      </header>
+      <div class="module-body">${moduleBody(id, fieldsVisible)}</div>
+      <div class="module-resize" title="${t("module.resize")}"></div>
+    </section>`;
+  }
+  var byPosition2 = (a, b) => a.y - b.y || a.x - b.x;
+  function applyGrid() {
+    const order = [...grid2].sort(byPosition2).map((c) => c.id);
+    for (const id of MODULE_IDS) {
+      const el = document.getElementById(`mod-${id}`);
+      if (!el) continue;
+      const c = grid2.find((cell) => cell.id === id);
+      el.classList.toggle("module-hidden", !c);
+      if (!c) continue;
+      el.style.gridColumn = `${c.x + 1} / span ${c.w}`;
+      el.style.gridRow = `${c.y + 1} / span ${c.h}`;
+      el.style.order = String(order.indexOf(id));
+      el.style.setProperty("--h", String(c.h));
+    }
+    renderLayoutMenu();
+  }
+  var narrow = () => matchMedia("(max-width: 720px)").matches;
+  function wireGrid() {
+    const gridEl = $("grid");
+    gridEl.addEventListener("click", (e) => {
+      const close = e.target.closest("[data-close]");
+      if (close) showModule(close.dataset.close, false);
+    });
+    gridEl.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || narrow() || document.body.classList.contains("presenting")) return;
+      const target = e.target;
+      const resize = target.closest(".module-resize");
+      const header = target.closest(".module-header");
+      if (!resize && (!header || target.closest("button, select, input"))) return;
+      const el = target.closest(".module");
+      const start = grid2.find((c) => c.id === el.dataset.module);
+      if (!start) return;
+      e.preventDefault();
+      const handle = resize ?? header;
+      handle.setPointerCapture(e.pointerId);
+      const cs = getComputedStyle(gridEl);
+      const gap = parseFloat(cs.columnGap) || 0;
+      const inner = gridEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const stepX = (inner - gap * (COLS - 1)) / COLS + gap;
+      const stepY = (parseFloat(cs.gridAutoRows) || 30) + (parseFloat(cs.rowGap) || 0);
+      const base = grid2;
+      let last = "";
+      el.classList.add("module-moving");
+      const move = (ev) => {
+        const dx = Math.round((ev.clientX - e.clientX) / stepX);
+        const dy = Math.round((ev.clientY - e.clientY) / stepY);
+        const cell = resize ? { ...start, w: start.w + dx, h: start.h + dy } : { ...start, x: start.x + dx, y: start.y + dy };
+        const sig = `${cell.x},${cell.y},${cell.w},${cell.h}`;
+        if (sig === last) return;
+        last = sig;
+        setGrid(placeCell(base, cell), false);
+      };
+      const up = () => {
+        handle.removeEventListener("pointermove", move);
+        handle.removeEventListener("pointerup", up);
+        handle.removeEventListener("pointercancel", up);
+        el.classList.remove("module-moving");
+        save("layout", grid2);
+      };
+      handle.addEventListener("pointermove", move);
+      handle.addEventListener("pointerup", up);
+      handle.addEventListener("pointercancel", up);
+    });
+  }
+  function watchFittedDiagrams() {
+    const fitAll = (el) => {
+      el.style.height = "";
+      const svgs = el.id === "guitar-container" ? el.querySelectorAll(":scope > div:first-child svg") : el.querySelectorAll(":scope > svg");
+      svgs.forEach((svg) => fitSvg(svg, el.id === "staff-container"));
+    };
+    const containers = [...document.querySelectorAll(".fit, #guitar-container")];
+    const observer = new MutationObserver((records) => {
+      const touched = new Set(records.map((r) => r.target.closest(".fit, #guitar-container")));
+      touched.forEach((el) => el && fitAll(el));
+    });
+    containers.forEach((el) => observer.observe(el, { childList: true, subtree: true }));
+  }
+  function renderLayoutMenu() {
+    const menu = document.getElementById("layout-menu");
+    if (!menu) return;
+    const names = Object.keys(savedLayouts).sort((a, b) => a.localeCompare(b));
+    menu.innerHTML = `
+    <div class="view-menu-title">${t("layout.presets")}</div>
+    <div class="layout-presets">
+      ${PRESET_IDS.map((p) => `<button class="ctrl-btn" data-preset="${p}" title="${t(`layout.preset.${p}.title`)}">${t(`layout.preset.${p}`)}</button>`).join("")}
+    </div>
+    ${names.length ? `<div class="view-menu-title">${t("layout.saved")}</div>` : ""}
+    ${names.map((n) => `
+      <div class="layout-saved-row">
+        <button class="ctrl-btn" data-saved="${escapeHtml(n)}">${escapeHtml(n)}</button>
+        <button class="ctrl-btn" data-delete="${escapeHtml(n)}" title="${t("layout.delete")}">\xD7</button>
+      </div>`).join("")}
+    <div class="layout-save-row">
+      <input id="layout-name" class="ctrl-select" placeholder="${t("layout.name")}" maxlength="40">
+      <button id="layout-save" class="ctrl-btn">${t("layout.save")}</button>
+    </div>
+    <div class="view-menu-title">${t("layout.panels")}</div>
+    <div class="layout-modules">
+      ${MODULE_IDS.map((id) => `
+        <label class="layout-module"><input type="checkbox" data-module="${id}"${isModuleShown(id) ? " checked" : ""}> ${t(`module.${id}`)}</label>`).join("")}
+    </div>
+    <div class="view-menu-hint">${t("layout.hint")}</div>`;
+  }
+  function wireLayoutMenu() {
+    const menu = $("layout-menu");
+    $("btn-layout").addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.classList.toggle("open");
+    });
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target) && e.target !== $("btn-layout")) menu.classList.remove("open");
+    });
+    menu.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const el = e.target;
+      const preset = el.closest("[data-preset]")?.dataset.preset;
+      const saved = el.closest("[data-saved]")?.dataset.saved;
+      const del = el.closest("[data-delete]")?.dataset.delete;
+      if (preset) applyPreset(preset);
+      else if (saved !== void 0 && savedLayouts[saved]) setGrid(savedLayouts[saved].map((c) => ({ ...c })));
+      else if (del !== void 0) {
+        delete savedLayouts[del];
+        save("layouts", savedLayouts);
+        renderLayoutMenu();
+      } else if (el.id === "layout-save") saveCurrentAs();
+    });
+    menu.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.target.id === "layout-name") saveCurrentAs();
+    });
+    menu.addEventListener("change", (e) => {
+      const box = e.target.closest("input[data-module]");
+      if (box) showModule(box.dataset.module, box.checked);
+    });
+  }
+  function saveCurrentAs() {
+    const input = document.getElementById("layout-name");
+    const name = input?.value.trim();
+    if (!name) {
+      input?.classList.add("invalid");
+      return;
+    }
+    savedLayouts[name] = grid2.map((c) => ({ ...c }));
+    save("layouts", savedLayouts);
+    renderLayoutMenu();
+  }
+
+  // src/view/presentation.ts
+  var presenting = false;
+  var onClose = () => {
+  };
+  function isPresenting() {
+    return presenting;
+  }
+  function fitRows() {
+    const gridEl = document.getElementById("grid");
+    if (!gridEl) return;
+    if (!presenting) {
+      gridEl.style.removeProperty("--row");
+      return;
+    }
+    const cs = getComputedStyle(gridEl);
+    const rows = Math.max(1, gridRows(currentGrid()));
+    const gap = parseFloat(cs.rowGap) || 0;
+    const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    gridEl.style.setProperty("--row", `${Math.max(4, (window.innerHeight - pad - gap * (rows - 1)) / rows)}px`);
+  }
+  onLayoutChange(fitRows);
+  window.addEventListener("resize", fitRows);
+  function openPresentation(close) {
+    if (presenting) return;
+    presenting = true;
+    onClose = close;
+    document.body.classList.add("presenting");
+    fitRows();
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    document.documentElement.requestFullscreen?.().then(fitRows, () => {
+    });
+  }
+  function closePresentation() {
+    if (!presenting) return;
+    presenting = false;
+    document.body.classList.remove("presenting");
+    fitRows();
+    document.removeEventListener("fullscreenchange", onFullscreenChange);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {
+    });
+    onClose();
+  }
+  function onFullscreenChange() {
+    if (!document.fullscreenElement) closePresentation();
+    else fitRows();
+  }
+
+  // src/diagrams/piano.ts
+  function renderPiano(container, noteNames, chordSymbol, onPress) {
+    const color2 = chordSymbol ? chordColor(chordSymbol) : neutralColor();
+    const colors = noteNames.map(() => color2);
+    container.innerHTML = Notae.renderPiano({
+      name: "",
+      keys: noteNames,
+      colors,
+      range: { from: "C2", to: "B5" }
+    }, {
+      pianoWhiteKeyColor: color("piano-white"),
+      pianoWhiteKeyStrokeColor: color("piano-white-stroke"),
+      pianoBlackKeyColor: color("piano-black"),
+      pianoBlackKeyStrokeColor: color("piano-black-stroke"),
+      stringLabelColor: color("piano-label"),
+      pianoBlackKeyLabelColor: color("piano-black-label")
+    });
+    container.querySelectorAll("rect[data-note]").forEach((el) => {
+      const midi = noteNameToMidi(el.dataset.note);
+      if (midi === null) return;
+      el.style.cursor = "pointer";
+      el.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        onPress?.(midi);
+      });
+    });
+  }
+
+  // src/diagrams/velocity.ts
+  function renderVelocity(container, notes) {
+    if (!notes.length) {
+      container.innerHTML = `<div class="vel-empty">${escapeHtml(t("velocity.empty"))}</div>`;
+      return;
+    }
+    const sorted = [...notes].sort((a, b) => b.midi - a.midi);
+    container.innerHTML = sorted.map((n) => `
+    <div class="vel-row" title="${escapeHtml(t("velocity.bar", { note: noteLabel(n.name), v: n.velocity }))}">
+      <span class="vel-note">${escapeHtml(noteLabel(n.name))}</span>
+      <span class="vel-bar"><span style="width:${(n.velocity / 127 * 100).toFixed(1)}%"></span></span>
+      <span class="vel-num">${n.velocity}</span>
+    </div>`).join("");
   }
 
   // src/diagrams/cof.ts
@@ -2350,23 +3015,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     });
   }
 
-  // src/ui/html.ts
-  function escapeHtml(text) {
-    return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  }
-
   // src/view/viewer.ts
-  function fitSvg(svg) {
-    if (!svg) return;
-    if (!svg.getAttribute("viewBox")) {
-      const w = parseFloat(svg.getAttribute("width") ?? ""), h = parseFloat(svg.getAttribute("height") ?? "");
-      if (w > 0 && h > 0) svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    }
-    svg.removeAttribute("width");
-    svg.removeAttribute("height");
-    svg.style.width = "100%";
-    svg.style.height = "100%";
-  }
   function cofOptions(key) {
     return {
       accidental: cofAccidentalFor(key, loadChoice("cof-accidental", ["flat", "sharp"], "flat")),
@@ -2421,73 +3070,6 @@ ${lower.length ? chordOf(lower) : empty}`;
       if (e.key && /^(guitar-|cof-|staff-clef|lang$|note-names$)/.test(e.key)) location.reload();
     });
     return true;
-  }
-
-  // src/view/presentation.ts
-  var overlay = null;
-  var tiles = [];
-  var last = "";
-  var onClose = () => {
-  };
-  function isPresenting() {
-    return overlay !== null;
-  }
-  function openPresentation(views, state2, close) {
-    if (overlay) return;
-    onClose = close;
-    overlay = document.createElement("div");
-    overlay.id = "presentation";
-    const diagrams = views.filter((v) => v !== "chord" && v !== "piano");
-    overlay.innerHTML = `
-    <button class="presentation-close" title="${t("present.close")}">\xD7</button>
-    <div class="pres-tile pres-chord view-chord" data-view="chord"></div>
-    ${diagrams.length ? `<div class="pres-row">${diagrams.map((v) => `<div class="pres-tile view-${v}" data-view="${v}"></div>`).join("")}</div>` : ""}
-    ${views.includes("piano") ? '<div class="pres-tile pres-piano view-piano" data-view="piano"></div>' : ""}`;
-    document.body.appendChild(overlay);
-    document.body.classList.add("presenting");
-    tiles = Array.from(overlay.querySelectorAll(".pres-tile")).map((el) => ({ view: el.dataset.view, el }));
-    overlay.querySelector(".presentation-close").addEventListener("click", closePresentation);
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-    document.documentElement.requestFullscreen?.().catch(() => {
-    });
-    last = "";
-    updatePresentation(state2);
-  }
-  function updatePresentation(state2) {
-    if (!overlay) return;
-    const sig = JSON.stringify(state2);
-    if (sig === last) return;
-    last = sig;
-    for (const { view, el } of tiles) renderView(view, el, state2);
-  }
-  function closePresentation() {
-    if (!overlay) return;
-    overlay.remove();
-    overlay = null;
-    tiles = [];
-    document.body.classList.remove("presenting");
-    document.removeEventListener("fullscreenchange", onFullscreenChange);
-    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {
-    });
-    onClose();
-  }
-  function onFullscreenChange() {
-    if (!document.fullscreenElement) closePresentation();
-  }
-
-  // src/diagrams/velocity.ts
-  function renderVelocity(container, notes) {
-    if (!notes.length) {
-      container.innerHTML = `<div class="vel-empty">${escapeHtml(t("velocity.empty"))}</div>`;
-      return;
-    }
-    const sorted = [...notes].sort((a, b) => b.midi - a.midi);
-    container.innerHTML = sorted.map((n) => `
-    <div class="vel-row" title="${escapeHtml(t("velocity.bar", { note: noteLabel(n.name), v: n.velocity }))}">
-      <span class="vel-note">${escapeHtml(noteLabel(n.name))}</span>
-      <span class="vel-bar"><span style="width:${(n.velocity / 127 * 100).toFixed(1)}%"></span></span>
-      <span class="vel-num">${n.velocity}</span>
-    </div>`).join("");
   }
 
   // src/ui/export.ts
@@ -2567,18 +3149,14 @@ ${lower.length ? chordOf(lower) : empty}`;
   // src/diagrams/neck.ts
   var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
   var NECK_FRETS = 12;
-  var neckSpacing = loadNumber("neck-spacing", 16, 10, 28);
-  function adjustNeckSpacing(delta) {
-    neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta));
-    save("neck-spacing", neckSpacing);
-  }
+  var NECK_SPACING = 16;
   function renderNeck(container, noteNames, preferFlats = true) {
     const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
     const frets = OPEN_MIDI.map((open2) => {
       const pos = midi.map((n) => n - open2).filter((f) => f >= 0 && f <= NECK_FRETS);
       return pos.length ? pos : [null];
     });
-    const sp = neckSpacing;
+    const sp = NECK_SPACING;
     const style = {
       ...fretboardColors(),
       numFrets: NECK_FRETS,
@@ -3122,11 +3700,11 @@ ${lower.length ? chordOf(lower) : empty}`;
       sections: song.sections.map((s) => {
         if (s.id !== sectionId) return s;
         const kept = [...s.measures];
-        const last2 = kept[kept.length - 1];
-        const reuse = last2 && last2.chords.length === 0;
+        const last = kept[kept.length - 1];
+        const reuse = last && last.chords.length === 0;
         if (reuse) kept.pop();
         const added = measures.map((syms, i) => ({
-          id: i === 0 && reuse ? last2.id : newId(),
+          id: i === 0 && reuse ? last.id : newId(),
           chords: syms.map((symbol) => ({ id: newId(), symbol, valid: isValidChordSymbol(symbol) }))
         }));
         return { ...s, measures: [...kept, ...added] };
@@ -3500,10 +4078,10 @@ ${lower.length ? chordOf(lower) : empty}`;
     wrap.style.borderLeft = `3px solid ${color2}`;
     const secHeader = document.createElement("div");
     secHeader.className = "section-header";
-    const toggle = document.createElement("span");
-    toggle.textContent = section.collapsed ? "\u25B6" : "\u25BC";
-    toggle.className = "section-toggle";
-    toggle.addEventListener("click", () => {
+    const toggle2 = document.createElement("span");
+    toggle2.textContent = section.collapsed ? "\u25B6" : "\u25BC";
+    toggle2.className = "section-toggle";
+    toggle2.addEventListener("click", () => {
       _song = updateSection(_song, section.id, { collapsed: !section.collapsed });
       saveSong(_song);
       h.onSongChange(_song);
@@ -3605,7 +4183,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     });
     delBtn.style.color = "var(--danger-soft)";
     delBtn.title = t("section.delete.title");
-    secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn);
+    secHeader.append(dragHandle, toggle2, nameInput, swatchEl, repeatBadge, dupBtn, delBtn);
     const addMeasureBtn = makeSmallBtn(t("section.addBar"), () => {
       _song = addMeasure(_song, section.id);
       saveSong(_song);
@@ -3988,7 +4566,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     "gesture.drag",
     "gesture.fill",
     "gesture.remove",
-    "gesture.piano"
+    "gesture.piano",
+    "gesture.layout"
   ];
   var keyText = (k) => k.startsWith("kbd.") ? t(k) : k;
   function reloadWith(apply) {
@@ -4116,354 +4695,10 @@ ${lower.length ? chordOf(lower) : empty}`;
     });
   }
 
-  // src/detector/analysis-panel.ts
-  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "secondary", "subs", "upper", "forte"];
-  var fieldLabel = (f) => t(`field.${f}`);
-  var fieldTooltip = (f) => t(`field.${f}.title`);
-  var rowLabel = (f) => t(`field.${f}.row`);
-  function renderChordSummary(detection, onAltSelect2) {
-    const el = document.getElementById("chord-summary");
-    if (!el) return;
-    if (!detection || detection.kind !== "chord") {
-      el.innerHTML = "";
-      return;
-    }
-    const symbol = detection.candidates[detection.selectedIndex];
-    const chordName = escapeHtml(chordLabel(symbol));
-    const color2 = chordColor(symbol);
-    const notes = escapeHtml(detection.notes.map((n) => noteLabel(n.replace(/(-?\d+)$/, ""))).join(" \xB7 "));
-    const alts = detection.candidates.slice(1, 7);
-    el.innerHTML = `
-    <div class="chord-summary-row">
-      <span class="chord-name-badge" style="background:${color2}22;border-left:3px solid ${color2}">${chordName}</span>
-      <span class="chord-notes">${notes}</span>
-      ${alts.map(
-      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(chordLabel(c))}</button>`
-    ).join("")}
-    </div>`;
-    el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
-      btn.addEventListener("click", () => onAltSelect2(parseInt(btn.dataset.idx)));
-    });
-  }
-  function renderZone1Analysis(detection, analysis, noteSet2, fieldsVisible, scale, onAltSelect2) {
-    renderChordSummary(detection, onAltSelect2);
-    const el = document.getElementById("analysis-content");
-    if (!el) return;
-    el.style.fontSize = scale + "px";
-    const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => fieldsVisible[f]).length;
-    el.style.minHeight = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
-    const colEl = document.getElementById("col-analysis");
-    if (colEl) {
-      const w = Math.round(scale * 19) + "px";
-      colEl.style.width = w;
-      colEl.style.flex = `0 0 ${w}`;
-    }
-    const row = (label, val) => `<div class="analysis-row">
-      <span class="analysis-label">${label}</span>
-      <span class="analysis-value">${escapeHtml(val)}</span>
-    </div>`;
-    const fieldRow = (f, val) => fieldsVisible[f] ? row(rowLabel(f), val ?? "\u2014") : "";
-    let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
-    let secondary = null, subs = null;
-    let voicing = null, plr = null, upper = null;
-    let extra = "";
-    if (detection?.kind === "note") {
-      extra = row(t("analysis.note"), `${noteLabel(detection.noteName)} \xB7 MIDI ${detection.midiNumber}`);
-    } else if (detection?.kind === "interval") {
-      extra = row(t("analysis.interval"), `${detection.intervalName} \xB7 ${t("analysis.semitones", { n: detection.semitones })}`) + row(t("analysis.inversion"), detection.inversionName);
-    } else if (detection?.kind === "chord" && analysis) {
-      roman = analysis.roman;
-      func_ = t(`fn.${analysis.function}`);
-      figuredBass = analysis.figuredBass || "\u2014";
-      diatonic = analysis.isDiatonic ? t("analysis.yes") : analysis.isBorrowed ? t("analysis.borrowed", { mode: analysis.borrowedFrom ?? "?" }) : t("analysis.chromatic");
-      scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
-      cadence = analysis.cadence ? cadenceLabel(analysis.cadence) : "\u2014";
-      if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget?.split("/")[1] ?? "?"}`;
-      if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
-      voicing = analysis.voicing;
-      plr = analysis.transformation;
-      if (analysis.upperStructures.length) upper = analysis.upperStructures.join(", ");
-    }
-    const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.map(noteLabel).join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
-    el.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
-  }
-
-  // src/ui/layout.ts
-  var viewLabel = (v) => t(`view.${v}`);
-  var $ = (id) => document.getElementById(id);
-  function loadPanels() {
-    return {
-      notation: true,
-      // always open on load (not persisted)
-      instruments: loadBool("panel-instruments", true),
-      colPiano: loadBool("panel-colPiano", true),
-      colNeck: loadBool("panel-colNeck", true),
-      colVelocity: loadBool("panel-colVelocity", true),
-      history: loadBool("panel-history", true),
-      song: loadBool("panel-song", true),
-      cofControls: loadBool("panel-cofControls", true),
-      guitarControls: loadBool("panel-guitarControls", true),
-      analysisControls: loadBool("panel-analysisControls", true),
-      colStaff: loadBool("panel-colStaff", true),
-      colAnalysis: loadBool("panel-colAnalysis", true),
-      key: loadBool("panel-key", true),
-      colCoF: loadBool("panel-colCoF", true),
-      colGuitar: loadBool("panel-colGuitar", true)
-    };
-  }
-  function renderLayout(panels, fieldsVisible) {
-    $("zone1").innerHTML = buildToolbar() + buildNotationPanel(panels, fieldsVisible) + buildKeyPanel() + buildInstrumentsPanel(panels) + '<div id="midi-banner"></div>';
-    buildZoneHeaders();
-  }
-  function wirePanelToggles(panels) {
-    document.querySelectorAll(".col-vis-btn, .toggle-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const panel = btn.dataset.col ?? btn.dataset.panel;
-        panels[panel] = !panels[panel];
-        if (panel !== "notation") save(`panel-${panel}`, panels[panel]);
-        applyPanelVisibility(panels);
-      });
-    });
-  }
-  function buildToolbar() {
-    return `
-    <div id="z1-toolbar" class="toolbar">
-      <span id="midi-status" class="midi-status">MIDI: \u2014</span>
-      <select id="midi-device" class="ctrl-select"></select>
-      <select id="midi-in-ch" class="ctrl-select" title="${t("midi.inChannel.title")}">
-        <option value="0">${t("midi.inChannel.all")}</option>
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.inChannel.one", { n: i + 1 })}</option>`).join("")}
-      </select>
-      <select id="midi-out" class="ctrl-select" title="${t("midi.out.title")}"><option value="">${t("midi.out.off")}</option></select>
-      <select id="midi-out-ch" class="ctrl-select" title="${t("midi.outChannel.title")}">
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.outChannel.one", { n: i + 1 })}</option>`).join("")}
-      </select>
-      <button id="btn-thru" class="mode-btn" title="${t("midi.thru.title")}">${t("midi.thru")}</button>
-      <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t("mode.normal.title")}">${t("mode.normal")}</button>
-      <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t("mode.hold.title")}">${t("mode.hold")}</button>
-      <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t("mode.arpeggio.title")}">${t("mode.arpeggio")}</button>
-      <button id="btn-keyboard" class="mode-btn" title="${t("keyboard.title")}">\u2328</button>
-      <span id="keyboard-status" class="auto-key-label"></span>
-      <select id="key-select" class="ctrl-select">
-        <option value="">${t("key.auto")}</option>
-        ${ALL_KEYS.map((k) => `<option value="${k}">${keyLabel(k)}</option>`).join("")}
-      </select>
-      <span id="auto-key-label" class="auto-key-label"></span>
-      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t("typed.placeholder")}" title="${t("typed.title")}" autocomplete="off" spellcheck="false">
-      <span class="toolbar-sep"></span>
-      <div id="audio-progress" class="audio-progress" title="${t("audio.title")}">
-        <div id="audio-progress-fill" class="audio-progress-fill"></div>
-        <span id="audio-status" class="audio-status">${t("audio.idle")}</span>
-      </div>
-      <button id="btn-play-chord" class="ctrl-btn" title="${t("audio.play.title")}">\u25B6</button>
-      <select id="audio-instrument" class="ctrl-select" title="${t("audio.instrument.title")}">
-        ${GM_INSTRUMENT_GROUPS.map(
-      (g) => `<optgroup label="${t(g.label)}">${g.instruments.map(
-        (i) => `<option value="${i}"${i === getCurrentInstrument() ? " selected" : ""}>${i.replace(/_/g, " ")}</option>`
-      ).join("")}</optgroup>`
-    ).join("")}
-      </select>
-      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t("audio.volume.title")}" class="volume-slider">
-      <div class="view-menu-wrap">
-        <button id="btn-present" class="ctrl-btn" title="${t("present.title")}">\u26F6</button>
-        <button id="btn-views" class="ctrl-btn" title="${t("views.title")}">\u29C9</button>
-        <div id="view-menu" class="view-menu">
-          <div class="view-menu-title">${t("views.open")}</div>
-          ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join("")}
-          <label class="view-menu-bg">${t("views.background")}
-            <select id="view-bg" class="ctrl-select">
-              ${Object.keys(VIEW_BACKGROUNDS).map((b) => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join("")}
-            </select>
-          </label>
-          <div class="view-menu-hint">${t("views.hint")}</div>
-          <div class="view-menu-title">${t("views.save")}</div>
-          ${["staff", "cof", "guitar", "piano"].map((v) => `
-            <div class="view-menu-export"><span>${viewLabel(v)}</span>
-              <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
-              <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
-            </div>`).join("")}
-        </div>
-      </div>
-      <button id="btn-help" class="help-btn" title="${t("help.title")}">?</button>
-    </div>`;
-  }
-  function buildNotationPanel(panels, fieldsVisible) {
-    return `
-    <div id="notation-panel" class="zone-panel">
-      <div class="panel-header">
-        <span>${t("notation.title")}</span>
-        <div class="col-vis-row">
-          <button class="col-vis-btn${panels.colStaff ? " active" : ""}" data-col="colStaff" title="${t("col.staff.title")}">${t("col.staff")}</button>
-          <button class="col-vis-btn${panels.colAnalysis ? " active" : ""}" data-col="colAnalysis" title="${t("col.analysis.title")}">${t("col.analysis")}</button>
-          <button class="col-vis-btn${panels.colCoF ? " active" : ""}" data-col="colCoF" title="${t("col.cof.title")}">${t("col.cof")}</button>
-          <button class="col-vis-btn${panels.colGuitar ? " active" : ""}" data-col="colGuitar" title="${t("col.guitar.title")}">${t("col.guitar")}</button>
-        </div>
-        <button class="toggle-btn" data-panel="notation">\u25BC</button>
-      </div>
-      <div id="notation-content">
-        <div class="col-auto" id="col-staff">
-          <div class="col-label">${t("staff.label")}</div>
-          <div id="chord-summary"></div>
-          <div id="staff-container"></div>
-          <div class="ctrl-row" style="justify-content:center">
-            <button id="btn-staff-clef" class="size-ctrl-btn" title="${t("staff.clef.title")}"></button>
-            <button id="btn-staff-minus" class="size-ctrl-btn" title="${t("staff.smaller")}">\u2212</button>
-            <button id="btn-staff-plus"  class="size-ctrl-btn" title="${t("staff.larger")}">+</button>
-          </div>
-        </div>
-        <div class="col-analysis" id="col-analysis">
-          <div class="col-header">
-            <div class="col-label">${t("analysis.label")}</div>
-            <button class="toggle-btn small" data-panel="analysisControls">\u25BC</button>
-          </div>
-          <div id="analysis-content"></div>
-          <div id="analysis-controls">
-            <div class="ctrl-row">
-              <button id="btn-analysis-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
-              <button id="btn-analysis-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
-            </div>
-            <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
-              ${ANALYSIS_FIELD_KEYS.map(
-      (f) => `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? " active" : ""}"
-                  title="${fieldTooltip(f)}">${fieldLabel(f)}</button>`
-    ).join("")}
-            </div>
-          </div>
-        </div>
-        <div class="col-auto" id="col-cof">
-          <div class="col-header">
-            <div class="col-label">${t("cof.label")}</div>
-            <button class="toggle-btn small" data-panel="cofControls">\u25BC</button>
-          </div>
-          <div id="cof-container"></div>
-          <div id="cof-controls">
-            <div class="ctrl-row">
-              <button id="btn-cof-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
-              <button id="btn-cof-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
-            </div>
-            <div class="ctrl-row">
-              <button id="btn-cof-flat"   class="size-ctrl-btn" title="${t("cof.flat.title")}">b</button>
-              <button id="btn-cof-sharp"  class="size-ctrl-btn" title="${t("cof.sharp.title")}">#</button>
-              <button id="btn-cof-minor"  class="size-ctrl-btn" title="${t("cof.minor.title")}">m</button>
-              <button id="btn-cof-deg"    class="size-ctrl-btn" title="${t("cof.degrees.title")}">\xB0</button>
-              <button id="btn-cof-7"      class="size-ctrl-btn" title="${t("cof.sevenths.title")}">7</button>
-            </div>
-          </div>
-        </div>
-        <div class="col-auto" id="col-guitar">
-          <div class="col-header">
-            <div class="col-label">${t("guitar.label")}</div>
-            <button class="toggle-btn small" data-panel="guitarControls">\u25BC</button>
-          </div>
-          <div id="guitar-container"></div>
-        </div>
-      </div>
-    </div>`;
-  }
-  function buildKeyPanel() {
-    return `
-    <div id="key-panel" class="zone-panel">
-      <div class="panel-header">
-        <span>${t("keyPanel.title")}</span>
-        <div class="ctrl-row">
-          <button id="btn-key-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
-          <button id="btn-key-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
-          <button id="btn-key-7"     class="size-ctrl-btn" title="${t("keyPanel.sevenths.title")}">7</button>
-          <button id="btn-key-neg"   class="size-ctrl-btn" title="${t("keyPanel.neg.title")}">${t("keyPanel.neg")}</button>
-          <button id="btn-key-par"   class="size-ctrl-btn" title="${t("keyPanel.par.title")}">${t("keyPanel.par")}</button>
-          <button id="btn-key-colt"  class="size-ctrl-btn" title="${t("keyPanel.colt.title")}">${t("keyPanel.colt")}</button>
-        </div>
-        <button class="toggle-btn" data-panel="key">\u25BC</button>
-      </div>
-      <div id="key-container"></div>
-    </div>`;
-  }
-  function buildInstrumentsPanel(panels) {
-    return `
-    <div id="instruments-panel" class="zone-panel">
-      <div class="panel-header">
-        <span>${t("instruments.title")}</span>
-        <div class="col-vis-row">
-          <button class="col-vis-btn${panels.colPiano ? " active" : ""}" data-col="colPiano" title="${t("col.piano.title")}">${t("col.piano")}</button>
-          <button class="col-vis-btn${panels.colNeck ? " active" : ""}" data-col="colNeck"  title="${t("col.neck.title")}">${t("col.neck")}</button>
-          <button class="col-vis-btn${panels.colVelocity ? " active" : ""}" data-col="colVelocity" title="${t("col.velocity.title")}">${t("col.velocity")}</button>
-        </div>
-        <button class="toggle-btn" data-panel="instruments">\u25BC</button>
-      </div>
-      <div id="instruments-content">
-        <div id="col-piano"><div id="piano-container"></div></div>
-        <div id="col-velocity"><div class="col-label">${t("velocity.label")}</div><div id="velocity-container"></div></div>
-        <div id="col-neck">
-          <div id="neck-container"></div>
-          <div class="ctrl-row" style="justify-content:center;margin-top:4px">
-            <button id="btn-neck-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
-            <button id="btn-neck-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }
-  function buildZoneHeaders() {
-    $("zone2").innerHTML = `
-    <div class="zone-header">
-      <span class="zone-title">${t("history.title")}</span>
-      <button class="toggle-btn" data-panel="history">\u25BC</button>
-    </div>
-    <div id="zone2-content"></div>`;
-    $("zone3").innerHTML = `
-    <div class="zone-header">
-      <span class="zone-title">${t("song.title")}</span>
-      <button class="toggle-btn" data-panel="song">\u25BC</button>
-    </div>
-    <div id="zone3-content"></div>`;
-  }
-  function applyPanelVisibility(panels) {
-    const nc = $("notation-content");
-    if (nc) nc.style.display = panels.notation ? "flex" : "none";
-    const ic = $("instruments-content");
-    if (ic) ic.style.display = panels.instruments ? "" : "none";
-    const cp = $("col-piano");
-    if (cp) cp.style.display = panels.colPiano ? "" : "none";
-    const cn = $("col-neck");
-    if (cn) cn.style.display = panels.colNeck ? "" : "none";
-    const cv = $("col-velocity");
-    if (cv) cv.style.display = panels.colVelocity ? "" : "none";
-    const z2 = $("zone2-content");
-    if (z2) z2.style.display = panels.history ? "" : "none";
-    const z3 = $("zone3-content");
-    if (z3) z3.style.display = panels.song ? "" : "none";
-    const cc = $("cof-controls");
-    if (cc) cc.style.display = panels.cofControls ? "" : "none";
-    setGuitarControlsVisible(panels.guitarControls);
-    const gcw = document.getElementById("guitar-ctrl-wrap");
-    if (gcw) gcw.style.display = panels.guitarControls ? "" : "none";
-    const ac = $("analysis-controls");
-    if (ac) ac.style.display = panels.analysisControls ? "" : "none";
-    const kp = $("key-container");
-    if (kp) kp.style.display = panels.key ? "" : "none";
-    const cs = $("col-staff");
-    if (cs) cs.style.display = panels.colStaff ? "" : "none";
-    const ca = $("col-analysis");
-    if (ca) ca.style.display = panels.colAnalysis ? "" : "none";
-    const ccof = $("col-cof");
-    if (ccof) ccof.style.display = panels.colCoF ? "" : "none";
-    const cg = $("col-guitar");
-    if (cg) cg.style.display = panels.colGuitar ? "" : "none";
-    document.querySelectorAll(".col-vis-btn").forEach((btn) => {
-      const col = btn.dataset.col;
-      if (col) btn.classList.toggle("active", !!panels[col]);
-    });
-    ["notation", "instruments", "history", "song", "cofControls", "guitarControls", "analysisControls", "key"].forEach((key) => {
-      const btn = document.querySelector(`.toggle-btn[data-panel="${key}"]`);
-      if (btn) btn.textContent = panels[key] ? "\u25B2" : "\u25BC";
-    });
-  }
-
   // src/app.ts
-  var staffWidth = 380;
-  var staffScale = loadNumber("staff-scale", 2, 1, 3);
+  var STAFF_WIDTH = 380;
+  var COF_SIZE = 300;
   var staffClef = loadChoice("staff-clef", STAFF_CLEFS, "grand");
-  var cofSize = loadNumber("cof-size", 160, 100, 400);
   var cofAccidental = loadChoice("cof-accidental", ["flat", "sharp"], "flat");
   var cofShowMinor = loadBool("cof-show-minor", true);
   var cofShowDegrees = loadBool("cof-show-degrees", false);
@@ -4677,14 +4912,6 @@ ${lower.length ? chordOf(lower) : empty}`;
         renderDiagrams();
       });
     };
-    onCofControl("btn-cof-minus", () => {
-      cofSize = Math.max(100, cofSize - 20);
-      save("cof-size", cofSize);
-    });
-    onCofControl("btn-cof-plus", () => {
-      cofSize = Math.min(400, cofSize + 20);
-      save("cof-size", cofSize);
-    });
     onCofControl("btn-cof-flat", () => {
       cofAccidental = "flat";
       save("cof-accidental", cofAccidental);
@@ -4715,11 +4942,6 @@ ${lower.length ? chordOf(lower) : empty}`;
       save("analysis-scale", analysisScale);
       renderAnalysisPanel();
     });
-    const resizeStaff = (delta) => {
-      staffScale = Math.min(3, Math.max(1, staffScale + delta));
-      save("staff-scale", staffScale);
-      renderStaff($2("staff-container"), displayedNotes(), staffWidth, analysisKey(), staffScale, staffClef);
-    };
     const clefBtn = $2("btn-staff-clef");
     const showClef = () => {
       clefBtn.textContent = t(`staff.clef.${staffClef}`);
@@ -4730,17 +4952,6 @@ ${lower.length ? chordOf(lower) : empty}`;
       save("staff-clef", staffClef);
       showClef();
       renderZone1Diagrams(displayedNotes(), selectedSymbol());
-    });
-    $2("btn-staff-minus").addEventListener("click", () => resizeStaff(-0.25));
-    $2("btn-staff-plus").addEventListener("click", () => resizeStaff(0.25));
-    const reRenderNeck = () => renderNeck($2("neck-container"), displayedNotes(), !keyPrefersSharps(analysisKey()));
-    $2("btn-neck-minus").addEventListener("click", () => {
-      adjustNeckSpacing(-2);
-      reRenderNeck();
-    });
-    $2("btn-neck-plus").addEventListener("click", () => {
-      adjustNeckSpacing(2);
-      reRenderNeck();
     });
     ANALYSIS_FIELD_KEYS.forEach((f) => {
       $2(`btn-field-${f}`).addEventListener("click", () => {
@@ -4812,6 +5023,14 @@ ${lower.length ? chordOf(lower) : empty}`;
     renderLayout(state.panels, analysisFieldsVisible);
     wireLayoutEvents();
     applyPanelVisibility(state.panels);
+    let shown = currentGrid().map((c) => c.id).sort().join();
+    onLayoutChange(() => {
+      const now = currentGrid().map((c) => c.id).sort().join();
+      if (now === shown) return;
+      shown = now;
+      for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k];
+      renderDetector();
+    });
   }
   var autoKey = null;
   var cadencePrev = null;
@@ -4880,7 +5099,6 @@ ${lower.length ? chordOf(lower) : empty}`;
   function publishView() {
     const view = viewState();
     sendView(view);
-    updatePresentation(view);
   }
   function viewState() {
     const d = state.detection;
@@ -4896,22 +5114,13 @@ ${lower.length ? chordOf(lower) : empty}`;
       guitarVoicing: getGuitarVoicingIndex()
     };
   }
-  function presentedViews() {
-    const p = state.panels;
-    const views = ["chord"];
-    if (p.notation && p.colStaff) views.push("staff");
-    if (p.notation && p.colCoF) views.push("cof");
-    if (p.notation && p.colGuitar) views.push("guitar");
-    if (p.instruments && p.colPiano) views.push("piano");
-    return views;
-  }
   function togglePresentation() {
     if (isPresenting()) {
       closePresentation();
       return;
     }
     $2("view-menu").classList.remove("open");
-    openPresentation(presentedViews(), viewState(), () => $2("btn-present").classList.remove("active-mode"));
+    openPresentation(() => $2("btn-present").classList.remove("active-mode"));
     $2("btn-present").classList.add("active-mode");
   }
   var viewBackground = loadChoice("view-bg", Object.keys(VIEW_BACKGROUNDS), "green");
@@ -5109,13 +5318,13 @@ ${lower.length ? chordOf(lower) : empty}`;
     const notes = noteNames.join(" ");
     syncCofAccidentalButtons();
     const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
-    renderIfChanged("staff", `${notes}|${key}|${staffScale}|${staffClef}`, () => renderStaff($2("staff-container"), noteNames, staffWidth, key, staffScale, staffClef));
+    renderIfChanged("staff", `${notes}|${key}|${staffClef}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef));
     renderIfChanged("piano", `${notes}|${chordSymbol}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress));
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
     renderIfChanged("neck", `${notes}|${keyPrefersSharps(key)}`, () => renderNeck($2("neck-container"), noteNames, !keyPrefersSharps(key)));
     renderIfChanged("guitar", `${chordSymbol}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames));
-    renderIfChanged("cof", `${key}|${chordSymbol}|${cofSize}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, cofSize, cofOpts));
+    renderIfChanged("cof", `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, COF_SIZE, cofOpts));
     const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale };
     const keyTitle = key ? state.activeKey ? keyLabel(key) : t("keyPanel.auto", { key: keyLabel(key) }) : "";
     renderIfChanged("key", `${keyTitle}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () => renderKeyExplorer($2("key-container"), key ? buildKeyMap(key, keySevenths) : null, keyTitle, chordSymbol, onKeyChordClick, keyOpts));

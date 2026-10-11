@@ -11,22 +11,10 @@ import { renderCircleOfFifths, cofAccidentalFor } from '../diagrams/cof'
 import type { CofOptions } from '../diagrams/cof'
 import { chordColor, neutralColor } from '../theory/chord'
 import { escapeHtml } from '../ui/html'
+import { fitSvg } from '../ui/fit'
 import { loadBool, loadChoice } from '../ui/storage'
 import { t, applyDocumentLang } from '../i18n/i18n'
 import { applyTheme, color } from '../ui/theme'
-
-/** Makes an SVG scale to its container: a viewBox from its size, no fixed width or height. */
-function fitSvg(svg: SVGSVGElement | null) {
-  if (!svg) return
-  if (!svg.getAttribute('viewBox')) {
-    const w = parseFloat(svg.getAttribute('width') ?? ''), h = parseFloat(svg.getAttribute('height') ?? '')
-    if (w > 0 && h > 0) svg.setAttribute('viewBox', `0 0 ${w} ${h}`)
-  }
-  svg.removeAttribute('width')
-  svg.removeAttribute('height')
-  svg.style.width = '100%'
-  svg.style.height = '100%'
-}
 
 function cofOptions(key: string | null): CofOptions {
   return {

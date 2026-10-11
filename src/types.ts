@@ -109,21 +109,10 @@ export interface AppState {
   activeCursorId: string | null        // id of active SongChord slot (Zone 3)
   historyActiveCursorId: string | null // id of active HistoryEntry chip (Zone 2)
   captureTargetId: string | null       // SongChord.id waiting for MIDI capture
+  // Control rows shown under a panel; which panels show is the layout's (ui/layout.ts)
   panels: {
-    notation: boolean
-    instruments: boolean
-    colPiano: boolean
-    colNeck: boolean
-    colVelocity: boolean
-    history: boolean
-    song: boolean
     cofControls: boolean
     guitarControls: boolean
     analysisControls: boolean
-    colStaff: boolean
-    colAnalysis: boolean
-    key: boolean
-    colCoF: boolean
-    colGuitar: boolean
   }
 }

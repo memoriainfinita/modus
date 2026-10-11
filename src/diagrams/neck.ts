@@ -1,5 +1,4 @@
 import { noteNameToMidi } from '../theory/notes'
-import { loadNumber, save } from '../ui/storage'
 import { fretboardColors } from './fretboard-style'
 import { color } from '../ui/theme'
 import { localizeDrawnNoteNames } from '../i18n/i18n'
@@ -7,11 +6,8 @@ import { localizeDrawnNoteNames } from '../i18n/i18n'
 const OPEN_MIDI = [40, 45, 50, 55, 59, 64]  // E2 A2 D3 G3 B3 E4
 const NECK_FRETS = 12
 
-let neckSpacing = loadNumber('neck-spacing', 16, 10, 28)
-export function adjustNeckSpacing(delta: number) {
-  neckSpacing = Math.min(28, Math.max(10, neckSpacing + delta))
-  save('neck-spacing', neckSpacing)
-}
+// Drawn at one spacing and scaled to its panel
+const NECK_SPACING = 16
 
 export function renderNeck(container: HTMLElement, noteNames: string[], preferFlats = true) {
   const midi = noteNames.map(noteNameToMidi).filter((n): n is number => n !== null)
@@ -21,7 +17,7 @@ export function renderNeck(container: HTMLElement, noteNames: string[], preferFl
     return pos.length ? pos : [null]
   })
 
-  const sp = neckSpacing
+  const sp = NECK_SPACING
   const style = {
     ...fretboardColors(),
     numFrets: NECK_FRETS,

@@ -68,8 +68,40 @@ export const en = {
   'gm.soundFx': 'Sound FX',
 
   // Toolbar: views, presentation, help
-  'present.title': 'Presentation: large, no controls, full screen (P; Esc to leave)',
-  'present.close': 'Leave presentation (Esc)',
+  'present.title': 'Presentation: this layout without controls, full screen (P; Esc to leave)',
+  'layout.title': 'Layout: ready-made and saved layouts, which panels show',
+  'layout.presets': 'Layouts',
+  'layout.preset.standard': 'Standard',
+  'layout.preset.standard.title': 'Every panel, as the page was',
+  'layout.preset.study': 'Study',
+  'layout.preset.study.title': 'Key and analysis large, what is played beside them',
+  'layout.preset.class': 'Class',
+  'layout.preset.class.title': 'Few panels, large: for a projector, with P',
+  'layout.preset.transcription': 'Transcription',
+  'layout.preset.transcription.title': 'History and song next to the piano and fretboard',
+  'layout.preset.recording': 'Recording',
+  'layout.preset.recording.title': 'Chord, staff, guitar and piano for a camera or screen capture',
+  'layout.saved': 'Saved',
+  'layout.delete': 'Delete this layout',
+  'layout.name': 'Name',
+  'layout.save': 'Save this one',
+  'layout.panels': 'Panels',
+  'layout.hint': 'Drag a panel by its title, resize it from its corner: it snaps to the grid.',
+  'module.chord': 'Chord',
+  'module.staff': 'Staff',
+  'module.analysis': 'Analysis',
+  'module.cof': 'Circle of fifths',
+  'module.guitar': 'Guitar',
+  'module.key': 'Key',
+  'module.piano': 'Piano',
+  'module.neck': 'Fretboard',
+  'module.velocity': 'Velocity',
+  'module.history': 'History',
+  'module.song': 'Song',
+  'module.drag': 'Drag to move',
+  'module.hide': 'Hide this panel (the ▦ menu shows it again)',
+  'module.resize': 'Drag to resize',
+  'module.controls': 'Show / hide the controls',
   'views.title': 'View windows for OBS, and diagram export (SVG, PNG)',
   'views.open': 'Open a view window',
   'views.background': 'Background',
@@ -91,24 +123,10 @@ export const en = {
   'ctrl.larger': 'Larger',
 
   // Notation panel
-  'notation.title': 'Notation',
-  'col.staff': 'St',
-  'col.analysis': 'An',
-  'col.cof': 'CoF',
-  'col.guitar': 'Git',
-  'col.staff.title': 'Staff',
-  'col.analysis.title': 'Analysis',
-  'col.cof.title': 'Circle of Fifths',
-  'col.guitar.title': 'Guitar',
-  'staff.label': 'Staff',
   'staff.clef.title': 'Staves: grand (treble and bass, split at middle C), treble only, bass only',
   'staff.clef.grand': 'Grand',
   'staff.clef.treble': 'Treble',
   'staff.clef.bass': 'Bass',
-  'staff.smaller': 'Smaller staff',
-  'staff.larger': 'Larger staff',
-  'analysis.label': 'Analysis',
-  'cof.label': 'CoF',
   'cof.flat.title': 'Show flat enharmonics (Gb, Db…)',
   'cof.sharp.title': 'Show sharp enharmonics (F#, C#…)',
   'cof.spelledInKey': 'Spelled as in {key}; b / # apply without a key',
@@ -117,7 +135,6 @@ export const en = {
   'cof.sevenths.title': 'Show 7th chords (maj7, m7, ø7)',
   'cof.segment.tip': 'Click: play · double-click: set as key',
   'cof.segment.play': 'Click: play',
-  'guitar.label': 'Guitar',
 
   // Analysis fields: button label, tooltip, row label
   'field.roman': 'Roman',
@@ -201,7 +218,6 @@ export const en = {
   'voicing.missing': 'no {notes}',
 
   // Key panel
-  'keyPanel.title': 'Key',
   'keyPanel.sevenths.title': 'Seventh chords instead of triads',
   'keyPanel.neg': 'Neg',
   'keyPanel.neg.title': 'Show/hide negative harmony',
@@ -224,14 +240,6 @@ export const en = {
   'keyPanel.characteristic': 'carries its characteristic note',
 
   // Instruments panel
-  'instruments.title': 'Instruments',
-  'col.piano': 'Pi',
-  'col.neck': 'Fr',
-  'col.velocity': 'Ve',
-  'col.piano.title': 'Piano',
-  'col.neck.title': 'Fretboard',
-  'col.velocity.title': 'Velocity of each note',
-  'velocity.label': 'Velocity',
   'velocity.empty': 'Play to see how hard each note is struck',
   'velocity.bar': '{note}: velocity {v} of 127',
 
@@ -240,8 +248,6 @@ export const en = {
   'guitar.prev': 'Previous voicing',
   'guitar.next': 'Next voicing',
   'guitar.string': 'String {n}',
-  'guitar.smaller': 'Smaller diagram',
-  'guitar.larger': 'Larger diagram',
   'guitar.labels.off': 'Off',
   'guitar.labels.off.title': 'Hide string labels',
   'guitar.labels.tuning.title': 'Show open string notes (tuning)',
@@ -254,7 +260,6 @@ export const en = {
   'guitar.tuner.title': 'Edit string tuning',
 
   // History
-  'history.title': 'History',
   'history.clear': 'Clear',
   'history.clear.title': 'Clear history (C) — can be undone',
   'history.cleared': 'History cleared ({n})',
@@ -264,7 +269,6 @@ export const en = {
   'history.modulation': 'Modulation to {key}: from here the numerals are read in it',
 
   // Song
-  'song.title': 'Song Structure',
   'song.untitled': 'Untitled',
   'song.saved.title': 'Saved songs',
   'song.new': 'New',
@@ -347,7 +351,7 @@ export const en = {
   'shortcut.clear': 'Clear history (undo in the toast)',
   'shortcut.escape': 'Drop a held chord, clear cursor, stop MIDI fill',
   'shortcut.keyboard': 'Play with the computer keyboard (M or Esc to stop)',
-  'shortcut.present': 'Presentation: large, no controls, full screen (P or Esc to leave)',
+  'shortcut.present': 'Presentation: this layout without controls, full screen (P or Esc to leave)',
   'shortcut.type': 'Type a chord name',
   'shortcut.candidate': 'Select chord candidate',
   'shortcut.help': 'Show / hide this panel',
@@ -358,6 +362,7 @@ export const en = {
   'gesture.fill': '⊙ on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.',
   'gesture.remove': 'Right-click a history chip to remove it. Removals and Clear can be undone from the toast.',
   'gesture.piano': 'Click the on-screen piano to play: in Hold each click adds or removes a note of the chord.',
+  'gesture.layout': 'Drag a panel by its title to move it, by its corner to resize it; × hides it, the ▦ menu shows it again.',
 }
 
 export type StringKey = keyof typeof en
