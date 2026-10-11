@@ -607,8 +607,14 @@
     const cacheKey = `${chordSymbol}|${key}`;
     if (romanCache.has(cacheKey)) return romanCache.get(cacheKey);
     const chord = tryParseChord(chordSymbol);
-    const a = chord ? tryUMT("progression", () => UMT.Harmony.analyzeProgression([chord], key).analysis[0], null) : null;
-    const info = a ? {
+    const a = chord ? tryUMT("progression", () => UMT.Harmony.analyzeProgression([chord], key, WRITTEN).analysis[0], null) : null;
+    const info = a ? toRomanInfo(a) : null;
+    romanCache.set(cacheKey, info);
+    return info;
+  }
+  var WRITTEN = { spelling: "written" };
+  function toRomanInfo(a) {
+    return {
       roman: a.isSecondary && a.secondaryTarget ? a.secondaryTarget : a.roman ?? "?",
       degree: a.roman ?? "?",
       function: a.function ?? "unknown",
@@ -617,19 +623,32 @@
       borrowedFrom: a.borrowedFrom,
       isSecondary: a.isSecondary ?? false,
       secondaryTarget: a.secondaryTarget
-    } : null;
-    romanCache.set(cacheKey, info);
-    return info;
+    };
   }
-  function progressionCadences(chords, key) {
-    const none = chords.map(() => null);
-    if (!key || chords.length < 2) return none;
+  function analyzeChordProgression(chords, key) {
+    const none = (k) => chords.map(() => ({ key: k, info: null, cadence: null }));
+    if (!key) return none(null);
     const parsed = chords.map(tryParseChord);
-    if (parsed.some((c) => !c)) {
-      return chords.map((_, i) => parsed[i] && parsed[i + 1] ? progressionCadences([chords[i], chords[i + 1]], key)[0] : null);
-    }
-    const analysis = tryUMT("progression", () => UMT.Harmony.analyzeProgression(parsed, key).analysis, []);
-    return chords.map((_, i) => analysis[i]?.cadenceWithNext ?? null);
+    const readable = parsed.flatMap((c, i) => c ? [i] : []);
+    if (!readable.length) return none(key);
+    const analysis = tryUMT(
+      "progression",
+      () => UMT.Harmony.analyzeProgression(readable.map((i) => parsed[i]), key, WRITTEN).analysis,
+      []
+    );
+    const steps = none(key);
+    let local = key;
+    readable.forEach((orig, j) => {
+      const a = analysis[j];
+      if (!a) return;
+      local = normalizeKey(a.key) ?? local;
+      const nextIsNeighbour = readable[j + 1] === orig + 1;
+      steps[orig] = { key: local, info: toRomanInfo(a), cadence: nextIsNeighbour ? a.cadenceWithNext ?? null : null };
+    });
+    steps.forEach((s, i) => {
+      if (!s.info && i > 0) s.key = steps[i - 1].key;
+    });
+    return steps;
   }
   function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol) {
     const chord = tryParseChord(chordSymbol);
@@ -1928,10 +1947,12 @@ ${lower.length ? chordOf(lower) : empty}`;
     const strip = document.createElement("div");
     strip.className = "history-strip";
     const shown = entries.map((e) => ({ ...e, symbol: spellChordSymbol(e.symbol, activeKey) }));
-    const cadences = progressionCadences(shown.map((e) => e.symbol).reverse(), activeKey).reverse();
+    const steps = analyzeChordProgression(shown.map((e) => e.symbol).reverse(), activeKey).reverse();
     shown.forEach((entry, i) => {
-      const cadence = i + 1 < shown.length ? cadences[i + 1] : null;
-      const analysis = romanInKey(entry.symbol, activeKey);
+      const older = i + 1 < shown.length ? steps[i + 1] : null;
+      const cadence = older?.cadence ?? null;
+      const modulation = older && steps[i].key && steps[i].key !== older.key ? steps[i].key : null;
+      const analysis = steps[i].info;
       const roman = analysis?.roman ?? "\u2014";
       const fn = analysis?.function ?? "unknown";
       const color = FUNCTION_COLORS[fn] ?? "#6b7280";
@@ -1949,7 +1970,7 @@ ${lower.length ? chordOf(lower) : empty}`;
         if (entry.notes.length > 0) playNoteNames(entry.notes);
         else playChord(entry.symbol);
       });
-      chip.title = `${entry.symbol} \u2014 click to play, drag to song, right-click to remove`;
+      chip.title = `${entry.symbol}${steps[i].key ? ` (${roman} in ${steps[i].key})` : ""} \u2014 click to play, drag to song, right-click to remove`;
       chip.draggable = true;
       chip.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol, notes: entry.notes }));
@@ -1966,6 +1987,13 @@ ${lower.length ? chordOf(lower) : empty}`;
         showUndo(`Removed ${entry.symbol}`, () => restoreEntries(before));
       });
       strip.appendChild(chip);
+      if (modulation) {
+        const tag = document.createElement("span");
+        tag.className = "history-modulation";
+        tag.textContent = `\u2192 ${modulation}`;
+        tag.title = `Modulation to ${modulation}: from here the numerals are read in it`;
+        strip.appendChild(tag);
+      }
       if (cadence) {
         const tag = document.createElement("span");
         tag.className = "history-cadence";

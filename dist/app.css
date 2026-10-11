@@ -572,6 +572,17 @@ body {
   margin: 0 -2px;
   flex-shrink: 0;
 }
+.history-modulation {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fbbf24;
+  white-space: nowrap;
+  padding: 1px 6px;
+  border: 1px solid #92400e;
+  border-radius: 3px;
+  margin: 0 -2px;
+  flex-shrink: 0;
+}
 .history-chip-roman {
   font-size: 10px;
   color: #9ca3af;
