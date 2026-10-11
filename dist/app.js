@@ -696,6 +696,7 @@
     "module.cof": "Circle of fifths",
     "module.guitar": "Strings",
     "module.explain": "Explanation",
+    "module.progressions": "Progressions",
     "module.key": "Key",
     "module.piano": "Piano",
     "module.velocity": "Velocity",
@@ -917,6 +918,41 @@
     "ex.vl.seventh": "The seventh of a dominant seventh asks to fall by step.",
     "ex.interval": "{n} semitones. Its inversion, with the lower note an octave up, is a {inv}: together they make an octave.",
     "ex.cadence.title": "{cadence}: {text}",
+    "prog.select.title": "A named progression, written in the key",
+    "prog.play.title": "Play the progression, a bar every 2.4 s",
+    "prog.stop.title": "Stop",
+    "prog.ii-V-I": "ii-V-I",
+    "prog.ii-V-I.about": "The cornerstone of jazz harmony: subdominant (ii7), dominant (V7), tonic (Imaj7). The root falls a fifth each time, and the seventh of each chord falls a step to the third of the next.",
+    "prog.ii-V-i": "ii-V-i (minor)",
+    "prog.ii-V-i.about": "The ii-V-I of a minor key: a half-diminished ii, a dominant V7 with the leading tone raised as in harmonic minor, and a minor tonic.",
+    "prog.turnaround-jazz": "Jazz turnaround (I-vi-ii-V)",
+    "prog.turnaround-jazz.about": "The turnaround that takes the last bars of a tune back to its start: from vi the roots fall by fifths to the dominant.",
+    "prog.backdoor-ii-V": "Backdoor ii-V",
+    "prog.backdoor-ii-V.about": "iv7, \u266DVII7 and I, the first two borrowed from the minor: \u266DVII7 reaches the tonic from a whole step below instead of from the dominant.",
+    "prog.rhythm-changes": "Rhythm changes",
+    "prog.rhythm-changes.about": "The A section of Gershwin's I Got Rhythm: I-vi-ii-V turnarounds, then I7 towards IV and iv on the way back. After the blues, the form jazz plays most.",
+    "prog.coltrane-changes": "Coltrane changes",
+    "prog.coltrane-changes.about": "A ii-V-I that passes through three tonics a major third apart (I, \u266DVI, III), each reached by its own dominant, as in Coltrane's Countdown.",
+    "prog.giant-steps-cycle": "Giant Steps (bars 1\u20133)",
+    "prog.giant-steps-cycle.about": "The opening of Giant Steps: three tonics a major third apart, each reached by its dominant. They split the octave into three equal parts.",
+    "prog.blues-12": "12-bar blues",
+    "prog.blues-12.about": "Twelve bars on I, IV and V, all dominant sevenths: four bars of I, two of IV, two of I, then V, IV, I and V to turn back to the top.",
+    "prog.blues-minor": "Minor blues",
+    "prog.blues-minor.about": "The twelve-bar blues in a minor key: i7 and iv7 minor, the dominant V7 in bars 9 and 12.",
+    "prog.blues-jazz": "Jazz blues",
+    "prog.blues-jazz.about": "The blues as jazz plays it: a ii-V into IV in bar 4, \u266Fiv\xB07 in bar 6 rising to I, and VI7 leading to the ii-V of the turnaround.",
+    "prog.bird-blues": "Bird blues",
+    "prog.bird-blues.about": "Charlie Parker's blues (Blues for Alice): chains of ii-V falling by step from bar 2 to bar 8.",
+    "prog.I-V-vi-IV": "I-V-vi-IV",
+    "prog.I-V-vi-IV.about": "The pop progression of countless songs: four chords in a loop, from the tonic through the dominant to the relative minor and the subdominant.",
+    "prog.I-vi-IV-V": "I-vi-IV-V (fifties)",
+    "prog.I-vi-IV-V.about": "The fifties progression, of doo-wop and early rock and roll.",
+    "prog.I-IV-V": "I-IV-V",
+    "prog.I-IV-V.about": "Three chords, tonic, subdominant and dominant: the ground of the blues, country and folk.",
+    "prog.pachelbel": "Pachelbel's Canon",
+    "prog.pachelbel.about": "The bass of Pachelbel's Canon, falling a fourth and rising a step in its first six chords; much used again in pop.",
+    "prog.andalusian": "Andalusian cadence",
+    "prog.andalusian.about": "i VII VI V in a minor key: a bass falling by step from the tonic to the dominant, the sound of flamenco. Heard on its last chord as the tonic, it is phrygian.",
     // Key panel
     "keyPanel.sevenths.title": "Seventh chords instead of triads",
     "keyPanel.neg": "Neg",
@@ -1159,6 +1195,7 @@
     "module.cof": "C\xEDrculo de quintas",
     "module.guitar": "Cuerdas",
     "module.explain": "Explicaci\xF3n",
+    "module.progressions": "Progresiones",
     "module.key": "Tonalidad",
     "module.piano": "Piano",
     "module.velocity": "Velocidad",
@@ -1374,6 +1411,41 @@
     "ex.vl.seventh": "La s\xE9ptima de una s\xE9ptima de dominante pide bajar por grado conjunto.",
     "ex.interval": "{n} semitonos. Su inversi\xF3n, con la nota grave una octava arriba, es {inv}: juntas suman una octava.",
     "ex.cadence.title": "{cadence}: {text}",
+    "prog.select.title": "Una progresi\xF3n con nombre, escrita en la tonalidad",
+    "prog.play.title": "Tocar la progresi\xF3n, un comp\xE1s cada 2,4 s",
+    "prog.stop.title": "Parar",
+    "prog.ii-V-I": "ii-V-I",
+    "prog.ii-V-I.about": "La base de la armon\xEDa del jazz: subdominante (ii7), dominante (V7), t\xF3nica (Imaj7). La ra\xEDz baja una quinta cada vez, y la s\xE9ptima de cada acorde baja un grado a la tercera del siguiente.",
+    "prog.ii-V-i": "ii-V-i (menor)",
+    "prog.ii-V-i.about": "El ii-V-I de una tonalidad menor: un ii semidisminuido, un V7 dominante con la sensible elevada como en la menor arm\xF3nica, y una t\xF3nica menor.",
+    "prog.turnaround-jazz": "Turnaround de jazz (I-vi-ii-V)",
+    "prog.turnaround-jazz.about": "El turnaround que lleva los \xFAltimos compases de un tema de vuelta al principio: desde vi las ra\xEDces bajan por quintas hasta la dominante.",
+    "prog.backdoor-ii-V": "ii-V por la puerta trasera (backdoor)",
+    "prog.backdoor-ii-V.about": "iv7, \u266DVII7 y I, los dos primeros prestados de la menor: \u266DVII7 llega a la t\xF3nica desde un tono por debajo en vez de desde la dominante.",
+    "prog.rhythm-changes": "Rhythm changes",
+    "prog.rhythm-changes.about": "La secci\xF3n A de I Got Rhythm de Gershwin: turnarounds I-vi-ii-V y despu\xE9s I7 hacia IV e iv de vuelta. Despu\xE9s del blues, la forma que m\xE1s toca el jazz.",
+    "prog.coltrane-changes": "Cambios de Coltrane",
+    "prog.coltrane-changes.about": "Un ii-V-I que pasa por tres t\xF3nicas a distancia de tercera mayor (I, \u266DVI, III), cada una precedida de su dominante, como en Countdown de Coltrane.",
+    "prog.giant-steps-cycle": "Giant Steps (compases 1\u20133)",
+    "prog.giant-steps-cycle.about": "El comienzo de Giant Steps: tres t\xF3nicas a distancia de tercera mayor, cada una precedida de su dominante. Dividen la octava en tres partes iguales.",
+    "prog.blues-12": "Blues de 12 compases",
+    "prog.blues-12.about": "Doce compases sobre I, IV y V, todos con s\xE9ptima de dominante: cuatro compases de I, dos de IV, dos de I, y despu\xE9s V, IV, I y V para volver al principio.",
+    "prog.blues-minor": "Blues menor",
+    "prog.blues-minor.about": "El blues de doce compases en tonalidad menor: i7 e iv7 menores, el V7 dominante en los compases 9 y 12.",
+    "prog.blues-jazz": "Blues de jazz",
+    "prog.blues-jazz.about": "El blues tal como lo toca el jazz: un ii-V hacia IV en el comp\xE1s 4, \u266Fiv\xB07 en el 6 que sube a I, y VI7 hacia el ii-V del turnaround.",
+    "prog.bird-blues": "Bird blues",
+    "prog.bird-blues.about": "El blues de Charlie Parker (Blues for Alice): cadenas de ii-V que bajan por grados del comp\xE1s 2 al 8.",
+    "prog.I-V-vi-IV": "I-V-vi-IV",
+    "prog.I-V-vi-IV.about": "La progresi\xF3n pop de infinidad de canciones: cuatro acordes en bucle, de la t\xF3nica por la dominante al relativo menor y la subdominante.",
+    "prog.I-vi-IV-V": "I-vi-IV-V (a\xF1os cincuenta)",
+    "prog.I-vi-IV-V.about": "La progresi\xF3n de los a\xF1os cincuenta, del doo-wop y el primer rock and roll.",
+    "prog.I-IV-V": "I-IV-V",
+    "prog.I-IV-V.about": "Tres acordes, t\xF3nica, subdominante y dominante: la base del blues, el country y el folk.",
+    "prog.pachelbel": "Canon de Pachelbel",
+    "prog.pachelbel.about": "El bajo del Canon de Pachelbel, que baja una cuarta y sube un grado en sus seis primeros acordes; muy usado de nuevo en el pop.",
+    "prog.andalusian": "Cadencia andaluza",
+    "prog.andalusian.about": "i VII VI V en tonalidad menor: un bajo que baja por grados de la t\xF3nica a la dominante, el sonido del flamenco. O\xEDda con su \xFAltimo acorde como t\xF3nica, es frigia.",
     "keyPanel.sevenths.title": "Cuatr\xEDadas en lugar de tr\xEDadas",
     "keyPanel.neg": "Neg",
     "keyPanel.neg.title": "Mostrar u ocultar la armon\xEDa negativa",
@@ -2708,13 +2780,13 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   function createViewPublisher() {
     const channel2 = open();
-    let current2 = null;
+    let current3 = null;
     let last = "";
     channel2?.addEventListener("message", (e) => {
-      if (e.data?.type === "hello" && current2) channel2.postMessage({ type: "state", state: current2 });
+      if (e.data?.type === "hello" && current3) channel2.postMessage({ type: "state", state: current3 });
     });
     return (state2) => {
-      current2 = state2;
+      current3 = state2;
       const sig = JSON.stringify(state2);
       if (sig === last) return;
       last = sig;
@@ -2811,6 +2883,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     "key",
     "piano",
     "velocity",
+    "progressions",
     "history",
     "song"
   ];
@@ -2824,6 +2897,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     key: { w: 12, h: 11 },
     piano: { w: 7, h: 5 },
     velocity: { w: 2, h: 5 },
+    progressions: { w: 12, h: 4 },
     history: { w: 12, h: 3 },
     song: { w: 12, h: 12 }
   };
@@ -2841,8 +2915,9 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["key", 0, 11, 8, 11],
       ["explain", 8, 11, 4, 11],
       ["piano", 0, 22, 12, 5],
-      ["history", 0, 27, 12, 3],
-      ["song", 0, 30, 12, 12]
+      ["progressions", 0, 27, 12, 4],
+      ["history", 0, 31, 12, 3],
+      ["song", 0, 34, 12, 12]
     ]),
     // Harmony at the desk: the key and the analysis large, what is played next to them
     study: grid([
@@ -2853,7 +2928,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["history", 8, 8, 4, 4],
       ["key", 0, 12, 8, 11],
       ["explain", 8, 12, 4, 11],
-      ["piano", 0, 23, 12, 5]
+      ["piano", 0, 23, 12, 5],
+      ["progressions", 0, 28, 12, 4]
     ]),
     // Teaching on a projector (made to be presented with P): few panels, large
     class: grid([
@@ -3083,6 +3159,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         return '<div id="key-container"></div>';
       case "explain":
         return '<div id="explain-container"></div>';
+      case "progressions":
+        return '<div id="progressions-container"></div>';
       case "piano":
         return '<div id="piano-container" class="fit"></div>';
       case "velocity":
@@ -5243,6 +5321,136 @@ ${explainCadence(cadence)}` : "");
     });
   }
 
+  // src/ui/progressions.ts
+  var PROGRESSION_IDS = [
+    "ii-V-I",
+    "ii-V-i",
+    "turnaround-jazz",
+    "backdoor-ii-V",
+    "rhythm-changes",
+    "coltrane-changes",
+    "giant-steps-cycle",
+    "blues-12",
+    "blues-minor",
+    "blues-jazz",
+    "bird-blues",
+    "I-V-vi-IV",
+    "I-vi-IV-V",
+    "I-IV-V",
+    "pachelbel",
+    "andalusian"
+  ];
+  var MINOR = ["ii-V-i", "blues-minor", "andalusian"];
+  var BAR_MS = 2400;
+  function progressionKey(id, key) {
+    const minor = MINOR.includes(id);
+    if (key) {
+      const root = key.split(" ")[0];
+      return normalizeKey(`${root} ${minor ? "Minor" : "Major"}`) ?? key;
+    }
+    const own = UMT.PROGRESSIONS[id]?.defaultKey;
+    return normalizeKey(own) ?? (minor ? "A Minor" : "C Major");
+  }
+  function realizeProgression(id, key) {
+    const entry = UMT.PROGRESSIONS[id];
+    if (!entry) return [];
+    const bars = entry.romanNumerals.flatMap((tokens, bar) => tokens.trim().split(/\s+/).map(() => bar));
+    const chords = tryUMT("progressions", () => UMT.getProgression(id, key).map((c) => c.name), []);
+    if (chords.length !== bars.length) return [];
+    const steps = analyzeChordProgression(chords, key);
+    return chords.map((symbol, i) => ({
+      symbol,
+      bar: bars[i],
+      roman: steps[i].info?.roman ?? "\u2014",
+      fn: steps[i].info?.function ?? "unknown",
+      cadence: i > 0 ? steps[i - 1].cadence : null,
+      modulation: i > 0 && steps[i].key && steps[i].key !== steps[i - 1].key ? steps[i].key : null
+    }));
+  }
+  var FUNCTION_COLORS2 = {
+    T: "var(--fn-t)",
+    S: "var(--fn-s)",
+    D: "var(--fn-d)",
+    unknown: "var(--text-dim)"
+  };
+  var current2 = loadChoice("progression", PROGRESSION_IDS, "ii-V-I");
+  var timer = null;
+  var playing = -1;
+  function stopProgression() {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    playing = -1;
+    document.querySelectorAll(".prog-chip.playing").forEach((c) => c.classList.remove("playing"));
+    const btn = document.getElementById("prog-play");
+    if (btn) {
+      btn.textContent = "\u25B6";
+      btn.title = t("prog.play.title");
+    }
+  }
+  function renderProgressions(container, analysisKey2, handlers) {
+    stopProgression();
+    const key = progressionKey(current2, analysisKey2);
+    const chords = realizeProgression(current2, key);
+    const options = PROGRESSION_IDS.map((id) => `<option value="${id}"${id === current2 ? " selected" : ""}>${escapeHtml(t(`prog.${id}`))}</option>`).join("");
+    let strip = "";
+    chords.forEach((c, i) => {
+      if (i > 0 && c.bar !== chords[i - 1].bar) strip += '<span class="prog-bar">|</span>';
+      if (c.modulation) strip += `<span class="prog-modulation history-modulation" title="${escapeHtml(t("history.modulation", { key: keyLabel(c.modulation) }))}">\u2192 ${escapeHtml(keyLabel(c.modulation))}</span>`;
+      if (c.cadence) {
+        const title = `${cadenceLabel(c.cadence)}${explainCadence(c.cadence) ? `
+${explainCadence(c.cadence)}` : ""}`;
+        strip += `<span class="prog-cadence history-cadence" title="${escapeHtml(title)}">${escapeHtml(cadenceLabel(c.cadence, true))}</span>`;
+      }
+      strip += `<button class="prog-chip" data-i="${i}" style="border-left:3px solid ${FUNCTION_COLORS2[c.fn] ?? FUNCTION_COLORS2.unknown}">
+      <span class="prog-chip-symbol">${escapeHtml(chordLabel(c.symbol))}</span>
+      <span class="prog-chip-roman">${escapeHtml(c.roman)}</span></button>`;
+    });
+    container.innerHTML = `
+    <div class="prog-head">
+      <select id="prog-select" title="${escapeHtml(t("prog.select.title"))}">${options}</select>
+      <button id="prog-play" class="ctrl-btn" title="${escapeHtml(t("prog.play.title"))}">\u25B6</button>
+      <span class="prog-key">${escapeHtml(keyLabel(key))}</span>
+    </div>
+    <p class="prog-about">${escapeHtml(t(`prog.${current2}.about`))}</p>
+    <div class="prog-strip">${strip}</div>`;
+    const select = container.querySelector("#prog-select");
+    select.addEventListener("change", () => {
+      current2 = select.value;
+      save("progression", current2);
+      renderProgressions(container, analysisKey2, handlers);
+    });
+    const chips = [...container.querySelectorAll(".prog-chip")];
+    const mark = (i) => chips.forEach((c, j) => c.classList.toggle("playing", i === j));
+    const show = (i) => {
+      mark(i);
+      handlers.play(chords[i].symbol, i > 0 ? chords[i - 1].symbol : null, key);
+    };
+    chips.forEach((chip, i) => chip.addEventListener("click", () => {
+      stopProgression();
+      show(i);
+    }));
+    const playBtn = container.querySelector("#prog-play");
+    playBtn.addEventListener("click", () => {
+      if (playing >= 0) {
+        stopProgression();
+        return;
+      }
+      playBtn.textContent = "\u25A0";
+      playBtn.title = t("prog.stop.title");
+      const step = (i) => {
+        if (i >= chords.length) {
+          stopProgression();
+          return;
+        }
+        playing = i;
+        show(i);
+        const inBar = chords.filter((c) => c.bar === chords[i].bar).length;
+        timer = setTimeout(() => step(i + 1), BAR_MS / inBar);
+      };
+      step(0);
+    });
+  }
+
   // src/app.ts
   var STAFF_WIDTH = 380;
   var COF_SIZE = 300;
@@ -5656,6 +5864,7 @@ ${explainCadence(cadence)}` : "");
   function renderDetector() {
     renderAnalysisPanel();
     renderExplain();
+    renderProgressionPanel();
     renderDiagrams();
     publishView();
   }
@@ -5911,6 +6120,22 @@ ${explainCadence(cadence)}` : "");
     lastCofClick = { key, at: now };
     playChord(chord);
     showChord(chord, void 0, previousHistoryChord(chord));
+  }
+  var progressionsKey;
+  function renderProgressionPanel() {
+    const el = document.getElementById("progressions-container");
+    if (!el || progressionsKey === analysisKey()) return;
+    progressionsKey = analysisKey();
+    renderProgressions(el, analysisKey(), {
+      play: (symbol, prev, key) => {
+        if (analysisKey() !== key) {
+          progressionsKey = key;
+          applyKey(key);
+        }
+        playChord(symbol);
+        showChord(symbol, void 0, prev ? { symbol: prev, notes: chordNoteNames(prev) } : null);
+      }
+    });
   }
   function renderZone2() {
     renderHistory(

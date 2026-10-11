@@ -52,7 +52,7 @@ Without Web MIDI a dismissible warning says a controller cannot connect. Song bu
 
 Single page, dark or light (see Theme): the toolbar on top, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
 
-Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
+Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, Progressions, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
 
 The ▦ menu in the toolbar:
 - **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (few panels, large, made to be presented with P), Transcription (history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
@@ -155,6 +155,12 @@ Each field has a show/hide toggle; font scale 8–20 px. The panel grows when a 
 A panel that says, of the chord on screen and in its key, what each term of the analysis means (`detector/explain.ts`): the degree it stands on and its name (tonic … leading tone; subtonic for the whole-step 7th of a minor key; a lowered or raised degree is a note outside the scale), how numerals are written, the function, and then whichever applies: diatonic, a secondary dominant or leading-tone chord with the chord it tonicizes (D7 in C: the dominant of G), borrowed from a named mode with its notes from outside the key, a tritone substitute, or chromatic. Then the figured bass, close / open position and drop voicings, the cadence from the chord before, each P / L / R move with an example, each substitution type UMT offers, upper structures and each voice-leading rule broken. An interval gets its size and its inversion. Nothing is decided here: the sentences come from the same analysis the panel shows. The cadence tags of the history carry the same explanation as a tooltip.
 
 P / L / R are read only between triads of three notes: UMT's `NeoRiemannian` also reads G7 or Cadd9 as their triad.
+
+### Progressions
+
+Every named progression of UMT (`PROGRESSIONS`, `getProgression`): ii-V-I and ii-V-i, the jazz turnaround, the backdoor ii-V, rhythm changes, Coltrane changes, the opening of Giant Steps, the 12-bar, minor, jazz and Bird blues, I-V-vi-IV, I-vi-IV-V, I-IV-V, Pachelbel's Canon and the Andalusian cadence (`ui/progressions.ts`). The one picked is written in the analysis key, in the progression's mode (ii-V-i, the minor blues and the Andalusian cadence in the parallel minor of a major key); with no key, in its own (rhythm changes in B♭) or in C major / A minor. It is drawn bar by bar as the history draws its chips: each chord with its numeral and function colour, cadence tags and the key where UMT finds a modulation, all from `analyzeProgression`. A sentence says what the progression is, written by Modus in both languages (UMT's descriptions are English only).
+
+A click on a chord shows and plays it, compared with the one before it in the progression (cadence, voice leading); ▶ walks the whole progression, a bar every 2.4 s, two chords sharing a bar, ■ stops. Showing a chord sets the analysis key to the progression's when it differs, without storing it in the open song. The panel is drawn again when the analysis key changes; the progression picked is remembered (`progression`).
 
 ### Staff, circle and strings
 
