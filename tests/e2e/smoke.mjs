@@ -276,7 +276,8 @@ await check('keyboard and screen reader: circle, buttons, panels and chips work 
   await page.keyboard.press('Shift+ArrowDown')
   const after = await page.evaluate(() => JSON.parse(localStorage.getItem('layout')).find(c => c.id === 'chord'))
   assert(after.x === (before?.x ?? 0) + 1 && after.h === (before?.h ?? 3) + 1, `moved: ${JSON.stringify(before)} → ${JSON.stringify(after)}`)
-  assert((await page.textContent('#sr-live')).startsWith('Chord: column'), `announced: ${await page.textContent('#sr-live')}`)
+  await page.waitForFunction(() => document.getElementById('sr-live')?.textContent?.startsWith('Chord: column'), null, { timeout: 2000 })
+    .catch(async () => { throw new Error(`announced: ${await page.textContent('#sr-live')}`) })
   await page.click('#btn-layout'); await page.click('#layout-menu [data-preset="standard"]'); await page.mouse.click(5, 990)
   // History chips: Enter shows the chord
   await page.focus('#mod-history .history-chip')
