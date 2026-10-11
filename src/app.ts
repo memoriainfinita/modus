@@ -20,7 +20,7 @@ import { renderNeck, adjustNeckSpacing } from './diagrams/neck'
 import { renderCircleOfFifths, cofAccidentalFor } from './diagrams/cof'
 import { renderKeyExplorer } from './diagrams/key-explorer'
 import { buildKeyMap } from './theory/key-map'
-import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry } from './history/history'
+import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry, restoreCarriedHistory } from './history/history'
 import { addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song/model'
 import { loadActiveSong, saveSong, listSongs, openSong, newSong, deleteSong, restoreSong } from './song/library'
 import { showUndo, dismiss as dismissUndo } from './ui/undo'
@@ -29,12 +29,13 @@ import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
-import { chordNoteNames, isKnownChord, normalizeChordName } from './theory/chord'
+import { chordNoteNames, isKnownChord, readTypedChord } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
 import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps } from './theory/keys'
 import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles } from './ui/layout'
+import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang } from './i18n/i18n'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -78,7 +79,16 @@ const state: AppState = {
 
 const $ = (id: string) => document.getElementById(id)!
 
+/** The static page's own messages, written in the interface language. */
+function translatePage() {
+  applyDocumentLang()
+  const warning = $('browser-warning')
+  warning.firstChild!.textContent = t('page.noMidi') + ' '
+  $('cdn-error-banner').textContent = t('page.cdnError')
+}
+
 function init() {
+  translatePage()
   if (!navigator.requestMIDIAccess) {
     $('browser-warning').style.display = 'block'
   }
@@ -104,7 +114,7 @@ function init() {
 
   initMidi().then(result => {
     if (result.denied) {
-      showMidiBanner('MIDI access denied. Grant permission in browser settings to use a controller.')
+      showMidiBanner(t('midi.denied'))
     }
     if (!result.unsupported) {
       refreshDeviceDropdown()
@@ -124,6 +134,7 @@ function init() {
   setPreviewListener(outPreview)
   wireMidiOut()
   setHistoryChangeCallback(onHistoryChange)
+  restoreCarriedHistory()
 
   setAudioMissedCallback(() => {
     const el = document.getElementById('audio-progress')
@@ -141,8 +152,8 @@ function init() {
     const fill = document.getElementById('audio-progress-fill')
     if (!el || !fill) return
 
-    const labels: Record<string, string> = { idle: '♪ idle', loading: '♪ loading…', suspended: '♪ click to activate', ready: '♪ ready', error: '♪ error' }
-    el.textContent = labels[status] ?? status
+    const known = ['idle', 'loading', 'suspended', 'ready', 'error'] as const
+    el.textContent = (known as readonly string[]).includes(status) ? t(`audio.${status as typeof known[number]}`) : status
 
     if (progressTimer) { clearInterval(progressTimer); progressTimer = null }
 
@@ -209,7 +220,7 @@ function makeSongHandlers() {
     onDeleteSong: () => {
       const { deleted, open } = deleteSong(state.song.id)
       showSong(open)
-      if (deleted) showUndo(`Deleted "${deleted.title}"`, () => { restoreSong(deleted); showSong(deleted) })
+      if (deleted) showUndo(t('song.deleted', { title: deleted.title }), () => { restoreSong(deleted); showSong(deleted) })
     },
   }
 }
@@ -234,8 +245,8 @@ function syncCofAccidentalButtons() {
     const btn = $(id) as HTMLButtonElement
     btn.classList.toggle('active', used === acc)
     btn.disabled = !!key
-    btn.title = key ? `Spelled as in ${key}; b / # apply without a key`
-      : acc === 'flat' ? 'Show flat enharmonics (Gb, Db…)' : 'Show sharp enharmonics (F#, C#…)'
+    btn.title = key ? t('cof.spelledInKey', { key: keyLabel(key) })
+      : acc === 'flat' ? t('cof.flat.title') : t('cof.sharp.title')
   }
 }
 
@@ -277,7 +288,7 @@ function wireLayoutEvents() {
     renderStaff($('staff-container'), displayedNotes(), staffWidth, analysisKey(), staffScale, staffClef)
   }
   const clefBtn = $('btn-staff-clef')
-  const showClef = () => { clefBtn.textContent = CLEF_LABELS[staffClef] }
+  const showClef = () => { clefBtn.textContent = t(`staff.clef.${staffClef}`) }
   showClef()
   clefBtn.addEventListener('click', () => {
     staffClef = STAFF_CLEFS[(STAFF_CLEFS.indexOf(staffClef) + 1) % STAFF_CLEFS.length]
@@ -371,8 +382,6 @@ function selectedSymbol(): string | null {
   return sym && sym !== '?' ? sym : null
 }
 
-const CLEF_LABELS: Record<typeof staffClef, string> = { grand: 'Grand', treble: 'Treble', bass: 'Bass' }
-
 function displayedNotes(): string[] {
   const d = state.detection
   if (!d) return []
@@ -453,7 +462,8 @@ function viewState(): ViewState {
   return {
     key: analysisKey(),
     kind: d?.kind ?? null,
-    label: !d ? '' : d.kind === 'note' ? d.pitchClass : d.kind === 'interval' ? d.intervalName : (selectedSymbol() ?? ''),
+    // Written as the page writes it: the views take no language of their own
+    label: !d ? '' : d.kind === 'note' ? noteLabel(d.pitchClass) : d.kind === 'interval' ? d.intervalName : chordLabel(selectedSymbol() ?? ''),
     symbol: selectedSymbol(),
     notes: displayedNotes(),
     roman: state.analysis?.roman ?? null,
@@ -649,7 +659,7 @@ function onHistoryChange(entries: HistoryEntry[]) {
 }
 
 function updateAutoKeyLabel() {
-  $('auto-key-label').textContent = !state.activeKey && autoKey ? `auto: ${autoKey}` : ''
+  $('auto-key-label').textContent = !state.activeKey && autoKey ? t('key.autoDetected', { key: keyLabel(autoKey) }) : ''
 }
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
@@ -683,7 +693,7 @@ function onPianoRelease() {
 
 /** A chord typed in the detector field: shown and played like one picked from history. */
 function submitTypedChord(input: HTMLInputElement) {
-  const symbol = normalizeChordName(input.value.trim())
+  const symbol = readTypedChord(input.value)
   if (!symbol) return
   const valid = isKnownChord(symbol)
   input.classList.toggle('invalid', !valid)
@@ -726,9 +736,9 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderIfChanged('cof', `${key}|${chordSymbol}|${cofSize}|${JSON.stringify(cofOpts)}`, () =>
     renderCircleOfFifths($('cof-container'), key, chordSymbol, onCofClick, cofSize, cofOpts))
   const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale }
-  const keyLabel = key ? (state.activeKey ? key : `${key} (auto)`) : ''
-  renderIfChanged('key', `${keyLabel}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () =>
-    renderKeyExplorer($('key-container'), key ? buildKeyMap(key, keySevenths) : null, keyLabel, chordSymbol, onKeyChordClick, keyOpts))
+  const keyTitle = key ? (state.activeKey ? keyLabel(key) : t('keyPanel.auto', { key: keyLabel(key) })) : ''
+  renderIfChanged('key', `${keyTitle}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () =>
+    renderKeyExplorer($('key-container'), key ? buildKeyMap(key, keySevenths) : null, keyTitle, chordSymbol, onKeyChordClick, keyOpts))
 }
 
 /** A chord picked in the key explorer: played and shown like a CoF segment; the key stays. */
@@ -775,7 +785,7 @@ function renderZone3() {
 
 function sendToSong(entry: HistoryEntry) {
   if (!state.song.sections.length) {
-    state.song = addSection(state.song, 'Verse', 'verse')
+    state.song = addSection(state.song, t('section.verse'), 'verse')
   }
 
   if (state.activeCursorId) {
@@ -814,7 +824,7 @@ function refreshDeviceDropdown() {
   const devices = getDevices()
   sel.innerHTML = devices.length
     ? devices.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('')
-    : '<option>No MIDI devices</option>'
+    : `<option>${escapeHtml(t('midi.noDeviceOption'))}</option>`
   sel.onchange = () => chooseDevice(sel.value)
   // Back to the device the user picked when it reappears; a reconnected port gets its
   // message handler back.
@@ -822,16 +832,16 @@ function refreshDeviceDropdown() {
   if (target) sel.value = target
 
   // Connected is shown by the green alone: the toolbar has no room to spare
-  $('midi-status').textContent = devices.length ? 'MIDI' : 'MIDI: no devices'
-  $('midi-status').title = devices.length ? 'MIDI: connected' : 'MIDI: no devices'
+  $('midi-status').textContent = devices.length ? 'MIDI' : t('midi.noDevices')
+  $('midi-status').title = devices.length ? t('midi.connected') : t('midi.noDevices')
   $('midi-status').style.color = devices.length ? '#4ade80' : '#6b7280'
 
   if (!deviceListenersAttached) {
     deviceListenersAttached = true
     window.addEventListener('midi-devices-changed', () => { refreshDeviceDropdown(); refreshOutputDropdown() })
     window.addEventListener('midi-device-disconnected', () => {
-      $('midi-status').textContent = 'MIDI: disconnected'
-      $('midi-status').title = 'MIDI: disconnected'
+      $('midi-status').textContent = t('midi.disconnected')
+      $('midi-status').title = t('midi.disconnected')
       $('midi-status').style.color = '#f87171'
     })
   }
@@ -844,14 +854,14 @@ function refreshOutputDropdown() {
   const { port } = getOutputSettings()
   const outputs = getOutputs()
   const present = port && outputs.find(o => o.name === port.name)
-  sel.innerHTML = '<option value="">Out: off</option>' +
-    outputs.map(o => `<option value="${escapeHtml(o.id)}">Out: ${escapeHtml(o.name)}</option>`).join('') +
+  sel.innerHTML = `<option value="">${t('midi.out.off')}</option>` +
+    outputs.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(t('midi.out.port', { name: o.name }))}</option>`).join('') +
     // A chosen port that is unplugged stays chosen and comes back when it reappears
-    (port && !present ? `<option value="__missing" disabled>Out: ${escapeHtml(port.name)} (absent)</option>` : '')
+    (port && !present ? `<option value="__missing" disabled>${escapeHtml(t('midi.out.absent', { name: port.name }))}</option>` : '')
   sel.value = present ? present.id : port ? '__missing' : ''
   const loops = outputLoops()
   sel.classList.toggle('invalid', loops)
-  sel.title = loops ? 'Same port as the input: nothing is sent, it would come back as input' : 'MIDI out: what sounds goes to this port'
+  sel.title = loops ? t('midi.out.loops') : t('midi.out.title')
 }
 
 function wireMidiOut() {

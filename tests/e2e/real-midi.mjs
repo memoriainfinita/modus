@@ -41,13 +41,14 @@ async function firefoxContext() {
   const insert = db.prepare('INSERT INTO moz_perms (origin, type, permission, expireType, expireTime, modificationTime) VALUES (?, ?, 1, 0, 0, ?)')
   for (const type of ['midi', 'midi-sysex']) insert.run(origin, type, Date.now())
   db.close()
-  const context = await firefox.launchPersistentContext(profile, { headless: true, firefoxUserPrefs: { 'media.volume_scale': '0.0' } })  // silent: the app plays every chord
+  const context = await firefox.launchPersistentContext(profile, { headless: true, firefoxUserPrefs: { 'media.volume_scale': '0.0', 'intl.accept_languages': 'en-US' } })  // silent: the app plays every chord
   return { context, dispose: async () => { await context.close(); await rm(profile, { recursive: true, force: true }) } }
 }
 
 async function chromeContext() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--mute-audio'] })
-  const context = await browser.newContext()
+  // The checks read English names; without a locale Chrome takes the system's, and Modus follows it
+  const context = await browser.newContext({ locale: 'en-US' })
   await context.grantPermissions(['midi', 'midi-sysex'], { origin })
   return { context, dispose: () => browser.close() }
 }

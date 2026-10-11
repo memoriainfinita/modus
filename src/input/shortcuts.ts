@@ -1,29 +1,39 @@
-const SHORTCUTS: { key: string; action: string }[] = [
-  { key: 'Space', action: 'Play current chord (or last if none active)' },
-  { key: '← →',   action: 'Previous / next chord in the song (or history) — plays it' },
-  { key: 'Del',   action: 'Remove the selected song chord (undo in the toast)' },
-  { key: 'H',     action: 'Toggle Hold mode' },
-  { key: 'A',     action: 'Toggle Arpeggio mode' },
-  { key: 'S',     action: 'Send history chip → Song' },
-  { key: 'C',     action: 'Clear history (undo in the toast)' },
-  { key: 'Esc',   action: 'Drop a held chord, clear cursor, stop MIDI fill' },
-  { key: 'M',     action: 'Play with the computer keyboard (M or Esc to stop)' },
-  { key: 'P',     action: 'Presentation: large, no controls, full screen (P or Esc to leave)' },
-  { key: '/',     action: 'Type a chord name' },
-  { key: '1–9',   action: 'Select chord candidate' },
-  { key: '?',     action: 'Show / hide this panel' },
+import { t, getLang, getNoteNaming, saveLang, saveNoteNaming, LANGS, LANG_NAMES, NOTE_NAMINGS } from '../i18n/i18n'
+import type { Lang, NoteNaming } from '../i18n/i18n'
+import type { StringKey } from '../i18n/en'
+import { carryHistoryOverReload } from '../history/history'
+import { escapeHtml } from '../ui/html'
+
+// Keys as printed (a string key for named keys) and what they do
+const SHORTCUTS: { key: string | StringKey; action: StringKey }[] = [
+  { key: 'kbd.space', action: 'shortcut.play' },
+  { key: '← →',       action: 'shortcut.step' },
+  { key: 'kbd.del',   action: 'shortcut.delete' },
+  { key: 'H',         action: 'shortcut.hold' },
+  { key: 'A',         action: 'shortcut.arpeggio' },
+  { key: 'S',         action: 'shortcut.send' },
+  { key: 'C',         action: 'shortcut.clear' },
+  { key: 'kbd.esc',   action: 'shortcut.escape' },
+  { key: 'M',         action: 'shortcut.keyboard' },
+  { key: 'P',         action: 'shortcut.present' },
+  { key: '/',         action: 'shortcut.type' },
+  { key: '1–9',       action: 'shortcut.candidate' },
+  { key: '?',         action: 'shortcut.help' },
 ]
 
 // What the mouse does that no label says.
-const GESTURES: string[] = [
-  'Click a history chip, song chord or circle segment to play it and show it in the detector.',
-  'Double-click a major or minor circle segment to make it the key.',
-  'A chord is logged to history once held steady for 0.8 s, and not twice in a row.',
-  'Drag a history chip onto a song measure to insert it; drag song chords and section headers to reorder.',
-  '⊙ on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.',
-  'Right-click a history chip to remove it. Removals and Clear can be undone from the toast.',
-  'Click the on-screen piano to play: in Hold each click adds or removes a note of the chord.',
+const GESTURES: StringKey[] = [
+  'gesture.click', 'gesture.doubleClick', 'gesture.logged', 'gesture.drag', 'gesture.fill', 'gesture.remove', 'gesture.piano',
 ]
+
+const keyText = (k: string) => k.startsWith('kbd.') ? t(k as StringKey) : k
+
+/** Saves the choice and loads the page again in it; the history comes along. */
+function reloadWith(apply: () => void) {
+  apply()
+  carryHistoryOverReload()
+  location.reload()
+}
 
 let helpVisible = false
 
@@ -43,18 +53,33 @@ export function toggleHelp() {
   popup.className = 'shortcut-help-popup'
   popup.innerHTML = `
     <div class="shortcut-help-header">
-      <span>Shortcuts and gestures</span>
+      <span>${t('help.heading')}</span>
       <button class="shortcut-help-close">×</button>
     </div>
     ${SHORTCUTS.map(s => `
       <div class="shortcut-row">
-        <kbd class="shortcut-key">${s.key}</kbd>
-        <span class="shortcut-action">${s.action}</span>
+        <kbd class="shortcut-key">${escapeHtml(keyText(s.key))}</kbd>
+        <span class="shortcut-action">${escapeHtml(t(s.action))}</span>
       </div>`).join('')}
-    <div class="shortcut-section">Mouse</div>
-    ${GESTURES.map(g => `<div class="gesture-row">${g}</div>`).join('')}`
+    <div class="shortcut-section">${t('help.mouse')}</div>
+    ${GESTURES.map(g => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join('')}
+    <div class="shortcut-section">${t('help.settings')}</div>
+    <div class="help-setting"><label for="help-lang">${t('help.language')}</label>
+      <select id="help-lang" class="ctrl-select">
+        ${LANGS.map(l => `<option value="${l}"${l === getLang() ? ' selected' : ''}>${LANG_NAMES[l]}</option>`).join('')}
+      </select></div>
+    <div class="help-setting"><label for="help-note-names">${t('help.noteNames')}</label>
+      <select id="help-note-names" class="ctrl-select">
+        ${NOTE_NAMINGS.map(n => `<option value="${n}"${n === getNoteNaming() ? ' selected' : ''}>${t(`help.noteNames.${n}`)}</option>`).join('')}
+      </select></div>
+    <div class="gesture-row">${escapeHtml(t('help.reloads'))}</div>`
   document.body.appendChild(popup)
   popup.querySelector('.shortcut-help-close')!.addEventListener('click', closeHelp)
+  const langSel = popup.querySelector<HTMLSelectElement>('#help-lang')!
+  // Note names follow the language until they are chosen on their own
+  langSel.addEventListener('change', () => reloadWith(() => saveLang(langSel.value as Lang)))
+  const namesSel = popup.querySelector<HTMLSelectElement>('#help-note-names')!
+  namesSel.addEventListener('change', () => reloadWith(() => saveNoteNaming(namesSel.value as NoteNaming)))
   document.addEventListener('mousedown', closeHelpOnOutsideClick)
 }
 

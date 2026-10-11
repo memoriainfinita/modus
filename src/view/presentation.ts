@@ -5,6 +5,7 @@
 
 import { renderView } from './viewer'
 import type { ViewName, ViewState } from './channel'
+import { t } from '../i18n/i18n'
 
 let overlay: HTMLElement | null = null
 let tiles: { view: ViewName; el: HTMLElement }[] = []
@@ -24,7 +25,7 @@ export function openPresentation(views: ViewName[], state: ViewState, close: () 
   overlay.id = 'presentation'
   const diagrams = views.filter(v => v !== 'chord' && v !== 'piano')
   overlay.innerHTML = `
-    <button class="presentation-close" title="Leave presentation (Esc)">×</button>
+    <button class="presentation-close" title="${t('present.close')}">×</button>
     <div class="pres-tile pres-chord view-chord" data-view="chord"></div>
     ${diagrams.length ? `<div class="pres-row">${diagrams.map(v => `<div class="pres-tile view-${v}" data-view="${v}"></div>`).join('')}</div>` : ''}
     ${views.includes('piano') ? '<div class="pres-tile pres-piano view-piano" data-view="piano"></div>' : ''}`

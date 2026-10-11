@@ -60,7 +60,7 @@ async function play(notes, holdMs = 100) { await on(notes); await page.waitForTi
 async function setKey(key) { await page.selectOption('#key-select', key); await page.waitForTimeout(50) }
 
 async function freshPage() {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'en-US' })
   await context.addInitScript(FAKE_MIDI)
   await context.addInitScript(() => { try { if (!sessionStorage.getItem('e2e')) { localStorage.clear(); sessionStorage.setItem('e2e', '1') } } catch {} })
   page = await context.newPage()
@@ -643,8 +643,69 @@ await check('no errors after the walk', async () => {
   assert(page.errors.length === 0, page.errors.join(' | '))
 })
 
+// One row of controls: no control starts a line below the others (a row is ~30 px)
+const toolbarRows = () => page.evaluate(() => {
+  const tops = [...document.getElementById('z1-toolbar').children].filter(el => el.offsetParent && el.offsetWidth)
+    .map(el => el.getBoundingClientRect().top)
+  return Math.max(...tops) - Math.min(...tops) < 24 ? 1 : 2
+})
+
+await check('toolbar fits on one row in English', async () => {
+  assert(await toolbarRows() === 1, 'toolbar wraps')
+})
+
+await check('Spanish from the help panel: the page reloads in Spanish with Do Re Mi, history kept', async () => {
+  await page.keyboard.press('Escape')
+  await play([60, 64, 67], 900)
+  await off([60, 64, 67])
+  assert((await page.locator('.history-chip-symbol').allInnerTexts())[0] === 'C', 'no C chip before switching')
+  await page.click('#btn-help')
+  await Promise.all([page.waitForEvent('load'), page.selectOption('#help-lang', 'es')])
+  await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
+  await page.waitForTimeout(300)
+  assert(await page.evaluate(() => document.documentElement.lang) === 'es', 'html lang')
+  assert((await text('#key-select option')) === 'Tono: auto', `key select: ${await text('#key-select option')}`)
+  assert((await text('#btn-hold')) === 'Mantener', 'Hold button')
+  assert((await text('#zone2 .zone-title')) === 'Historial', 'history title')
+  assert((await page.locator('.history-chip-symbol').allInnerTexts())[0] === 'Do', `chips: ${(await page.locator('.history-chip-symbol').allInnerTexts()).join(',')}`)
+  assert(await toolbarRows() === 1, 'toolbar wraps in Spanish')
+})
+
+await check('Spanish: detector, analysis and typed chords in Do Re Mi', async () => {
+  await setKey('A Minor')
+  assert((await page.locator('#key-select option:checked').innerText()) === 'La menor', 'key name')
+  await play([57, 60, 64])
+  assert((await text('.chord-name-badge')) === 'Lam', `badge: ${await text('.chord-name-badge')}`)
+  const a = await text('#analysis-content')
+  assert(a.includes('Grado') && a.includes('Tónica') && a.includes('estado fundamental'), `analysis: ${a}`)
+  await off([57, 60, 64])
+  await page.fill('#typed-chord', 'Rem7')
+  await page.keyboard.press('Enter')
+  assert((await text('.chord-name-badge')) === 'Rem7', `typed: ${await text('.chord-name-badge')}`)
+  await page.fill('#typed-chord', '')
+  await page.locator('#typed-chord').blur()
+})
+
+await check('Spanish: letters again from the help panel', async () => {
+  await page.click('#btn-help')
+  await Promise.all([page.waitForEvent('load'), page.selectOption('#help-note-names', 'letters')])
+  await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
+  await page.waitForTimeout(300)
+  assert((await page.locator('#key-select option:checked').innerText()) === 'A menor', 'key name with letters')
+  assert((await text('#zone2 .zone-title')) === 'Historial', 'still in Spanish')
+  await page.click('#btn-help')
+  await Promise.all([page.waitForEvent('load'), page.selectOption('#help-lang', 'en')])
+  await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
+  await page.waitForTimeout(300)
+  assert((await text('#zone2 .zone-title')) === 'History', 'back in English')
+})
+
+await check('no errors after switching languages', async () => {
+  assert(page.errors.length === 0, page.errors.join(' | '))
+})
+
 await check('without the soundfont-player script the app still renders, audio in error', async () => {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'en-US' })
   await context.addInitScript(FAKE_MIDI)
   await context.route('**/soundfont-player*', r => r.abort())
   const p = await context.newPage()

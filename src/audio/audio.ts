@@ -1,6 +1,7 @@
 import { noteNameToMidi } from '../theory/notes'
 import { chordNoteNames } from '../theory/chord'
 import { loadNumber, loadString, save } from '../ui/storage'
+import type { StringKey } from '../i18n/en'
 
 let audioCtx: AudioContext | null = null
 let masterGain: GainNode | null = null
@@ -23,23 +24,24 @@ export function setAudioMissedCallback(cb: () => void) { onMissed = cb }
 
 function setStatus(s: AudioStatus) { audioStatus = s; onStatusChange?.(s) }
 
-export const GM_INSTRUMENT_GROUPS: { label: string; instruments: string[] }[] = [
-  { label: 'Piano',          instruments: ['acoustic_grand_piano','bright_acoustic_piano','electric_grand_piano','honkytonk_piano','electric_piano_1','electric_piano_2','harpsichord','clavinet'] },
-  { label: 'Chromatic Perc', instruments: ['celesta','glockenspiel','music_box','vibraphone','marimba','xylophone','tubular_bells','dulcimer'] },
-  { label: 'Organ',          instruments: ['drawbar_organ','percussive_organ','rock_organ','church_organ','reed_organ','accordion','harmonica','tango_accordion'] },
-  { label: 'Guitar',         instruments: ['acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_guitar_clean','electric_guitar_muted','overdriven_guitar','distortion_guitar','guitar_harmonics'] },
-  { label: 'Bass',           instruments: ['acoustic_bass','electric_bass_finger','electric_bass_pick','fretless_bass','slap_bass_1','slap_bass_2','synth_bass_1','synth_bass_2'] },
-  { label: 'Strings',        instruments: ['violin','viola','cello','contrabass','tremolo_strings','pizzicato_strings','orchestral_harp','timpani'] },
-  { label: 'Ensemble',       instruments: ['string_ensemble_1','string_ensemble_2','synth_strings_1','synth_strings_2','choir_aahs','voice_oohs','synth_voice','orchestra_hit'] },
-  { label: 'Brass',          instruments: ['trumpet','trombone','tuba','muted_trumpet','french_horn','brass_section','synth_brass_1','synth_brass_2'] },
-  { label: 'Reed',           instruments: ['soprano_sax','alto_sax','tenor_sax','baritone_sax','oboe','english_horn','bassoon','clarinet'] },
-  { label: 'Pipe',           instruments: ['piccolo','flute','recorder','pan_flute','blown_bottle','shakuhachi','whistle','ocarina'] },
-  { label: 'Synth Lead',     instruments: ['lead_1_square','lead_2_sawtooth','lead_3_calliope','lead_4_chiff','lead_5_charang','lead_6_voice','lead_7_fifths','lead_8_bass_lead'] },
-  { label: 'Synth Pad',      instruments: ['pad_1_new_age','pad_2_warm','pad_3_polysynth','pad_4_choir','pad_5_bowed','pad_6_metallic','pad_7_halo','pad_8_sweep'] },
-  { label: 'Synth FX',       instruments: ['fx_1_rain','fx_2_soundtrack','fx_3_crystal','fx_4_atmosphere','fx_5_brightness','fx_6_goblins','fx_7_echoes','fx_8_sci-fi'] },
-  { label: 'Ethnic',         instruments: ['sitar','banjo','shamisen','koto','kalimba','bag_pipe','fiddle','shanai'] },
-  { label: 'Percussive',     instruments: ['tinkle_bell','agogo','steel_drums','woodblock','taiko_drum','melodic_tom','synth_drum','reverse_cymbal'] },
-  { label: 'Sound FX',       instruments: ['guitar_fret_noise','breath_noise','seashore','bird_tweet','telephone_ring','helicopter','applause','gunshot'] },
+// Group names are string keys (i18n/en.ts); instrument names are the soundfont's own
+export const GM_INSTRUMENT_GROUPS: { label: StringKey; instruments: string[] }[] = [
+  { label: 'gm.piano', instruments: ['acoustic_grand_piano','bright_acoustic_piano','electric_grand_piano','honkytonk_piano','electric_piano_1','electric_piano_2','harpsichord','clavinet'] },
+  { label: 'gm.chromatic', instruments: ['celesta','glockenspiel','music_box','vibraphone','marimba','xylophone','tubular_bells','dulcimer'] },
+  { label: 'gm.organ', instruments: ['drawbar_organ','percussive_organ','rock_organ','church_organ','reed_organ','accordion','harmonica','tango_accordion'] },
+  { label: 'gm.guitar', instruments: ['acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_guitar_clean','electric_guitar_muted','overdriven_guitar','distortion_guitar','guitar_harmonics'] },
+  { label: 'gm.bass', instruments: ['acoustic_bass','electric_bass_finger','electric_bass_pick','fretless_bass','slap_bass_1','slap_bass_2','synth_bass_1','synth_bass_2'] },
+  { label: 'gm.strings', instruments: ['violin','viola','cello','contrabass','tremolo_strings','pizzicato_strings','orchestral_harp','timpani'] },
+  { label: 'gm.ensemble', instruments: ['string_ensemble_1','string_ensemble_2','synth_strings_1','synth_strings_2','choir_aahs','voice_oohs','synth_voice','orchestra_hit'] },
+  { label: 'gm.brass', instruments: ['trumpet','trombone','tuba','muted_trumpet','french_horn','brass_section','synth_brass_1','synth_brass_2'] },
+  { label: 'gm.reed', instruments: ['soprano_sax','alto_sax','tenor_sax','baritone_sax','oboe','english_horn','bassoon','clarinet'] },
+  { label: 'gm.pipe', instruments: ['piccolo','flute','recorder','pan_flute','blown_bottle','shakuhachi','whistle','ocarina'] },
+  { label: 'gm.lead', instruments: ['lead_1_square','lead_2_sawtooth','lead_3_calliope','lead_4_chiff','lead_5_charang','lead_6_voice','lead_7_fifths','lead_8_bass_lead'] },
+  { label: 'gm.pad', instruments: ['pad_1_new_age','pad_2_warm','pad_3_polysynth','pad_4_choir','pad_5_bowed','pad_6_metallic','pad_7_halo','pad_8_sweep'] },
+  { label: 'gm.fx', instruments: ['fx_1_rain','fx_2_soundtrack','fx_3_crystal','fx_4_atmosphere','fx_5_brightness','fx_6_goblins','fx_7_echoes','fx_8_sci-fi'] },
+  { label: 'gm.ethnic', instruments: ['sitar','banjo','shamisen','koto','kalimba','bag_pipe','fiddle','shanai'] },
+  { label: 'gm.percussive', instruments: ['tinkle_bell','agogo','steel_drums','woodblock','taiko_drum','melodic_tom','synth_drum','reverse_cymbal'] },
+  { label: 'gm.soundFx', instruments: ['guitar_fret_noise','breath_noise','seashore','bird_tweet','telephone_ring','helicopter','applause','gunshot'] },
 ]
 
 // Every note goes through the master gain, so the volume slider also moves notes already sounding.

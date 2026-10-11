@@ -1,9 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import {
-  ANALYSIS_FIELD_KEYS,
-  ANALYSIS_FIELD_LABELS,
-  ANALYSIS_FIELD_TOOLTIPS,
-} from '../src/detector/analysis-panel'
+import { describe, it, expect, afterEach } from 'vitest'
+import { ANALYSIS_FIELD_KEYS, fieldLabel, fieldTooltip } from '../src/detector/analysis-panel'
+import { useLang, LANGS } from '../src/i18n/i18n'
 
 describe('ANALYSIS_FIELD_KEYS', () => {
   it('contains exactly 13 keys', () => {
@@ -18,18 +15,17 @@ describe('ANALYSIS_FIELD_KEYS', () => {
   })
 })
 
-describe('ANALYSIS_FIELD_LABELS', () => {
-  it('has a non-empty label for every field key', () => {
-    for (const key of ANALYSIS_FIELD_KEYS) {
-      expect(ANALYSIS_FIELD_LABELS[key]).toBeTruthy()
-    }
-  })
-})
+describe('field labels and tooltips', () => {
+  afterEach(() => useLang('en'))
 
-describe('ANALYSIS_FIELD_TOOLTIPS', () => {
-  it('has a non-empty tooltip for every field key', () => {
-    for (const key of ANALYSIS_FIELD_KEYS) {
-      expect(ANALYSIS_FIELD_TOOLTIPS[key]).toBeTruthy()
-    }
-  })
+  for (const lang of LANGS) {
+    it(`has a label and a tooltip for every field in ${lang}`, () => {
+      useLang(lang)
+      for (const key of ANALYSIS_FIELD_KEYS) {
+        expect(fieldLabel(key)).toBeTruthy()
+        expect(fieldLabel(key)).not.toContain('field.')
+        expect(fieldTooltip(key).length).toBeGreaterThan(fieldLabel(key).length)
+      }
+    })
+  }
 })

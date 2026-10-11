@@ -75,3 +75,22 @@ export function chordNoteNames(symbol: string | null | undefined): string[] {
 export function chordRoot(symbol: string | null | undefined): string | null {
   return symbol?.match(/^([A-G][b#]*)/)?.[1] ?? null
 }
+
+// Chord names typed in Spanish (Lam7, Sib/Re), as UMT reads them
+let typedAliases: Record<string, string> | null = null
+const SOLFEGE_START = /^(Do|Re|Mi|Fa|Sol|La|Si)/
+
+/**
+ * A chord as the user typed it, in letters or in solfège ("Lam7" → "Am7"). A name that
+ * starts with a syllable is read in solfège first: "Do7" is C7, though UMT also reads it as
+ * D°7. When that is no chord the letters stand ("Fadd9"); unknown text comes back as typed.
+ */
+export function readTypedChord(text: string): string {
+  const s = normalizeChordName(text.trim())
+  if (SOLFEGE_START.test(s)) {
+    typedAliases ??= tryUMT('typed chords', () => ({ ...UMT.SOLFEGE_ROOTS, ...UMT.QUALITY_ALIASES_ES }), {})
+    const translated = normalizeChordName(tryUMT('typed chords', () => UMT.translateSymbol(s, typedAliases!), s))
+    if (translated !== s && isKnownChord(translated)) return translated
+  }
+  return s
+}

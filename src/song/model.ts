@@ -3,15 +3,21 @@ import { PITCH_NAMES_FLAT, noteNameToMidi } from '../theory/notes'
 import { isKnownChord } from '../theory/chord'
 import { romanInKey } from '../detector/analyzer'
 import { keyPrefersSharps } from '../theory/keys'
+import { t } from '../i18n/i18n'
+import { en } from '../i18n/en'
+import { es } from '../i18n/es'
 export { transposeKey } from '../theory/keys'
 
 export function createSong(): Song {
-  return { schemaVersion: 2, id: newId(), title: 'Untitled', key: null, updatedAt: Date.now(), sections: [] }
+  return { schemaVersion: 2, id: newId(), title: t('song.untitled'), key: null, updatedAt: Date.now(), sections: [] }
 }
+
+// A song started in another language keeps that language's default title
+const UNTITLED = new Set([en['song.untitled'], es['song.untitled']])
 
 /** Nothing written yet: no sections and the default title. */
 export function isBlankSong(song: Song): boolean {
-  return !song.sections.length && song.title === 'Untitled'
+  return !song.sections.length && UNTITLED.has(song.title)
 }
 
 function newId(): string { return crypto.randomUUID() }
@@ -328,7 +334,7 @@ export function withoutEmptyChords(song: Song): Song {
 }
 
 export function detectForm(sectionNames: string[]): string {
-  if (sectionNames.length === 0) return 'Empty'
+  if (sectionNames.length === 0) return t('form.empty')
   const map = new Map<string, string>()
   let letter = 65
   const letters = sectionNames.map(name => {
@@ -337,10 +343,10 @@ export function detectForm(sectionNames: string[]): string {
     return map.get(key)!
   })
   const pattern = letters.join('')
-  if (/^(AB)+$/.test(pattern)) return `Verse-Chorus (${pattern})`
+  if (/^(AB)+$/.test(pattern)) return t('form.verseChorus', { p: pattern })
   if (/^AABA/.test(pattern)) return `AABA (${pattern})`
-  if (/^(A+B+A+)$/.test(pattern)) return `Ternary (${pattern})`
-  if (pattern === 'A') return 'Single section (A)'
-  if (/^A+$/.test(pattern)) return `Strophic (${pattern})`
+  if (/^(A+B+A+)$/.test(pattern)) return t('form.ternary', { p: pattern })
+  if (pattern === 'A') return t('form.single')
+  if (/^A+$/.test(pattern)) return t('form.strophic', { p: pattern })
   return `${pattern}`
 }

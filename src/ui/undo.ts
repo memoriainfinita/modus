@@ -2,6 +2,7 @@
 // One toast at a time: a new action replaces the previous offer.
 
 import { escapeHtml } from './html'
+import { t } from '../i18n/i18n'
 
 const UNDO_MS = 5000
 let current: { el: HTMLElement; timer: number } | null = null
@@ -18,7 +19,7 @@ export function showUndo(message: string, undo: () => void) {
   dismiss()
   const el = document.createElement('div')
   el.className = 'undo-toast'
-  el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">Undo</button>`
+  el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">${escapeHtml(t('undo'))}</button>`
   el.querySelector('button')!.addEventListener('click', () => { dismiss(); undo() })
   document.body.appendChild(el)
   current = { el, timer: window.setTimeout(dismiss, UNDO_MS) }

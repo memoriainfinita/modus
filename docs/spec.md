@@ -88,12 +88,12 @@ Zone 1 is the primary module. Key, Instruments, History and Song are collapsible
 - **MIDI out (Out ▾, ch, Thru):** see MIDI out.
 - **Mode buttons:** Normal, Hold, Arpeggio (mutually exclusive). They apply to every input: controller, computer keyboard and on-screen piano.
 - **⌨ (M):** the computer keyboard as a piano; octave and velocity shown next to it.
-- **Chord field (/):** type a chord name, Enter shows and plays it like a chord picked from history; an unknown name is marked red.
+- **Chord field (/):** type a chord name, in letters or in solfège (Am7, Lam7), Enter shows and plays it like a chord picked from history; an unknown name is marked red.
 - **Key selector:** 24 major/minor keys + Auto. On Auto, the detected key is shown next to it and drives the whole app. The choice belongs to the open song (see Zone 3).
 - **Audio status bar, play button (▶, same as Space), instrument selector, volume.**
 - **⛶ button (P):** presentation mode (see View windows and export).
 - **⧉ button:** view windows for OBS and diagram export (see View windows and export).
-- **? button:** shortcuts and mouse gestures.
+- **? button:** shortcuts, mouse gestures, interface language and note names (see Language).
 
 ### MIDI input
 
@@ -291,6 +291,17 @@ The main window sends what the detector shows over a `BroadcastChannel` (`modus-
 
 **Export.** The same menu saves the staff, circle, guitar or piano on screen as SVG or PNG (3× the screen size), transparent background, cropped to the drawing, named `modus-<diagram>-<chord or key>`. The circle gets the page colour behind its rings (its minor ring is transparent).
 
+## Language
+
+The interface is in English or Spanish: the browser's first language when it is Spanish, otherwise English, and changeable in the ? panel. Note names are a separate choice, letters (C D E) or fixed-do solfège (Do Re Mi): they follow the language until chosen. Changing either reloads the page; the history is carried over, songs and settings are stored anyway.
+
+- Strings: one table per language (`src/i18n/en.ts`, `es.ts`); Spanish has every English key, with the same values filled in (checked by a test)
+- Notes and chords in solfège come from UMT: `localizeNoteName` for notes, `formatChordSymbol(…, { roots: 'solfege' })` for chords (root and slash bass: Sibm7/Re). They apply wherever a note or chord is shown: detector, analysis, history, song, key panel, circle, guitar and fretboard labels, velocity, view windows and presentation. Key names are Modus's (C Major / Do mayor / C mayor)
+- Chords typed in solfège (chord field, song chords, pasted progressions) are stored in letters, through UMT `translateSymbol` with `SOLFEGE_ROOTS` and `QUALITY_ALIASES_ES`. A name that starts with a syllable reads as solfège first ("Do7" is C7, not D°7); when that is no chord the letters stand ("Fadd9")
+- Theory names UMT writes in English (scales and modes, cadences, substitution types) stay English in Spanish too, with the root in solfège when that is chosen; asked of UMT
+- View window titles stay "Modus view: …" in every language: OBS finds the window by its title. A view reloads when the language or the note names change in the main window
+- A new song and new sections are named in the interface language (Sin título, Estrofa); after that the name is the user's
+
 ## Customization
 
 Persisted to localStorage:
@@ -303,6 +314,7 @@ Persisted to localStorage:
 - Guitar tuning (including custom strings), label mode, fret spacing
 - Fretboard spacing
 - MIDI device, input channel, input mode, instrument, volume (the key is stored with each song)
+- Interface language and note names
 
 ## Keyboard shortcuts
 

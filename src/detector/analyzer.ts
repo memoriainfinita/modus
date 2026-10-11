@@ -2,19 +2,17 @@ import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis, HistoryEntry, 
 import { midiToNoteName, pitchClassOf, PITCH_NAMES_FLAT } from '../theory/notes'
 import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from '../theory/chord'
 import { normalizeKey } from '../theory/keys'
+import { t, chordLabel, scaleLabel } from '../i18n/i18n'
 
-const INTERVAL_NAMES = [
-  'Unison','Minor 2nd','Major 2nd','Minor 3rd','Major 3rd','Perfect 4th',
-  'Tritone','Perfect 5th','Minor 6th','Major 6th','Minor 7th','Major 7th'
-]
+const intervalName = (n: number) => t(`interval.${n}` as `interval.${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}`)
 
 // Compound intervals are reduced to their simple form; whole octaves are named as such.
 function semitonesToInterval(semitones: number): { name: string; inversionName: string } {
   const n = ((semitones % 12) + 12) % 12
   if (n === 0) return semitones === 0
-    ? { name: 'Unison', inversionName: 'Octave' }
-    : { name: 'Octave', inversionName: 'Unison' }
-  return { name: INTERVAL_NAMES[n], inversionName: INTERVAL_NAMES[12 - n] }
+    ? { name: intervalName(0), inversionName: t('interval.octave') }
+    : { name: t('interval.octave'), inversionName: intervalName(0) }
+  return { name: intervalName(n), inversionName: intervalName(12 - n) }
 }
 
 export function analyzeNotes(midiNotes: number[]): DetectionResult {
@@ -140,7 +138,6 @@ export function analyzeChordProgression(chords: string[], key: string | null): P
   return steps
 }
 
-const INVERSIONS = ['root position', '1st inversion', '2nd inversion', '3rd inversion']
 const pcName = (n: string) => n.replace(/-?\d+$/, '')
 
 /** How the chord is laid out (UMT `analyzeVoicing`), in one line. Null for fewer than 3 notes. */
@@ -148,11 +145,13 @@ export function describeVoicing(noteNames: string[], chord: any): string | null 
   if (noteNames.length < 3) return null
   const v = tryUMT('voicing', () => UMT.analyzeVoicing(noteNames.map(n => UMT.parseNote(n)), chord), null)
   if (!v) return null
-  const bass = INVERSIONS[v.inversion] ?? `${v.bassDegree ?? pcName(v.bass)} in the bass`
+  const bass = v.inversion >= 0 && v.inversion <= 3
+    ? t(`voicing.inversion${v.inversion as 0 | 1 | 2 | 3}`)
+    : t('voicing.inBass', { degree: v.bassDegree ?? pcName(v.bass) })
   return [
-    bass, v.position, v.drop,
-    v.doubled.length ? `doubled ${v.doubled.join(' ')}` : null,
-    v.omitted.length ? `no ${v.omitted.join(' ')}` : null,
+    bass, t(`voicing.${v.position}`), v.drop,
+    v.doubled.length ? t('voicing.doubled', { notes: v.doubled.join(' ') }) : null,
+    v.omitted.length ? t('voicing.missing', { notes: v.omitted.join(' ') }) : null,
     v.added.length ? `+ ${v.added.map(pcName).join(' ')}` : null,
   ].filter(Boolean).join(' · ')
 }
@@ -169,7 +168,7 @@ export function presentUpperStructures(noteNames: string[], chord: any): string[
   return all.flatMap(u => {
     const triad = tryUMT('upper structures', () => u.triad.getNotes().map(n => n.name), [] as string[])
     return triad.length && triad.every(n => sounding.has(pcOf(n)))
-      ? [`${u.label} (${u.triad.name}: ${u.tensions.join(' ')})`] : []
+      ? [`${u.label} (${chordLabel(u.triad.name)}: ${u.tensions.join(' ')})`] : []
   })
 }
 
@@ -215,7 +214,7 @@ export function analyzeNoteSet(noteNames: string[], key: string | null, fromMelo
   const tonic = key?.split(' ')[0]
   // The chromatic scale holds every set: it says nothing, so it is left out
   const fits = tryUMT('scales', () => UMT.findScalesForNotes(notes, { tonic, limit: 7 })
-    .filter(s => s.notes.length < 12).slice(0, 6).map(s => s.name), [] as string[])
+    .filter(s => s.notes.length < 12).slice(0, 6).map(s => scaleLabel(s.name)), [] as string[])
   return { notes: names, fromMelody, forte, fits }
 }
 
@@ -232,7 +231,7 @@ export function buildHarmonicAnalysis(
   // Each field is optional: UMT throws for cases it does not support (e.g. non-12-TET).
   const bassNote = tryUMT('notes', () => chord.getNotes()[0] ?? null, null)
   if (bassNote) result.figuredBass = tryUMT('figured bass', () => UMT.FiguredBass.fromChord(chord, bassNote), '')
-  result.suggestedScales = tryUMT('scales', () => UMT.Harmony.getSuggestedScales(chord).map(s => s.scale), [])
+  result.suggestedScales = tryUMT('scales', () => UMT.Harmony.getSuggestedScales(chord).map(s => scaleLabel(s.scale)), [])
   result.voicing = describeVoicing(noteNames, chord)
   result.upperStructures = presentUpperStructures(noteNames, chord)
 
@@ -250,7 +249,7 @@ export function buildHarmonicAnalysis(
   }
 
   result.substitutions = tryUMT('substitutions', () => UMT.getSubstitutions(chord, activeKey).map((s: any) => {
-    const name = s.chord?.name ?? s.name ?? String(s)
+    const name = chordLabel(s.chord?.name ?? s.name ?? String(s))
     return s.type ? `${name} (${s.type})` : name
   }), [])
 
