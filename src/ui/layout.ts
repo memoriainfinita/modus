@@ -233,6 +233,7 @@ function moduleBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolea
     case 'key': return '<div id="key-container"></div>'
     case 'explain': return '<div id="explain-container"></div>'
     case 'progressions': return '<div id="progressions-container"></div>'
+    case 'ear': return '<div id="ear-container"></div>'
     case 'piano': return '<div id="piano-container" class="fit"></div>'
     case 'velocity': return '<div id="velocity-container"></div>'
     case 'history': return '<div id="zone2-content"></div>'

@@ -29,6 +29,7 @@ import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import { explainDetection, renderExplanation } from './detector/explain'
 import { renderProgressions } from './ui/progressions'
+import { renderEar, type EarQuestion } from './ui/ear'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames, isKnownChord, readTypedChord } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
@@ -122,6 +123,8 @@ function init() {
   chordInput.addEventListener('input', () => chordInput.classList.remove('invalid'))
   setModeBtn(getMode())
   renderDetector()
+  const ear = document.getElementById('ear-container')
+  if (ear) renderEar(ear, { show: showEarAnswer })
 
   initMidi().then(result => {
     if (result.denied) {
@@ -781,6 +784,20 @@ function onCofClick(chord: string, key: string | null) {
   lastCofClick = { key, at: now }
   playChord(chord)
   showChord(chord, undefined, previousHistoryChord(chord))
+}
+
+/** An ear-training answer, once given, in the detector: the notes, or the chord (with the one before it for a cadence, in its key). */
+function showEarAnswer(q: EarQuestion) {
+  if (!q.symbol) {
+    detectionFromMidi = false
+    const notes = q.steps[q.steps.length - 1]
+    showDetection(spellDetection(analyzeNotes(notes.map(noteNameToMidi).filter((m): m is number => m !== null)), analysisKey()), null)
+    return
+  }
+  if (q.key && analysisKey() !== q.key) { progressionsKey = q.key; applyKey(q.key) }
+  const last = q.steps[q.steps.length - 1]
+  const before = q.steps.length > 1 ? q.steps[q.steps.length - 2] : null
+  showChord(q.symbol, last, q.prev && before ? { symbol: q.prev, notes: before } : null)
 }
 
 // A progression is written in the analysis key; drawn again when the key changes

@@ -1712,4 +1712,62 @@ body.view-mode {
   color: var(--text-dim);
   font-size: 14px;
 }
+#ear-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+.ear-head {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ear-score {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ear-prompt {
+  margin: 0;
+  color: var(--text-soft);
+}
+.ear-answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ear-answer {
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.ear-answer:disabled {
+  cursor: default;
+  opacity: .6;
+}
+.ear-answer.ear-correct {
+  border-color: var(--fn-t);
+  opacity: 1;
+}
+.ear-answer.ear-missed {
+  border-color: var(--fn-d);
+  opacity: 1;
+}
+.ear-feedback {
+  margin: 0;
+  min-height: 1.4em;
+  font-weight: 600;
+}
+.ear-feedback.ear-right {
+  color: var(--fn-t);
+}
+.ear-feedback.ear-wrong {
+  color: var(--fn-d);
+}
 /*# sourceMappingURL=app.css.map */
