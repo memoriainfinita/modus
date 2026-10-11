@@ -7,9 +7,9 @@ import { spellChordSymbol } from '../theory/spelling'
 import { t, chordLabel, keyLabel } from '../i18n/i18n'
 
 const MAX_ENTRIES = 200
-// Chip accent by harmonic function (T/S/D), not by chord quality
+// Chip accent by harmonic function (T/S/D), not by chord quality: theme tokens
 const FUNCTION_COLORS: Record<string, string> = {
-  'T': '#f59e0b', 'S': '#3b82f6', 'D': '#ef4444', 'unknown': '#6b7280'
+  'T': 'var(--history-t)', 'S': 'var(--history-s)', 'D': 'var(--history-d)', 'unknown': 'var(--text-dim)'
 }
 
 let entries: HistoryEntry[] = []
@@ -122,7 +122,7 @@ export function renderHistory(
     const analysis = steps[i].info
     const roman = analysis?.roman ?? '—'
     const fn = analysis?.function ?? 'unknown'
-    const color = FUNCTION_COLORS[fn] ?? '#6b7280'
+    const color = FUNCTION_COLORS[fn] ?? FUNCTION_COLORS.unknown
 
     const chip = document.createElement('div')
     chip.className = 'history-chip'

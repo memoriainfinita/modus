@@ -234,12 +234,14 @@ src/
     html.ts               HTML escaping
     storage.ts            localStorage preferences with safe fallbacks
     export.ts             SVG / PNG export of the diagrams
+    theme.ts              dark / light / system theme; colour tokens for the SVG diagrams
 tests/
   setup-umt.ts        loads the real UMT bundle (pinned devDependency) as the UMT global
+  setup-theme.ts      puts the stylesheet in the test document, for the theme tokens
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
   library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
-  structure.test.ts, i18n.test.ts
+  structure.test.ts, i18n.test.ts, theme.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both
@@ -266,7 +268,7 @@ docs/
 | `M` | Computer keyboard as a piano (M or Esc to stop) |
 | `P` | Presentation: large, no controls, full screen (P or Esc to leave) |
 | `/` | Type a chord name |
-| `?` | Show / hide shortcuts, mouse gestures, language and note names |
+| `?` | Show / hide shortcuts, mouse gestures, theme, language and note names |
 
 Shortcuts are disabled while typing in input fields or with a dropdown focused, and never fire with Ctrl/Cmd/Alt held.
 

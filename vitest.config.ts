@@ -4,6 +4,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['tests/setup-umt.ts'],
+    setupFiles: ['tests/setup-umt.ts', 'tests/setup-theme.ts'],
   }
 })

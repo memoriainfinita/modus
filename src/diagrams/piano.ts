@@ -1,4 +1,5 @@
-import { chordColor, NEUTRAL_COLOR } from '../theory/chord'
+import { chordColor, neutralColor } from '../theory/chord'
+import { color as themeColor } from '../ui/theme'
 import { noteNameToMidi } from '../theory/notes'
 
 /**
@@ -7,12 +8,19 @@ import { noteNameToMidi } from '../theory/notes'
  * detector lights is rebuilt and never receives its own pointerup.
  */
 export function renderPiano(container: HTMLElement, noteNames: string[], chordSymbol: string | null, onPress?: (midi: number) => void) {
-  const color = chordSymbol ? chordColor(chordSymbol) : NEUTRAL_COLOR
+  const color = chordSymbol ? chordColor(chordSymbol) : neutralColor()
   const colors = noteNames.map(() => color)
 
   container.innerHTML = Notae.renderPiano({
     name: '', keys: noteNames, colors,
     range: { from: 'C2', to: 'B5' }
+  }, {
+    pianoWhiteKeyColor: themeColor('piano-white'),
+    pianoWhiteKeyStrokeColor: themeColor('piano-white-stroke'),
+    pianoBlackKeyColor: themeColor('piano-black'),
+    pianoBlackKeyStrokeColor: themeColor('piano-black-stroke'),
+    stringLabelColor: themeColor('piano-label'),
+    pianoBlackKeyLabelColor: themeColor('piano-black-label'),
   })
 
   // notae tags every key with data-note (sharp spelling + octave).

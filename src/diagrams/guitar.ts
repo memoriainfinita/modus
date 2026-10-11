@@ -1,7 +1,7 @@
 import { tryParseChord, tryUMT } from '../theory/chord'
 import { playableVoicings, tuningToMidi, normalizeNoteName } from '../theory/voicings'
 import { loadBool, loadChoice, loadJSON, loadNumber, save } from '../ui/storage'
-import { DARK_FRETBOARD_STYLE } from './fretboard-style'
+import { fretboardColors } from './fretboard-style'
 import { t, chordLabel, localizeDrawnNoteNames } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
 
@@ -48,7 +48,7 @@ function detectPreset(notes: string[]): GuitarTuningKey {
 function guitarStyle(): object {
   const sp = guitarSpacing
   return {
-    ...DARK_FRETBOARD_STYLE,
+    ...fretboardColors(),
     stringSpacing: sp,
     fretSpacing: Math.round(sp * 23 / 19),
     dotRadius: Math.max(5, Math.round(sp * 9 / 19)),
@@ -57,7 +57,6 @@ function guitarStyle(): object {
     ...(guitarLabelMode !== 'none' ? {
       stringLabelMode: guitarLabelMode,
       stringLabelPosition: 'bottom',
-      stringLabelColor: '#9ca3af',
     } : {}),
   }
 }

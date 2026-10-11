@@ -16,9 +16,10 @@ import type { StringKey } from '../i18n/en'
 // ─── Song UI ─────────────────────────────────────────────────────────────────
 
 const SECTION_COLORS: Record<SectionColor, string> = {
-  intro: '#7c3aed', verse: '#2563eb', prechorus: '#0891b2',
-  chorus: '#16a34a', bridge: '#d97706', outro: '#6b7280', custom: '#4b5563'
+  intro: 'var(--section-intro)', verse: 'var(--section-verse)', prechorus: 'var(--section-prechorus)',
+  chorus: 'var(--section-chorus)', bridge: 'var(--section-bridge)', outro: 'var(--section-outro)', custom: 'var(--section-custom)'
 }
+const NEUTRAL_BTN = 'var(--btn-neutral)'
 
 type SongEventHandlers = {
   onChordClick: (chordId: string, symbol: string, notes?: string[]) => void
@@ -122,13 +123,13 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   songSelect.value = song.id
   songSelect.addEventListener('change', () => h.onOpenSong(songSelect.value))
 
-  const newBtn = makeBtn(t('song.new'), '#374151', () => {
+  const newBtn = makeBtn(t('song.new'), NEUTRAL_BTN, () => {
     if (isBlankSong(_song)) return   // already on an empty song
     h.onNewSong()
   })
   newBtn.title = t('song.new.title')
 
-  const deleteBtn = makeBtn(t('song.delete'), '#374151', () => h.onDeleteSong())
+  const deleteBtn = makeBtn(t('song.delete'), NEUTRAL_BTN, () => h.onDeleteSong())
   deleteBtn.title = t('song.delete.title')
 
   // Inline paste area
@@ -139,7 +140,7 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   pasteTA.placeholder = t('song.paste.placeholder')
   pasteTA.rows = 2
   pasteTA.className = 'paste-textarea'
-  const pasteSubmit = makeBtn(t('song.paste.add'), '#4f46e5', () => {
+  const pasteSubmit = makeBtn(t('song.paste.add'), 'var(--accent)', () => {
     const text = pasteTA.value.trim()
     if (!text) return
     // Chords may be written in Do Re Mi: stored in letters
@@ -189,7 +190,7 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
     transposeSelect.value = ''
   })
 
-  const exportBtn = makeBtn(t('song.export'), '#374151', () => {
+  const exportBtn = makeBtn(t('song.export'), NEUTRAL_BTN, () => {
     const printWin = window.open('', '_blank')
     if (!printWin) { showNotice(t('song.popupBlocked'), 'warn'); return }
     printWin.document.write(buildPrintHTML(_song, h.activeKey))
@@ -198,7 +199,7 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   })
   exportBtn.title = t('song.export.title')
 
-  const pasteBtn = makeBtn(t('song.paste'), '#374151', () => {
+  const pasteBtn = makeBtn(t('song.paste'), NEUTRAL_BTN, () => {
     const open = pasteArea.style.display === 'none'
     pasteArea.style.display = open ? 'block' : 'none'
     if (open) pasteTA.focus()
@@ -274,7 +275,7 @@ function buildSectionDOM(
       dot.title = t(`section.${c}`)
       dot.className = 'color-picker-dot'
       dot.style.background = SECTION_COLORS[c]
-      dot.style.borderColor = c === section.color ? '#fff' : 'transparent'
+      dot.style.borderColor = c === section.color ? 'var(--cursor)' : 'transparent'
       dot.addEventListener('click', (ev) => {
         ev.stopPropagation()
         picker.remove()
@@ -325,7 +326,7 @@ function buildSectionDOM(
   const delBtn = makeSmallBtn('×', () => {
     applyWithUndo(removeSection(_song, section.id), t('section.deleted', { name: section.name }))
   })
-  delBtn.style.color = '#f87171'
+  delBtn.style.color = 'var(--danger-soft)'
   delBtn.title = t('section.delete.title')
 
   secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn)
@@ -359,8 +360,8 @@ function buildSectionDOM(
     e.dataTransfer!.dropEffect = 'move'
     const rect = wrap.getBoundingClientRect()
     const before = e.clientY < rect.top + rect.height / 2
-    wrap.style.borderTop = before ? '2px solid #4f46e5' : ''
-    wrap.style.borderBottom = !before ? '2px solid #4f46e5' : ''
+    wrap.style.borderTop = before ? '2px solid var(--accent)' : ''
+    wrap.style.borderBottom = !before ? '2px solid var(--accent)' : ''
   })
   wrap.addEventListener('dragleave', e => {
     if (!wrap.contains(e.relatedTarget as Node)) {
@@ -433,7 +434,7 @@ function buildMeasureDOM(
     if (!hasHistory && !hasChord) return
     e.preventDefault()
     e.dataTransfer!.dropEffect = hasHistory ? 'copy' : 'move'
-    chordsRow.style.outline = '1px dashed #4f46e5'
+    chordsRow.style.outline = '1px dashed var(--accent)'
   })
   chordsRow.addEventListener('dragleave', e => {
     if (!chordsRow.contains(e.relatedTarget as Node)) {
@@ -468,7 +469,7 @@ function buildMeasureDOM(
     applyWithUndo(removeMeasure(_song, section.id, measure.id), t('measure.deleted', { n: measureNum }))
   })
   delMBtn.title = t('measure.delete.title')
-  delMBtn.style.color = '#f87171'
+  delMBtn.style.color = 'var(--danger-soft)'
   delMBtn.style.alignSelf = 'center'
   const sectionObj = _song.sections.find(s => s.id === section.id)
   if (!sectionObj || sectionObj.measures.length <= 1) delMBtn.style.display = 'none'
@@ -526,12 +527,12 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   const symbolEl = document.createElement('div')
   symbolEl.textContent = chordLabel(chord.symbol)
   symbolEl.className = 'chord-chip-symbol'
-  if (!chord.valid) symbolEl.style.color = '#ef4444'
+  if (!chord.valid) symbolEl.style.color = 'var(--danger)'
 
   const degreeEl = document.createElement('div')
   degreeEl.textContent = degree
   degreeEl.className = 'chord-chip-degree'
-  if (borrowed) degreeEl.style.color = '#f59e0b'
+  if (borrowed) degreeEl.style.color = 'var(--warn)'
 
   wrap.appendChild(symbolEl)
   wrap.appendChild(degreeEl)
@@ -565,7 +566,7 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
 
     if (notesState?.length) {
       const notesRow = document.createElement('div')
-      notesRow.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:9px;color:#9ca3af;white-space:nowrap;overflow:hidden'
+      notesRow.style.cssText = 'display:flex;align-items:center;gap:3px;font-size:9px;color:var(--text-muted);white-space:nowrap;overflow:hidden'
       const notesText = document.createElement('span')
       notesText.textContent = '♩ ' + notesState.join(' ')
       notesText.style.overflow = 'hidden'
@@ -573,7 +574,7 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
       const clearBtn = document.createElement('button')
       clearBtn.textContent = '×'
       clearBtn.title = t('chord.clearVoicing.title')
-      clearBtn.style.cssText = 'background:none;border:none;color:#6b7280;cursor:pointer;padding:0 2px;font-size:10px;flex-shrink:0'
+      clearBtn.style.cssText = 'background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 2px;font-size:10px;flex-shrink:0'
       clearBtn.addEventListener('mousedown', e => {
         e.preventDefault()
         notesState = undefined
@@ -594,7 +595,7 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   delBtn.title = t('chord.remove.title')
   const captureBtn = makeSmallBtn('⊙', () => h.onChordCapture(chord.id))
   captureBtn.title = t('chord.capture.title')
-  if (isCapture) { captureBtn.style.color = '#818cf8'; captureBtn.style.fontWeight = '700' }
+  if (isCapture) { captureBtn.style.color = 'var(--accent-text)'; captureBtn.style.fontWeight = '700' }
 
   controls.append(editBtn, dupBtn, captureBtn, delBtn)
   wrap.appendChild(controls)

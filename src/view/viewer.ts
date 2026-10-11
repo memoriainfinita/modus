@@ -9,10 +9,11 @@ import { renderPiano } from '../diagrams/piano'
 import { renderGuitar } from '../diagrams/guitar'
 import { renderCircleOfFifths, cofAccidentalFor } from '../diagrams/cof'
 import type { CofOptions } from '../diagrams/cof'
-import { chordColor, NEUTRAL_COLOR } from '../theory/chord'
+import { chordColor, neutralColor } from '../theory/chord'
 import { escapeHtml } from '../ui/html'
 import { loadBool, loadChoice } from '../ui/storage'
 import { t, applyDocumentLang } from '../i18n/i18n'
+import { applyTheme, color } from '../ui/theme'
 
 /** Makes an SVG scale to its container: a viewBox from its size, no fixed width or height. */
 function fitSvg(svg: SVGSVGElement | null) {
@@ -38,12 +39,12 @@ function cofOptions(key: string | null): CofOptions {
 
 function renderChordView(el: HTMLElement, s: ViewState) {
   if (!s.label) { el.innerHTML = ''; return }
-  const color = s.symbol ? chordColor(s.symbol) : NEUTRAL_COLOR
+  const fill = s.symbol ? chordColor(s.symbol) : neutralColor()
   const detail = s.kind === 'chord' && s.roman && s.roman !== '?'
     ? [s.roman, s.function && s.function !== 'unknown' ? t(`fn.${s.function}`) : null].filter(Boolean).join(' · ')
     : ''
   el.innerHTML = `
-    <div class="view-chord-name" style="color:${color}">${escapeHtml(s.label)}</div>
+    <div class="view-chord-name" style="color:${fill}">${escapeHtml(s.label)}</div>
     ${detail ? `<div class="view-chord-detail">${escapeHtml(detail)}</div>` : ''}`
 }
 
@@ -59,7 +60,7 @@ export function renderView(view: ViewName, el: HTMLElement, s: ViewState) {
     inner.style.height = '100%'
     inner.style.width = '100%'
   }
-  else if (view === 'cof') renderCircleOfFifths(el, s.key, s.symbol, () => {}, 400, { ...cofOptions(s.key), backdrop: '#1a1a2e' })
+  else if (view === 'cof') renderCircleOfFifths(el, s.key, s.symbol, () => {}, 400, { ...cofOptions(s.key), backdrop: color('bg') })
   else if (view === 'piano') renderPiano(el, s.notes, s.symbol)
   else if (view === 'guitar') renderGuitar(el, s.symbol, s.notes, s.guitarVoicing)
   fitSvg(el.querySelector('svg'))
@@ -76,6 +77,8 @@ export function runViewerFromUrl(): boolean {
   // A stable title, in English whatever the language: OBS window capture finds the window by it.
   document.title = `Modus view: ${view}`
   applyDocumentLang()
+  // Dark whatever the page's theme: the light text and its dark glow read on chroma and on the dark background
+  applyTheme('dark')
   document.body.classList.add('view-mode')
   document.body.style.background = background
   document.getElementById('app')!.style.display = 'none'

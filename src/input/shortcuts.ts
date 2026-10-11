@@ -3,6 +3,8 @@ import type { Lang, NoteNaming } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
 import { carryHistoryOverReload } from '../history/history'
 import { escapeHtml } from '../ui/html'
+import { getThemeChoice, saveThemeChoice, THEME_CHOICES } from '../ui/theme'
+import type { ThemeChoice } from '../ui/theme'
 
 // Keys as printed (a string key for named keys) and what they do
 const SHORTCUTS: { key: string | StringKey; action: StringKey }[] = [
@@ -64,6 +66,10 @@ export function toggleHelp() {
     <div class="shortcut-section">${t('help.mouse')}</div>
     ${GESTURES.map(g => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join('')}
     <div class="shortcut-section">${t('help.settings')}</div>
+    <div class="help-setting"><label for="help-theme">${t('help.theme')}</label>
+      <select id="help-theme" class="ctrl-select">
+        ${THEME_CHOICES.map(c => `<option value="${c}"${c === getThemeChoice() ? ' selected' : ''}>${t(`help.theme.${c}`)}</option>`).join('')}
+      </select></div>
     <div class="help-setting"><label for="help-lang">${t('help.language')}</label>
       <select id="help-lang" class="ctrl-select">
         ${LANGS.map(l => `<option value="${l}"${l === getLang() ? ' selected' : ''}>${LANG_NAMES[l]}</option>`).join('')}
@@ -75,6 +81,9 @@ export function toggleHelp() {
     <div class="gesture-row">${escapeHtml(t('help.reloads'))}</div>`
   document.body.appendChild(popup)
   popup.querySelector('.shortcut-help-close')!.addEventListener('click', closeHelp)
+  // The theme changes in place: no reload
+  const themeSel = popup.querySelector<HTMLSelectElement>('#help-theme')!
+  themeSel.addEventListener('change', () => saveThemeChoice(themeSel.value as ThemeChoice))
   const langSel = popup.querySelector<HTMLSelectElement>('#help-lang')!
   // Note names follow the language until they are chosen on their own
   langSel.addEventListener('change', () => reloadWith(() => saveLang(langSel.value as Lang)))

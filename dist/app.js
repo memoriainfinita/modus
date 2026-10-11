@@ -446,17 +446,67 @@
     return offset % 12 === 0 ? `${base}${offset / 12 - 1}` : null;
   }
 
+  // src/ui/theme.ts
+  var THEME_CHOICES = ["system", "dark", "light"];
+  var KEY = "theme";
+  function getThemeChoice() {
+    return loadChoice(KEY, THEME_CHOICES, "system");
+  }
+  function systemPrefersLight() {
+    try {
+      return matchMedia("(prefers-color-scheme: light)").matches;
+    } catch {
+      return false;
+    }
+  }
+  function resolveTheme(choice = getThemeChoice()) {
+    return choice === "system" ? systemPrefersLight() ? "light" : "dark" : choice;
+  }
+  var cache = /* @__PURE__ */ new Map();
+  function color(token) {
+    let v = cache.get(token);
+    if (v === void 0) {
+      v = getComputedStyle(document.documentElement).getPropertyValue(`--${token}`).trim();
+      cache.set(token, v);
+    }
+    return v;
+  }
+  function applyTheme(theme = resolveTheme()) {
+    document.documentElement.dataset.theme = theme;
+    cache.clear();
+  }
+  var listeners = [];
+  function onThemeChange(onChange3) {
+    listeners.push(onChange3);
+  }
+  function changed() {
+    applyTheme();
+    listeners.forEach((f) => f());
+  }
+  function saveThemeChoice(choice) {
+    save(KEY, choice);
+    changed();
+  }
+  function followSystemTheme() {
+    try {
+      matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+        if (getThemeChoice() === "system") changed();
+      });
+    } catch {
+    }
+  }
+
   // src/theory/chord.ts
-  var CHORD_FAMILY_COLORS = {
-    major: "#f59e0b",
-    minor: "#3b82f6",
-    dominant: "#ef4444",
-    diminished: "#7c3aed",
-    "half-diminished": "#7c3aed",
-    augmented: "#0d9488",
-    sus: "#6b7280"
+  var CHORD_FAMILY_TOKENS = {
+    major: "chord-major",
+    minor: "chord-minor",
+    dominant: "chord-dominant",
+    diminished: "chord-diminished",
+    "half-diminished": "chord-diminished",
+    augmented: "chord-augmented",
+    sus: "chord-other"
   };
-  var NEUTRAL_COLOR = "#6b7280";
+  var neutralColor = () => color("chord-other");
   function tryUMT(what, fn, fallback) {
     try {
       return fn();
@@ -496,7 +546,7 @@
   }
   function chordColor(symbol) {
     const family = chordFamily(symbol);
-    return family ? CHORD_FAMILY_COLORS[family] : NEUTRAL_COLOR;
+    return family ? color(CHORD_FAMILY_TOKENS[family]) : neutralColor();
   }
   function chordNoteNames(symbol) {
     const chord = tryParseChord(symbol);
@@ -864,11 +914,15 @@
     "help.heading": "Shortcuts and gestures",
     "help.mouse": "Mouse",
     "help.settings": "Language",
+    "help.theme": "Theme",
+    "help.theme.system": "As the system",
+    "help.theme.dark": "Dark",
+    "help.theme.light": "Light",
     "help.language": "Interface",
     "help.noteNames": "Note names",
     "help.noteNames.letters": "C D E",
     "help.noteNames.solfege": "Do Re Mi",
-    "help.reloads": "Changing either reloads the page; history and songs stay.",
+    "help.reloads": "Changing the interface or the note names reloads the page; history and songs stay.",
     "kbd.space": "Space",
     "kbd.del": "Del",
     "kbd.esc": "Esc",
@@ -1183,11 +1237,15 @@
     "help.heading": "Atajos y gestos",
     "help.mouse": "Rat\xF3n",
     "help.settings": "Idioma",
+    "help.theme": "Tema",
+    "help.theme.system": "Como el sistema",
+    "help.theme.dark": "Oscuro",
+    "help.theme.light": "Claro",
     "help.language": "Interfaz",
     "help.noteNames": "Nombres de nota",
     "help.noteNames.letters": "C D E",
     "help.noteNames.solfege": "Do Re Mi",
-    "help.reloads": "Al cambiar cualquiera se recarga la p\xE1gina; el historial y las canciones se mantienen.",
+    "help.reloads": "Al cambiar la interfaz o los nombres de nota se recarga la p\xE1gina; el historial y las canciones se mantienen.",
     "kbd.space": "Espacio",
     "kbd.del": "Supr",
     "kbd.esc": "Esc",
@@ -1855,13 +1913,20 @@ ${lower.length ? chordOf(lower) : empty}`;
 
   // src/diagrams/piano.ts
   function renderPiano(container, noteNames, chordSymbol, onPress) {
-    const color = chordSymbol ? chordColor(chordSymbol) : NEUTRAL_COLOR;
-    const colors = noteNames.map(() => color);
+    const color2 = chordSymbol ? chordColor(chordSymbol) : neutralColor();
+    const colors = noteNames.map(() => color2);
     container.innerHTML = Notae.renderPiano({
       name: "",
       keys: noteNames,
       colors,
       range: { from: "C2", to: "B5" }
+    }, {
+      pianoWhiteKeyColor: color("piano-white"),
+      pianoWhiteKeyStrokeColor: color("piano-white-stroke"),
+      pianoBlackKeyColor: color("piano-black"),
+      pianoBlackKeyStrokeColor: color("piano-black-stroke"),
+      stringLabelColor: color("piano-label"),
+      pianoBlackKeyLabelColor: color("piano-black-label")
     });
     container.querySelectorAll("rect[data-note]").forEach((el) => {
       const midi = noteNameToMidi(el.dataset.note);
@@ -1929,13 +1994,20 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
 
   // src/diagrams/fretboard-style.ts
-  var DARK_FRETBOARD_STYLE = {
-    chordNameColor: "#e0e0e0",
-    fretLabelColor: "#9ca3af",
-    nutColor: "#aaaaaa",
-    indicatorColor: "#9ca3af",
-    stringLabelColor: "#9ca3af"
-  };
+  function fretboardColors() {
+    return {
+      chordNameColor: color("fret-text"),
+      fretLabelColor: color("fret-label"),
+      nutColor: color("fret-nut"),
+      stringColor: color("fret-string"),
+      fretColor: color("fret-wire"),
+      dotColor: color("fret-dot"),
+      barreColor: color("fret-dot"),
+      dotTextColor: color("fret-dot-text"),
+      indicatorColor: color("fret-label"),
+      stringLabelColor: color("fret-label")
+    };
+  }
 
   // src/diagrams/guitar.ts
   var guitarControlsVisible = loadBool("panel-guitarControls", true);
@@ -1978,7 +2050,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   function guitarStyle() {
     const sp = guitarSpacing;
     return {
-      ...DARK_FRETBOARD_STYLE,
+      ...fretboardColors(),
       stringSpacing: sp,
       fretSpacing: Math.round(sp * 23 / 19),
       dotRadius: Math.max(5, Math.round(sp * 9 / 19)),
@@ -1986,8 +2058,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       showStringLabels: guitarLabelMode !== "none",
       ...guitarLabelMode !== "none" ? {
         stringLabelMode: guitarLabelMode,
-        stringLabelPosition: "bottom",
-        stringLabelColor: "#9ca3af"
+        stringLabelPosition: "bottom"
       } : {}
     };
   }
@@ -2181,6 +2252,26 @@ ${lower.length ? chordOf(lower) : empty}`;
     const label = (x, y, font, fill, main, sub, subFill) => sub ? `<text x="${x}" y="${y - font * 0.5}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text><text x="${x}" y="${y + font * 0.72}" text-anchor="middle" dominant-baseline="middle" font-size="${font * 0.85}" fill="${subFill}" pointer-events="none">${sub}</text>` : `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text>`;
     const TIP = t("cof.segment.tip");
     const diatonicPos = activePos !== -1 ? /* @__PURE__ */ new Set([(activePos + 11) % 12, activePos, (activePos + 1) % 12]) : /* @__PURE__ */ new Set();
+    const c = {
+      tonic: color("cof-tonic"),
+      chord: color("cof-chord"),
+      diatonic: color("cof-diatonic"),
+      diatonicStroke: color("cof-diatonic-stroke"),
+      segment: color("cof-segment"),
+      stroke: color("cof-stroke"),
+      dimDiatonic: color("cof-dim-diatonic"),
+      dimDiatonicStroke: color("cof-dim-diatonic-stroke"),
+      dim: color("cof-dim"),
+      dimStroke: color("cof-dim-stroke"),
+      label: color("cof-label"),
+      onMark: color("cof-label-on-mark"),
+      minorLabel: color("cof-minor-label"),
+      minorDiatonicLabel: color("cof-minor-diatonic-label"),
+      dimLabel: color("cof-dim-label"),
+      dimDiatonicLabel: color("cof-dim-diatonic-label"),
+      degree: color("cof-degree"),
+      degreeSmall: color("cof-degree-small")
+    };
     let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`;
     if (opts.backdrop) svg += `<circle cx="${size / 2}" cy="${size / 2}" r="${size * 0.43}" fill="${opts.backdrop}"/>`;
     keys.forEach((key, i) => {
@@ -2192,8 +2283,8 @@ ${lower.length ? chordOf(lower) : empty}`;
       const showDeg = opts.showDegrees && activePos !== -1;
       const isTonic = activePos === i && !keyIsMinor;
       const isChordRoot = !isMinorActiveChord && !isDimActiveChord && chordRootPc === pitchClass(key);
-      const fill = isTonic ? "#4f46e5" : isChordRoot ? "#0d9488" : isDiatonic ? "#252550" : "#2d2d44";
-      const stroke = isChordRoot ? "#0d9488" : isDiatonic ? "#7c7ca0" : "#4a4a6a";
+      const fill = isTonic ? c.tonic : isChordRoot ? c.chord : isDiatonic ? c.diatonic : c.segment;
+      const stroke = isChordRoot ? c.chord : isDiatonic ? c.diatonicStroke : c.stroke;
       const suffix7 = opts.show7ths ? relPos === 1 ? "7" : "maj7" : "";
       svg += `<path d="${ring(outerR, innerR, angle, nextAngle)}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
       data-chord="${key + suffix7}" data-key="${key} Major"><title>${TIP}</title></path>`;
@@ -2201,21 +2292,21 @@ ${lower.length ? chordOf(lower) : empty}`;
         cx + labelR * Math.cos(midAngle),
         cy + labelR * Math.sin(midAngle),
         majorFont,
-        "#e0e0e0",
+        isTonic || isChordRoot ? c.onMark : c.label,
         chordLabel(key + suffix7),
         showDeg ? degreeOf(key) : null,
-        "#a5b4fc"
+        isTonic || isChordRoot ? c.onMark : c.degree
       );
       if (!opts.showMinor) return;
       const minorRoot = rootOf(minorKeys[i]);
       const isMinorTonic = activePos === i && keyIsMinor;
       const isMinorChordHere = isMinorActiveChord && chordRootPc === pitchClass(minorRoot);
       const minorChord = minorKeys[i] + (opts.show7ths ? "7" : "");
-      const minorSegFill = isMinorTonic ? "#4f46e5" : isMinorChordHere ? "#0d9488" : isDiatonic ? "#252550" : "transparent";
-      const minorSegStroke = isMinorTonic ? "#4f46e5" : isMinorChordHere ? "#0d9488" : isDiatonic ? "#7c7ca0" : "transparent";
+      const minorSegFill = isMinorTonic ? c.tonic : isMinorChordHere ? c.chord : isDiatonic ? c.diatonic : "transparent";
+      const minorSegStroke = isMinorTonic ? c.tonic : isMinorChordHere ? c.chord : isDiatonic ? c.diatonicStroke : "transparent";
       svg += `<path d="${ring(minorOutR, minorInR, angle, nextAngle)}" fill="${minorSegFill}" stroke="${minorSegStroke}" stroke-width="1"
       pointer-events="all" style="cursor:pointer" data-chord="${minorChord}" data-key="${minorRoot} Minor"><title>${TIP}</title></path>`;
-      const minorFill = isMinorTonic || isMinorChordHere ? "#e0e0e0" : isDiatonic ? "#c4b5fd" : "#9ca3af";
+      const minorFill = isMinorTonic || isMinorChordHere ? c.onMark : isDiatonic ? c.minorDiatonicLabel : c.minorLabel;
       svg += label(
         cx + minorR * Math.cos(midAngle),
         cy + minorR * Math.sin(midAngle),
@@ -2223,24 +2314,24 @@ ${lower.length ? chordOf(lower) : empty}`;
         minorFill,
         chordLabel(minorChord),
         showDeg ? degreeOf(minorKeys[i]) : null,
-        "#818cf8"
+        isMinorTonic || isMinorChordHere ? c.onMark : c.degreeSmall
       );
       const dimRoot = CIRCLE_DIM[i];
       const isDiatonicDim = i === activePos;
       const isDimChordHere = isDimActiveChord && chordRootPc === pitchClass(dimRoot);
       const dimChord = `${dimRoot}${opts.show7ths ? "m7b5" : "dim"}`;
       svg += `<path d="${ring(dimOutR, dimInR, angle, nextAngle)}"
-      fill="${isDimChordHere ? "#0d9488" : isDiatonicDim ? "#2a2a5a" : "#1e1e35"}" stroke="${isDiatonicDim ? "#a0a0d8" : "#3a3a5c"}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
+      fill="${isDimChordHere ? c.chord : isDiatonicDim ? c.dimDiatonic : c.dim}" stroke="${isDiatonicDim ? c.dimDiatonicStroke : c.dimStroke}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
       pointer-events="all" style="cursor:pointer" data-chord="${dimChord}"><title>${t("cof.segment.play")}</title></path>`;
       const dimText = `${noteLabel(dimRoot)}${opts.show7ths ? "\xF87" : "\xB0"}`;
       svg += label(
         cx + dimLabR * Math.cos(midAngle),
         cy + dimLabR * Math.sin(midAngle),
         dimFont,
-        isDimChordHere ? "#e0e0e0" : isDiatonicDim ? "#a78bfa" : "#6b7280",
+        isDimChordHere ? c.onMark : isDiatonicDim ? c.dimDiatonicLabel : c.dimLabel,
         dimText,
         showDeg ? degreeOf(`${dimRoot}dim`) : null,
-        "#818cf8"
+        isDimChordHere ? c.onMark : c.degreeSmall
       );
     });
     svg += "</svg>";
@@ -2280,10 +2371,10 @@ ${lower.length ? chordOf(lower) : empty}`;
       el.innerHTML = "";
       return;
     }
-    const color = s.symbol ? chordColor(s.symbol) : NEUTRAL_COLOR;
+    const fill = s.symbol ? chordColor(s.symbol) : neutralColor();
     const detail = s.kind === "chord" && s.roman && s.roman !== "?" ? [s.roman, s.function && s.function !== "unknown" ? t(`fn.${s.function}`) : null].filter(Boolean).join(" \xB7 ") : "";
     el.innerHTML = `
-    <div class="view-chord-name" style="color:${color}">${escapeHtml(s.label)}</div>
+    <div class="view-chord-name" style="color:${fill}">${escapeHtml(s.label)}</div>
     ${detail ? `<div class="view-chord-detail">${escapeHtml(detail)}</div>` : ""}`;
   }
   function renderView(view, el, s) {
@@ -2295,7 +2386,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       inner.style.height = "100%";
       inner.style.width = "100%";
     } else if (view === "cof") renderCircleOfFifths(el, s.key, s.symbol, () => {
-    }, 400, { ...cofOptions(s.key), backdrop: "#1a1a2e" });
+    }, 400, { ...cofOptions(s.key), backdrop: color("bg") });
     else if (view === "piano") renderPiano(el, s.notes, s.symbol);
     else if (view === "guitar") renderGuitar(el, s.symbol, s.notes, s.guitarVoicing);
     fitSvg(el.querySelector("svg"));
@@ -2308,6 +2399,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const background = VIEW_BACKGROUNDS[bg] ?? VIEW_BACKGROUNDS.green;
     document.title = `Modus view: ${view}`;
     applyDocumentLang();
+    applyTheme("dark");
     document.body.classList.add("view-mode");
     document.body.style.background = background;
     document.getElementById("app").style.display = "none";
@@ -2479,9 +2571,9 @@ ${lower.length ? chordOf(lower) : empty}`;
     });
     const sp = neckSpacing;
     const style = {
-      ...DARK_FRETBOARD_STYLE,
+      ...fretboardColors(),
       numFrets: NECK_FRETS,
-      dotColor: "#3b82f6",
+      dotColor: color("neck-dot"),
       chordNameSize: 0,
       chordNameY: 4,
       chordNameGapH: 4,
@@ -2555,13 +2647,13 @@ ${lower.length ? chordOf(lower) : empty}`;
     const secondary = a && a.roman !== a.degree ? a.roman : void 0;
     return { symbol, roman: a?.degree ?? "?", secondary, function: a?.function ?? "unknown" };
   }
-  var cache = /* @__PURE__ */ new Map();
+  var cache2 = /* @__PURE__ */ new Map();
   function buildKeyMap(key, sevenths) {
     const cacheKey = `${key}|${sevenths}`;
-    if (cache.has(cacheKey)) return cache.get(cacheKey);
+    if (cache2.has(cacheKey)) return cache2.get(cacheKey);
     const chords = tryUMT("diatonic chords", () => UMT.parseScaleSymbol(key).getDiatonicChords(sevenths ? "seventh" : "triad"), []);
     if (!chords.length) {
-      cache.set(cacheKey, null);
+      cache2.set(cacheKey, null);
       return null;
     }
     const diatonic = chords.map((c) => keyChord(c.name, key));
@@ -2592,7 +2684,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const axis = tryUMT("coltrane axis", () => UMT.Harmony.getColtraneAxis(key).majorThirds, null);
     const coltraneAxis = axis ? axis.map((n) => spellPitchClassInKey(n, key)) : null;
     const map = { key, diatonic, negative, parallel, coltraneAxis };
-    cache.set(cacheKey, map);
+    cache2.set(cacheKey, map);
     return map;
   }
   function sameChord(a, b) {
@@ -2679,10 +2771,10 @@ ${lower.length ? chordOf(lower) : empty}`;
   // src/history/history.ts
   var MAX_ENTRIES = 200;
   var FUNCTION_COLORS = {
-    "T": "#f59e0b",
-    "S": "#3b82f6",
-    "D": "#ef4444",
-    "unknown": "#6b7280"
+    "T": "var(--history-t)",
+    "S": "var(--history-s)",
+    "D": "var(--history-d)",
+    "unknown": "var(--text-dim)"
   };
   var entries = [];
   var debounceTimer = null;
@@ -2764,12 +2856,12 @@ ${lower.length ? chordOf(lower) : empty}`;
       const analysis = steps[i].info;
       const roman = analysis?.roman ?? "\u2014";
       const fn = analysis?.function ?? "unknown";
-      const color = FUNCTION_COLORS[fn] ?? "#6b7280";
+      const color2 = FUNCTION_COLORS[fn] ?? FUNCTION_COLORS.unknown;
       const chip = document.createElement("div");
       chip.className = "history-chip";
       chip.dataset.id = entry.id;
       chip.classList.toggle("active-cursor", activeCursorEntryId === entry.id);
-      chip.style.borderLeft = `3px solid ${color}`;
+      chip.style.borderLeft = `3px solid ${color2}`;
       chip.innerHTML = `
       <span class="history-chip-symbol">${escapeHtml(chordLabel(entry.symbol))}</span>
       <span class="history-chip-roman">${escapeHtml(roman)}</span>
@@ -2839,11 +2931,11 @@ ${lower.length ? chordOf(lower) : empty}`;
   function newMeasure() {
     return { id: newId(), chords: [] };
   }
-  function addSection(song, name, color) {
+  function addSection(song, name, color2) {
     const section = {
       id: newId(),
       name,
-      color,
+      color: color2,
       measures: [newMeasure()],
       collapsed: false,
       repeatCount: 1
@@ -3217,14 +3309,15 @@ ${lower.length ? chordOf(lower) : empty}`;
 
   // src/song/view.ts
   var SECTION_COLORS = {
-    intro: "#7c3aed",
-    verse: "#2563eb",
-    prechorus: "#0891b2",
-    chorus: "#16a34a",
-    bridge: "#d97706",
-    outro: "#6b7280",
-    custom: "#4b5563"
+    intro: "var(--section-intro)",
+    verse: "var(--section-verse)",
+    prechorus: "var(--section-prechorus)",
+    chorus: "var(--section-chorus)",
+    bridge: "var(--section-bridge)",
+    outro: "var(--section-outro)",
+    custom: "var(--section-custom)"
   };
+  var NEUTRAL_BTN = "var(--btn-neutral)";
   var _song = createSong();
   var _handlers = null;
   var _container = null;
@@ -3297,12 +3390,12 @@ ${lower.length ? chordOf(lower) : empty}`;
     songSelect.innerHTML = metas.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id === song.id ? song.title : m.title) || escapeHtml(t("song.untitled"))}</option>`).join("");
     songSelect.value = song.id;
     songSelect.addEventListener("change", () => h.onOpenSong(songSelect.value));
-    const newBtn = makeBtn(t("song.new"), "#374151", () => {
+    const newBtn = makeBtn(t("song.new"), NEUTRAL_BTN, () => {
       if (isBlankSong(_song)) return;
       h.onNewSong();
     });
     newBtn.title = t("song.new.title");
-    const deleteBtn = makeBtn(t("song.delete"), "#374151", () => h.onDeleteSong());
+    const deleteBtn = makeBtn(t("song.delete"), NEUTRAL_BTN, () => h.onDeleteSong());
     deleteBtn.title = t("song.delete.title");
     const pasteArea = document.createElement("div");
     pasteArea.className = "paste-area";
@@ -3311,7 +3404,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     pasteTA.placeholder = t("song.paste.placeholder");
     pasteTA.rows = 2;
     pasteTA.className = "paste-textarea";
-    const pasteSubmit = makeBtn(t("song.paste.add"), "#4f46e5", () => {
+    const pasteSubmit = makeBtn(t("song.paste.add"), "var(--accent)", () => {
       const text = pasteTA.value.trim();
       if (!text) return;
       const measures = parseProgressionMeasures(text).map((m) => m.map(readTypedChord));
@@ -3362,7 +3455,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       }
       transposeSelect.value = "";
     });
-    const exportBtn = makeBtn(t("song.export"), "#374151", () => {
+    const exportBtn = makeBtn(t("song.export"), NEUTRAL_BTN, () => {
       const printWin = window.open("", "_blank");
       if (!printWin) {
         showNotice(t("song.popupBlocked"), "warn");
@@ -3373,7 +3466,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       printWin.print();
     });
     exportBtn.title = t("song.export.title");
-    const pasteBtn = makeBtn(t("song.paste"), "#374151", () => {
+    const pasteBtn = makeBtn(t("song.paste"), NEUTRAL_BTN, () => {
       const open2 = pasteArea.style.display === "none";
       pasteArea.style.display = open2 ? "block" : "none";
       if (open2) pasteTA.focus();
@@ -3395,10 +3488,10 @@ ${lower.length ? chordOf(lower) : empty}`;
     return root;
   }
   function buildSectionDOM(section, h, measureNums) {
-    const color = SECTION_COLORS[section.color];
+    const color2 = SECTION_COLORS[section.color];
     const wrap = document.createElement("div");
     wrap.className = "section-wrap";
-    wrap.style.borderLeft = `3px solid ${color}`;
+    wrap.style.borderLeft = `3px solid ${color2}`;
     const secHeader = document.createElement("div");
     secHeader.className = "section-header";
     const toggle = document.createElement("span");
@@ -3412,8 +3505,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     const nameInput = document.createElement("input");
     nameInput.value = section.name;
     nameInput.className = "section-name-input";
-    nameInput.style.color = color;
-    nameInput.addEventListener("focus", () => nameInput.style.borderBottomColor = color);
+    nameInput.style.color = color2;
+    nameInput.addEventListener("focus", () => nameInput.style.borderBottomColor = color2);
     nameInput.addEventListener("blur", () => {
       nameInput.style.borderBottomColor = "transparent";
       _song = updateSection(_song, section.id, { name: nameInput.value });
@@ -3423,7 +3516,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const PRESET_COLORS = ["intro", "verse", "prechorus", "chorus", "bridge", "outro", "custom"];
     const swatchEl = document.createElement("button");
     swatchEl.className = "section-swatch";
-    swatchEl.style.background = color;
+    swatchEl.style.background = color2;
     swatchEl.title = t("section.color.title");
     swatchEl.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -3435,7 +3528,7 @@ ${lower.length ? chordOf(lower) : empty}`;
         dot.title = t(`section.${c}`);
         dot.className = "color-picker-dot";
         dot.style.background = SECTION_COLORS[c];
-        dot.style.borderColor = c === section.color ? "#fff" : "transparent";
+        dot.style.borderColor = c === section.color ? "var(--cursor)" : "transparent";
         dot.addEventListener("click", (ev) => {
           ev.stopPropagation();
           picker.remove();
@@ -3504,7 +3597,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const delBtn = makeSmallBtn("\xD7", () => {
       applyWithUndo(removeSection(_song, section.id), t("section.deleted", { name: section.name }));
     });
-    delBtn.style.color = "#f87171";
+    delBtn.style.color = "var(--danger-soft)";
     delBtn.title = t("section.delete.title");
     secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn);
     const addMeasureBtn = makeSmallBtn(t("section.addBar"), () => {
@@ -3537,8 +3630,8 @@ ${lower.length ? chordOf(lower) : empty}`;
       e.dataTransfer.dropEffect = "move";
       const rect = wrap.getBoundingClientRect();
       const before = e.clientY < rect.top + rect.height / 2;
-      wrap.style.borderTop = before ? "2px solid #4f46e5" : "";
-      wrap.style.borderBottom = !before ? "2px solid #4f46e5" : "";
+      wrap.style.borderTop = before ? "2px solid var(--accent)" : "";
+      wrap.style.borderBottom = !before ? "2px solid var(--accent)" : "";
     });
     wrap.addEventListener("dragleave", (e) => {
       if (!wrap.contains(e.relatedTarget)) {
@@ -3599,7 +3692,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       if (!hasHistory && !hasChord) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = hasHistory ? "copy" : "move";
-      chordsRow.style.outline = "1px dashed #4f46e5";
+      chordsRow.style.outline = "1px dashed var(--accent)";
     });
     chordsRow.addEventListener("dragleave", (e) => {
       if (!chordsRow.contains(e.relatedTarget)) {
@@ -3634,7 +3727,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       applyWithUndo(removeMeasure(_song, section.id, measure.id), t("measure.deleted", { n: measureNum }));
     });
     delMBtn.title = t("measure.delete.title");
-    delMBtn.style.color = "#f87171";
+    delMBtn.style.color = "var(--danger-soft)";
     delMBtn.style.alignSelf = "center";
     const sectionObj = _song.sections.find((s) => s.id === section.id);
     if (!sectionObj || sectionObj.measures.length <= 1) delMBtn.style.display = "none";
@@ -3691,11 +3784,11 @@ ${lower.length ? chordOf(lower) : empty}`;
     const symbolEl = document.createElement("div");
     symbolEl.textContent = chordLabel(chord.symbol);
     symbolEl.className = "chord-chip-symbol";
-    if (!chord.valid) symbolEl.style.color = "#ef4444";
+    if (!chord.valid) symbolEl.style.color = "var(--danger)";
     const degreeEl = document.createElement("div");
     degreeEl.textContent = degree;
     degreeEl.className = "chord-chip-degree";
-    if (borrowed) degreeEl.style.color = "#f59e0b";
+    if (borrowed) degreeEl.style.color = "var(--warn)";
     wrap.appendChild(symbolEl);
     wrap.appendChild(degreeEl);
     const controls = document.createElement("div");
@@ -3722,7 +3815,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       editWrap.appendChild(input);
       if (notesState?.length) {
         const notesRow = document.createElement("div");
-        notesRow.style.cssText = "display:flex;align-items:center;gap:3px;font-size:9px;color:#9ca3af;white-space:nowrap;overflow:hidden";
+        notesRow.style.cssText = "display:flex;align-items:center;gap:3px;font-size:9px;color:var(--text-muted);white-space:nowrap;overflow:hidden";
         const notesText = document.createElement("span");
         notesText.textContent = "\u2669 " + notesState.join(" ");
         notesText.style.overflow = "hidden";
@@ -3730,7 +3823,7 @@ ${lower.length ? chordOf(lower) : empty}`;
         const clearBtn = document.createElement("button");
         clearBtn.textContent = "\xD7";
         clearBtn.title = t("chord.clearVoicing.title");
-        clearBtn.style.cssText = "background:none;border:none;color:#6b7280;cursor:pointer;padding:0 2px;font-size:10px;flex-shrink:0";
+        clearBtn.style.cssText = "background:none;border:none;color:var(--text-dim);cursor:pointer;padding:0 2px;font-size:10px;flex-shrink:0";
         clearBtn.addEventListener("mousedown", (e) => {
           e.preventDefault();
           notesState = void 0;
@@ -3755,7 +3848,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const captureBtn = makeSmallBtn("\u2299", () => h.onChordCapture(chord.id));
     captureBtn.title = t("chord.capture.title");
     if (isCapture) {
-      captureBtn.style.color = "#818cf8";
+      captureBtn.style.color = "var(--accent-text)";
       captureBtn.style.fontWeight = "700";
     }
     controls.append(editBtn, dupBtn, captureBtn, delBtn);
@@ -3927,6 +4020,10 @@ ${lower.length ? chordOf(lower) : empty}`;
     <div class="shortcut-section">${t("help.mouse")}</div>
     ${GESTURES.map((g) => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join("")}
     <div class="shortcut-section">${t("help.settings")}</div>
+    <div class="help-setting"><label for="help-theme">${t("help.theme")}</label>
+      <select id="help-theme" class="ctrl-select">
+        ${THEME_CHOICES.map((c) => `<option value="${c}"${c === getThemeChoice() ? " selected" : ""}>${t(`help.theme.${c}`)}</option>`).join("")}
+      </select></div>
     <div class="help-setting"><label for="help-lang">${t("help.language")}</label>
       <select id="help-lang" class="ctrl-select">
         ${LANGS.map((l) => `<option value="${l}"${l === getLang() ? " selected" : ""}>${LANG_NAMES[l]}</option>`).join("")}
@@ -3938,6 +4035,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     <div class="gesture-row">${escapeHtml(t("help.reloads"))}</div>`;
     document.body.appendChild(popup);
     popup.querySelector(".shortcut-help-close").addEventListener("click", closeHelp);
+    const themeSel = popup.querySelector("#help-theme");
+    themeSel.addEventListener("change", () => saveThemeChoice(themeSel.value));
     const langSel = popup.querySelector("#help-lang");
     langSel.addEventListener("change", () => reloadWith(() => saveLang(langSel.value)));
     const namesSel = popup.querySelector("#help-note-names");
@@ -4025,12 +4124,12 @@ ${lower.length ? chordOf(lower) : empty}`;
     }
     const symbol = detection.candidates[detection.selectedIndex];
     const chordName = escapeHtml(chordLabel(symbol));
-    const color = chordColor(symbol);
+    const color2 = chordColor(symbol);
     const notes = escapeHtml(detection.notes.map((n) => noteLabel(n.replace(/(-?\d+)$/, ""))).join(" \xB7 "));
     const alts = detection.candidates.slice(1, 7);
     el.innerHTML = `
     <div class="chord-summary-row">
-      <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
+      <span class="chord-name-badge" style="background:${color2}22;border-left:3px solid ${color2}">${chordName}</span>
       <span class="chord-notes">${notes}</span>
       ${alts.map(
       (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(chordLabel(c))}</button>`
@@ -4394,6 +4493,12 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
   function init() {
     translatePage();
+    applyTheme();
+    followSystemTheme();
+    onThemeChange(() => {
+      for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k];
+      renderDetector();
+    });
     if (!navigator.requestMIDIAccess) {
       $2("browser-warning").style.display = "block";
     }
@@ -4478,15 +4583,15 @@ ${lower.length ? chordOf(lower) : empty}`;
           fill.style.width = progressValue.toFixed(1) + "%";
         }, 100);
       } else if (status2 === "suspended") {
-        fill.style.background = "#f59e0b";
+        fill.style.background = "var(--warn)";
         fill.style.transition = "width 0.3s ease-out";
         fill.style.width = "100%";
       } else if (status2 === "ready") {
-        fill.style.background = "#22c55e";
+        fill.style.background = "var(--ok-strong)";
         fill.style.transition = "width 0.2s ease-out";
         fill.style.width = "100%";
       } else if (status2 === "error") {
-        fill.style.background = "#ef4444";
+        fill.style.background = "var(--danger)";
         fill.style.transition = "width 0.2s ease-out";
         fill.style.width = "100%";
       } else {
@@ -5076,7 +5181,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     if (target) sel.value = target;
     $2("midi-status").textContent = devices.length ? "MIDI" : t("midi.noDevices");
     $2("midi-status").title = devices.length ? t("midi.connected") : t("midi.noDevices");
-    $2("midi-status").style.color = devices.length ? "#4ade80" : "#6b7280";
+    $2("midi-status").style.color = devices.length ? "var(--ok)" : "var(--text-dim)";
     if (!deviceListenersAttached) {
       deviceListenersAttached = true;
       window.addEventListener("midi-devices-changed", () => {
@@ -5086,7 +5191,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       window.addEventListener("midi-device-disconnected", () => {
         $2("midi-status").textContent = t("midi.disconnected");
         $2("midi-status").title = t("midi.disconnected");
-        $2("midi-status").style.color = "#f87171";
+        $2("midi-status").style.color = "var(--danger-soft)";
       });
     }
   }

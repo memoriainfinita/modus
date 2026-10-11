@@ -60,7 +60,8 @@ async function play(notes, holdMs = 100) { await on(notes); await page.waitForTi
 async function setKey(key) { await page.selectOption('#key-select', key); await page.waitForTimeout(50) }
 
 async function freshPage() {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'en-US' })
+  // Dark system theme, the page's look before themes; the light one is checked on its own
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'en-US', colorScheme: 'dark' })
   await context.addInitScript(FAKE_MIDI)
   await context.addInitScript(() => { try { if (!sessionStorage.getItem('e2e')) { localStorage.clear(); sessionStorage.setItem('e2e', '1') } } catch {} })
   page = await context.newPage()
@@ -700,7 +701,36 @@ await check('Spanish: letters again from the help panel', async () => {
   assert((await text('#zone2 .zone-title')) === 'History', 'back in English')
 })
 
-await check('no errors after switching languages', async () => {
+await check('theme: follows the system, light from the help panel without a reload, diagrams redrawn', async () => {
+  const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor)
+  const theme = () => page.evaluate(() => document.documentElement.dataset.theme)
+  assert(await theme() === 'dark' && await bg() === 'rgb(26, 26, 46)', `dark: ${await theme()} ${await bg()}`)
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.waitForTimeout(100)
+  assert(await theme() === 'light', 'does not follow the system')
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.waitForTimeout(100)
+  await setKey('C Major')
+  await page.click('#btn-help')
+  await page.evaluate(() => { window.__noReload = true })
+  await page.selectOption('#help-theme', 'light')
+  await page.waitForTimeout(150)
+  assert(await page.evaluate(() => window.__noReload) === true, 'the page reloaded')
+  assert(await theme() === 'light' && await bg() === 'rgb(244, 245, 249)', `light: ${await theme()} ${await bg()}`)
+  const seg = await page.getAttribute('#cof-container [data-chord="E"]', 'fill')
+  assert(seg === '#e6e8ef', `circle not redrawn: ${seg}`)
+  // The choice wins over the system and survives a reload
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.reload()
+  await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
+  assert(await theme() === 'light', 'light lost on reload')
+  await page.click('#btn-help')
+  await page.selectOption('#help-theme', 'system')
+  await page.keyboard.press('Escape')
+  assert(await theme() === 'dark', 'system again')
+})
+
+await check('no errors after switching languages and themes', async () => {
   assert(page.errors.length === 0, page.errors.join(' | '))
 })
 

@@ -36,7 +36,7 @@ The core is the **Detector**: input → chord detection → harmonic analysis, s
 
 **Two ways to look.** The full view is for studying; a presentation view (planned) is for teaching and recording: large elements, no controls.
 
-**Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`src/styles.css`). Dark today; light mode and colour themes are planned.
+**Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`src/styles.css`). Dark and light themes (see Theme); colour themes are planned.
 
 **User-configurable.** Every panel can be toggled; sizes and visible fields persist in localStorage.
 
@@ -50,7 +50,7 @@ Without Web MIDI a dismissible warning says a controller cannot connect. Song bu
 
 ## Layout
 
-Single page, dark. Three zones stacked vertically.
+Single page, dark or light (see Theme). Three zones stacked vertically.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -302,6 +302,17 @@ The interface is in English or Spanish: the browser's first language when it is 
 - View window titles stay "Modus view: …" in every language: OBS finds the window by its title. A view reloads when the language or the note names change in the main window
 - A new song and new sections are named in the interface language (Sin título, Estrofa); after that the name is the user's
 
+## Theme
+
+Dark or light, or as the system (the default), chosen in the ? panel; the change applies in place, without a reload. With "as the system" the page follows the operating system while it is open.
+
+- Every colour is a token in `src/styles.css`: one block for dark (`:root`), one for light (`[data-theme="light"]`), both with the same tokens (checked by a test, as is that the rest of the stylesheet writes no colour)
+- The page takes the tokens through `var()`. The SVG diagrams (circle, piano, guitar, fretboard) write their colours into the drawing: they read the tokens through `ui/theme.ts` and are drawn again when the theme changes, so exported SVG and PNG carry the theme's colours
+- A script in `index.html` sets `<html data-theme>` before the first paint: no flash of the other theme
+- Harmony colours (chord quality, function, sections) are the same hues in both themes; labels that would not read on light are darker there
+- View windows stay dark whatever the theme: their light text and dark glow are made for chroma and the dark background. Presentation mode follows the theme
+- The song's print view is always black on white
+
 ## Customization
 
 Persisted to localStorage:
@@ -315,6 +326,7 @@ Persisted to localStorage:
 - Fretboard spacing
 - MIDI device, input channel, input mode, instrument, volume (the key is stored with each song)
 - Interface language and note names
+- Theme
 
 ## Keyboard shortcuts
 
