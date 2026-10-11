@@ -214,6 +214,16 @@
     sound.noteOff(note, source);
     handleNoteOff(note);
   }
+  var heardNotes = /* @__PURE__ */ new Set();
+  function setHeardNotes(notes, velocity2) {
+    const next = new Set(notes);
+    for (const n of heardNotes) if (!next.has(n)) handleNoteOff(n);
+    for (const n of next) if (!heardNotes.has(n)) {
+      velocities.set(n, velocity2);
+      handleNoteOn(n);
+    }
+    heardNotes = next;
+  }
   function setPedal(down) {
     sound.sustain(down, "virtual");
   }
@@ -570,10 +580,10 @@
   var MINOR_ROOTS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
   var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc3) => [`${root} Major`, `${MINOR_ROOTS[pc3]} Minor`]);
   function parseKey(key) {
-    const [root, mode3] = key.split(" ");
+    const [root, mode4] = key.split(" ");
     const pc3 = pitchClassOf(root ?? "");
     if (pc3 === -1) return null;
-    return { pc: pc3, minor: mode3?.toLowerCase() === "minor" };
+    return { pc: pc3, minor: mode4?.toLowerCase() === "minor" };
   }
   function keyName(pc3, minor) {
     const p = (pc3 % 12 + 12) % 12;
@@ -600,8 +610,8 @@
       const m = n.match(/^([A-G])([#b])/);
       if (m) accidentals[m[1]] = m[2];
     }
-    const [root, mode3] = name.split(" ");
-    return { abcKey: root + (mode3 === "Minor" ? "m" : ""), accidentals };
+    const [root, mode4] = name.split(" ");
+    return { abcKey: root + (mode4 === "Minor" ? "m" : ""), accidentals };
   }
   function keyPrefersSharps(key) {
     return Object.values(keySignature(key ?? null).accidentals).includes("#");
@@ -699,6 +709,7 @@
     "module.progressions": "Progressions",
     "module.ear": "Ear training",
     "module.player": "Player",
+    "module.tuner": "Tuner",
     "module.key": "Key",
     "module.piano": "Piano",
     "module.velocity": "Velocity",
@@ -956,6 +967,16 @@
     "player.a.title": "Loop start: here",
     "player.b.title": "Loop end: here; from B it goes back to A",
     "player.clear.title": "No loop",
+    "mic.title": "Microphone: what is sung or played goes to the detector as notes held (never sounded)",
+    "mic.on": "On",
+    "mic.off": "Off",
+    "mic.mode.notes": "Notes",
+    "mic.mode.notes.title": "One note at a time: voice, wind, a melody on any instrument. Feeds the scales of the melody",
+    "mic.mode.chords": "Chords",
+    "mic.mode.chords.title": "The notes of a chord, from the spectrum (experimental: clean, sustained chords read best)",
+    "mic.hint": "Turn the microphone on and sing or play.",
+    "mic.listening": "Listening\u2026",
+    "mic.error": "No microphone ({error}): allow it in the browser and try again.",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "The cornerstone of jazz harmony: subdominant (ii7), dominant (V7), tonic (Imaj7). The root falls a fifth each time, and the seventh of each chord falls a step to the third of the next.",
     "prog.ii-V-i": "ii-V-i (minor)",
@@ -1233,6 +1254,7 @@
     "module.progressions": "Progresiones",
     "module.ear": "Entrenamiento auditivo",
     "module.player": "Reproductor",
+    "module.tuner": "Afinador",
     "module.key": "Tonalidad",
     "module.piano": "Piano",
     "module.velocity": "Velocidad",
@@ -1484,6 +1506,16 @@
     "player.a.title": "Inicio del bucle: aqu\xED",
     "player.b.title": "Fin del bucle: aqu\xED; desde B vuelve a A",
     "player.clear.title": "Sin bucle",
+    "mic.title": "Micr\xF3fono: lo que se canta o se toca entra al detector como notas pulsadas (nunca suena)",
+    "mic.on": "Activo",
+    "mic.off": "Apagado",
+    "mic.mode.notes": "Notas",
+    "mic.mode.notes.title": "Una nota cada vez: voz, viento, una melod\xEDa en cualquier instrumento. Alimenta las escalas de la melod\xEDa",
+    "mic.mode.chords": "Acordes",
+    "mic.mode.chords.title": "Las notas de un acorde, del espectro (experimental: se leen mejor acordes limpios y sostenidos)",
+    "mic.hint": "Activa el micr\xF3fono y canta o toca.",
+    "mic.listening": "Escuchando\u2026",
+    "mic.error": "Sin micr\xF3fono ({error}): perm\xEDtelo en el navegador y vuelve a probar.",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "La base de la armon\xEDa del jazz: subdominante (ii7), dominante (V7), t\xF3nica (Imaj7). La ra\xEDz baja una quinta cada vez, y la s\xE9ptima de cada acorde baja un grado a la tercera del siguiente.",
     "prog.ii-V-i": "ii-V-i (menor)",
@@ -1711,10 +1743,10 @@
     });
   }
   function keyLabel(key) {
-    const [root, mode3] = key.split(" ");
-    if (!mode3) return noteLabel(key);
-    const m = mode3.toLowerCase();
-    const modeName = m === "major" ? t("key.major") : m === "minor" ? t("key.minor") : mode3;
+    const [root, mode4] = key.split(" ");
+    if (!mode4) return noteLabel(key);
+    const m = mode4.toLowerCase();
+    const modeName = m === "major" ? t("key.major") : m === "minor" ? t("key.minor") : mode4;
     return `${noteLabel(root)} ${modeName}`;
   }
   function scaleLabel(name) {
@@ -2956,6 +2988,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     "progressions",
     "ear",
     "player",
+    "tuner",
     "history",
     "song"
   ];
@@ -2972,6 +3005,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     progressions: { w: 12, h: 4 },
     ear: { w: 6, h: 5 },
     player: { w: 6, h: 5 },
+    tuner: { w: 3, h: 5 },
     history: { w: 12, h: 3 },
     song: { w: 12, h: 12 }
   };
@@ -2990,8 +3024,9 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["explain", 8, 11, 4, 11],
       ["piano", 0, 22, 12, 5],
       ["progressions", 0, 27, 12, 4],
-      ["ear", 0, 31, 6, 5],
-      ["player", 6, 31, 6, 5],
+      ["ear", 0, 31, 4, 5],
+      ["tuner", 4, 31, 3, 5],
+      ["player", 7, 31, 5, 5],
       ["history", 0, 36, 12, 3],
       ["song", 0, 39, 12, 12]
     ]),
@@ -3018,7 +3053,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     ]),
     // Writing down a recording: the player on top, the song and the history in reach of what is heard
     transcription: grid([
-      ["player", 0, 0, 12, 5],
+      ["player", 0, 0, 9, 5],
+      ["tuner", 9, 0, 3, 5],
       ["chord", 0, 5, 3, 3],
       ["staff", 0, 8, 3, 8],
       ["analysis", 3, 5, 3, 11],
@@ -3130,6 +3166,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t("mode.hold.title")}">${t("mode.hold")}</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t("mode.arpeggio.title")}">${t("mode.arpeggio")}</button>
       <button id="btn-keyboard" class="mode-btn" title="${t("keyboard.title")}">\u2328</button>
+      <button id="btn-mic" class="mode-btn" title="${t("mic.title")}">\u{1F3A4}</button>
       <span id="keyboard-status" class="auto-key-label"></span>
       <select id="key-select" class="ctrl-select">
         <option value="">${t("key.auto")}</option>
@@ -3243,6 +3280,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         return '<div id="ear-container"></div>';
       case "player":
         return '<div id="player-container"></div>';
+      case "tuner":
+        return '<div id="tuner-container"></div>';
       case "piano":
         return '<div id="piano-container" class="fit"></div>';
       case "velocity":
@@ -3980,8 +4019,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     if (a.isDiatonic) return [{ term: t("analysis.yes"), text: t("ex.diatonic", { chord, key: k }) }];
     const notes = notesOutside(symbol, key).join(" ");
     if (a.isBorrowed && a.borrowedFrom) {
-      const mode3 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
-      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode3, key: k, notes }) }];
+      const mode4 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
+      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode4, key: k, notes }) }];
     }
     if (a.substitutionCandidate?.startsWith("tritone")) return [{ term: substitutionTypeLabel("tritone"), text: t("ex.tritoneSub", { chord }) }];
     return [{ term: t("analysis.chromatic"), text: t("ex.chromatic", { chord, key: k, notes }) }];
@@ -4859,7 +4898,7 @@ ${explainCadence(cadence)}` : "");
       repeatBadge.replaceWith(input);
       input.focus();
       input.select();
-      const commit = () => {
+      const commit2 = () => {
         const n = parseInt(input.value);
         if (n >= 1 && n <= 16) {
           _song = updateSection(_song, section.id, { repeatCount: n });
@@ -4867,7 +4906,7 @@ ${explainCadence(cadence)}` : "");
         }
         h.onSongChange(_song);
       };
-      input.addEventListener("blur", commit);
+      input.addEventListener("blur", commit2);
       input.addEventListener("keydown", (ke) => {
         if (ke.key === "Enter") input.blur();
         if (ke.key === "Escape") {
@@ -5093,17 +5132,17 @@ ${explainCadence(cadence)}` : "");
       const input = document.createElement("input");
       input.className = "chord-input";
       input.value = chord.symbol;
-      const commit = () => {
+      const commit2 = () => {
         const symbol = readTypedChord(input.value) || prevVal;
         _song = updateChord(_song, chord.id, symbol, symbol === prevVal ? notesState : void 0);
         saveSong(_song);
         h.onSongChange(_song);
       };
       input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") commit();
+        if (e.key === "Enter") commit2();
         if (e.key === "Escape") h.onSongChange(_song);
       });
-      input.addEventListener("blur", commit);
+      input.addEventListener("blur", commit2);
       editWrap.appendChild(input);
       if (notesState?.length) {
         const notesRow = document.createElement("div");
@@ -5558,29 +5597,29 @@ ${explainCadence(c.cadence)}` : ""}`;
     const bass = 36 + (rootPc % 12 + 12) % 12;
     return [bass, ...midis].map(midiToNoteName);
   }
-  function makeQuestion(mode3, rng = Math.random) {
-    if (mode3 === "interval") {
+  function makeQuestion(mode4, rng = Math.random) {
+    if (mode4 === "interval") {
       const n = parseInt(pick(INTERVALS, rng));
       const low = 55 + Math.floor(rng() * 12);
       const [a, b] = [midiToNoteName(low), midiToNoteName(low + n)];
-      return { mode: mode3, answer: String(n), steps: [[a], [b], [a, b]], symbol: null, prev: null, key: null };
+      return { mode: mode4, answer: String(n), steps: [[a], [b], [a, b]], symbol: null, prev: null, key: null };
     }
-    if (mode3 === "chord") {
+    if (mode4 === "chord") {
       const suffix = pick(CHORDS, rng);
       const root = pick(["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"], rng);
       const symbol = root + suffix;
-      return { mode: mode3, answer: suffix, steps: [chordNoteNames(symbol)], symbol, prev: null, key: null };
+      return { mode: mode4, answer: suffix, steps: [chordNoteNames(symbol)], symbol, prev: null, key: null };
     }
     const answer = pick(Object.keys(CADENCES2), rng);
     const key = pick(ALL_KEYS.filter((k) => k.endsWith("Major")), rng);
     const chords = tryUMT("roman numerals", () => UMT.parseRomanProgression(`I ${CADENCES2[answer].numerals}`, key), []);
     const steps = chords.map((c) => voiceNear(chordNoteNames(c.name), c.rootStep + 9));
     const symbols = chords.map((c) => c.name);
-    return { mode: mode3, answer, steps, symbol: symbols[2] ?? null, prev: symbols[1] ?? null, key };
+    return { mode: mode4, answer, steps, symbol: symbols[2] ?? null, prev: symbols[1] ?? null, key };
   }
-  function answerLabel(mode3, answer) {
-    if (mode3 === "interval") return answer === "12" ? t("interval.octave") : t(`interval.${answer}`);
-    if (mode3 === "chord") return t(`ear.chord.${answer || "maj"}`);
+  function answerLabel(mode4, answer) {
+    if (mode4 === "interval") return answer === "12" ? t("interval.octave") : t(`interval.${answer}`);
+    if (mode4 === "chord") return t(`ear.chord.${answer || "maj"}`);
     return cadenceLabel(CADENCES2[answer].umt, true);
   }
   var STEP_MS = { interval: 700, chord: 0, cadence: 1100 };
@@ -5694,8 +5733,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     samples = null;
     renderPlayer(container);
     try {
-      const ctx = new OfflineAudioContext(1, 1, 44100);
-      const buffer = await ctx.decodeAudioData(await file.arrayBuffer());
+      const ctx2 = new OfflineAudioContext(1, 1, 44100);
+      const buffer = await ctx2.decodeAudioData(await file.arrayBuffer());
       samples = buffer.getChannelData(0);
     } catch {
       samples = null;
@@ -5834,6 +5873,212 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   var observed = null;
 
+  // src/input/pitch.ts
+  function frequencyToNote(freq) {
+    const exact = 69 + 12 * Math.log2(freq / 440);
+    const midi = Math.round(exact);
+    return { midi, cents: Math.round((exact - midi) * 100) };
+  }
+  function rms(buf) {
+    let s = 0;
+    for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+    return Math.sqrt(s / buf.length);
+  }
+  function detectPitch(buf, sampleRate, threshold = 0.12) {
+    const minTau = Math.floor(sampleRate / 1600);
+    const maxTau = Math.min(Math.floor(sampleRate / 50), Math.floor(buf.length / 2));
+    if (maxTau <= minTau + 2) return null;
+    const n = buf.length - maxTau;
+    const d = new Float32Array(maxTau + 1);
+    for (let tau2 = 1; tau2 <= maxTau; tau2++) {
+      let sum = 0;
+      for (let i = 0; i < n; i++) {
+        const x = buf[i] - buf[i + tau2];
+        sum += x * x;
+      }
+      d[tau2] = sum;
+    }
+    const cmnd = new Float32Array(maxTau + 1);
+    cmnd[0] = 1;
+    let running = 0;
+    for (let tau2 = 1; tau2 <= maxTau; tau2++) {
+      running += d[tau2];
+      cmnd[tau2] = running > 0 ? d[tau2] * tau2 / running : 1;
+    }
+    let tau = -1;
+    for (let t2 = minTau; t2 <= maxTau; t2++) {
+      if (cmnd[t2] < threshold) {
+        while (t2 + 1 <= maxTau && cmnd[t2 + 1] < cmnd[t2]) t2++;
+        tau = t2;
+        break;
+      }
+    }
+    if (tau < 0) return null;
+    const a = cmnd[tau - 1] ?? cmnd[tau], b = cmnd[tau], c = cmnd[tau + 1] ?? cmnd[tau];
+    const shift = a - 2 * b + c !== 0 ? (a - c) / (2 * (a - 2 * b + c)) : 0;
+    return { freq: sampleRate / (tau + shift), clarity: 1 - b };
+  }
+  function chromagram(db, sampleRate, fftSize) {
+    const chroma = new Array(12).fill(0);
+    const low = new Array(12).fill(0);
+    const binHz = sampleRate / fftSize;
+    for (let i = Math.ceil(60 / binHz); i < db.length && i * binHz <= 2e3; i++) {
+      const power = Math.pow(10, db[i] / 10);
+      if (!isFinite(power)) continue;
+      const midi = Math.round(69 + 12 * Math.log2(i * binHz / 440));
+      const pc3 = (midi % 12 + 12) % 12;
+      chroma[pc3] += power;
+      if (i * binHz < 260) low[pc3] += power;
+    }
+    const lowMax = Math.max(...low);
+    return { chroma, bass: lowMax > 0 ? low.indexOf(lowMax) : null };
+  }
+  function chromaNotes(chroma, share = 0.3) {
+    const max = Math.max(...chroma);
+    if (max <= 0) return [];
+    return chroma.map((v, pc3) => ({ v, pc: pc3 })).filter((x) => x.v >= max * share).sort((a, b) => b.v - a.v).slice(0, 5).map((x) => x.pc).sort((a, b) => a - b);
+  }
+
+  // src/input/mic.ts
+  var MIC_MODES = ["notes", "chords"];
+  var FRAME_MS = 40;
+  var HOLD_FRAMES = 3;
+  var RELEASE_FRAMES = 5;
+  var GATE = 0.01;
+  var mode3 = loadChoice("mic-mode", MIC_MODES, "notes");
+  function getMicMode() {
+    return mode3;
+  }
+  function setMicMode(m) {
+    mode3 = m;
+    save("mic-mode", m);
+  }
+  var ctx = null;
+  var stream = null;
+  var timer2 = null;
+  var callbacks = null;
+  function isMicOn() {
+    return !!timer2;
+  }
+  var held = [];
+  var candidate = "";
+  var candidateFrames = 0;
+  var missFrames = 0;
+  function commit(notes, level) {
+    if (notes.join() === held.join()) return;
+    held = notes;
+    callbacks?.notes(notes, Math.max(1, Math.min(127, Math.round(level * 600))));
+  }
+  function hear(analyser, time, spectrum, rate) {
+    analyser.getFloatTimeDomainData(time);
+    const recent = time.subarray(time.length - 2048);
+    const level = rms(recent);
+    let notes = [];
+    let heard = null;
+    if (level >= GATE) {
+      if (mode3 === "notes") {
+        const p = detectPitch(recent, rate);
+        if (p) {
+          const n = frequencyToNote(p.freq);
+          heard = { ...n, freq: p.freq, level };
+          notes = [n.midi];
+        }
+      } else {
+        analyser.getFloatFrequencyData(spectrum);
+        const { chroma, bass } = chromagram(spectrum, rate, analyser.fftSize);
+        const pcs = chromaNotes(chroma);
+        if (pcs.length >= 2) notes = [...bass !== null ? [48 + bass] : [], ...pcs.filter((pc3) => pc3 !== bass).map((pc3) => 60 + pc3)];
+        const p = detectPitch(recent, rate);
+        if (p) heard = { ...frequencyToNote(p.freq), freq: p.freq, level };
+      }
+    }
+    callbacks?.frame(heard);
+    const key = notes.join();
+    if (notes.length) {
+      missFrames = 0;
+      if (key === candidate) candidateFrames++;
+      else {
+        candidate = key;
+        candidateFrames = 1;
+      }
+      if (candidateFrames >= HOLD_FRAMES) commit(notes, level);
+    } else if (++missFrames >= RELEASE_FRAMES) {
+      candidate = "";
+      commit([], 0);
+    }
+  }
+  async function startMic(cb) {
+    if (timer2) return;
+    callbacks = cb;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    } catch (e) {
+      cb.state(false, e.name);
+      return;
+    }
+    ctx = new AudioContext();
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 8192;
+    analyser.smoothingTimeConstant = 0.5;
+    source.connect(analyser);
+    const time = new Float32Array(analyser.fftSize);
+    const spectrum = new Float32Array(analyser.frequencyBinCount);
+    const rate = ctx.sampleRate;
+    timer2 = setInterval(() => hear(analyser, time, spectrum, rate), FRAME_MS);
+    cb.state(true);
+  }
+  function stopMic() {
+    if (timer2) clearInterval(timer2);
+    timer2 = null;
+    stream?.getTracks().forEach((t2) => t2.stop());
+    stream = null;
+    ctx?.close().catch(() => {
+    });
+    ctx = null;
+    commit([], 0);
+    callbacks?.frame(null);
+    callbacks?.state(false);
+  }
+
+  // src/ui/tuner.ts
+  function renderTuner(container, handlers, error) {
+    const on = isMicOn();
+    const mode4 = getMicMode();
+    container.innerHTML = `
+    <div class="tuner-head">
+      <button id="tuner-mic" class="ctrl-btn${on ? " active-mode" : ""}" title="${escapeHtml(t("mic.title"))}">\u{1F3A4} ${escapeHtml(t(on ? "mic.on" : "mic.off"))}</button>
+      ${MIC_MODES.map((m) => `<button class="size-ctrl-btn tuner-mode${m === mode4 ? " active" : ""}" data-mode="${m}" title="${escapeHtml(t(`mic.mode.${m}.title`))}">${escapeHtml(t(`mic.mode.${m}`))}</button>`).join("")}
+    </div>
+    <div class="tuner-note">\u2014</div>
+    <div class="tuner-meter"><span class="tuner-zero"></span><span class="tuner-needle"></span></div>
+    <div class="tuner-detail">${escapeHtml(error ? t("mic.error", { error }) : on ? t("mic.listening") : t("mic.hint"))}</div>`;
+    container.querySelector("#tuner-mic").addEventListener("click", () => handlers.toggle());
+    container.querySelectorAll(".tuner-mode").forEach((b) => b.addEventListener("click", () => {
+      setMicMode(b.dataset.mode);
+      renderTuner(container, handlers);
+    }));
+  }
+  function updateTuner(container, heard) {
+    const note = container.querySelector(".tuner-note");
+    const needle = container.querySelector(".tuner-needle");
+    const detail = container.querySelector(".tuner-detail");
+    if (!note || !needle || !detail) return;
+    if (!heard) {
+      note.textContent = "\u2014";
+      needle.style.left = "50%";
+      needle.classList.remove("in-tune", "off");
+      if (isMicOn()) detail.textContent = t("mic.listening");
+      return;
+    }
+    const name = midiToNoteName(heard.midi);
+    note.textContent = noteLabel(name);
+    needle.style.left = `${50 + heard.cents}%`;
+    needle.classList.toggle("in-tune", Math.abs(heard.cents) <= 5);
+    needle.classList.toggle("off", Math.abs(heard.cents) > 15);
+    detail.textContent = `${heard.cents > 0 ? "+" : ""}${heard.cents} \xA2 \xB7 ${heard.freq.toFixed(1)} Hz`;
+  }
+
   // src/app.ts
   var STAFF_WIDTH = 380;
   var COF_SIZE = 300;
@@ -5893,6 +6138,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       initAudioOnGesture();
       toggleComputerKeyboard();
     });
+    $2("btn-mic").addEventListener("click", toggleMic);
     window.addEventListener("pointerup", onPianoRelease);
     window.addEventListener("pointercancel", onPianoRelease);
     const chordInput = $2("typed-chord");
@@ -5909,6 +6155,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     if (ear) renderEar(ear, { show: showEarAnswer });
     const player = document.getElementById("player-container");
     if (player) renderPlayer(player);
+    drawTuner();
     initMidi().then((result) => {
       if (result.denied) {
         showMidiBanner(t("midi.denied"));
@@ -6508,6 +6755,25 @@ ${explainCadence(c.cadence)}` : ""}`;
     playChord(chord);
     showChord(chord, void 0, previousHistoryChord(chord));
   }
+  function drawTuner(error) {
+    $2("btn-mic").classList.toggle("active-mode", isMicOn());
+    const el = document.getElementById("tuner-container");
+    if (el) renderTuner(el, { toggle: toggleMic }, error);
+  }
+  function toggleMic() {
+    if (isMicOn()) {
+      stopMic();
+      return;
+    }
+    startMic({
+      notes: (midis, velocity2) => setHeardNotes(midis, velocity2),
+      frame: (heard) => {
+        const el = document.getElementById("tuner-container");
+        if (el) updateTuner(el, heard);
+      },
+      state: (_on, error) => drawTuner(error)
+    });
+  }
   function showEarAnswer(q) {
     if (!q.symbol) {
       detectionFromMidi = false;
@@ -6718,10 +6984,10 @@ ${explainCadence(c.cadence)}` : ""}`;
     if (state.captureTargetId === id) state.captureTargetId = null;
     removeChordWithUndo(id);
   }
-  function setModeBtn(mode3) {
-    setMode(mode3);
+  function setModeBtn(mode4) {
+    setMode(mode4);
     document.querySelectorAll(".mode-btn[data-mode]").forEach((b) => {
-      b.classList.toggle("active-mode", b.dataset.mode === mode3);
+      b.classList.toggle("active-mode", b.dataset.mode === mode4);
     });
   }
   if (!runViewerFromUrl()) init();

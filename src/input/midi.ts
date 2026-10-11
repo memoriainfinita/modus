@@ -238,6 +238,18 @@ export function keyUp(note: number, source: NoteSource = 'virtual') {
   handleNoteOff(note)
 }
 
+// The microphone's notes are held like keys and let go when it stops hearing them; they
+// never sound, or the microphone would hear them again.
+let heardNotes = new Set<number>()
+
+/** The notes the microphone hears now. */
+export function setHeardNotes(notes: number[], velocity: number) {
+  const next = new Set(notes)
+  for (const n of heardNotes) if (!next.has(n)) handleNoteOff(n)
+  for (const n of next) if (!heardNotes.has(n)) { velocities.set(n, velocity); handleNoteOn(n) }
+  heardNotes = next
+}
+
 /** Sustain pedal from any input. */
 export function setPedal(down: boolean) { sound.sustain(down, 'virtual') }
 

@@ -4,6 +4,9 @@
 
 import { chromium } from 'playwright-core'
 import { serve } from './serve.mjs'
+import { writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const { server, url: URL_ } = await serve()
 
@@ -42,7 +45,13 @@ const FAKE_MIDI = () => {
   }
 }
 
-const browser = await chromium.launch({ channel: 'chrome', headless: !process.env.HEADED, args: ['--mute-audio'] })  // muted: the app plays every chord
+// The microphone is a WAV of A3 (220 Hz), looped by Chrome's fake capture device
+const MIC_WAV = join(tmpdir(), 'modus-e2e-mic.wav')
+writeFileSync(MIC_WAV, testWav(10))
+const browser = await chromium.launch({ channel: 'chrome', headless: !process.env.HEADED, args: [
+  '--mute-audio',   // muted: the app plays every chord
+  '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-audio-capture=${MIC_WAV}`,
+] })
 const results = []
 let page
 
@@ -236,6 +245,17 @@ await check('player: a recording opens with its length and waveform; speed, A–
   await page.click('#player-container [data-act="play"]')
   await page.click('#player-container [data-act="clear"]')
   await page.selectOption('.player-speed', '1')
+})
+
+await check('microphone: a sung A3 shows on the tuner and in the detector as a note; off lets it go', async () => {
+  await page.click('#btn-mic')
+  await page.waitForFunction(() => document.querySelector('.tuner-note')?.textContent === 'A3', null, { timeout: 5000 })
+  assert((await text('.tuner-detail')).includes('Hz'), `detail: ${await text('.tuner-detail')}`)
+  await page.waitForFunction(() => document.querySelector('#analysis-content')?.textContent?.includes('A3'), null, { timeout: 3000 })
+  assert(await page.locator('#btn-mic.active-mode').count() === 1, 'toolbar button not lit')
+  await page.click('#tuner-mic')
+  assert(await text('.tuner-note') === '—', 'tuner still shows a note')
+  assert(!(await text('#analysis-content')).includes('MIDI 57'), 'the note is still held')
 })
 
 await check('view window: the chord view follows the detector, alone on the chroma background', async () => {

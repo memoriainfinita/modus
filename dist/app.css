@@ -443,7 +443,7 @@ body {
 }
 .toolbar {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   align-items: center;
   padding: 8px 12px;
   background: var(--bg-bar);
@@ -455,7 +455,7 @@ body {
   color: var(--text-dim);
 }
 #audio-instrument {
-  max-width: 130px;
+  max-width: 112px;
 }
 .auto-key-label {
   font-size: 11px;
@@ -512,7 +512,7 @@ body {
   border-color: var(--danger);
 }
 .volume-slider {
-  width: 72px;
+  width: 56px;
   height: 4px;
   accent-color: var(--accent);
   cursor: pointer;
@@ -1818,5 +1818,62 @@ body.view-mode {
   border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 12px;
+}
+#tuner-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  font-size: 12px;
+}
+.tuner-head {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.tuner-note {
+  font-size: 2.4em;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-strong);
+  line-height: 1.1;
+}
+.tuner-meter {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+}
+.tuner-zero {
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--text-muted);
+}
+.tuner-needle {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 4px;
+  height: 14px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--fn-s);
+  transition: left .08s linear;
+}
+.tuner-needle.in-tune {
+  background: var(--fn-t);
+}
+.tuner-needle.off {
+  background: var(--fn-d);
+}
+.tuner-detail {
+  text-align: center;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 /*# sourceMappingURL=app.css.map */

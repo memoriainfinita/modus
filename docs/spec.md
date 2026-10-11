@@ -52,10 +52,10 @@ Without Web MIDI a dismissible warning says a controller cannot connect. Song bu
 
 Single page, dark or light (see Theme): the toolbar on top, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
 
-Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, Progressions, Ear training, Player, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
+Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, Progressions, Ear training, Player, Tuner, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
 
 The ▦ menu in the toolbar:
-- **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (few panels, large, made to be presented with P), Transcription (the player on top, history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
+- **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (few panels, large, made to be presented with P), Transcription (the player and tuner on top, history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
 - **Saved:** the current layout saved under a name; opened or deleted from the menu
 - **Panels:** a box per panel to show or hide it; a panel shown again goes at the bottom, at its usual size
 
@@ -161,6 +161,14 @@ P / L / R are read only between triads of three notes: UMT's `NeoRiemannian` als
 Every named progression of UMT (`PROGRESSIONS`, `getProgression`): ii-V-I and ii-V-i, the jazz turnaround, the backdoor ii-V, rhythm changes, Coltrane changes, the opening of Giant Steps, the 12-bar, minor, jazz and Bird blues, I-V-vi-IV, I-vi-IV-V, I-IV-V, Pachelbel's Canon and the Andalusian cadence (`ui/progressions.ts`). The one picked is written in the analysis key, in the progression's mode (ii-V-i, the minor blues and the Andalusian cadence in the parallel minor of a major key); with no key, in its own (rhythm changes in B♭) or in C major / A minor. It is drawn bar by bar as the history draws its chips: each chord with its numeral and function colour, cadence tags and the key where UMT finds a modulation, all from `analyzeProgression`. A sentence says what the progression is, written by Modus in both languages (UMT's descriptions are English only).
 
 A click on a chord shows and plays it, compared with the one before it in the progression (cadence, voice leading); ▶ walks the whole progression, a bar every 2.4 s, two chords sharing a bar, ■ stops. Showing a chord sets the analysis key to the progression's when it differs, without storing it in the open song. The panel is drawn again when the analysis key changes; the progression picked is remembered (`progression`).
+
+### Microphone and tuner
+
+🎤 in the toolbar, or the Tuner panel's button, turns the microphone on (`input/mic.ts`, `input/pitch.ts`); the browser asks for it the first time. It is read raw (no echo cancelling, noise suppression or gain control, which bend a sung note), every 40 ms, below a level gate as silence. Two modes, remembered (`mic-mode`):
+- **Notes:** the one note sung or played, by YIN (de Cheveigné & Kawahara, 2002) over the newest 2048 samples, 50–1600 Hz. A note that holds for three frames (~120 ms) is held in the detector like a key, and let go after five frames (~200 ms) without it; so a melody sung feeds Fits (the scales of the melody) as one played on keys does, and chords played note by note on a guitar are read as an arpeggio is
+- **Chords (experimental):** the pitch classes of a chromagram of the spectrum (60 Hz–2 kHz) with at least 30 % of the strongest, five at most; the strongest pitch class below 260 Hz is the bass (written in octave 3, the rest in octave 4). Clean, sustained chords read best
+
+Nothing heard is sounded, sent to MIDI out or played back: the microphone would hear it again. Its notes go through the same path as the controller's (mode, history, analysis), with a velocity from their level. The Tuner panel shows the note heard, how many cents off (green within 5, red beyond 15) and its frequency.
 
 ### Player
 
