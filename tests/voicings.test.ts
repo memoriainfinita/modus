@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { playableVoicings, tuningToMidi, normalizeNoteName, STANDARD_OPEN_MIDI } from '../src/theory/voicings'
+import { INSTRUMENT_IDS, INSTRUMENT_TUNINGS, isReentrant, referenceStrings } from '../src/theory/instruments'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
 const umtVoicings = (symbol: string, open = STANDARD_OPEN_MIDI) =>
@@ -72,5 +73,36 @@ describe('normalizeNoteName', () => {
     expect(normalizeNoteName('bb')).toBe('Bb')
     expect(normalizeNoteName('H')).toBeNull()
     expect(normalizeNoteName('C##')).toBeNull()
+  })
+})
+
+describe('other instruments', () => {
+  const uke = INSTRUMENT_TUNINGS.ukulele.standard
+  it('a ukulele C is 0003, its G 0232: reentrant, so no bass is asked for', () => {
+    expect(isReentrant(uke)).toBe(true)
+    expect(shape(playable('C', uke)[0])).toBe('0003')
+    expect(playable('G', uke).map(shape)).toContain('0232')
+  })
+
+  it('a bass shape has its root lowest and three strings at least', () => {
+    const bass = INSTRUMENT_TUNINGS.bass.standard
+    for (const v of playable('C', bass)) {
+      const sounding = v.frets.flatMap((f: number, i: number) => f >= 0 ? [bass[i] + f] : [])
+      expect(sounding.length).toBeGreaterThanOrEqual(3)
+      expect(Math.min(...sounding) % 12).toBe(0)
+    }
+  })
+
+  it('a custom tuning takes each string\'s octave from the instrument: a ukulele keeps its high G', () => {
+    expect(tuningToMidi(['A', 'D', 'F#', 'B'], uke)).toEqual([69, 62, 66, 71])
+    expect(tuningToMidi(['E', 'A', 'D', 'G'], INSTRUMENT_TUNINGS.bass.standard)).toEqual([28, 33, 38, 43])
+    expect(tuningToMidi(['E', 'A', 'D', 'G'])).toBeNull()   // four names against six strings
+  })
+
+  it('every preset has as many strings as its instrument', () => {
+    for (const id of INSTRUMENT_IDS) {
+      const n = referenceStrings(id).length
+      for (const open of Object.values(INSTRUMENT_TUNINGS[id])) expect(open).toHaveLength(n)
+    }
   })
 })

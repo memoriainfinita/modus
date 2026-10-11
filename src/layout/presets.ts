@@ -4,14 +4,14 @@
 import type { Grid } from './grid'
 
 export const MODULE_IDS = [
-  'chord', 'staff', 'analysis', 'cof', 'guitar', 'key', 'piano', 'neck', 'velocity', 'history', 'song',
+  'chord', 'staff', 'analysis', 'cof', 'guitar', 'key', 'piano', 'velocity', 'history', 'song',
 ] as const
 export type ModuleId = typeof MODULE_IDS[number]
 
 /** Width and height a panel takes when it is added (columns of 12, rows). */
 export const MODULE_SIZE: Record<ModuleId, { w: number; h: number }> = {
   chord: { w: 4, h: 3 }, staff: { w: 4, h: 8 }, analysis: { w: 3, h: 11 }, cof: { w: 3, h: 7 },
-  guitar: { w: 3, h: 9 }, key: { w: 12, h: 11 }, piano: { w: 7, h: 5 }, neck: { w: 4, h: 4 },
+  guitar: { w: 3, h: 9 }, key: { w: 12, h: 11 }, piano: { w: 7, h: 5 },
   velocity: { w: 2, h: 5 }, history: { w: 12, h: 3 }, song: { w: 12, h: 12 },
 }
 
@@ -27,7 +27,7 @@ export const PRESETS: Record<PresetId, Grid> = {
     ['chord', 0, 0, 3, 3], ['staff', 0, 3, 3, 8], ['analysis', 3, 0, 3, 11], ['cof', 6, 0, 3, 7],
     ['guitar', 9, 0, 3, 11], ['velocity', 6, 7, 3, 4],
     ['key', 0, 11, 12, 11],
-    ['piano', 0, 22, 8, 5], ['neck', 8, 22, 4, 5],
+    ['piano', 0, 22, 12, 5],
     ['history', 0, 27, 12, 3], ['song', 0, 30, 12, 12],
   ]),
   // Harmony at the desk: the key and the analysis large, what is played next to them
@@ -46,7 +46,7 @@ export const PRESETS: Record<PresetId, Grid> = {
   // Writing down a recording: the song and the history in reach of what is heard
   transcription: grid([
     ['chord', 0, 0, 3, 3], ['staff', 0, 3, 3, 8], ['analysis', 3, 0, 3, 11],
-    ['piano', 6, 0, 6, 5], ['neck', 6, 5, 6, 6],
+    ['piano', 6, 0, 6, 5], ['guitar', 6, 5, 6, 6],
     ['history', 0, 11, 12, 3], ['song', 0, 14, 12, 14],
   ]),
   // On camera or screen capture: the chord and the instruments, no controls in view

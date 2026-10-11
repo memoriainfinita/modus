@@ -105,11 +105,14 @@ await check('piano keys carry data-note', async () => {
   assert(n === 48, `data-note keys: ${n}`)
 })
 
-await check('fretboard dots show note names', async () => {
+await check('strings panel, neck view: every note sounding on the neck, named; shapes again', async () => {
+  await page.click('.guitar-ctrl[data-action="view-neck"]')
   await play([60, 64, 67])
-  const t = await page.locator('#neck-container text').allTextContents()
+  const t = await page.locator('#guitar-container text').allTextContents()
   assert(t.includes('E') && t.includes('G'), `neck texts: ${t.join(',')}`)
   await off([60, 64, 67])
+  await page.click('.guitar-ctrl[data-action="view-shapes"]')
+  assert(await page.locator('#guitar-container .guitar-nav').count() === 0, 'no chord, no voicing list')
 })
 
 await check('history logs a chord after 800 ms', async () => {
@@ -347,6 +350,20 @@ await check('custom tuning rejects a non-note and keeps the string', async () =>
   assert(await page.locator('.guitar-string-input').first().inputValue() === 'D', 'not normalized')
   assert(await page.inputValue('.guitar-tuning-sel') === 'dropD', 'preset not detected')
   await page.selectOption('.guitar-tuning-sel', 'standard')
+})
+
+await check('strings panel: a ukulele has four strings and plays C as 0003', async () => {
+  await page.selectOption('.guitar-instrument-sel', 'ukulele')
+  await page.waitForTimeout(450)   // a second click on C within 400 ms would set the key
+  await page.locator('#cof-container [data-chord="C"]').click()
+  assert(await page.locator('.guitar-string-input').count() === 4, 'tuning row not four strings')
+  const values = await page.locator('.guitar-string-input').evaluateAll(es => es.map(e => e.value))
+  assert(values.join('') === 'GCEA', `ukulele tuning: ${values}`)
+  const dots = await page.locator('#guitar-container > div:first-child circle').count()
+  assert(dots >= 1, `dots: ${dots}`)
+  await page.locator('.guitar-ctrl[data-action="toggle-tuner"]').click()
+  await page.selectOption('.guitar-instrument-sel', 'guitar')
+  assert(await page.inputValue('.guitar-tuning-sel') === 'standard', 'guitar tuning')
 })
 
 // Where a panel sits: its grid column and row, as the page applies them

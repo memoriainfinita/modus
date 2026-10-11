@@ -66,7 +66,7 @@ Every element is a panel on a grid: drag it by its title, resize it from its cor
 - **Staff** (abcjs) — grand staff (treble and bass, split at middle C), or treble or bass alone; key signature follows the active key; ⇠ writes the previous chord before it, faded, to see the voices move (on the piano it lights the previous keys)
 - **Analysis** — all harmonic analysis fields, each field individually togglable; font scale +/−
 - **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels
-- **Guitar voicing** (notae) — Standard / Drop D / Open G / Custom tuning. Out of every fingering UMT finds, only playable ones are kept (chord bass lowest, no muted string in between, four-fret hand, open strings only in first position), ordered along the neck from the open shapes up; next/prev to browse. Custom tuning accepts note names per string and gets real voicings too
+- **Strings** (notae) — guitar, 7-string guitar, bass, 5-string bass, ukulele, baritone ukulele, mandolin or banjo, each in its usual tunings or a custom one per string. **Shapes:** out of every fingering UMT finds, only playable ones are kept (chord bass lowest, no muted string in between, four-fret hand, open strings only in first position), ordered from the open shapes up the neck; next/prev to browse. **Neck:** every place the notes sounding are over 12 frets, each dot labelled with its note (flats or sharps by key)
 
 **Key** — a map of the analysis key (selected, or detected on Auto), without playing:
 
@@ -79,7 +79,6 @@ Click a chord to play it and show it in the detector; the key stays. The chord o
 
 - **Piano** (notae) — 4 octaves C2–B5, click any key to play
 - **Velocity** — how hard each note on screen was struck, as a bar and a number
-- **Horizontal fretboard** (notae) — all note positions across 12 frets, each dot labelled with its note (flats or sharps by key)
 
 ### Views for OBS, and export
 
@@ -195,18 +194,18 @@ src/
     notes.ts              note names ↔ MIDI numbers
     chord.ts              adapters over UMT chords: family/colour, name normalization, notes
     keys.ts               key names, normalization and key signatures (from UMT spelling)
-    voicings.ts           playable guitar voicings, tuning names → MIDI
+    voicings.ts           playable voicings on any fretted instrument, tuning names → MIDI
+    instruments.ts        fretted instruments and their tunings
     spelling.ts           display spelling in the key, over UMT
     key-map.ts            the key panel's chords: diatonic, negative, parallel modes, Coltrane axis
   diagrams/
     staff.ts              staff (abcjs)
     piano.ts              piano (notae), click to play
-    guitar.ts             guitar voicings and tuning controls (notae)
-    neck.ts               full-neck horizontal fretboard (notae)
+    guitar.ts             strings panel: instrument, tuning, shapes or the whole neck (notae)
     cof.ts                circle of fifths (custom SVG)
     key-explorer.ts       key panel rendering
     velocity.ts           velocity bars of the notes on screen
-    fretboard-style.ts    colours shared by guitar and neck
+    fretboard-style.ts    colours of the strings panel's two views
   history/
     history.ts            chord history log
   song/
