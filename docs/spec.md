@@ -52,7 +52,7 @@ Without Web MIDI a dismissible warning says a controller cannot connect. Song bu
 
 Single page, dark or light (see Theme): the toolbar on top, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
 
-Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, Progressions, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
+Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, Progressions, Ear training, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
 
 The ▦ menu in the toolbar:
 - **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (few panels, large, made to be presented with P), Transcription (history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
@@ -161,6 +161,15 @@ P / L / R are read only between triads of three notes: UMT's `NeoRiemannian` als
 Every named progression of UMT (`PROGRESSIONS`, `getProgression`): ii-V-I and ii-V-i, the jazz turnaround, the backdoor ii-V, rhythm changes, Coltrane changes, the opening of Giant Steps, the 12-bar, minor, jazz and Bird blues, I-V-vi-IV, I-vi-IV-V, I-IV-V, Pachelbel's Canon and the Andalusian cadence (`ui/progressions.ts`). The one picked is written in the analysis key, in the progression's mode (ii-V-i, the minor blues and the Andalusian cadence in the parallel minor of a major key); with no key, in its own (rhythm changes in B♭) or in C major / A minor. It is drawn bar by bar as the history draws its chips: each chord with its numeral and function colour, cadence tags and the key where UMT finds a modulation, all from `analyzeProgression`. A sentence says what the progression is, written by Modus in both languages (UMT's descriptions are English only).
 
 A click on a chord shows and plays it, compared with the one before it in the progression (cadence, voice leading); ▶ walks the whole progression, a bar every 2.4 s, two chords sharing a bar, ■ stops. Showing a chord sets the analysis key to the progression's when it differs, without storing it in the open song. The panel is drawn again when the analysis key changes; the progression picked is remembered (`progression`).
+
+### Ear training
+
+The app plays without showing and the user names what was heard (`ui/ear.ts`). Three kinds of question, each with its own score (right / asked, kept in `ear-score`; the kind in `ear-mode`):
+- **Intervals:** minor 2nd to octave, from a random note G3–F#4: the two notes one after the other, then together
+- **Chords:** major, minor, diminished, augmented, sus4, dominant 7th, major 7th, minor 7th, half-diminished, diminished 7th, on a random root, as UMT spells it
+- **Cadences:** authentic (V7 I), plagal (IV I), deceptive (V7 vi), half (IV V) in a random major key: the tonic first so the key is heard, then the two chords. Each chord is kept between G3 and F#4 with its root doubled in the bass, read from UMT's `parseRomanProgression`
+
+New question plays one, ↺ plays it again; answers open only while a question waits. Once answered the panel says right or what it was (and the key, for a cadence), marks the right button and the one picked, and the answer goes to the detector as any chord does: the notes for an interval, the chord for a chord, the last chord compared with the one before it in its key for a cadence (the analysis key is set to it, without storing it in the song).
 
 ### Staff, circle and strings
 

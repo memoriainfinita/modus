@@ -570,10 +570,10 @@
   var MINOR_ROOTS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
   var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc3) => [`${root} Major`, `${MINOR_ROOTS[pc3]} Minor`]);
   function parseKey(key) {
-    const [root, mode2] = key.split(" ");
+    const [root, mode3] = key.split(" ");
     const pc3 = pitchClassOf(root ?? "");
     if (pc3 === -1) return null;
-    return { pc: pc3, minor: mode2?.toLowerCase() === "minor" };
+    return { pc: pc3, minor: mode3?.toLowerCase() === "minor" };
   }
   function keyName(pc3, minor) {
     const p = (pc3 % 12 + 12) % 12;
@@ -600,8 +600,8 @@
       const m = n.match(/^([A-G])([#b])/);
       if (m) accidentals[m[1]] = m[2];
     }
-    const [root, mode2] = name.split(" ");
-    return { abcKey: root + (mode2 === "Minor" ? "m" : ""), accidentals };
+    const [root, mode3] = name.split(" ");
+    return { abcKey: root + (mode3 === "Minor" ? "m" : ""), accidentals };
   }
   function keyPrefersSharps(key) {
     return Object.values(keySignature(key ?? null).accidentals).includes("#");
@@ -697,6 +697,7 @@
     "module.guitar": "Strings",
     "module.explain": "Explanation",
     "module.progressions": "Progressions",
+    "module.ear": "Ear training",
     "module.key": "Key",
     "module.piano": "Piano",
     "module.velocity": "Velocity",
@@ -921,6 +922,29 @@
     "prog.select.title": "A named progression, written in the key",
     "prog.play.title": "Play the progression, a bar every 2.4 s",
     "prog.stop.title": "Stop",
+    "ear.mode.interval": "Intervals",
+    "ear.mode.chord": "Chords",
+    "ear.mode.cadence": "Cadences",
+    "ear.new": "New question",
+    "ear.new.title": "Play a new question",
+    "ear.again.title": "Play it again",
+    "ear.score.title": "Right answers out of all, for this kind of question",
+    "ear.start": "Press New question: the app plays without showing, and you name what you heard.",
+    "ear.ask.interval": "Which interval? Two notes one after the other, then together.",
+    "ear.ask.chord": "Which kind of chord?",
+    "ear.ask.cadence": "Which cadence? The tonic, then the two chords that close the phrase.",
+    "ear.right": "Right: {answer}",
+    "ear.wrong": "It was {answer}",
+    "ear.chord.maj": "major",
+    "ear.chord.m": "minor",
+    "ear.chord.dim": "diminished",
+    "ear.chord.aug": "augmented",
+    "ear.chord.sus4": "sus4",
+    "ear.chord.7": "dominant 7th",
+    "ear.chord.maj7": "major 7th",
+    "ear.chord.m7": "minor 7th",
+    "ear.chord.m7b5": "half-diminished",
+    "ear.chord.dim7": "diminished 7th",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "The cornerstone of jazz harmony: subdominant (ii7), dominant (V7), tonic (Imaj7). The root falls a fifth each time, and the seventh of each chord falls a step to the third of the next.",
     "prog.ii-V-i": "ii-V-i (minor)",
@@ -1196,6 +1220,7 @@
     "module.guitar": "Cuerdas",
     "module.explain": "Explicaci\xF3n",
     "module.progressions": "Progresiones",
+    "module.ear": "Entrenamiento auditivo",
     "module.key": "Tonalidad",
     "module.piano": "Piano",
     "module.velocity": "Velocidad",
@@ -1414,6 +1439,29 @@
     "prog.select.title": "Una progresi\xF3n con nombre, escrita en la tonalidad",
     "prog.play.title": "Tocar la progresi\xF3n, un comp\xE1s cada 2,4 s",
     "prog.stop.title": "Parar",
+    "ear.mode.interval": "Intervalos",
+    "ear.mode.chord": "Acordes",
+    "ear.mode.cadence": "Cadencias",
+    "ear.new": "Pregunta nueva",
+    "ear.new.title": "Tocar una pregunta nueva",
+    "ear.again.title": "Tocarla otra vez",
+    "ear.score.title": "Aciertos sobre el total, en este tipo de pregunta",
+    "ear.start": "Pulsa Pregunta nueva: la app toca sin ense\xF1ar, y t\xFA dices lo que has o\xEDdo.",
+    "ear.ask.interval": "\xBFQu\xE9 intervalo? Dos notas una tras otra y luego juntas.",
+    "ear.ask.chord": "\xBFQu\xE9 tipo de acorde?",
+    "ear.ask.cadence": "\xBFQu\xE9 cadencia? La t\xF3nica y despu\xE9s los dos acordes que cierran la frase.",
+    "ear.right": "Correcto: {answer}",
+    "ear.wrong": "Era {answer}",
+    "ear.chord.maj": "mayor",
+    "ear.chord.m": "menor",
+    "ear.chord.dim": "disminuido",
+    "ear.chord.aug": "aumentado",
+    "ear.chord.sus4": "sus4",
+    "ear.chord.7": "s\xE9ptima de dominante",
+    "ear.chord.maj7": "s\xE9ptima mayor",
+    "ear.chord.m7": "menor s\xE9ptima",
+    "ear.chord.m7b5": "semidisminuido",
+    "ear.chord.dim7": "s\xE9ptima disminuida",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "La base de la armon\xEDa del jazz: subdominante (ii7), dominante (V7), t\xF3nica (Imaj7). La ra\xEDz baja una quinta cada vez, y la s\xE9ptima de cada acorde baja un grado a la tercera del siguiente.",
     "prog.ii-V-i": "ii-V-i (menor)",
@@ -1641,10 +1689,10 @@
     });
   }
   function keyLabel(key) {
-    const [root, mode2] = key.split(" ");
-    if (!mode2) return noteLabel(key);
-    const m = mode2.toLowerCase();
-    const modeName = m === "major" ? t("key.major") : m === "minor" ? t("key.minor") : mode2;
+    const [root, mode3] = key.split(" ");
+    if (!mode3) return noteLabel(key);
+    const m = mode3.toLowerCase();
+    const modeName = m === "major" ? t("key.major") : m === "minor" ? t("key.minor") : mode3;
     return `${noteLabel(root)} ${modeName}`;
   }
   function scaleLabel(name) {
@@ -1671,13 +1719,13 @@
     for (let j = 0; j <= m; j++) cost[0][j] = 0;
     for (let i = 1; i <= n; i++) for (let j = i; j <= m; j++)
       cost[i][j] = Math.min(cost[i][j - 1], cost[i - 1][j - 1] + Math.abs(short[i - 1].midi - long[j - 1].midi));
-    const pick = [];
+    const pick2 = [];
     for (let i = n, j = m; i > 0; j--) {
       if (cost[i][j] === cost[i][j - 1] && j > i) continue;
-      pick.unshift(j - 1);
+      pick2.unshift(j - 1);
       i--;
     }
-    return pick;
+    return pick2;
   }
   function pairVoices(fromNames, toNames) {
     const a = voices(fromNames), b = voices(toNames);
@@ -1687,9 +1735,9 @@
     if (a.length === 1 || b.length === 1) return [move(a[0], b[0])];
     const shortIsFrom = a.length < b.length;
     const [short, long] = shortIsFrom ? [a, b] : [b, a];
-    const pick = matchInner(short.slice(1, -1), long.slice(1, -1)).map((j) => j + 1);
+    const pick2 = matchInner(short.slice(1, -1), long.slice(1, -1)).map((j) => j + 1);
     const paired = /* @__PURE__ */ new Map([[0, 0], [long.length - 1, short.length - 1]]);
-    pick.forEach((j, i) => paired.set(j, i + 1));
+    pick2.forEach((j, i) => paired.set(j, i + 1));
     return long.map((voice, j) => {
       const other = paired.has(j) ? short[paired.get(j)] : null;
       return shortIsFrom ? move(other, voice) : move(voice, other);
@@ -2884,6 +2932,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     "piano",
     "velocity",
     "progressions",
+    "ear",
     "history",
     "song"
   ];
@@ -2898,6 +2947,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     piano: { w: 7, h: 5 },
     velocity: { w: 2, h: 5 },
     progressions: { w: 12, h: 4 },
+    ear: { w: 6, h: 5 },
     history: { w: 12, h: 3 },
     song: { w: 12, h: 12 }
   };
@@ -2916,8 +2966,9 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["explain", 8, 11, 4, 11],
       ["piano", 0, 22, 12, 5],
       ["progressions", 0, 27, 12, 4],
-      ["history", 0, 31, 12, 3],
-      ["song", 0, 34, 12, 12]
+      ["ear", 0, 31, 6, 5],
+      ["history", 0, 36, 12, 3],
+      ["song", 0, 39, 12, 12]
     ]),
     // Harmony at the desk: the key and the analysis large, what is played next to them
     study: grid([
@@ -2929,7 +2980,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["key", 0, 12, 8, 11],
       ["explain", 8, 12, 4, 11],
       ["piano", 0, 23, 12, 5],
-      ["progressions", 0, 28, 12, 4]
+      ["progressions", 0, 28, 12, 4],
+      ["ear", 0, 32, 6, 5]
     ]),
     // Teaching on a projector (made to be presented with P): few panels, large
     class: grid([
@@ -3161,6 +3213,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         return '<div id="explain-container"></div>';
       case "progressions":
         return '<div id="progressions-container"></div>';
+      case "ear":
+        return '<div id="ear-container"></div>';
       case "piano":
         return '<div id="piano-container" class="fit"></div>';
       case "velocity":
@@ -3898,8 +3952,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     if (a.isDiatonic) return [{ term: t("analysis.yes"), text: t("ex.diatonic", { chord, key: k }) }];
     const notes = notesOutside(symbol, key).join(" ");
     if (a.isBorrowed && a.borrowedFrom) {
-      const mode2 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
-      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode2, key: k, notes }) }];
+      const mode3 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
+      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode3, key: k, notes }) }];
     }
     if (a.substitutionCandidate?.startsWith("tritone")) return [{ term: substitutionTypeLabel("tritone"), text: t("ex.tritoneSub", { chord }) }];
     return [{ term: t("analysis.chromatic"), text: t("ex.chromatic", { chord, key: k, notes }) }];
@@ -5451,6 +5505,118 @@ ${explainCadence(c.cadence)}` : ""}`;
     });
   }
 
+  // src/ui/ear.ts
+  var EAR_MODES = ["interval", "chord", "cadence"];
+  var INTERVALS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+  var CHORDS = ["", "m", "dim", "aug", "sus4", "7", "maj7", "m7", "m7b5", "dim7"];
+  var CADENCES2 = {
+    authentic: { numerals: "V7 I", umt: "Authentic Cadence (V -> I)" },
+    plagal: { numerals: "IV I", umt: "Plagal Cadence (IV -> I)" },
+    deceptive: { numerals: "V7 vi", umt: "Deceptive Cadence (V -> vi)" },
+    half: { numerals: "IV V", umt: "Half Cadence (-> V)" }
+  };
+  var EAR_ANSWERS = {
+    interval: INTERVALS,
+    chord: CHORDS,
+    cadence: Object.keys(CADENCES2)
+  };
+  var pick = (list, rng) => list[Math.floor(rng() * list.length) % list.length];
+  var toMidi = (names) => names.map(noteNameToMidi).filter((m) => m !== null);
+  function voiceNear(names, rootPc) {
+    let midis = toMidi(names);
+    if (!midis.length) return [];
+    while (Math.min(...midis) >= 67) midis = midis.map((m) => m - 12);
+    while (Math.min(...midis) < 55) midis = midis.map((m) => m + 12);
+    const bass = 36 + (rootPc % 12 + 12) % 12;
+    return [bass, ...midis].map(midiToNoteName);
+  }
+  function makeQuestion(mode3, rng = Math.random) {
+    if (mode3 === "interval") {
+      const n = parseInt(pick(INTERVALS, rng));
+      const low = 55 + Math.floor(rng() * 12);
+      const [a, b] = [midiToNoteName(low), midiToNoteName(low + n)];
+      return { mode: mode3, answer: String(n), steps: [[a], [b], [a, b]], symbol: null, prev: null, key: null };
+    }
+    if (mode3 === "chord") {
+      const suffix = pick(CHORDS, rng);
+      const root = pick(["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"], rng);
+      const symbol = root + suffix;
+      return { mode: mode3, answer: suffix, steps: [chordNoteNames(symbol)], symbol, prev: null, key: null };
+    }
+    const answer = pick(Object.keys(CADENCES2), rng);
+    const key = pick(ALL_KEYS.filter((k) => k.endsWith("Major")), rng);
+    const chords = tryUMT("roman numerals", () => UMT.parseRomanProgression(`I ${CADENCES2[answer].numerals}`, key), []);
+    const steps = chords.map((c) => voiceNear(chordNoteNames(c.name), c.rootStep + 9));
+    const symbols = chords.map((c) => c.name);
+    return { mode: mode3, answer, steps, symbol: symbols[2] ?? null, prev: symbols[1] ?? null, key };
+  }
+  function answerLabel(mode3, answer) {
+    if (mode3 === "interval") return answer === "12" ? t("interval.octave") : t(`interval.${answer}`);
+    if (mode3 === "chord") return t(`ear.chord.${answer || "maj"}`);
+    return cadenceLabel(CADENCES2[answer].umt, true);
+  }
+  var STEP_MS = { interval: 700, chord: 0, cadence: 1100 };
+  var timers = [];
+  function playQuestion(q) {
+    timers.forEach(clearTimeout);
+    timers = q.steps.map((notes, i) => setTimeout(() => playNoteNames(notes, q.mode === "interval" && i < 2 ? 0.8 : 1.6), i * STEP_MS[q.mode]));
+  }
+  var emptyScore = () => ({ interval: { right: 0, total: 0 }, chord: { right: 0, total: 0 }, cadence: { right: 0, total: 0 } });
+  var mode2 = loadChoice("ear-mode", EAR_MODES, "chord");
+  var score = { ...emptyScore(), ...loadJSON("ear-score", {}) };
+  var question = null;
+  var answered = false;
+  function renderEar(container, handlers) {
+    const tally = score[mode2];
+    container.innerHTML = `
+    <div class="ear-head">
+      ${EAR_MODES.map((m) => `<button class="size-ctrl-btn ear-mode${m === mode2 ? " active" : ""}" data-mode="${m}">${escapeHtml(t(`ear.mode.${m}`))}</button>`).join("")}
+      <button id="ear-new" class="ctrl-btn" title="${escapeHtml(t("ear.new.title"))}">${escapeHtml(t("ear.new"))}</button>
+      <button id="ear-again" class="ctrl-btn" title="${escapeHtml(t("ear.again.title"))}"${question ? "" : " disabled"}>\u21BA</button>
+      <span class="ear-score" title="${escapeHtml(t("ear.score.title"))}">${tally.right} / ${tally.total}</span>
+    </div>
+    <p class="ear-prompt">${escapeHtml(question ? t(`ear.ask.${mode2}`) : t("ear.start"))}</p>
+    <div class="ear-answers">
+      ${EAR_ANSWERS[mode2].map((a) => `<button class="ear-answer" data-answer="${escapeHtml(a)}"${question && !answered ? "" : " disabled"}>${escapeHtml(answerLabel(mode2, a))}</button>`).join("")}
+    </div>
+    <p class="ear-feedback" aria-live="polite"></p>`;
+    container.querySelectorAll(".ear-mode").forEach((b) => b.addEventListener("click", () => {
+      mode2 = b.dataset.mode;
+      save("ear-mode", mode2);
+      question = null;
+      renderEar(container, handlers);
+    }));
+    container.querySelector("#ear-new").addEventListener("click", () => {
+      question = makeQuestion(mode2);
+      answered = false;
+      renderEar(container, handlers);
+      playQuestion(question);
+    });
+    container.querySelector("#ear-again").addEventListener("click", () => {
+      if (question) playQuestion(question);
+    });
+    container.querySelectorAll(".ear-answer").forEach((b) => b.addEventListener("click", () => {
+      if (!question || answered) return;
+      answered = true;
+      const given = b.dataset.answer;
+      const right = given === question.answer;
+      score[mode2].total++;
+      if (right) score[mode2].right++;
+      save("ear-score", score);
+      const q = question;
+      renderEar(container, handlers);
+      const correct = answerLabel(q.mode, q.answer);
+      const feedback = container.querySelector(".ear-feedback");
+      feedback.className = `ear-feedback ${right ? "ear-right" : "ear-wrong"}`;
+      const where = q.key ? ` \xB7 ${keyLabel(q.key)}` : "";
+      feedback.textContent = (right ? t("ear.right", { answer: correct }) : t("ear.wrong", { answer: correct })) + where;
+      const button = (a) => container.querySelector(`.ear-answer[data-answer="${CSS.escape(a)}"]`);
+      button(q.answer)?.classList.add("ear-correct");
+      if (!right) button(given)?.classList.add("ear-missed");
+      handlers.show(q);
+    }));
+  }
+
   // src/app.ts
   var STAFF_WIDTH = 380;
   var COF_SIZE = 300;
@@ -5522,6 +5688,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     chordInput.addEventListener("input", () => chordInput.classList.remove("invalid"));
     setModeBtn(getMode());
     renderDetector();
+    const ear = document.getElementById("ear-container");
+    if (ear) renderEar(ear, { show: showEarAnswer });
     initMidi().then((result) => {
       if (result.denied) {
         showMidiBanner(t("midi.denied"));
@@ -6121,6 +6289,21 @@ ${explainCadence(c.cadence)}` : ""}`;
     playChord(chord);
     showChord(chord, void 0, previousHistoryChord(chord));
   }
+  function showEarAnswer(q) {
+    if (!q.symbol) {
+      detectionFromMidi = false;
+      const notes = q.steps[q.steps.length - 1];
+      showDetection(spellDetection(analyzeNotes(notes.map(noteNameToMidi).filter((m) => m !== null)), analysisKey()), null);
+      return;
+    }
+    if (q.key && analysisKey() !== q.key) {
+      progressionsKey = q.key;
+      applyKey(q.key);
+    }
+    const last = q.steps[q.steps.length - 1];
+    const before = q.steps.length > 1 ? q.steps[q.steps.length - 2] : null;
+    showChord(q.symbol, last, q.prev && before ? { symbol: q.prev, notes: before } : null);
+  }
   var progressionsKey;
   function renderProgressionPanel() {
     const el = document.getElementById("progressions-container");
@@ -6316,10 +6499,10 @@ ${explainCadence(c.cadence)}` : ""}`;
     if (state.captureTargetId === id) state.captureTargetId = null;
     removeChordWithUndo(id);
   }
-  function setModeBtn(mode2) {
-    setMode(mode2);
+  function setModeBtn(mode3) {
+    setMode(mode3);
     document.querySelectorAll(".mode-btn[data-mode]").forEach((b) => {
-      b.classList.toggle("active-mode", b.dataset.mode === mode2);
+      b.classList.toggle("active-mode", b.dataset.mode === mode3);
     });
   }
   if (!runViewerFromUrl()) init();
