@@ -19,12 +19,26 @@ describe('buildKeyMap: diatonic chords', () => {
       .toEqual(['F#maj7', 'G#m7', 'A#m7', 'Bmaj7', 'C#7', 'D#m7', 'E#m7b5'])
   })
 
-  it('a minor key lists natural minor; the harmonic-minor V7 is under parallel modes', () => {
+  it('a minor key lists natural minor, with the harmonic-minor V7 and vii°7 under v and VII', () => {
     const m = buildKeyMap('A Minor', true)!
     expect(m.diatonic.map(c => c.roman)).toEqual(['i7', 'iiø7', 'IIImaj7', 'iv7', 'v7', 'VImaj7', 'VII7'])
     expect(m.diatonic[6].secondary).toBe('V7/III')   // what the analysis panel shows for G7
+    expect(m.diatonic[4].alternative?.symbol).toBe('E7')
+    expect(m.diatonic[6].alternative?.symbol).toBe('G#dim7')
+    expect(m.diatonic.filter(c => c.alternative)).toHaveLength(2)
+    // UMT no longer lists them as borrowed; i(maj7) and III+ still are
     const harmonic = m.parallel.find(p => p.mode === 'harmonic minor')!
-    expect(harmonic.chords.map(c => c.symbol)).toContain('E7')
+    expect(harmonic.chords.map(c => c.symbol)).not.toContain('E7')
+    expect(harmonic.chords.map(c => c.symbol)).toContain('AmM7')
+  })
+
+  it('parallel modes in triads too, the characteristic ones marked', () => {
+    const m = buildKeyMap('C Major', false)!
+    const lydian = m.parallel.find(p => p.mode === 'lydian')!
+    expect(lydian.chords.map(c => c.symbol)).toContain('D')
+    const aeolian = m.parallel.find(p => p.mode === 'aeolian')!
+    expect(aeolian.chords.find(c => c.symbol === 'Ab')?.characteristic).toBe(true)
+    expect(aeolian.chords.find(c => c.symbol === 'Cm')?.characteristic).toBe(false)
   })
 
   it('null for a key UMT cannot read', () => {
@@ -40,7 +54,7 @@ describe('buildKeyMap: negative harmony, parallel modes, Coltrane axis', () => {
   })
 
   it('parallel modes brightest first, chords outside the key only', () => {
-    const m = buildKeyMap('C Major', false)!
+    const m = buildKeyMap('C Major', true)!
     expect(m.parallel[0].mode).toBe('lydian')
     expect(m.parallel[m.parallel.length - 1].mode).toBe('locrian')
     const aeolian = m.parallel.find(p => p.mode === 'aeolian')!

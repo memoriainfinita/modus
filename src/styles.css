@@ -724,3 +724,6 @@ body.presenting { overflow: hidden; }
 .vel-bar { height: 8px; background: #252540; border-radius: 2px; overflow: hidden; }
 .vel-bar > span { display: block; height: 100%; background: #f59e0b; }
 .vel-empty { font-size: 10px; color: #6b7280; line-height: 1.4; }
+
+.key-chord.key-alt { font-size: .85em; opacity: .85; margin-top: 2px; }
+.key-chord.key-characteristic { font-weight: 700; color: #fff; }

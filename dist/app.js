@@ -591,7 +591,7 @@
       return result2;
     }
     let candidates = [];
-    candidates = tryUMT("chord detection", () => (UMT.Harmony.detectChords(noteNames.map((n) => UMT.parseNote(n))) ?? []).map(normalizeChordName).filter(isKnownChord), []);
+    candidates = tryUMT("chord detection", () => (UMT.Harmony.detectChordsScored(noteNames.map((n) => UMT.parseNote(n))) ?? []).map((c) => normalizeChordName(c.name)).filter(isKnownChord), []);
     candidates = [...new Set(candidates)];
     const result = {
       kind: "chord",
@@ -650,17 +650,81 @@
     });
     return steps;
   }
-  function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol) {
+  var INVERSIONS = ["root position", "1st inversion", "2nd inversion", "3rd inversion"];
+  var pcName = (n) => n.replace(/-?\d+$/, "");
+  function describeVoicing(noteNames, chord) {
+    if (noteNames.length < 3) return null;
+    const v = tryUMT("voicing", () => UMT.analyzeVoicing(noteNames.map((n) => UMT.parseNote(n)), chord), null);
+    if (!v) return null;
+    const bass = INVERSIONS[v.inversion] ?? `${v.bassDegree ?? pcName(v.bass)} in the bass`;
+    return [
+      bass,
+      v.position,
+      v.drop,
+      v.doubled.length ? `doubled ${v.doubled.join(" ")}` : null,
+      v.omitted.length ? `no ${v.omitted.join(" ")}` : null,
+      v.added.length ? `+ ${v.added.map(pcName).join(" ")}` : null
+    ].filter(Boolean).join(" \xB7 ");
+  }
+  var pcOf = (name) => pitchClassOf(pcName(name));
+  function presentUpperStructures(noteNames, chord) {
+    const sounding3 = new Set(noteNames.map(pcOf));
+    const all = tryUMT("upper structures", () => UMT.getUpperStructures(chord), []);
+    return all.flatMap((u) => {
+      const triad = tryUMT("upper structures", () => u.triad.getNotes().map((n) => n.name), []);
+      return triad.length && triad.every((n) => sounding3.has(pcOf(n))) ? [`${u.label} (${u.triad.name}: ${u.tensions.join(" ")})`] : [];
+    });
+  }
+  function neoRiemannianPath(from, to) {
+    const id = (c) => c ? `${(c.rootStep % 12 + 12) % 12}:${c.intervalsInSteps.join(",")}` : "";
+    const target = id(to);
+    const isTriad = (c) => !!tryUMT("neo-Riemannian", () => UMT.NeoRiemannian.P(c), null);
+    if (!target || !isTriad(from) || !isTriad(to)) return null;
+    if (id(from) === target) return null;
+    let frontier = [{ chord: from, path: "" }];
+    for (let depth = 1; depth <= 3; depth++) {
+      const next = [];
+      for (const { chord, path } of frontier) for (const op of ["P", "L", "R"]) {
+        const c = tryUMT("neo-Riemannian", () => UMT.NeoRiemannian[op](chord), null);
+        if (!c) continue;
+        if (id(c) === target) return path + op;
+        next.push({ chord: c, path: path + op });
+      }
+      frontier = next;
+    }
+    return null;
+  }
+  function analyzeNoteSet(noteNames, key, fromMelody = false) {
+    const names = [...new Set(noteNames.map(pcName))];
+    if (!names.length) return null;
+    const notes = names.map((n) => tryUMT("notes", () => UMT.parseNote(n + "4"), null)).filter(Boolean);
+    const pcs = tryUMT("set theory", () => UMT.SetTheory.getPitchClasses(notes), []);
+    let forte = null;
+    if (pcs.length >= 3) {
+      const number = tryUMT("set theory", () => UMT.SetTheory.getForteNumber(pcs), "");
+      const prime = tryUMT("set theory", () => UMT.SetTheory.primeForm(pcs), []);
+      const vector = tryUMT("set theory", () => UMT.SetTheory.intervalVector(pcs), []);
+      const digits = prime.map((p) => p === 10 ? "t" : p === 11 ? "e" : String(p)).join("");
+      forte = [number, prime.length ? `[${digits}]` : "", vector.length ? `<${vector.join("")}>` : ""].filter(Boolean).join(" \xB7 ") || null;
+    }
+    const tonic = key?.split(" ")[0];
+    const fits = tryUMT("scales", () => UMT.findScalesForNotes(notes, { tonic, limit: 7 }).filter((s) => s.notes.length < 12).slice(0, 6).map((s) => s.name), []);
+    return { notes: names, fromMelody, forte, fits };
+  }
+  function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol, noteNames = []) {
     const chord = tryParseChord(chordSymbol);
     if (!chord) return emptyAnalysis(chordSymbol);
     const result = emptyAnalysis(chordSymbol);
     const bassNote = tryUMT("notes", () => chord.getNotes()[0] ?? null, null);
     if (bassNote) result.figuredBass = tryUMT("figured bass", () => UMT.FiguredBass.fromChord(chord, bassNote), "");
     result.suggestedScales = tryUMT("scales", () => UMT.Harmony.getSuggestedScales(chord).map((s) => s.scale), []);
+    result.voicing = describeVoicing(noteNames, chord);
+    result.upperStructures = presentUpperStructures(noteNames, chord);
+    const prevChord = tryParseChord(prevChordSymbol);
+    if (prevChord) result.transformation = neoRiemannianPath(prevChord, chord);
     if (!activeKey) return result;
     const a = romanInKey(chordSymbol, activeKey);
     if (a) Object.assign(result, a);
-    const prevChord = tryParseChord(prevChordSymbol);
     if (prevChord) {
       const cad = tryUMT("cadence", () => UMT.Harmony.analyzeCadence(prevChord, chord, activeKey), null);
       if (cad && cad !== "No standard cadence") result.cadence = cad;
@@ -682,7 +746,10 @@
       figuredBass: "",
       suggestedScales: [],
       substitutions: [],
-      cadence: null
+      cadence: null,
+      voicing: null,
+      upperStructures: [],
+      transformation: null
     };
   }
   function getAutoKey(history) {
@@ -1785,17 +1852,28 @@ ${lower.length ? chordOf(lower) : empty}`;
       return null;
     }
     const diatonic = chords.map((c) => keyChord(c.name, key));
+    if (/ minor$/i.test(key)) {
+      const harmonic = tryUMT(
+        "diatonic chords",
+        () => UMT.parseScaleSymbol(key.replace(/ minor$/i, " Harmonic Minor")).getDiatonicChords(sevenths ? "seventh" : "triad"),
+        []
+      );
+      harmonic.forEach((c, i) => {
+        if (!diatonic[i] || c.name === diatonic[i].symbol) return;
+        if (romanInKey(c.name, key)?.isDiatonic) diatonic[i].alternative = keyChord(c.name, key);
+      });
+    }
     const negative = chords.map((c) => tryUMT("negative harmony", () => {
       const name = UMT.Harmony.getNegativeHarmony(c, key)?.name;
       return name ? spellChordSymbol(name, key) : null;
     }, null));
     const byMode = /* @__PURE__ */ new Map();
-    for (const b of tryUMT("borrowed chords", () => UMT.Harmony.getBorrowedChords(key), [])) {
+    for (const b of tryUMT("borrowed chords", () => UMT.Harmony.getBorrowedChords(key, { type: sevenths ? "seventh" : "triad" }), [])) {
       const name = b.chord?.name;
       if (!name || !tryParseChord(name)) continue;
       let row = byMode.get(b.sourceMode);
       if (!row) byMode.set(b.sourceMode, row = { mode: b.sourceMode, brightness: b.brightness ?? 0, chords: [] });
-      row.chords.push(keyChord(name, key));
+      row.chords.push({ ...keyChord(name, key), characteristic: !!b.characteristic });
     }
     const parallel = [...byMode.values()].sort((a, b) => b.brightness - a.brightness);
     const axis = tryUMT("coltrane axis", () => UMT.Harmony.getColtraneAxis(key).majorThirds, null);
@@ -1828,6 +1906,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     <div class="key-cell">
       <span class="key-roman">${escapeHtml(c.roman)}</span>
       ${button(c.symbol, "", describe(c))}
+      ${c.alternative ? button(c.alternative.symbol, "key-alt", `${describe(c.alternative)} \xB7 harmonic minor, raised 7th`) : ""}
       <span class="key-function key-fn-${c.function}" title="${FUNCTION_NAMES2[c.function]}">${c.function === "unknown" ? "\xB7" : c.function}</span>
     </div>`;
     let html = `<div class="key-main"><div class="key-title">${escapeHtml(keyLabel)}</div>`;
@@ -1844,14 +1923,14 @@ ${lower.length ? chordOf(lower) : empty}`;
     }
     html += "</div>";
     if (opts.showParallel && map.parallel.length) {
-      html += `<div class="key-parallel"><div class="key-section-label" title="Seventh chords of each mode on the same tonic that use a note outside the key (Harmony.getBorrowedChords)">Parallel modes</div><div class="key-mode-grid">`;
+      html += `<div class="key-parallel"><div class="key-section-label" title="Chords of each mode on the same tonic that use a note outside the key (Harmony.getBorrowedChords). Bold: the ones with the note that sets the mode apart">Parallel modes</div><div class="key-mode-grid">`;
       html += map.parallel.map((row) => `
       <div class="key-mode-row">
         <span class="key-mode-name">${escapeHtml(row.mode)}</span>
         <div class="key-mode-chords">${row.chords.map((c) => `
           <span class="key-mode-chord">
             <span class="key-roman">${escapeHtml(c.roman)}</span>
-            ${button(c.symbol, "", `${describe(c)} \xB7 from ${row.mode}`)}
+            ${button(c.symbol, c.characteristic ? "key-characteristic" : "", `${describe(c)} \xB7 from ${row.mode}${c.characteristic ? " \xB7 carries its characteristic note" : ""}`)}
           </span>`).join("")}
         </div>
       </div>`).join("") + "</div></div>";
@@ -3180,26 +3259,36 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
 
   // src/detector/analysis-panel.ts
-  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "diatonic", "scales", "cadence", "secondary", "subs"];
+  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "secondary", "subs", "upper", "forte"];
   var ANALYSIS_FIELD_LABELS = {
     roman: "Roman",
     function: "Func",
     figbass: "Fig",
+    voicing: "Voic",
     diatonic: "Diat",
     scales: "Scl",
+    fits: "Fits",
     cadence: "Cad",
+    plr: "PLR",
     secondary: "Sec",
-    subs: "Subs"
+    subs: "Subs",
+    upper: "UST",
+    forte: "Set"
   };
   var ANALYSIS_FIELD_TOOLTIPS = {
     roman: "Roman numeral",
     function: "Harmonic function",
     figbass: "Figured bass",
+    voicing: "Voicing: inversion, close / open, drop, doubled and missing notes",
     diatonic: "Diatonic / borrowed",
-    scales: "Suggested scales",
+    scales: "Suggested scales for the chord",
+    fits: "Scales that contain every note on screen, or of the melody played note by note",
     cadence: "Cadence",
+    plr: "Neo-Riemannian moves (P, L, R) from the previous triad",
     secondary: "Secondary dominant",
-    subs: "Substitutions"
+    subs: "Substitutions",
+    upper: "Upper-structure triads sounding over a dominant",
+    forte: "Set class: Forte number, prime form, interval vector"
   };
   function renderChordSummary(detection, onAltSelect2) {
     const el = document.getElementById("chord-summary");
@@ -3224,13 +3313,13 @@ ${lower.length ? chordOf(lower) : empty}`;
       btn.addEventListener("click", () => onAltSelect2(parseInt(btn.dataset.idx)));
     });
   }
-  function renderZone1Analysis(detection, analysis, fieldsVisible, scale, onAltSelect2) {
+  function renderZone1Analysis(detection, analysis, noteSet2, fieldsVisible, scale, onAltSelect2) {
     renderChordSummary(detection, onAltSelect2);
     const el = document.getElementById("analysis-content");
     if (!el) return;
     el.style.fontSize = scale + "px";
     const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => fieldsVisible[f]).length;
-    el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
+    el.style.minHeight = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
     const colEl = document.getElementById("col-analysis");
     if (colEl) {
       const w = Math.round(scale * 19) + "px";
@@ -3245,6 +3334,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const conditionalRow = (f, label, val) => fieldsVisible[f] ? row(label, val ?? "\u2014") : "";
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
     let secondary = null, subs = null;
+    let voicing = null, plr = null, upper = null;
     let extra = "";
     if (detection?.kind === "note") {
       extra = row("Note", `${detection.noteName} \xB7 MIDI ${detection.midiNumber}`);
@@ -3259,8 +3349,12 @@ ${lower.length ? chordOf(lower) : empty}`;
       cadence = analysis.cadence || "\u2014";
       if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget?.split("/")[1] ?? "?"}`;
       if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
+      voicing = analysis.voicing;
+      plr = analysis.transformation;
+      if (analysis.upperStructures.length) upper = analysis.upperStructures.join(", ");
     }
-    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("subs", "Subs.", subs) + extra;
+    const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
+    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + conditionalRow("voicing", "Voicing", voicing) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + conditionalRow("fits", "Fits", fits) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("plr", "P/L/R", plr) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("subs", "Subs.", subs) + conditionalRow("upper", "Upper str.", upper) + conditionalRow("forte", "Set class", noteSet2?.forte ?? null) + extra;
   }
 
   // src/ui/layout.ts
@@ -3893,15 +3987,42 @@ ${lower.length ? chordOf(lower) : empty}`;
     return d.kind === "note" ? [d.noteName] : d.notes;
   }
   var lastAnalysisSig = "";
+  var noteSet = null;
+  var MELODY_GAP_MS = 6e3;
+  var melody = [];
+  var melodyAt = 0;
+  var melodyHeld = /* @__PURE__ */ new Set();
+  function trackMelody(notes, detection) {
+    const struck = notes.filter((n) => !melodyHeld.has(n));
+    melodyHeld = new Set(notes);
+    if (!detection || !struck.length) return;
+    if (detection.kind === "chord") {
+      melody = [];
+      return;
+    }
+    const now = Date.now();
+    if (now - melodyAt > MELODY_GAP_MS) melody = [];
+    melodyAt = now;
+    const names = detection.kind === "note" ? [detection.noteName] : detection.notes;
+    const midis = detection.kind === "note" ? [detection.midiNumber] : notes;
+    names.forEach((name, i) => {
+      const pc = name.replace(/-?\d+$/, "");
+      if (struck.includes(midis[i]) && !melody.includes(pc)) melody.push(pc);
+    });
+  }
   function refreshAnalysis() {
     const sym = selectedSymbol();
-    const sig = `${sym}|${analysisKey()}|${cadencePrev}`;
+    const notes = displayedNotes();
+    const sig = `${sym}|${analysisKey()}|${cadencePrev}|${notes.join(" ")}|${melody.join(" ")}`;
     if (sig === lastAnalysisSig) return;
     lastAnalysisSig = sig;
-    state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev) : null;
+    state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev, notes) : null;
+    const kind = state.detection?.kind;
+    const useMelody = (kind === "note" || kind === "interval") && melody.length >= 2;
+    noteSet = useMelody ? analyzeNoteSet(melody, analysisKey(), true) : notes.length >= 2 ? analyzeNoteSet(notes, analysisKey()) : null;
   }
   function renderAnalysisPanel() {
-    renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect);
+    renderZone1Analysis(state.detection, state.analysis, noteSet, analysisFieldsVisible, analysisScale, onAltSelect);
   }
   function renderDiagrams() {
     renderZone1Diagrams(displayedNotes(), selectedSymbol());
@@ -4070,6 +4191,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   function onNoteChange2(notes) {
     detectionFromMidi = true;
     const result = spellDetection(analyzeNotes(notes), analysisKey());
+    trackMelody(notes, result);
     const top = result?.kind === "chord" ? result.candidates[0] : null;
     const known = top && top !== "?" ? top : null;
     if (state.captureTargetId) {
@@ -4300,6 +4422,7 @@ ${lower.length ? chordOf(lower) : empty}`;
           closePresentation();
           return;
         }
+        melody = [];
         releaseKeptNotes();
         cancelCapture();
         state.activeCursorId = null;

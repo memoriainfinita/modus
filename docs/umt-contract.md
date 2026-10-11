@@ -1,6 +1,6 @@
 # Modus — UMT API contract
 
-Verified by reading the UMT TypeScript source and, on 2026-10-10, by running the pinned bundle in Node. Pinned to the release tag `v0.3.0` since 2026-10-11 (changes per version in UMT's `CHANGELOG.md`; the npm package exports the IIFE as `umt/iife`). Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
+Verified by reading the UMT TypeScript source and, on 2026-10-10, by running the pinned bundle in Node. Pinned to the release tag `v0.4.0` since 2026-10-11 (changes per version in UMT's `CHANGELOG.md`; the npm package exports the IIFE as `umt/iife`). Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
 
 ```ts
 // Convert note string to UMT Note object
@@ -12,6 +12,17 @@ UMT.Harmony.detectChords(notes: Note[]): string[]
 // Returns ranked chord name strings, e.g. ["Cmaj7"], ["Dm7", "F6/D"]
 // Plain major triad is "C" / "C/E" (since 6750e23; it was "CM")
 // No match returns ["Unknown Chord"], which parseChordSymbol rejects (filtered in detector/analyzer.ts)
+UMT.Harmony.detectChordsScored(notes: Note[]): { name, root, bass, quality, score, rootInBass, omitted, tensions }[]
+// What Modus uses since v0.3.0: best first; readings may omit the fifth (G2 B3 F4 → G7, omitted ['5'])
+
+// Analysis fields added with v0.3.0
+UMT.analyzeVoicing(notes: Note[], chord?: Chord): { chord, voices, bass, bassDegree, inversion, position: 'close'|'open', drop: 'drop 2'|'drop 3'|'drop 2+4'|null, doubled, omitted, added, span }
+// degrees as 'R', '3', '5', 'b7', '9'…; added are note names outside the chord
+UMT.findScalesForNotes(notes: Note[], { tonic?, tonicOnly?, limit? }): { name: 'C major', root, type, aliases, notes, extra, rootIsTonic, tier }[]
+// ranked by tonic, tier, then fewest extra notes; includes the chromatic scale, which Modus drops
+UMT.getUpperStructures(dominant: Chord): { triad: Chord, tensions: string[], label: 'II UST' … }[]  // [] unless the chord has a 3rd and b7
+UMT.NeoRiemannian.P / L / R(chord: Chord): Chord | null   // null for anything but a major or minor triad
+UMT.SetTheory.getPitchClasses(notes) / getForteNumber(pcs) / primeForm(pcs) / intervalVector(pcs)
 
 // Chord object: name, rootStep, intervalsInSteps (semitones above root), bassStep, preferFlats
 // There is NO `quality` field — chord family is derived from intervalsInSteps (theory/chord.ts)
@@ -60,11 +71,12 @@ UMT.getSubstitutions(chord: Chord, key: string): SubstitutionResult[]
 UMT.Harmony.analyzeCadence(c1: Chord, c2: Chord, key: string): string  // deceptive: 'Deceptive Cadence (V -> vi)' in major, '(V -> VI)' in minor
 UMT.Harmony.getSuggestedScales(chord: Chord): { scale: string; hint?: string }[]
 UMT.Harmony.getColtraneAxis(key: string): { root: string; majorThirds: [string,string,string] }  // names in flats (F# Major → Gb Bb D): Modus writes them in the key
-UMT.Harmony.getBorrowedChords(key: string): { chord: Chord; sourceMode: string; brightness: number; function; characteristic: boolean }[]
-// Seventh chords only, of lydian, mixolydian, dorian, aeolian, phrygian, locrian, harmonic minor, melodic minor,
+UMT.Harmony.getBorrowedChords(key: string, { type: 'triad' | 'seventh' } = seventh): { chord: Chord; sourceMode: string; brightness: number; function; characteristic: boolean }[]
+// Chords of lydian, mixolydian, dorian, aeolian, phrygian, locrian, harmonic minor, melodic minor,
 // harmonic major on the key's tonic, keeping those with a note outside the key's scale. A mode identical to the key is skipped.
 // brightness: lydian 1, mixolydian -1, dorian -2, aeolian -3, phrygian -4, locrian -5, harmonic minor -3, melodic minor -2, harmonic major -1
-// In a minor key it lists V7 and vii°7 under harmonic minor, which analyzeProgression counts as diatonic
+// In a minor key, harmonic minor's V, V7, vii°, vii°7 are not listed (diatonic, as in analyzeProgression; since v0.4.0): Modus shows them under v and VII
+// characteristic (v0.4.0): carries the degree that sets the mode apart from its reference scale (#4 lydian, b7 mixolydian, 6 dorian, b2 phrygian, b2 or b5 locrian, b6 aeolian…)
 UMT.Harmony.getNegativeHarmony(chord: Chord, key: string): Chord  // 12-TET only; rootStep is the named root, a different lowest note goes to bassStep (C6 in C → Cm7/Bb)
 UMT.parseChordSymbol(symbol: string): Chord  // accepts 6/9, m6/9, 6/9/<bass>
 

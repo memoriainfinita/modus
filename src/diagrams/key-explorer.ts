@@ -43,6 +43,7 @@ export function renderKeyExplorer(
     <div class="key-cell">
       <span class="key-roman">${escapeHtml(c.roman)}</span>
       ${button(c.symbol, '', describe(c))}
+      ${c.alternative ? button(c.alternative.symbol, 'key-alt', `${describe(c.alternative)} · harmonic minor, raised 7th`) : ''}
       <span class="key-function key-fn-${c.function}" title="${FUNCTION_NAMES[c.function]}">${c.function === 'unknown' ? '·' : c.function}</span>
     </div>`
 
@@ -64,14 +65,14 @@ export function renderKeyExplorer(
   html += '</div>'
 
   if (opts.showParallel && map.parallel.length) {
-    html += `<div class="key-parallel"><div class="key-section-label" title="Seventh chords of each mode on the same tonic that use a note outside the key (Harmony.getBorrowedChords)">Parallel modes</div><div class="key-mode-grid">`
+    html += `<div class="key-parallel"><div class="key-section-label" title="Chords of each mode on the same tonic that use a note outside the key (Harmony.getBorrowedChords). Bold: the ones with the note that sets the mode apart">Parallel modes</div><div class="key-mode-grid">`
     html += map.parallel.map(row => `
       <div class="key-mode-row">
         <span class="key-mode-name">${escapeHtml(row.mode)}</span>
         <div class="key-mode-chords">${row.chords.map(c => `
           <span class="key-mode-chord">
             <span class="key-roman">${escapeHtml(c.roman)}</span>
-            ${button(c.symbol, '', `${describe(c)} · from ${row.mode}`)}
+            ${button(c.symbol, c.characteristic ? 'key-characteristic' : '', `${describe(c)} · from ${row.mode}${c.characteristic ? ' · carries its characteristic note' : ''}`)}
           </span>`).join('')}
         </div>
       </div>`).join('') + '</div></div>'

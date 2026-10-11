@@ -13,6 +13,8 @@ export interface KeyChord {
   roman: string                // the degree (VII7), as a key chart writes it
   secondary?: string           // the reading the analysis panel shows when it differs (V7/III)
   function: HarmonicAnalysis['function']
+  characteristic?: boolean     // parallel modes: carries the note that sets the mode apart (UMT)
+  alternative?: KeyChord       // minor keys: the harmonic-minor V and vii° UMT also counts as diatonic
 }
 
 export interface ParallelMode {
@@ -25,7 +27,7 @@ export interface KeyMap {
   key: string
   diatonic: KeyChord[]
   negative: (string | null)[]  // negative harmony of each diatonic chord, same order
-  parallel: ParallelMode[]     // seventh chords only: getBorrowedChords builds sevenths
+  parallel: ParallelMode[]     // triads or sevenths, as the diatonic row
   coltraneAxis: string[] | null
 }
 
@@ -46,6 +48,16 @@ export function buildKeyMap(key: string, sevenths: boolean): KeyMap | null {
   if (!chords.length) { cache.set(cacheKey, null); return null }
 
   const diatonic = chords.map(c => keyChord(c.name, key))
+  // In minor, UMT counts V(7) and vii°(7) of harmonic minor as diatonic: shown under the
+  // natural-minor chord of the same degree (Em7 / E7 in A minor)
+  if (/ minor$/i.test(key)) {
+    const harmonic = tryUMT<any[]>('diatonic chords',
+      () => UMT.parseScaleSymbol(key.replace(/ minor$/i, ' Harmonic Minor')).getDiatonicChords(sevenths ? 'seventh' : 'triad'), [])
+    harmonic.forEach((c, i) => {
+      if (!diatonic[i] || c.name === diatonic[i].symbol) return
+      if (romanInKey(c.name, key)?.isDiatonic) diatonic[i].alternative = keyChord(c.name, key)
+    })
+  }
   const negative = chords.map(c =>
     tryUMT('negative harmony', () => {
       const name = UMT.Harmony.getNegativeHarmony(c, key)?.name
@@ -53,12 +65,12 @@ export function buildKeyMap(key: string, sevenths: boolean): KeyMap | null {
     }, null))
 
   const byMode = new Map<string, ParallelMode>()
-  for (const b of tryUMT<any[]>('borrowed chords', () => UMT.Harmony.getBorrowedChords(key), [])) {
+  for (const b of tryUMT<any[]>('borrowed chords', () => UMT.Harmony.getBorrowedChords(key, { type: sevenths ? 'seventh' : 'triad' }), [])) {
     const name = b.chord?.name
     if (!name || !tryParseChord(name)) continue
     let row = byMode.get(b.sourceMode)
     if (!row) byMode.set(b.sourceMode, row = { mode: b.sourceMode, brightness: b.brightness ?? 0, chords: [] })
-    row.chords.push(keyChord(name, key))
+    row.chords.push({ ...keyChord(name, key), characteristic: !!b.characteristic })
   }
   // Brightest first, as the modes are usually taught (lydian → locrian).
   const parallel = [...byMode.values()].sort((a, b) => b.brightness - a.brightness)

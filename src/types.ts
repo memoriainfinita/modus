@@ -43,6 +43,17 @@ export interface HarmonicAnalysis {
   suggestedScales: string[]
   substitutions: string[]       // e.g. ["Db7 (tritone sub)", "Fmaj7 (diatonic)"]
   cadence: string | null    // null = no standard cadence vs prev chord
+  voicing: string | null        // e.g. "1st inversion · open · drop 2 · doubled R · no 5"
+  upperStructures: string[]     // upper-structure triads present over a dominant: "II UST (D: 9 #11 13)"
+  transformation: string | null // neo-Riemannian P / L / R from the previous triad, e.g. "R", "PL"
+}
+
+/** What any set of notes on screen is, chord or not: set class and the scales that hold it. */
+export interface NoteSetAnalysis {
+  notes: string[]           // pitch classes the reading is about (a melody's, when single notes are played)
+  fromMelody: boolean
+  forte: string | null      // "3-11 · [037] · <001110>"
+  fits: string[]            // scales containing every note, e.g. "C major"
 }
 
 // ─── History ─────────────────────────────────────────────────────────────────
