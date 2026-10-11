@@ -25,7 +25,7 @@ const SHORTCUTS: { key: string | StringKey; action: StringKey }[] = [
 
 // What the mouse does that no label says.
 const GESTURES: StringKey[] = [
-  'gesture.click', 'gesture.doubleClick', 'gesture.logged', 'gesture.drag', 'gesture.fill', 'gesture.remove', 'gesture.piano',
+  'gesture.click', 'gesture.doubleClick', 'gesture.logged', 'gesture.drag', 'gesture.fill', 'gesture.remove', 'gesture.piano', 'gesture.layout',
 ]
 
 const keyText = (k: string) => k.startsWith('kbd.') ? t(k as StringKey) : k

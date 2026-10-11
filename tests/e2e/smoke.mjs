@@ -113,7 +113,7 @@ await check('fretboard dots show note names', async () => {
 })
 
 await check('history logs a chord after 800 ms', async () => {
-  await page.click('#zone2 .history-clear-btn').catch(() => {})
+  await page.click('#mod-history .history-clear-btn').catch(() => {})
   await play([57, 60, 64], 900)
   await off([57, 60, 64])
   const chips = await page.locator('.history-chip-symbol').allInnerTexts()
@@ -134,7 +134,7 @@ await check('history marks the cadence between two chips: G7 → C is Authentic 
   await off([55, 59, 62, 65])
   await play([60, 64, 67], 900)
   await off([60, 64, 67])
-  const strip = await page.locator('#zone2 .history-strip > *').allInnerTexts()
+  const strip = await page.locator('#mod-history .history-strip > *').allInnerTexts()
   assert(strip.slice(0, 3).join('|').replace(/\s+/g, ' ') === 'C I|Authentic|G7 V7', `strip: ${strip.slice(0, 3).join('|')}`)
 })
 
@@ -332,17 +332,65 @@ await check('custom tuning rejects a non-note and keeps the string', async () =>
   await page.selectOption('.guitar-tuning-sel', 'standard')
 })
 
-await check('staff +/- changes its size', async () => {
-  const w = () => page.locator('#staff-container svg').evaluate(s => s.getBoundingClientRect().width)
-  const before = await w()
-  await page.click('#btn-staff-minus')
-  const smaller = await w()
-  await page.click('#btn-staff-plus')
-  assert(smaller < before && Math.abs(await w() - before) < 1, `widths ${before} ${smaller}`)
+// Where a panel sits: its grid column and row, as the page applies them
+const cell = id => page.evaluate(id => {
+  const el = document.getElementById(`mod-${id}`)
+  if (el.classList.contains('module-hidden')) return null
+  return { col: el.style.gridColumn, row: el.style.gridRow }
+}, id)
+const box = sel => page.locator(sel).evaluate(e => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height } })
+
+await check('layout: a panel dragged by its title snaps to the grid; the others make room', async () => {
+  const before = await cell('chord')
+  const header = await box('#mod-chord .module-header')
+  const target = await box('#mod-analysis')
+  await page.mouse.move(header.x + 30, header.y + header.h / 2)
+  await page.mouse.down()
+  await page.mouse.move(target.x + 30, header.y + header.h / 2, { steps: 8 })
+  await page.mouse.up()
+  const after = await cell('chord')
+  assert(after.col !== before.col, `did not move: ${JSON.stringify(after)}`)
+  const g = await page.evaluate(() => JSON.parse(localStorage.getItem('layout')))
+  const hit = (a, b) => a.id !== b.id && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
+  assert(!g.some(a => g.some(b => hit(a, b))), 'two panels in the same cells')
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('layout')).find(c => c.id === 'chord'))
+  assert(`${stored.x + 1} / span ${stored.w}` === after.col, `not stored: ${JSON.stringify(stored)}`)
+})
+
+await check('layout: the corner resizes a panel, and the diagram fills it', async () => {
+  const width = () => page.locator('#cof-container svg').evaluate(s => s.getBoundingClientRect().width)
+  const w0 = await width()
+  const corner = await box('#mod-cof .module-resize')
+  await page.mouse.move(corner.x + 6, corner.y + 6)
+  await page.mouse.down()
+  await page.mouse.move(corner.x + 200, corner.y + 200, { steps: 8 })
+  await page.mouse.up()
+  assert((await width()) > w0 + 40, `circle ${w0} → ${await width()}`)
+})
+
+await check('layout: × hides a panel, the ▦ menu shows it again; a preset puts every panel back', async () => {
+  await page.click('#mod-velocity .module-close')
+  assert(await cell('velocity') === null, 'still shown')
+  await page.click('#btn-layout')
+  assert(!(await page.locator('#layout-menu input[data-module="velocity"]').isChecked()), 'box checked')
+  await page.check('#layout-menu input[data-module="velocity"]')
+  assert(await cell('velocity') !== null, 'not shown again')
+  await page.click('#layout-menu [data-preset="class"]')
+  assert(await cell('key') === null && await cell('chord') !== null, 'class preset')
+  await page.fill('#layout-name', 'Mine')
+  await page.click('#layout-save')
+  await page.click('#layout-menu [data-preset="standard"]')
+  assert(await cell('key') !== null, 'standard preset')
+  await page.click('#layout-menu [data-saved="Mine"]')
+  assert(await cell('key') === null, 'saved layout')
+  await page.click('#layout-menu [data-preset="standard"]')
+  await page.mouse.click(5, 990)
+  assert(!(await page.locator('#layout-menu').getAttribute('class')).includes('open'), 'menu open')
 })
 
 await check('the clef button cycles grand, treble and bass staves', async () => {
-  const h = () => page.locator('#staff-container svg').evaluate(s => s.getBoundingClientRect().height)
+  // The staff fills its panel: a grand staff is the taller drawing
+  const h = () => page.locator('#staff-container svg').evaluate(s => s.viewBox.baseVal.height / s.viewBox.baseVal.width)
   assert(await text('#btn-staff-clef') === 'Grand', 'default grand')
   const grand = await h()
   await page.click('#btn-staff-clef')
@@ -354,20 +402,38 @@ await check('the clef button cycles grand, treble and bass staves', async () => 
   assert(await text('#btn-staff-clef') === 'Grand' && grand > treble * 1.4, `heights ${grand} ${treble}`)
 })
 
-await check('P presents the detector large, follows what is played, Esc leaves', async () => {
+await check('P presents the layout without controls, filling the window; Esc leaves', async () => {
+  await page.click('#btn-layout')
+  await page.click('#layout-menu [data-preset="class"]')
+  await page.mouse.click(5, 990)
   await page.keyboard.press('p')
-  await page.waitForSelector('#presentation')
-  const tiles = await page.locator('#presentation .pres-tile').evaluateAll(els => els.map(e => e.dataset.view))
-  assert(tiles.join() === 'chord,staff,cof,guitar,piano', `tiles: ${tiles}`)
+  assert(await page.evaluate(() => document.body.classList.contains('presenting')), 'not presenting')
+  assert(!(await page.locator('#z1-toolbar').isVisible()), 'toolbar shown')
+  assert(!(await page.locator('#mod-chord .module-header').isVisible()), 'panel header shown')
   await play([60, 64, 67])
-  await page.waitForFunction(() => document.querySelector('#presentation .view-chord-name')?.textContent === 'C')
-  const size = await page.locator('#presentation .view-chord-name').evaluate(e => parseFloat(getComputedStyle(e).fontSize))
-  assert(size > 60, `chord name ${size}px`)
-  assert(await page.locator('#presentation .view-staff svg').count() === 1, 'staff tile')
+  await page.waitForFunction(() => document.querySelector('#mod-chord .chord-name-badge')?.textContent === 'C')
+  const size = await page.locator('#mod-chord .chord-name-badge').evaluate(e => parseFloat(getComputedStyle(e).fontSize))
+  assert(size > 40, `chord name ${size}px`)
+  const bottom = await page.locator('#mod-piano').evaluate(e => e.getBoundingClientRect().bottom)
+  const vh = await page.evaluate(() => window.innerHeight)
+  assert(Math.abs(bottom - vh) < 30, `layout does not fill the window: ${bottom} of ${vh}`)
   await off([60, 64, 67])
   await page.keyboard.press('Escape')
-  assert(await page.locator('#presentation').count() === 0, 'still presenting')
+  assert(!(await page.evaluate(() => document.body.classList.contains('presenting'))), 'still presenting')
   assert(!(await page.locator('#btn-present').getAttribute('class')).includes('active-mode'), 'button lit')
+  await page.click('#btn-layout')
+  await page.click('#layout-menu [data-preset="standard"]')
+  await page.mouse.click(5, 990)
+})
+
+await check('a phone stacks the panels in one column, in layout order', async () => {
+  await page.setViewportSize({ width: 400, height: 800 })
+  const xs = await page.locator('.module:not(.module-hidden)').evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().x)))
+  assert(new Set(xs).size === 1, `columns: ${[...new Set(xs)]}`)
+  const order = await page.locator('.module:not(.module-hidden)').evaluateAll(els =>
+    els.map(e => [e.dataset.module, e.getBoundingClientRect().y]).sort((a, b) => a[1] - b[1]).map(a => a[0]))
+  assert(order[0] === 'chord' && order.at(-1) === 'song', `order: ${order}`)
+  await page.setViewportSize({ width: 1440, height: 1000 })
 })
 
 await check('velocity: a bar per note, highest on top; none for a picked chord', async () => {
@@ -667,7 +733,7 @@ await check('Spanish from the help panel: the page reloads in Spanish with Do Re
   assert(await page.evaluate(() => document.documentElement.lang) === 'es', 'html lang')
   assert((await text('#key-select option')) === 'Tono: auto', `key select: ${await text('#key-select option')}`)
   assert((await text('#btn-hold')) === 'Mantener', 'Hold button')
-  assert((await text('#zone2 .zone-title')) === 'Historial', 'history title')
+  assert((await text('#mod-history .module-title')) === 'Historial', 'history title')
   assert((await page.locator('.history-chip-symbol').allInnerTexts())[0] === 'Do', `chips: ${(await page.locator('.history-chip-symbol').allInnerTexts()).join(',')}`)
   assert(await toolbarRows() === 1, 'toolbar wraps in Spanish')
 })
@@ -693,12 +759,12 @@ await check('Spanish: letters again from the help panel', async () => {
   await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
   await page.waitForTimeout(300)
   assert((await page.locator('#key-select option:checked').innerText()) === 'A menor', 'key name with letters')
-  assert((await text('#zone2 .zone-title')) === 'Historial', 'still in Spanish')
+  assert((await text('#mod-history .module-title')) === 'Historial', 'still in Spanish')
   await page.click('#btn-help')
   await Promise.all([page.waitForEvent('load'), page.selectOption('#help-lang', 'en')])
   await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
   await page.waitForTimeout(300)
-  assert((await text('#zone2 .zone-title')) === 'History', 'back in English')
+  assert((await text('#mod-history .module-title')) === 'History', 'back in English')
 })
 
 await check('theme: follows the system, light from the help panel without a reload, diagrams redrawn', async () => {
@@ -743,7 +809,7 @@ await check('without the soundfont-player script the app still renders, audio in
   await p.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
   await p.waitForTimeout(300)
   const r = await p.evaluate(() => ({
-    zone1: document.getElementById('zone1').innerHTML.length,
+    zone1: document.getElementById('grid').innerHTML.length,
     status: document.getElementById('audio-status')?.textContent,
   }))
   await context.close()

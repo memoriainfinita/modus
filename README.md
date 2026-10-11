@@ -56,18 +56,17 @@ Each field can be toggled individually. Font scale adjustable with +/−.
 
 **Input modes:** Normal, Hold (chord stays after release — useful for arpeggios), Arpeggio (accumulates notes until 1.2 s pass with no new one).
 
-### Notation panel
+### Panels and layouts
 
-Four columns, each togglable independently ([St][An][CoF][Git]):
+Every element is a panel on a grid: drag it by its title, resize it from its corner, hide it with ×; it snaps to the grid and the others make room. Diagrams fill their panel. The ▦ menu has ready-made layouts (Standard, Study, Class, Transcription, Recording), layouts you save under a name, and a box per panel to show or hide it. On a phone the panels stack in one column.
 
-- **Staff** (abcjs) — grand staff (treble and bass, split at middle C), or treble or bass alone; chord summary (name, notes, alternatives) always shown above; key signature follows the active key; size −/+
+- **Chord** — the name, its notes and the alternative readings; it grows with its panel
+- **Staff** (abcjs) — grand staff (treble and bass, split at middle C), or treble or bass alone; key signature follows the active key
 - **Analysis** — all harmonic analysis fields, each field individually togglable; font scale +/−
-- **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels, size
+- **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels
 - **Guitar voicing** (notae) — Standard / Drop D / Open G / Custom tuning. Out of every fingering UMT finds, only playable ones are kept (chord bass lowest, no muted string in between, four-fret hand, open strings only in first position), ordered along the neck from the open shapes up; next/prev to browse. Custom tuning accepts note names per string and gets real voicings too
 
-### Key panel
-
-A map of the analysis key (selected, or detected on Auto), without playing:
+**Key** — a map of the analysis key (selected, or detected on Auto), without playing:
 
 - **Diatonic chords** — triads or sevenths (`7`), each with its degree and function (T / S / D). A chord the analysis reads as a secondary (G7 in A minor: `V7/III`) says so on hover
 - **Negative harmony** (`Neg`) — the mirror of each diatonic chord, under it
@@ -76,17 +75,15 @@ A map of the analysis key (selected, or detected on Auto), without playing:
 
 Click a chord to play it and show it in the detector; the key stays. The chord on screen is outlined wherever it appears. Font scale −/+.
 
-### Instruments panel
-
 - **Piano** (notae) — 4 octaves C2–B5, click any key to play
 - **Velocity** — how hard each note on screen was struck, as a bar and a number
-- **Horizontal fretboard** (notae) — all note positions across 12 frets, each dot labelled with its note (flats or sharps by key), spacing adjustable
+- **Horizontal fretboard** (notae) — all note positions across 12 frets, each dot labelled with its note (flats or sharps by key)
 
 ### Views for OBS, and export
 
 The ⧉ button opens a window with one element alone — the chord name with its degree, the staff, the circle of fifths, the piano or the guitar — filling the window on a chroma green (or magenta, black, dark) background, following what you play live. In OBS: Window Capture of "Modus view: chord" (or staff, cof…), then a Chroma Key filter. The same menu saves the staff, circle, guitar or piano as SVG or PNG with a transparent background.
 
-**Presentation** (⛶ or P) puts the chord name, staff, circle, guitar and piano large over the whole screen with no controls, for a class or a recording of the screen; Esc leaves.
+**Presentation** (⛶ or P) shows the current layout over the whole screen with no controls, for a class or a recording of the screen (the Class layout is made for it); Esc leaves.
 
 ### MIDI out
 
@@ -184,7 +181,7 @@ UMT and notae are loaded from jsDelivr, pinned in `index.html`: UMT to a release
 
 ```
 src/
-  app.ts                  entry point — state, detector flow, zones, keyboard actions
+  app.ts                  entry point — state, detector flow, panels, keyboard actions
   types.ts                shared TypeScript types
   globals.d.ts            CDN global declarations
   styles.css              all styles, bundled to dist/app.css
@@ -216,7 +213,7 @@ src/
   view/
     channel.ts            BroadcastChannel to the view windows, view names and backgrounds
     viewer.ts             a view window (?view=): one element filling the window
-    presentation.ts       presentation mode over the main window
+    presentation.ts       presentation mode: the layout without controls, filling the screen
   output/
     midi-out.ts           MIDI out to a synth or DAW
   input/
@@ -228,8 +225,12 @@ src/
   i18n/
     i18n.ts               interface language, note names (letters or Do Re Mi, from UMT)
     en.ts, es.ts          interface strings, one table per language
+  layout/
+    grid.ts               panels on a 12-column grid: snap, push down, close up
+    presets.ts            the panels and the ready-made layouts
   ui/
-    layout.ts             page structure and panel visibility
+    layout.ts             toolbar, panels on the grid, dragging and resizing, the ▦ menu
+    fit.ts                an SVG scaled to its panel
     undo.ts               Undo toast for destructive actions
     html.ts               HTML escaping
     storage.ts            localStorage preferences with safe fallbacks
@@ -241,7 +242,7 @@ tests/
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
   library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
-  structure.test.ts, i18n.test.ts, theme.test.ts
+  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both
@@ -266,7 +267,7 @@ docs/
 | `1`–`9` | Select alternative chord interpretation |
 | `Esc` | Leave presentation / drop a Hold / Arpeggio chord / cancel MIDI fill / close help / deselect |
 | `M` | Computer keyboard as a piano (M or Esc to stop) |
-| `P` | Presentation: large, no controls, full screen (P or Esc to leave) |
+| `P` | Presentation: this layout without controls, full screen (P or Esc to leave) |
 | `/` | Type a chord name |
 | `?` | Show / hide shortcuts, mouse gestures, theme, language and note names |
 

@@ -5,7 +5,7 @@ import { analyzeNotes, buildHarmonicAnalysis, analyzeNoteSet, getAutoKey } from 
 import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
 import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
 import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
-import { openPresentation, updatePresentation, closePresentation, isPresenting } from './view/presentation'
+import { openPresentation, closePresentation, isPresenting } from './view/presentation'
 import { renderPiano } from './diagrams/piano'
 import { renderVelocity } from './diagrams/velocity'
 import type { NoteVelocity } from './diagrams/velocity'
@@ -16,7 +16,7 @@ import type { ViewName, ViewBackground, ViewState } from './view/channel'
 import { runViewerFromUrl } from './view/viewer'
 import { exportDiagram } from './ui/export'
 import type { ExportTarget } from './ui/export'
-import { renderNeck, adjustNeckSpacing } from './diagrams/neck'
+import { renderNeck } from './diagrams/neck'
 import { renderCircleOfFifths, cofAccidentalFor } from './diagrams/cof'
 import { renderKeyExplorer } from './diagrams/key-explorer'
 import { buildKeyMap } from './theory/key-map'
@@ -34,16 +34,16 @@ import { spellDetection, spellVoicing } from './theory/spelling'
 import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps } from './theory/keys'
-import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles } from './ui/layout'
+import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid } from './ui/layout'
 import { applyTheme, onThemeChange, followSystemTheme } from './ui/theme'
 import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang } from './i18n/i18n'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
-const staffWidth = 380
-let staffScale = loadNumber('staff-scale', 2, 1, 3)
+// Diagrams are drawn at one size and scaled to their panel (ui/layout.ts)
+const STAFF_WIDTH = 380
+const COF_SIZE = 300
 let staffClef = loadChoice('staff-clef', STAFF_CLEFS, 'grand')
-let cofSize = loadNumber('cof-size', 160, 100, 400)
 let cofAccidental = loadChoice('cof-accidental', ['flat', 'sharp'] as const, 'flat')
 let cofShowMinor   = loadBool('cof-show-minor', true)
 let cofShowDegrees = loadBool('cof-show-degrees', false)
@@ -271,8 +271,6 @@ function wireLayoutEvents() {
   const onCofControl = (id: string, apply: () => void) => {
     $(id).addEventListener('click', () => { apply(); updateCofButtons(); renderDiagrams() })
   }
-  onCofControl('btn-cof-minus', () => { cofSize = Math.max(100, cofSize - 20); save('cof-size', cofSize) })
-  onCofControl('btn-cof-plus',  () => { cofSize = Math.min(400, cofSize + 20); save('cof-size', cofSize) })
   onCofControl('btn-cof-flat',  () => { cofAccidental = 'flat';  save('cof-accidental', cofAccidental) })
   onCofControl('btn-cof-sharp', () => { cofAccidental = 'sharp'; save('cof-accidental', cofAccidental) })
   onCofControl('btn-cof-minor', () => { cofShowMinor = !cofShowMinor;     save('cof-show-minor', cofShowMinor) })
@@ -290,11 +288,6 @@ function wireLayoutEvents() {
     renderAnalysisPanel()
   })
 
-  const resizeStaff = (delta: number) => {
-    staffScale = Math.min(3, Math.max(1, staffScale + delta))
-    save('staff-scale', staffScale)
-    renderStaff($('staff-container'), displayedNotes(), staffWidth, analysisKey(), staffScale, staffClef)
-  }
   const clefBtn = $('btn-staff-clef')
   const showClef = () => { clefBtn.textContent = t(`staff.clef.${staffClef}`) }
   showClef()
@@ -304,12 +297,6 @@ function wireLayoutEvents() {
     showClef()
     renderZone1Diagrams(displayedNotes(), selectedSymbol())
   })
-  $('btn-staff-minus').addEventListener('click', () => resizeStaff(-0.25))
-  $('btn-staff-plus').addEventListener('click', () => resizeStaff(0.25))
-
-  const reRenderNeck = () => renderNeck($('neck-container'), displayedNotes(), !keyPrefersSharps(analysisKey()))
-  $('btn-neck-minus').addEventListener('click', () => { adjustNeckSpacing(-2); reRenderNeck() })
-  $('btn-neck-plus').addEventListener('click',  () => { adjustNeckSpacing(2);  reRenderNeck() })
 
   ANALYSIS_FIELD_KEYS.forEach(f => {
     $(`btn-field-${f}`).addEventListener('click', () => {
@@ -368,6 +355,15 @@ function buildLayout() {
   renderLayout(state.panels, analysisFieldsVisible)
   wireLayoutEvents()
   applyPanelVisibility(state.panels)
+  // A panel shown again is drawn again: a hidden one has nothing to measure its drawing by
+  let shown = currentGrid().map(c => c.id).sort().join()
+  onLayoutChange(() => {
+    const now = currentGrid().map(c => c.id).sort().join()
+    if (now === shown) return
+    shown = now
+    for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k]
+    renderDetector()
+  })
 }
 
 // ─── Detector ─────────────────────────────────────────────────────────────────
@@ -462,7 +458,6 @@ const sendView = createViewPublisher()
 function publishView() {
   const view = viewState()
   sendView(view)
-  updatePresentation(view)
 }
 
 function viewState(): ViewState {
@@ -482,21 +477,10 @@ function viewState(): ViewState {
 
 // ─── Presentation mode ───────────────────────────────────────────────────────
 
-/** Presents what the main page shows: hidden panels stay out. */
-function presentedViews(): ViewName[] {
-  const p = state.panels
-  const views: ViewName[] = ['chord']
-  if (p.notation && p.colStaff) views.push('staff')
-  if (p.notation && p.colCoF) views.push('cof')
-  if (p.notation && p.colGuitar) views.push('guitar')
-  if (p.instruments && p.colPiano) views.push('piano')
-  return views
-}
-
 function togglePresentation() {
   if (isPresenting()) { closePresentation(); return }
   $('view-menu').classList.remove('open')
-  openPresentation(presentedViews(), viewState(), () => $('btn-present').classList.remove('active-mode'))
+  openPresentation(() => $('btn-present').classList.remove('active-mode'))
   $('btn-present').classList.add('active-mode')
 }
 
@@ -731,8 +715,8 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const notes = noteNames.join(' ')
   syncCofAccidentalButtons()
   const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths }
-  renderIfChanged('staff', `${notes}|${key}|${staffScale}|${staffClef}`, () =>
-    renderStaff($('staff-container'), noteNames, staffWidth, key, staffScale, staffClef))
+  renderIfChanged('staff', `${notes}|${key}|${staffClef}`, () =>
+    renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef))
   renderIfChanged('piano', `${notes}|${chordSymbol}`, () =>
     renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress))
   const vel = noteVelocities(noteNames)
@@ -741,8 +725,8 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
     renderNeck($('neck-container'), noteNames, !keyPrefersSharps(key)))
   renderIfChanged('guitar', `${chordSymbol}`, () =>
     renderGuitar($('guitar-container'), chordSymbol, noteNames))
-  renderIfChanged('cof', `${key}|${chordSymbol}|${cofSize}|${JSON.stringify(cofOpts)}`, () =>
-    renderCircleOfFifths($('cof-container'), key, chordSymbol, onCofClick, cofSize, cofOpts))
+  renderIfChanged('cof', `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () =>
+    renderCircleOfFifths($('cof-container'), key, chordSymbol, onCofClick, COF_SIZE, cofOpts))
   const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale }
   const keyTitle = key ? (state.activeKey ? keyLabel(key) : t('keyPanel.auto', { key: keyLabel(key) })) : ''
   renderIfChanged('key', `${keyTitle}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () =>

@@ -34,7 +34,8 @@ describe('theme tokens', () => {
       ...[...code.matchAll(/var\(--([\w-]+)\)/g)].map(m => m[1]),
       ...[...code.matchAll(/\bcolor\('([\w-]+)'\)/g)].map(m => m[1]),
     ])
-    for (const tok of used) expect(dark.has(tok), tok).toBe(true)
+    // --row and --h are the layout grid's, not colours
+    for (const tok of used) if (tok !== 'row' && tok !== 'h') expect(dark.has(tok), tok).toBe(true)
   })
 
   it('no colour is written outside the theme, but the print view and the chroma backgrounds', () => {

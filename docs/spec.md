@@ -34,11 +34,11 @@ The core is the **Detector**: input → chord detection → harmonic analysis, s
 
 **Information density over decoration.** The app exposes everything UMT can compute. Each field can be shown or hidden. Theory added to UMT reaches Modus through a pin bump.
 
-**Two ways to look.** The full view is for studying; a presentation view (planned) is for teaching and recording: large elements, no controls.
+**Two ways to look.** The full view is for studying; presentation (P) is for teaching and recording: the layout with no controls, filling the screen.
 
 **Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`src/styles.css`). Dark and light themes and two colour themes (see Theme).
 
-**User-configurable.** Every panel can be toggled; sizes and visible fields persist in localStorage.
+**User-configurable.** Every panel can be moved, resized and hidden on the layout grid; layouts, visible fields and options persist in localStorage.
 
 **Serverless, the data is the user's.** Pure HTML + JS from any static host. No backend, no account; songs live in the browser or in the user's files.
 
@@ -50,36 +50,20 @@ Without Web MIDI a dismissible warning says a controller cannot connect. Song bu
 
 ## Layout
 
-Single page, dark or light (see Theme). Three zones stacked vertically.
+Single page, dark or light (see Theme): the toolbar on top, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, guitar, piano, fretboard) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  ZONE 1 — Detector (always visible)                          │
-│  MIDI status [device ▾] [Normal][Hold][Arpeggio] [Key ▾] auto│
-│  [audio status bar] [▶] [Instrument ▾] [Vol ──] [?]          │
-│                                                              │
-│  Notation  [St][An][CoF][Git]                                │
-│  ┌──────────┐ ┌────────────────┐ ┌───────┐ ┌────────────┐   │
-│  │  Staff   │ │   Analysis     │ │  CoF  │ │  Guitar    │   │
-│  └──────────┘ └────────────────┘ └───────┘ └────────────┘   │
-│  Key [▼]  [−][+][7][Neg][Par][Colt]                          │
-│  ┌──────────────────────────┐ ┌──────────────────────────┐  │
-│  │ Diatonic · Negative · Ax │ │ Parallel modes           │  │
-│  └──────────────────────────┘ └──────────────────────────┘  │
-│  Instruments [▼]  [Pi][Fr]                                   │
-│  ┌────────────────────────┐ ┌────────────────────────────┐  │
-│  │  Piano  (C2–B5)        │ │  Fretboard  (0–12 frets)   │  │
-│  └────────────────────────┘ └────────────────────────────┘  │
-├──────────────────────────────────────────────────────────────┤
-│  ZONE 2 — History [▼]                                        │
-├──────────────────────────────────────────────────────────────┤
-│  ZONE 3 — Song [▼]                                           │
-└──────────────────────────────────────────────────────────────┘
-```
+Panels: Chord (name, notes, alternatives), Staff, Analysis, Circle of fifths, Guitar, Key, Piano, Fretboard, Velocity, History, Song.
 
-Zone 1 is the primary module. Key, Instruments, History and Song are collapsible.
+The ▦ menu in the toolbar:
+- **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (few panels, large, made to be presented with P), Transcription (history and song next to piano and fretboard), Recording (chord, staff, guitar, piano). A preset replaces the current layout
+- **Saved:** the current layout saved under a name; opened or deleted from the menu
+- **Panels:** a box per panel to show or hide it; a panel shown again goes at the bottom, at its usual size
 
-## Zone 1 — Detector
+The current layout is kept as it is left (`layout`), saved ones under `layouts`; a stored layout that cannot be read falls back to Standard, and unknown panels in it are dropped.
+
+**Phone** (720 px wide or less): the same panels in one column, in layout order (top to bottom, left to right), each as tall as its rows; no dragging.
+
+## Detector
 
 ### Toolbar
 
@@ -89,7 +73,7 @@ Zone 1 is the primary module. Key, Instruments, History and Song are collapsible
 - **Mode buttons:** Normal, Hold, Arpeggio (mutually exclusive). They apply to every input: controller, computer keyboard and on-screen piano.
 - **⌨ (M):** the computer keyboard as a piano; octave and velocity shown next to it.
 - **Chord field (/):** type a chord name, in letters or in solfège (Am7, Lam7), Enter shows and plays it like a chord picked from history; an unknown name is marked red.
-- **Key selector:** 24 major/minor keys + Auto. On Auto, the detected key is shown next to it and drives the whole app. The choice belongs to the open song (see Zone 3).
+- **Key selector:** 24 major/minor keys + Auto. On Auto, the detected key is shown next to it and drives the whole app. The choice belongs to the open song (see Song).
 - **Audio status bar, play button (▶, same as Space), instrument selector, volume.**
 - **⛶ button (P):** presentation mode (see View windows and export).
 - **⧉ button:** view windows for OBS and diagram export (see View windows and export).
@@ -164,17 +148,13 @@ Key reference: the key selector (or the detected key on Auto).
 
 Each field has a show/hide toggle; font scale 8–20 px. The panel grows when a value wraps.
 
-### Notation panel
+### Staff, circle and guitar
 
-Four columns, toggled with [St][An][CoF][Git].
+**Staff:** detected notes in ABC notation, rendered by abcjs. Grand staff by default: notes from middle C up on the treble staff, the rest on the bass staff, split by the written letter (B♯3 sounds as C4 and goes below); an empty staff stays blank, nothing at all shows a rest on both. The clef button cycles Grand / Treble / Bass. Key signature from the active key, read from UMT's letter-spelled scale. The drawing is cropped to what abcjs draws and fills its panel.
 
-**Staff:** detected notes in ABC notation, rendered by abcjs. Grand staff by default: notes from middle C up on the treble staff, the rest on the bass staff, split by the written letter (B♯3 sounds as C4 and goes below); an empty staff stays blank, nothing at all shows a rest on both. The clef button cycles Grand / Treble / Bass. Key signature from the active key, read from UMT's letter-spelled scale. Size −/+.
+**Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: b/♯, minor/dim rings, degree labels, seventh labels. The enharmonic segments are spelled by the key in effect (selected, or detected on Auto): sharps for a sharp signature, flats otherwise. b/♯ only apply with no key, and are greyed out while one decides. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring. Degrees are the ones the analysis fields give (`analyzeProgression`), counted from the tonic: F#° in C is ♯iv°.
 
-**Analysis:** the fields above.
-
-**Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: size, b/♯, minor/dim rings, degree labels, seventh labels. The enharmonic segments are spelled by the key in effect (selected, or detected on Auto): sharps for a sharp signature, flats otherwise. b/♯ only apply with no key, and are greyed out while one decides. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring. Degrees are the ones the analysis fields give (`analyzeProgression`), counted from the tonic: F#° in C is ♯iv°.
-
-**Guitar:** `UMT.getFretboardVoicings(chord, tuning)` kept only when playable — bass lowest, contiguous strings, four-fret span, open strings only in first position — ordered along the neck; ‹/› to browse. Tunings: Standard, Drop D, Open G, custom per string. String labels: off / tuning / notes. Fret spacing −/+. Rendered by notae.
+**Guitar:** `UMT.getFretboardVoicings(chord, tuning)` kept only when playable — bass lowest, contiguous strings, four-fret span, open strings only in first position — ordered along the neck; ‹/› to browse. Tunings: Standard, Drop D, Open G, custom per string. String labels: off / tuning / notes. Rendered by notae.
 
 ### Key panel
 
@@ -189,17 +169,15 @@ What the analysis key (selected, or detected on Auto) offers, without playing. W
 
 Controls: font scale, triads / sevenths (`7`), show/hide Neg, Par, Colt. A click plays the chord and shows it in the detector like a CoF segment; the key does not change. The chord on screen is outlined in every section where it appears (matched by pitch, so G#7 lights Ab7).
 
-### Instruments panel
-
-Toggled with [Pi][Fr][Ve].
+### Piano, velocity and fretboard
 
 **Piano:** notae, C2–B5. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`.
 
 **Velocity:** one bar per note on screen, highest on top, with the MIDI velocity (1–127) it was struck with on any input. Kept after release, so Hold still shows it. A chord picked from history, song or circle has none and shows nothing. No dynamic marks (p, mf…): there is no standard mapping from velocity.
 
-**Fretboard:** notae, horizontal, all positions of the active notes over frets 0–12. Spacing −/+.
+**Fretboard:** notae, horizontal, all positions of the active notes over frets 0–12.
 
-## Zone 2 — History
+## History
 
 ```ts
 type HistoryEntry = {
@@ -223,7 +201,7 @@ Roman numeral and badge are computed on render from `symbol` + current key.
 - Clear / `C`: empty the strip (Undo)
 - The note pool feeds key detection
 
-## Zone 3 — Song
+## Song
 
 Quick scratchpad or full song editor.
 
@@ -287,7 +265,7 @@ For recording and streaming (`view/`, `ui/export.ts`).
 
 The main window sends what the detector shows over a `BroadcastChannel` (`modus-view`): key, chord, notes, degree, function, guitar voicing. A view that opens asks for the current state. Guitar tuning and CoF options are read from localStorage; when the main window changes them, the views reload. An OBS Browser Source cannot be the view: it is another browser, with no channel to the tab where one plays, and on Windows 10 the controller usually cannot be opened by two programs at once.
 
-**Presentation** (⛶ or P; Esc, P or the × on hover to leave), for teaching and recording: the detector over the whole window, full screen when the browser allows it, no controls. The chord name large with degree and function, then staff, circle and guitar in a row, the piano below: whichever of them the page shows, drawn as the view windows draw them. MIDI, audio and shortcuts keep working; leaving the browser's full screen leaves it too.
+**Presentation** (⛶ or P; Esc or P to leave), for teaching and recording: the current layout with no toolbar, panel headers or controls, its rows stretched so the layout fills the window, full screen when the browser allows it. The Class preset is made for it; any layout can be presented. MIDI, audio and shortcuts keep working; leaving the browser's full screen leaves it too.
 
 **Export.** The same menu saves the staff, circle, guitar or piano on screen as SVG or PNG (3× the screen size), transparent background, cropped to the drawing, named `modus-<diagram>-<chord or key>`. The circle gets the page colour behind its rings (its minor ring is transparent).
 
@@ -316,14 +294,13 @@ Dark, light, high contrast (black ground, bright marks, for a projector or a far
 ## Customization
 
 Persisted to localStorage:
-- Panels: notation columns, instruments sub-panels, history, song, control rows
+- Layout: where each panel is and its size, which panels show; saved layouts; control rows shown under the circle, guitar and analysis
 - Analysis fields and font scale
-- Staff size and clef
-- CoF size, b/♯ (without a key), minor/dim rings, degrees, sevenths
+- Staff clef
+- CoF b/♯ (without a key), minor/dim rings, degrees, sevenths
 - Key panel font scale, triads / sevenths, sections shown
 - View window background
-- Guitar tuning (including custom strings), label mode, fret spacing
-- Fretboard spacing
+- Guitar tuning (including custom strings), label mode
 - MIDI device, input channel, input mode, instrument, volume (the key is stored with each song)
 - Interface language and note names
 - Theme

@@ -18,7 +18,7 @@ What is true now. What already happened lives in `state-history.md`.
 
 - Working: detector, analysis, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard, velocity, grand staff, presentation mode, view windows for OBS and export, MIDI out, input channel filter. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-11: TSC clean, 301 unit tests against the real UMT bundle, `pnpm test:e2e` 59/59 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
+- Tests 2026-10-11: TSC clean, 310 unit tests against the real UMT bundle, `pnpm test:e2e` 62/62 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `v0.4.0` on 2026-10-11, when the UMT audit ended (all tests passed unchanged), and to `v0.4.1` and `v0.5.0` (theory names in Spanish) the same day. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Numerals follow the letter written (`analyzeProgression` with `spelling: 'written'`): Gb in C is ♭V, F# is ♯IV. CoF degrees come from the same call
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
@@ -68,7 +68,7 @@ Ordered by what each one makes cheaper or depends on: strings, colours and the m
 
 1. [x] Interface in English and Spanish, 2026-10-11: one string table per language (`src/i18n`), the browser's language or the one picked in the ? panel; note names in letters or fixed-do solfège from UMT, chords typed in either; scale, cadence and substitution names from UMT v0.5.0. Every later item writes its text in both tables. Movable do (UMT has it since the audit) belongs with the didactic items
 2. [x] Colours as theme tokens, 2026-10-11: every colour a token in `styles.css`, one block per theme, the SVG diagrams read them through `ui/theme.ts`; dark, light, high contrast, paper, or as the system, in the ? panel, in place. View windows stay dark
-3. [ ] Modular layout (decided 2026-10-11): every element a panel on a grid, moved and resized by snapping, not floating; saved layouts with presets (study, class, transcription, recording); on a phone the same panels stack in one column. Built on the view renderers, which already fill any size; presentation mode becomes a preset. Before the items that add panels, so they are born as modules. Today's Notation / Instruments grouping goes (the CoF is not notation)
+3. [x] Modular layout, 2026-10-11: eleven panels on a 12-column grid (`layout/grid.ts`), moved and resized by snapping, never overlapping; presets Standard, Study, Class, Transcription, Recording and saved layouts in the ▦ menu; on a phone one column. Diagrams scale to their panel (their −/+ sizes went). Presentation (P) is the current layout without controls, filling the window. New panels are born as modules: an id in `layout/presets.ts` and a body in `ui/layout.ts`
 4. [ ] Voice leading: how each voice moves from one played chord to the next, on staff and piano (voices paired bass to top). Warnings (parallels, leading tone) from UMT `checkVoiceLeading` wait on UMT: the audit found it fixed to 12-TET steps and checking overlap between any voices
 5. [ ] One string-instrument panel: guitar, bass, ukulele, other tunings, with two views (chord positions, whole neck) instead of today's Guitar and Fretboard. First check what notae draws
 6. [ ] Explanations: each term the app shows (V7/V, borrowed from dorian, a cadence) explains what it means
@@ -80,7 +80,7 @@ Ordered by what each one makes cheaper or depends on: strings, colours and the m
 12. [ ] Accessibility: full keyboard use and screen reader
 13. [ ] Mobile and touch
 14. [ ] Built-in help and a first-run guided tour
-15. [ ] Presentation mode, rest: history with its cadences, the key panel. Done 2026-10-11: chord, staff, CoF, guitar, piano large and full screen (⛶ / P), the ones the page shows; not yet tried on a projector
+15. [x] Presentation mode, 2026-10-11: any layout without controls, filling the screen (⛶ / P), so history and key panel too; the Class preset is made for it. Not yet tried on a projector
 
 ### Unblocked by UMT v0.4.0, to place in the order
 
