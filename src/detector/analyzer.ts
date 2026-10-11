@@ -80,8 +80,19 @@ export function romanInKey(chordSymbol: string, key: string | null): RomanInfo |
   const cacheKey = `${chordSymbol}|${key}`
   if (romanCache.has(cacheKey)) return romanCache.get(cacheKey)!
   const chord = tryParseChord(chordSymbol)
-  const a = chord ? tryUMT('progression', () => UMT.Harmony.analyzeProgression([chord], key).analysis[0], null) : null
-  const info: RomanInfo | null = a ? {
+  const a = chord ? tryUMT('progression', () => UMT.Harmony.analyzeProgression([chord], key, WRITTEN).analysis[0], null) : null
+  const info = a ? toRomanInfo(a) : null
+  romanCache.set(cacheKey, info)
+  return info
+}
+
+// Every symbol Modus passes is already written: MIDI detections are spelled in the key
+// before they get here, chords picked by name keep their letters. So the numeral follows
+// the letter given (Gb in C is bV, F# is #IV), never a respelling.
+const WRITTEN = { spelling: 'written' } as const
+
+function toRomanInfo(a: any): RomanInfo {
+  return {
     roman: (a.isSecondary && a.secondaryTarget) ? a.secondaryTarget : (a.roman ?? '?'),
     degree: a.roman ?? '?',
     function: a.function ?? 'unknown',
@@ -90,26 +101,42 @@ export function romanInKey(chordSymbol: string, key: string | null): RomanInfo |
     borrowedFrom: a.borrowedFrom,
     isSecondary: a.isSecondary ?? false,
     secondaryTarget: a.secondaryTarget,
-  } : null
-  romanCache.set(cacheKey, info)
-  return info
+  }
+}
+
+/** One chord of a progression, read in the key in force at that point. */
+export interface ProgressionStep {
+  key: string | null          // the local key: changes where UMT finds a modulation
+  info: RomanInfo | null      // numeral and function in that key
+  cadence: string | null      // to the next chord, read in the key of the chord it reaches
 }
 
 /**
- * Cadence from each chord to the next, in playing order: result[i] is the cadence
- * chords[i] → chords[i + 1] in the key, or null. Unparseable symbols break the chain.
+ * A progression in playing order, as UMT reads it: modulations (three chords or more in
+ * a new key; fewer is a tonicization), each chord's numeral in its local key, and the
+ * cadence from each chord to the next. An unreadable symbol is left out of the reading
+ * and gets no numeral; no cadence is read across it.
  */
-export function progressionCadences(chords: string[], key: string | null): (string | null)[] {
-  const none = chords.map(() => null)
-  if (!key || chords.length < 2) return none
+export function analyzeChordProgression(chords: string[], key: string | null): ProgressionStep[] {
+  const none = (k: string | null) => chords.map(() => ({ key: k, info: null, cadence: null }))
+  if (!key) return none(null)
   const parsed = chords.map(tryParseChord)
-  if (parsed.some(c => !c)) {
-    // Cadences only between neighbours UMT can read
-    return chords.map((_, i) => parsed[i] && parsed[i + 1]
-      ? progressionCadences([chords[i], chords[i + 1]], key)[0] : null)
-  }
-  const analysis = tryUMT<any[]>('progression', () => UMT.Harmony.analyzeProgression(parsed, key).analysis, [])
-  return chords.map((_, i) => analysis[i]?.cadenceWithNext ?? null)
+  const readable = parsed.flatMap((c, i) => c ? [i] : [])
+  if (!readable.length) return none(key)
+  const analysis = tryUMT<any[]>('progression',
+    () => UMT.Harmony.analyzeProgression(readable.map(i => parsed[i]), key, WRITTEN).analysis, [])
+  const steps: ProgressionStep[] = none(key)
+  let local: string | null = key
+  readable.forEach((orig, j) => {
+    const a = analysis[j]
+    if (!a) return
+    local = normalizeKey(a.key) ?? local
+    const nextIsNeighbour = readable[j + 1] === orig + 1
+    steps[orig] = { key: local, info: toRomanInfo(a), cadence: nextIsNeighbour ? a.cadenceWithNext ?? null : null }
+  })
+  // An unreadable chord stays in the key around it
+  steps.forEach((s, i) => { if (!s.info && i > 0) s.key = steps[i - 1].key })
+  return steps
 }
 
 export function buildHarmonicAnalysis(

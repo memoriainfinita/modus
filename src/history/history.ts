@@ -1,5 +1,5 @@
 import type { HistoryEntry } from '../types'
-import { romanInKey, progressionCadences } from '../detector/analyzer'
+import { analyzeChordProgression } from '../detector/analyzer'
 import { playChord, playNoteNames } from '../audio/audio'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
@@ -91,13 +91,16 @@ export function renderHistory(
 
   // Written in the current key: an entry keeps the spelling it was captured with
   const shown = entries.map(e => ({ ...e, symbol: spellChordSymbol(e.symbol, activeKey) }))
-  // The strip is newest first; cadences run in playing order, from each chip to the one on its left.
-  const cadences = progressionCadences(shown.map(e => e.symbol).reverse(), activeKey).reverse()
+  // The strip is newest first; the progression runs in playing order, from each chip to the
+  // one on its left. Numerals are read in the key in force at each chip.
+  const steps = analyzeChordProgression(shown.map(e => e.symbol).reverse(), activeKey).reverse()
 
   shown.forEach((entry, i) => {
-    // cadences[i + 1]: from the chip on the right (older) to this one
-    const cadence = i + 1 < shown.length ? cadences[i + 1] : null
-    const analysis = romanInKey(entry.symbol, activeKey)
+    // steps[i + 1]: the chip on the right (older), whose cadence leads to this one
+    const older = i + 1 < shown.length ? steps[i + 1] : null
+    const cadence = older?.cadence ?? null
+    const modulation = older && steps[i].key && steps[i].key !== older.key ? steps[i].key : null
+    const analysis = steps[i].info
     const roman = analysis?.roman ?? '—'
     const fn = analysis?.function ?? 'unknown'
     const color = FUNCTION_COLORS[fn] ?? '#6b7280'
@@ -117,7 +120,7 @@ export function renderHistory(
       if (entry.notes.length > 0) playNoteNames(entry.notes)
       else playChord(entry.symbol)
     })
-    chip.title = `${entry.symbol} — click to play, drag to song, right-click to remove`
+    chip.title = `${entry.symbol}${steps[i].key ? ` (${roman} in ${steps[i].key})` : ''} — click to play, drag to song, right-click to remove`
 
     // Drag to song
     chip.draggable = true
@@ -138,12 +141,21 @@ export function renderHistory(
 
     strip.appendChild(chip)
 
+    // Between this chip and the older one on its right: the new key when this chip is where
+    // UMT finds a modulation (next to it), and the cadence that leads here.
+    if (modulation) {
+      const tag = document.createElement('span')
+      tag.className = 'history-modulation'
+      tag.textContent = `→ ${modulation}`
+      tag.title = `Modulation to ${modulation}: from here the numerals are read in it`
+      strip.appendChild(tag)
+    }
     if (cadence) {
       const tag = document.createElement('span')
       tag.className = 'history-cadence'
       tag.textContent = shortCadence(cadence)
       tag.title = `${cadence}: ${shown[i + 1].symbol} → ${entry.symbol}`
-      strip.appendChild(tag)   // between this chip and the older one on its right
+      strip.appendChild(tag)
     }
   })
 

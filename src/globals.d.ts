@@ -11,7 +11,7 @@ declare const UMT: {
   GUITAR_OPEN_G: readonly number[]
   Harmony: {
     detectChords: (notes: any[]) => string[]
-    analyzeProgression: (chords: any[], key: string) => { analysis: any[]; modulations: any[]; harmonicRhythm: number }
+    analyzeProgression: (chords: any[], key: string, opts?: { spelling?: 'key' | 'written'; durations?: number[]; beatsPerBar?: number }) => { analysis: any[]; modulations: any[]; harmonicRhythm: number; harmonicRhythmUnit?: 'per-bar' | 'per-chord' }
     analyzeCadence: (c1: any, c2: any, key: string) => string
     getSuggestedScales: (chord: any) => { scale: string; hint?: string }[]
     getColtraneAxis: (key: string) => { root: string; majorThirds: [string, string, string] }

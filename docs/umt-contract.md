@@ -1,6 +1,6 @@
 # Modus — UMT API contract
 
-Verified by reading the UMT TypeScript source and, on 2026-10-10, by running the pinned bundle in Node. Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
+Verified by reading the UMT TypeScript source and, on 2026-10-10, by running the pinned bundle in Node. Pinned to the release tag `v0.3.0` since 2026-10-11 (changes per version in UMT's `CHANGELOG.md`; the npm package exports the IIFE as `umt/iife`). Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
 
 ```ts
 // Convert note string to UMT Note object
@@ -19,22 +19,26 @@ UMT.Harmony.detectChords(notes: Note[]): string[]
 // Each note by its interval above the written root (since ac10838): D#m → D# F# A#, Cm7b5 → Gb; E#, Cb, double accidentals possible
 
 // Full harmonic analysis — returns .analysis (NOT .analyses)
-UMT.Harmony.analyzeProgression(chords: Chord[], key: string): {
+UMT.Harmony.analyzeProgression(chords: Chord[], key: string, opts?: { spelling?: 'key' | 'written', durations?: number[], beatsPerBar?: number }): {
   analysis: ChordAnalysis[]   // ← .analysis, array
-  modulations: ModulationEvent[]
+  modulations: ModulationEvent[]   // { atIndex, fromKey, toKey, type: 'pivot' | 'direct', pivotChord? }
   harmonicRhythm: number
+  harmonicRhythmUnit: 'per-bar' | 'per-chord'   // per bar only with durations
 }
 // ChordAnalysis has: roman, degree, function ('T'|'S'|'D'|'unknown'),
-// isDiatonic, isBorrowed, borrowedFrom, isSecondary, secondaryTarget, cadenceWithNext
+// isDiatonic, isBorrowed, borrowedFrom, isSecondary, secondaryTarget, cadenceWithNext, key
+// key: the local key, lower-case mode after a modulation ("G major"); Modus normalizes it.
+// A modulation needs three chords or more in the new key (authentic cadence, then its tonic, then
+// Krumhansl); fewer is a tonicization. Numerals and cadences after it are read in the new key.
 // roman for D7 in C is "II7"; secondaryTarget is "V7/V" (lower case for minor targets: "V7/ii").
 // Secondary leading-tone chords too: F#dim7 in C → secondaryTarget "vii°7/V"
-// The degree of a chromatic root comes from the letter spellChordInKey gives it (since ac10838): F#dim7 in C → "#iv°7".
-// The letter of the symbol passed in is not used: Gb in C reads "#IV", Bbdim "#vi°" (reported to UMT)
+// Modus always passes { spelling: 'written' }: the numeral follows the letter of the symbol given
+// (Gb in C → "bV", F# → "#IV", F#dim7 → "#iv°7"). The default ('key') respells with spellChordInKey.
 // function: every secondary and the tritone sub of V are 'D'; VII in minor 'D', bVII in major 'S'
 // Natural minor: V, V7, vii°, vii°7 with the raised 7th are isDiatonic (G#dim7 in A minor → "vii°7")
 // A secondary is never also isBorrowed (D7 in C is V7/V, not lydian)
 // Modus shows secondaryTarget in the Roman field (romanInKey in detector/analyzer.ts)
-// modulations and harmonicRhythm are not used by Modus yet
+// Modus reads modulations through ChordAnalysis.key (history); harmonicRhythm is not used: the history has no timing
 
 // Scales: letter-correct spelling for heptatonic 12-TET scales (F# major has E#)
 UMT.parseScaleSymbol(symbol: string): Scale   // e.g. "F# Major"; .getNotes() → Note[] (8, root repeated)

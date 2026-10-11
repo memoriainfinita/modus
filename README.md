@@ -171,7 +171,7 @@ pnpm test:e2e:midi    # real Web MIDI in Chrome and Firefox through loopMIDI ("l
                       # Firefox: pnpm exec playwright-core install firefox)
 ```
 
-UMT and notae are loaded from jsDelivr pinned to a commit hash in `index.html`. Bump the hash deliberately after a release of either library.
+UMT and notae are loaded from jsDelivr, pinned in `index.html`: UMT to a release tag (same as `package.json`), notae to a commit hash. Bump deliberately after a release of either library.
 
 ---
 
