@@ -5,7 +5,7 @@ import { t, noteLabel, chordLabel, cadenceLabel } from '../i18n/i18n'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 
-export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','voicing','diatonic','scales','fits','cadence','plr','secondary','subs','upper','forte'] as const
+export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','voicing','diatonic','scales','fits','cadence','plr','voices','rules','secondary','subs','upper','forte'] as const
 export type AnalysisFieldKey = (typeof ANALYSIS_FIELD_KEYS)[number]
 
 /** The field's toggle button, its tooltip and its row label in the panel. */
@@ -76,6 +76,7 @@ export function renderZone1Analysis(
   let roman = '—', func_ = '—', figuredBass = '—', diatonic = '—', scales = '—', cadence = '—'
   let secondary: string | null = null, subs: string | null = null
   let voicing: string | null = null, plr: string | null = null, upper: string | null = null
+  let voices: string | null = null, rules: string | null = null
   let extra = ''
 
   if (detection?.kind === 'note') {
@@ -94,6 +95,8 @@ export function renderZone1Analysis(
     if (analysis.substitutions?.length) subs = analysis.substitutions.join(', ')
     voicing = analysis.voicing
     plr = analysis.transformation
+    voices = analysis.voiceLeading
+    if (analysis.voiceRules) rules = analysis.voiceRules.length ? analysis.voiceRules.join(', ') : t('vl.none')
     if (analysis.upperStructures.length) upper = analysis.upperStructures.join(', ')
   }
   const fits = noteSet?.fits.length
@@ -110,6 +113,8 @@ export function renderZone1Analysis(
     fieldRow('fits', fits) +
     fieldRow('cadence', cadence) +
     fieldRow('plr', plr) +
+    fieldRow('voices', voices) +
+    fieldRow('rules', rules) +
     fieldRow('secondary', secondary) +
     fieldRow('subs', subs) +
     fieldRow('upper', upper) +

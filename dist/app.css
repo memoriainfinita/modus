@@ -1633,4 +1633,7 @@ body.view-mode {
   gap: 4px;
   cursor: pointer;
 }
+.staff-prev {
+  opacity: .4;
+}
 /*# sourceMappingURL=app.css.map */

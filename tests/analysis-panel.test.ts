@@ -3,8 +3,8 @@ import { ANALYSIS_FIELD_KEYS, fieldLabel, fieldTooltip } from '../src/detector/a
 import { useLang, LANGS } from '../src/i18n/i18n'
 
 describe('ANALYSIS_FIELD_KEYS', () => {
-  it('contains exactly 13 keys', () => {
-    expect(ANALYSIS_FIELD_KEYS).toHaveLength(13)
+  it('contains exactly 15 keys', () => {
+    expect(ANALYSIS_FIELD_KEYS).toHaveLength(15)
   })
 
   it('contains all expected field identifiers', () => {

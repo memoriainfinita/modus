@@ -7,12 +7,16 @@ import { noteNameToMidi } from '../theory/notes'
  * plays it through the input path and watches for the release itself, since a key the
  * detector lights is rebuilt and never receives its own pointerup.
  */
-export function renderPiano(container: HTMLElement, noteNames: string[], chordSymbol: string | null, onPress?: (midi: number) => void) {
+export function renderPiano(container: HTMLElement, noteNames: string[], chordSymbol: string | null, onPress?: (midi: number) => void, prevNotes: string[] | null = null) {
   const color = chordSymbol ? chordColor(chordSymbol) : neutralColor()
-  const colors = noteNames.map(() => color)
+  // The chord before: its keys that are not held now, in the neutral colour
+  const now = new Set(noteNames.map(noteNameToMidi))
+  const before = (prevNotes ?? []).filter(n => !now.has(noteNameToMidi(n)))
+  const keys = [...noteNames, ...before]
+  const colors = [...noteNames.map(() => color), ...before.map(() => neutralColor())]
 
   container.innerHTML = Notae.renderPiano({
-    name: '', keys: noteNames, colors,
+    name: '', keys, colors,
     range: { from: 'C2', to: 'B5' }
   }, {
     pianoWhiteKeyColor: themeColor('piano-white'),

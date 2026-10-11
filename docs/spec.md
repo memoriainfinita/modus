@@ -142,6 +142,8 @@ Key reference: the key selector (or the detected key on Auto).
 | Substitutions | `getSubstitutions` |
 | Cadence | `Harmony.analyzeCadence` against the previous chord |
 | P/L/R | Neo-Riemannian moves from the previous triad: the shortest chain of UMT's `NeoRiemannian.P / L / R`, up to three (C → Am: R) |
+| Voices | Voice leading from the previous chord, when its notes are known (played, or a history or song chord captured from MIDI): each voice bass first (`B→C ↑1`, `G =` held, `+ F` enters, `− D` drops out), then the outer voices' motion (parallel, similar, contrary, oblique, held), the semitones moved in all and the notes held. Voices are read in pitch order; with as many notes in both chords the nth goes to the nth; otherwise bass to bass, top to top, and the inner voices pair in order with the least motion (`detector/voice-leading.ts`) |
+| Rules | Four-part rules broken from the previous chord, from `Harmony.checkVoiceLeading` (strict) with the key and both chords: parallel fifths and octaves, hidden fifths and octaves in the outer voices, crossing, overlap, wide leaps, a leading tone of V that does not rise to the tonic, a doubled leading tone, a seventh that does not fall by step. Only when both chords have as many notes (UMT pairs voices by position). UMT's false relations are left out: it marks any chromatic neighbour in another voice as possible |
 | Upper structures | Upper-structure triads over a dominant (`getUpperStructures`) whose three notes all sound: `II UST (D: 9 #11 13)` |
 | Set class | `SetTheory`: Forte number, prime form, interval vector, for any 3 notes or more (`3-11 · [037] · <001110>`) |
 | Key detection | `KeyDetection.detect` over the history note pool |
@@ -150,7 +152,7 @@ Each field has a show/hide toggle; font scale 8–20 px. The panel grows when a 
 
 ### Staff, circle and guitar
 
-**Staff:** detected notes in ABC notation, rendered by abcjs. Grand staff by default: notes from middle C up on the treble staff, the rest on the bass staff, split by the written letter (B♯3 sounds as C4 and goes below); an empty staff stays blank, nothing at all shows a rest on both. The clef button cycles Grand / Treble / Bass. Key signature from the active key, read from UMT's letter-spelled scale. The drawing is cropped to what abcjs draws and fills its panel.
+**Staff:** detected notes in ABC notation, rendered by abcjs. Grand staff by default: notes from middle C up on the treble staff, the rest on the bass staff, split by the written letter (B♯3 sounds as C4 and goes below); an empty staff stays blank, nothing at all shows a rest on both. The clef button cycles Grand / Treble / Bass. Key signature from the active key, read from UMT's letter-spelled scale. The drawing is cropped to what abcjs draws and fills its panel. ⇠ (here or on the piano, one setting for both) writes the previous chord first, faded and in a bar of its own so its accidentals do not carry, to see each voice move.
 
 **Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: b/♯, minor/dim rings, degree labels, seventh labels. The enharmonic segments are spelled by the key in effect (selected, or detected on Auto): sharps for a sharp signature, flats otherwise. b/♯ only apply with no key, and are greyed out while one decides. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring. Degrees are the ones the analysis fields give (`analyzeProgression`), counted from the tonic: F#° in C is ♯iv°.
 
@@ -171,7 +173,7 @@ Controls: font scale, triads / sevenths (`7`), show/hide Neg, Par, Colt. A click
 
 ### Piano, velocity and fretboard
 
-**Piano:** notae, C2–B5. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`.
+**Piano:** notae, C2–B5. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`. With ⇠ the keys of the previous chord that are not held now are lit in the neutral colour.
 
 **Velocity:** one bar per note on screen, highest on top, with the MIDI velocity (1–127) it was struck with on any input. Kept after release, so Hold still shows it. A chord picked from history, song or circle has none and shows nothing. No dynamic marks (p, mf…): there is no standard mapping from velocity.
 
@@ -296,7 +298,7 @@ Dark, light, high contrast (black ground, bright marks, for a projector or a far
 Persisted to localStorage:
 - Layout: where each panel is and its size, which panels show; saved layouts; control rows shown under the circle, guitar and analysis
 - Analysis fields and font scale
-- Staff clef
+- Staff clef; the previous chord shown on staff and piano (`show-prev-chord`)
 - CoF b/♯ (without a key), minor/dim rings, degrees, sevenths
 - Key panel font scale, triads / sevenths, sections shown
 - View window background

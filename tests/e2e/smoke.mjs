@@ -138,6 +138,23 @@ await check('history marks the cadence between two chips: G7 → C is Authentic 
   assert(strip.slice(0, 3).join('|').replace(/\s+/g, ' ') === 'C I|Authentic|G7 V7', `strip: ${strip.slice(0, 3).join('|')}`)
 })
 
+await check('voice leading: each voice from the chord before; staff and piano can show it', async () => {
+  // G7 (G3 B3 D4 F4) is the chip before C: play C as C3 C4 E4 G4
+  await play([48, 60, 64, 67])
+  const rows = await page.locator('#analysis-content .analysis-row').evaluateAll(rs => rs.map(r => [r.children[0].textContent, r.children[1].textContent]))
+  const voices = rows.find(([l]) => l === 'Voices')?.[1] ?? ''
+  assert(voices.startsWith('G→C ↓7  B→C ↑1  D→E ↑2  F→G ↑2'), `voices: ${voices}`)
+  assert(await page.locator('.staff-prev').count() === 0, 'faded before the toggle')
+  await page.click('#btn-staff-prev')
+  assert(await page.locator('#btn-piano-prev').getAttribute('class').then(c => c.includes('active')), 'piano button not lit')
+  assert(await page.locator('#staff-container .staff-prev').count() >= 2, 'chord before not on the staff')
+  const lit = await page.locator('#piano-container rect[data-note]').evaluateAll(rs => rs.filter(r => r.getAttribute('fill') && !/^(#fff|#ffffff|white)$/i.test(r.getAttribute('fill'))).length)
+  assert(lit >= 6, `piano keys lit: ${lit}`)
+  await page.click('#btn-piano-prev')
+  assert(await page.locator('#staff-container .staff-prev').count() === 0, 'still faded')
+  await off([48, 60, 64, 67])
+})
+
 await check('view window: the chord view follows the detector, alone on the chroma background', async () => {
   await page.click('#btn-views')
   const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="chord"]')])

@@ -46,6 +46,8 @@ export interface HarmonicAnalysis {
   voicing: string | null        // e.g. "1st inversion · open · drop 2 · doubled R · no 5"
   upperStructures: string[]     // upper-structure triads present over a dominant: "II UST (D: 9 #11 13)"
   transformation: string | null // neo-Riemannian P / L / R from the previous triad, e.g. "R", "PL"
+  voiceLeading: string | null   // each voice from the chord before: "C→B ↓1  E =  G =  — outer voices oblique · …"
+  voiceRules: string[] | null   // four-part rules broken from the chord before; null when it cannot be read
 }
 
 /** What any set of notes on screen is, chord or not: set class and the scales that hold it. */

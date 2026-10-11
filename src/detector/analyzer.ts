@@ -3,6 +3,7 @@ import { midiToNoteName, pitchClassOf, PITCH_NAMES_FLAT } from '../theory/notes'
 import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from '../theory/chord'
 import { normalizeKey } from '../theory/keys'
 import { t, chordLabel, scaleLabel, substitutionTypeLabel } from '../i18n/i18n'
+import { analyzeVoiceLeading, describeVoiceLeading } from './voice-leading'
 
 const intervalName = (n: number) => t(`interval.${n}` as `interval.${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}`)
 
@@ -222,7 +223,8 @@ export function buildHarmonicAnalysis(
   chordSymbol: string,
   activeKey: string | null,
   prevChordSymbol: string | null,
-  noteNames: string[] = []
+  noteNames: string[] = [],
+  prevNotes: string[] | null = null
 ): HarmonicAnalysis {
   const chord = tryParseChord(chordSymbol)
   if (!chord) return emptyAnalysis(chordSymbol)
@@ -237,6 +239,8 @@ export function buildHarmonicAnalysis(
 
   const prevChord = tryParseChord(prevChordSymbol)
   if (prevChord) result.transformation = neoRiemannianPath(prevChord, chord)
+  const vl = analyzeVoiceLeading(prevNotes, noteNames, activeKey, prevChordSymbol, chordSymbol)
+  if (vl) { result.voiceLeading = describeVoiceLeading(vl); result.voiceRules = vl.issues }
 
   if (!activeKey) return result
 
@@ -262,6 +266,7 @@ function emptyAnalysis(chordName: string): HarmonicAnalysis {
     isDiatonic: false, isBorrowed: false, isSecondary: false,
     figuredBass: '', suggestedScales: [], substitutions: [],
     cadence: null, voicing: null, upperStructures: [], transformation: null,
+    voiceLeading: null, voiceRules: null,
   }
 }
 

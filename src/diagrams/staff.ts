@@ -34,23 +34,44 @@ const MIDDLE_C = 4 * 7
  * ABC source for a block chord. Accidentals are written only where they differ from the key
  * signature. On a grand staff the notes from middle C up go on the treble staff, the rest on
  * the bass staff; an empty staff gets an invisible rest, and both get a rest when there is
- * nothing to write.
+ * nothing to write. With `prevNotes` the chord before is written first, in a bar of its own
+ * (so its accidentals do not carry), to show how each voice moves.
  */
-export function buildStaffAbc(noteNames: string[], keyStr: string | null, clef: StaffClef = 'treble'): string {
+export function buildStaffAbc(noteNames: string[], keyStr: string | null, clef: StaffClef = 'treble', prevNotes: string[] | null = null): string {
   const { abcKey, accidentals } = keySignature(keyStr)
   const notes = parseNotes(noteNames, accidentals)
-  if (clef !== 'grand') {
-    const header = `X:1\nM:none\nL:1\nK:${abcKey}${clef === 'bass' ? ' clef=bass' : ''}\n`
-    return header + (notes.length ? chordOf(notes) : 'z')
+  const prev = prevNotes?.length ? parseNotes(prevNotes, accidentals) : null
+  const bar = (before: Parsed[] | null, now: Parsed[], empty: string) => {
+    const chord = (ns: Parsed[]) => ns.length ? chordOf(ns) : empty
+    return before ? `${chord(before)} | ${chord(now)}` : chord(now)
   }
-  const upper = notes.filter(n => n.step >= MIDDLE_C)
-  const lower = notes.filter(n => n.step < MIDDLE_C)
-  const empty = notes.length ? 'x' : 'z'
-  return `X:1\nM:none\nL:1\n%%staves {RH LH}\nK:${abcKey}\n` +
-    `V:RH clef=treble\n${upper.length ? chordOf(upper) : empty}\n` +
-    `V:LH clef=bass\n${lower.length ? chordOf(lower) : empty}`
+  if (clef !== 'grand') {
+    const header = `X:1
+M:none
+L:1
+K:${abcKey}${clef === 'bass' ? ' clef=bass' : ''}
+`
+    return header + bar(prev, notes, notes.length || prev ? 'x' : 'z')
+  }
+  const upper = (ns: Parsed[]) => ns.filter(n => n.step >= MIDDLE_C)
+  const lower = (ns: Parsed[]) => ns.filter(n => n.step < MIDDLE_C)
+  const empty = notes.length || prev ? 'x' : 'z'
+  return `X:1
+M:none
+L:1
+%%staves {RH LH}
+K:${abcKey}
+` +
+    `V:RH clef=treble
+${bar(prev && upper(prev), upper(notes), empty)}
+` +
+    `V:LH clef=bass
+${bar(prev && lower(prev), lower(notes), empty)}`
 }
 
-export function renderStaff(container: HTMLElement, noteNames: string[], width = 380, keyStr: string | null = null, scale = 2, clef: StaffClef = 'treble') {
-  ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr, clef), { staffwidth: width - 20, scale })
+export function renderStaff(container: HTMLElement, noteNames: string[], width = 380, keyStr: string | null = null, scale = 2, clef: StaffClef = 'treble', prevNotes: string[] | null = null) {
+  // add_classes: abcjs marks each element with its measure (abcjs-m0, abcjs-m1)
+  ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr, clef, prevNotes), { staffwidth: width - 20, scale, add_classes: !!prevNotes?.length })
+  // The chord before is the first bar: drawn faded
+  if (prevNotes?.length) container.querySelectorAll<SVGElement>('.abcjs-note.abcjs-m0').forEach(el => el.classList.add('staff-prev'))
 }

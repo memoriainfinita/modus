@@ -1081,3 +1081,6 @@ body.view-mode { overflow: hidden; }
 .layout-save-row input.invalid { border-color: var(--danger); }
 .layout-modules { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font-size: 11px; color: var(--text-soft); }
 .layout-module { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+
+/* The chord before, written next to this one (voice leading) */
+.staff-prev { opacity: .4; }
