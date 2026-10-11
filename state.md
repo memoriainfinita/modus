@@ -65,24 +65,23 @@ Items 1-3 need new UMT functions or UMT fixes: requested in `umt/docs/notas-desd
 
 ### Rest of the app, in order (2026-10-11)
 
-Ordered by what each one makes cheaper or depends on: strings and colours before more UI is written, didactic text after the interface speaks Spanish, help last because it describes the finished UI.
+Ordered by what each one makes cheaper or depends on: strings, colours and the modular layout before more UI is written, didactic text after the interface speaks Spanish, help last because it describes the finished UI.
 
 1. [ ] Interface in English and Spanish: one string table, the language picked or taken from the browser. Every later item writes its text once per language. Fixed-do note names (Do, Re, Mi) with it, if UMT `solfege.ts` names them; movable do waits on UMT (minor)
 2. [ ] Colours as theme tokens, then light mode and colour themes (background, dots, frets, piano keys, CoF segments). Today colours are written in CSS and in each diagram's code
-3. [ ] Voice leading: how each voice moves from one played chord to the next, on staff and piano (voices paired bass to top). Warnings (parallels, leading tone) from UMT `checkVoiceLeading` wait on UMT: the audit found it fixed to 12-TET steps and checking overlap between any voices
-4. [ ] One string-instrument panel: guitar, bass, ukulele, other tunings, with two views (chord positions, whole neck) instead of today's Guitar and Fretboard. First check what notae draws
-5. [ ] Explanations: each term the app shows (V7/V, borrowed from dorian, a cadence) explains what it means
-6. [ ] Reference progressions and examples (ii-V-I, cadences, modal interchange), loadable, with explanation, from UMT's named progressions
-7. [ ] Ear training: the app plays a chord or cadence and the user names it
-8. [ ] Audio player for the recording being transcribed: loop, slow down
-9. [ ] Microphone input: first monophonic (tuner, the note sung or played; feeds scales-from-notes), then chords from audio. Without it, guitarists, singers and wind players are left out
-10. [ ] Works offline and installable: UMT, notae, abcjs, soundfont-player and the samples served with the app instead of from CDNs (also removes the `gleitz.github.io` risk). Before publication
-11. [ ] Accessibility: full keyboard use and screen reader
-12. [ ] Mobile and touch
-13. [ ] Built-in help and a first-run guided tour
-14. [ ] Presentation mode, rest: history with its cadences, the key panel. Done 2026-10-11: chord, staff, CoF, guitar, piano large and full screen (⛶ / P), the ones the page shows; not yet tried on a projector
-
-Undecided, before 11 and 12: modular layout (panels placed and resized freely). Today's Notation / Instruments grouping is arbitrary (the CoF is not notation).
+3. [ ] Modular layout (decided 2026-10-11): every element a panel on a grid, moved and resized by snapping, not floating; saved layouts with presets (study, class, transcription, recording); on a phone the same panels stack in one column. Built on the view renderers, which already fill any size; presentation mode becomes a preset. Before the items that add panels, so they are born as modules. Today's Notation / Instruments grouping goes (the CoF is not notation)
+4. [ ] Voice leading: how each voice moves from one played chord to the next, on staff and piano (voices paired bass to top). Warnings (parallels, leading tone) from UMT `checkVoiceLeading` wait on UMT: the audit found it fixed to 12-TET steps and checking overlap between any voices
+5. [ ] One string-instrument panel: guitar, bass, ukulele, other tunings, with two views (chord positions, whole neck) instead of today's Guitar and Fretboard. First check what notae draws
+6. [ ] Explanations: each term the app shows (V7/V, borrowed from dorian, a cadence) explains what it means
+7. [ ] Reference progressions and examples (ii-V-I, cadences, modal interchange), loadable, with explanation, from UMT's named progressions
+8. [ ] Ear training: the app plays a chord or cadence and the user names it
+9. [ ] Audio player for the recording being transcribed: loop, slow down
+10. [ ] Microphone input: first monophonic (tuner, the note sung or played; feeds scales-from-notes), then chords from audio. Without it, guitarists, singers and wind players are left out
+11. [ ] Works offline and installable: UMT, notae, abcjs, soundfont-player and the samples served with the app instead of from CDNs (also removes the `gleitz.github.io` risk). Before publication
+12. [ ] Accessibility: full keyboard use and screen reader
+13. [ ] Mobile and touch
+14. [ ] Built-in help and a first-run guided tour
+15. [ ] Presentation mode, rest: history with its cadences, the key panel. Done 2026-10-11: chord, staff, CoF, guitar, piano large and full screen (⛶ / P), the ones the page shows; not yet tried on a projector
 
 ### Waiting on UMT
 
