@@ -125,7 +125,7 @@ Both go through the same path as MIDI: modes, sound, spelling in the key, histor
 | 0 (Normal) | Panel cleared |
 | 1 | Note name + octave + MIDI number |
 | 2 | Interval name + semitones + inversion |
-| ≥3 | Chord detection via UMT, ranked candidates |
+| ≥3 | Chord detection via UMT `detectChordsScored`, best reading first; readings may leave out the fifth, so shells (G B F → G7) are named |
 
 Every source — MIDI, history, song, CoF, arrow keys — goes through the same detector path; analysis and diagrams derive from it.
 
@@ -151,13 +151,18 @@ Key reference: the key selector (or the detected key on Auto).
 | Roman numeral | `analyzeProgression`; secondary dominants written `V7/x` |
 | Harmonic function | Tonic / Subdominant / Dominant / Unknown |
 | Figured bass | `FiguredBass.fromChord` |
+| Voicing | `analyzeVoicing` on the notes played: inversion, close / open, drop 2 / 3, doubled, missing (`no 5`) and added notes |
 | Diatonic / borrowed | Source mode shown |
 | Suggested scales | `Harmony.getSuggestedScales` |
+| Fits | `findScalesForNotes`: scales holding every note on screen, the key's tonic first, fewest added notes first; the chromatic scale left out. For single notes and intervals, the melody played note by note: the pitch classes struck since the last chord, Esc or a pause over 6 s, shown in brackets |
 | Substitutions | `getSubstitutions` |
 | Cadence | `Harmony.analyzeCadence` against the previous chord |
+| P/L/R | Neo-Riemannian moves from the previous triad: the shortest chain of UMT's `NeoRiemannian.P / L / R`, up to three (C → Am: R) |
+| Upper structures | Upper-structure triads over a dominant (`getUpperStructures`) whose three notes all sound: `II UST (D: 9 #11 13)` |
+| Set class | `SetTheory`: Forte number, prime form, interval vector, for any 3 notes or more (`3-11 · [037] · <001110>`) |
 | Key detection | `KeyDetection.detect` over the history note pool |
 
-Each field has a show/hide toggle; font scale 8–20 px.
+Each field has a show/hide toggle; font scale 8–20 px. The panel grows when a value wraps.
 
 ### Notation panel
 

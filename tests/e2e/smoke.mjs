@@ -291,8 +291,9 @@ await check('CoF minor segment double click sets the minor key', async () => {
 await check('key explorer follows the key; a click shows the chord and keeps the key', async () => {
   await setKey('E Minor')
   assert((await text('#key-container .key-title')) === 'E Minor', `title: ${await text('#key-container .key-title')}`)
-  const diatonic = await page.locator('#key-container .key-grid').first().locator('.key-chord').allInnerTexts()
-  assert(diatonic.join(' ') === 'Em F#dim G Am Bm C D', `diatonic: ${diatonic.join(' ')}`)
+  const diatonic = await page.locator('#key-container .key-grid').first().locator('.key-chord:not(.key-alt)').allInnerTexts()
+  const alternatives = await page.locator('#key-container .key-grid').first().locator('.key-alt').allInnerTexts()
+  assert(diatonic.join(' ') === 'Em F#dim G Am Bm C D' && alternatives.join(' ') === 'B D#dim', `diatonic: ${diatonic.join(' ')} | ${alternatives.join(' ')}`)
   await page.locator('#key-container .key-grid').first().locator('[data-chord="C"]').click()
   assert((await text('.chord-name-badge')) === 'C', 'chord not shown')
   assert((await text('#analysis-content')).includes('VI'), 'analysis not in E minor')
@@ -399,6 +400,25 @@ await check('circle b / # work only without a key; with one, the key spells it',
   assert(await page.locator('#cof-container text', { hasText: /^F#$/ }).count() === 1, 'E major not in sharps')
   await setKey('Bb Major')
   assert(await page.locator('#cof-container text', { hasText: /^Gb$/ }).count() === 1, 'Bb major not in flats')
+  await setKey('')
+})
+
+await check('analysis: a shell is named, its voicing read; single notes give the scales of the melody', async () => {
+  await setKey('C Major')
+  const field = async label => {
+    const rows = await page.locator('#analysis-content .analysis-row').evaluateAll(rs => rs.map(r => [r.children[0].textContent, r.children[1].textContent]))
+    return rows.find(([l]) => l === label)?.[1]
+  }
+  await play([43, 59, 65])   // G2 B3 F4: G7 without its fifth
+  assert(await text('.chord-name-badge') === 'G7', `shell: ${await text('.chord-name-badge')}`)
+  const voicing = await field('Voicing')
+  assert(voicing.includes('no 5'), `voicing: ${voicing}`)
+  await off([43, 59, 65])
+  for (const n of [60, 62, 64, 65]) { await play([n], 60); await off([n]); await page.waitForTimeout(40) }
+  await play([67], 60)
+  const fits = await field('Fits')
+  assert(fits.startsWith('(C D E F G)') && fits.includes('C major'), `fits: ${fits}`)
+  await off([67])
   await setKey('')
 })
 

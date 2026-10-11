@@ -1219,4 +1219,13 @@ body.presenting {
   color: #6b7280;
   line-height: 1.4;
 }
+.key-chord.key-alt {
+  font-size: .85em;
+  opacity: .85;
+  margin-top: 2px;
+}
+.key-chord.key-characteristic {
+  font-weight: 700;
+  color: #fff;
+}
 /*# sourceMappingURL=app.css.map */

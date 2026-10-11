@@ -1,7 +1,7 @@
 import './styles.css'
 import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes, getVelocity, getInputChannel, setInputChannel } from './input/midi'
 import { wireComputerKeyboard, toggleComputerKeyboard, isComputerKeyboardOn, computerKeyboardStatus, setComputerKeyboardChange } from './input/computer-keyboard'
-import { analyzeNotes, buildHarmonicAnalysis, getAutoKey } from './detector/analyzer'
+import { analyzeNotes, buildHarmonicAnalysis, analyzeNoteSet, getAutoKey } from './detector/analyzer'
 import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
 import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
 import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
@@ -25,7 +25,7 @@ import { addChord as songAddChord, addSection, insertChordAfter, updateChord } f
 import { loadActiveSong, saveSong, listSongs, openSong, newSong, deleteSong, restoreSong } from './song/library'
 import { showUndo, dismiss as dismissUndo } from './ui/undo'
 import { mountSong, markActiveChord, removeChordWithUndo } from './song/view'
-import type { AppState, DetectionResult, HistoryEntry, MidiMode, Song, SongChord } from './types'
+import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis, Song, SongChord } from './types'
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
@@ -381,17 +381,50 @@ function displayedNotes(): string[] {
 
 // The full analysis runs dozens of UMT calls; a MIDI note that keeps the same chord reuses it.
 let lastAnalysisSig = ''
+let noteSet: NoteSetAnalysis | null = null
+
+// A melody played note by note: the pitch classes of single notes (and two-note overlaps,
+// as legato playing gives), so Fits can name the scales it comes from. A chord, Esc, or a
+// pause longer than MELODY_GAP_MS starts it again.
+const MELODY_GAP_MS = 6000
+let melody: string[] = []
+let melodyAt = 0
+
+let melodyHeld = new Set<number>()
+
+/** Only notes struck count: releasing a chord passes through two notes and one, which are no melody. */
+function trackMelody(notes: number[], detection: DetectionResult) {
+  const struck = notes.filter(n => !melodyHeld.has(n))
+  melodyHeld = new Set(notes)
+  if (!detection || !struck.length) return
+  if (detection.kind === 'chord') { melody = []; return }
+  const now = Date.now()
+  if (now - melodyAt > MELODY_GAP_MS) melody = []
+  melodyAt = now
+  const names = detection.kind === 'note' ? [detection.noteName] : detection.notes
+  const midis = detection.kind === 'note' ? [detection.midiNumber] : notes
+  names.forEach((name, i) => {
+    const pc = name.replace(/-?\d+$/, '')
+    if (struck.includes(midis[i]) && !melody.includes(pc)) melody.push(pc)
+  })
+}
 
 function refreshAnalysis() {
   const sym = selectedSymbol()
-  const sig = `${sym}|${analysisKey()}|${cadencePrev}`
+  const notes = displayedNotes()
+  const sig = `${sym}|${analysisKey()}|${cadencePrev}|${notes.join(' ')}|${melody.join(' ')}`
   if (sig === lastAnalysisSig) return
   lastAnalysisSig = sig
-  state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev) : null
+  state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev, notes) : null
+  // Single notes and intervals are read with the melody they belong to
+  const kind = state.detection?.kind
+  const useMelody = (kind === 'note' || kind === 'interval') && melody.length >= 2
+  noteSet = useMelody ? analyzeNoteSet(melody, analysisKey(), true)
+    : notes.length >= 2 ? analyzeNoteSet(notes, analysisKey()) : null
 }
 
 function renderAnalysisPanel() {
-  renderZone1Analysis(state.detection, state.analysis, analysisFieldsVisible, analysisScale, onAltSelect)
+  renderZone1Analysis(state.detection, state.analysis, noteSet, analysisFieldsVisible, analysisScale, onAltSelect)
 }
 
 function renderDiagrams() {
@@ -585,6 +618,7 @@ function cancelCapture() {
 function onNoteChange(notes: number[]) {
   detectionFromMidi = true
   const result = spellDetection(analyzeNotes(notes), analysisKey())
+  trackMelody(notes, result)
   const top = result?.kind === 'chord' ? result.candidates[0] : null
   const known = top && top !== '?' ? top : null
 
@@ -874,6 +908,7 @@ function wireShortcuts() {
     togglePresentation,
     escape: () => {
       if (isPresenting()) { closePresentation(); return }
+      melody = []
       releaseKeptNotes()
       cancelCapture()
       state.activeCursorId = null

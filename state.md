@@ -12,14 +12,14 @@ What is true now. What already happened lives in `state-history.md`.
 **Modus** — see and understand the harmony of what you play, in real time. Aimed at being a complete, professional, useful, universal and didactic app, for studying, transcribing songs, composing, teaching and making videos. No time or budget limits, no marketing or profit goals. GPL-3.0, part of the **memoriainfinita** ecosystem: UMT (developed for Modus, all theory) and notae (diagrams).
 
 - **Spec:** `docs/spec.md` (purpose, design, behaviour) · **UMT contract:** `docs/umt-contract.md` · Executed plans and earlier spec revisions in `.archive/` (local, gitignored)
-- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to the tag `v0.3.0`, notae to `81b58de`
+- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to the tag `v0.4.0`, notae to `81b58de`
 
 ## Status
 
 - Working: detector, analysis, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard, velocity, grand staff, presentation mode, view windows for OBS and export, MIDI out, input channel filter. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-11: TSC clean, 269 unit tests against the real UMT bundle, `pnpm test:e2e` 52/52 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
-- UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `v0.3.0` on 2026-10-11, when the UMT audit ended: all tests passed unchanged. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
+- Tests 2026-10-11: TSC clean, 280 unit tests against the real UMT bundle, `pnpm test:e2e` 53/53 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
+- UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `v0.4.0` on 2026-10-11, when the UMT audit ended: all tests passed unchanged. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Numerals follow the letter written (`analyzeProgression` with `spelling: 'written'`): Gb in C is ♭V, F# is ♯IV. CoF degrees come from the same call
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
@@ -32,7 +32,7 @@ What is true now. What already happened lives in `state-history.md`.
 - [typescript] `pnpm build` does not typecheck (esbuild). Use `pnpm exec tsc --noEmit`. Confirmed 2026-05.
 - [build] `dist/` is tracked in git, same as notae and UMT. Commit it in sync with `src/`. Confirmed 2026-05.
 - [build] pnpm, not npm. Confirmed 2026-10.
-- [deps] UMT pinned to a release tag (`v0.3.0`) in `package.json` and the CDN URL, notae to a commit hash; never `@main`/`@master`. Bump deliberately, reading UMT's `CHANGELOG.md`. Confirmed 2026-10.
+- [deps] UMT pinned to a release tag (`v0.4.0`) in `package.json` and the CDN URL, notae to a commit hash; never `@main`/`@master`. Bump deliberately, reading UMT's `CHANGELOG.md`. Confirmed 2026-10.
 - [naming] Project name: Modus (Latin — mode, measure). Confirmed 2026-05.
 - [theory] Music-theory fixes go into UMT or notae, then Modus bumps the pin. No workarounds in Modus for library output. Since 2026-10-10 only the session running the UMT audit (`umt/docs/auditoria-2026-10.md`) commits to UMT: Modus writes what it needs in `umt/docs/notas-desde-modus-2026-10.md` (both local, gitignored) and waits. Confirmed 2026-10.
 - [ux] Destructive actions run at once and offer Undo (`ui/undo.ts`), never a confirmation. Confirmed 2026-10.
@@ -52,12 +52,10 @@ What is true now. What already happened lives in `state-history.md`.
 
 ### Analysis, in order (2026-10-10)
 
-Items 1-3 need new UMT functions or UMT fixes: requested in `umt/docs/notas-desde-modus-2026-10.md`.
-
-1. [ ] Voicing analysis: inversion, close / open position, drop 2 / drop 3, doubled and omitted notes
-2. [ ] Scales and modes that fit a melody or a set of single notes
-3. [ ] Show what UMT computes and Modus does not: upper structures and slash-chord reading (`upper-structures`), neo-Riemannian P/L/R between consecutive chords, Forte number and interval vector
-4. [~] Key and scale explorer. Done 2026-10-10: Key panel on the analysis key, with diatonic chords, functions, negative harmony, parallel-mode chords and the Coltrane axis (moved out of the per-chord panel). Open: a mode as the home key (D dorian), which the key selector does not offer; triads in the parallel modes (waits on UMT, requested); a choice of the usual borrowings instead of every parallel mode
+1. [x] Voicing analysis, 2026-10-11: Voicing field from UMT `analyzeVoicing`; chords detected with `detectChordsScored`, so shells are named
+2. [x] Scales that fit, 2026-10-11: Fits field from `findScalesForNotes`, on the notes on screen or the melody played note by note. With the microphone (later) it will also hear sung or played lines
+3. [~] What UMT computes and Modus did not, 2026-10-11: upper structures sounding over a dominant, neo-Riemannian P/L/R from the previous triad, set class (Forte, prime form, interval vector). Open: slash-chord reading (a triad over a foreign bass, D/C as C13#11 or as a polychord)
+4. [~] Key and scale explorer. Done 2026-10-10: Key panel on the analysis key, with diatonic chords, functions, negative harmony, parallel-mode chords and the Coltrane axis (moved out of the per-chord panel). 2026-10-11: parallel modes in triads too, characteristic chords in bold; in minor, harmonic minor's V(7) and vii°(7) under v and VII. Open: a mode as the home key (D dorian), which the key selector does not offer; a choice of the usual borrowings instead of every parallel mode
 5. [ ] Next-chord suggestions, as didactics: what usually follows and why (function, cadences, UMT's named progressions)
 6. [~] Progression analysis over the history. Done: cadence tags between chips (2026-10-10); modulations marked where the key changes, with numerals and cadences after it in the new key (2026-10-11). Open: harmonic rhythm, which needs the time each chord lasts (the history has no timing)
 7. [x] Views for OBS and export, 2026-10-10. View windows (popups synced by BroadcastChannel) on a chroma background for Window Capture: not a Browser Source, which is another browser and cannot reach the playing tab. SVG / PNG export of staff, circle, guitar, piano. Checked headless in Chrome and Firefox; not yet in OBS itself
@@ -83,12 +81,17 @@ Ordered by what each one makes cheaper or depends on: strings, colours and the m
 14. [ ] Built-in help and a first-run guided tour
 15. [ ] Presentation mode, rest: history with its cadences, the key panel. Done 2026-10-11: chord, staff, CoF, guitar, piano large and full screen (⛶ / P), the ones the page shows; not yet tried on a projector
 
+### Unblocked by UMT v0.4.0, to place in the order
+
+The UMT audit ended 2026-10-11 (`umt/docs/auditoria-2026-10.md`).
+
+- Metronome, didactic: any meter including additive ones (7/8 as 2+2+3) with accents per group, subdivisions and tuplets, polyrhythms (3:2, 4:3, 5:4), clave and Euclidean patterns, tap tempo, tempo trainer (+N BPM every N bars), and the cycles UMT now has (talas, flamenco compás, aksak: `RHYTHMIC_CYCLES`, `cycleStrokes`, `cycleCounts`). Shown as a circular necklace (beats as dots, groups as arcs, current beat lit; a polyrhythm as concentric rings). Clicks synthesized with Web Audio, not the soundfont. Clave patterns corrected in the audit
+- Movable-do solfege for didactics, from UMT `Solfege.movableDo` (minor la-based, modes from their major's do, since the audit). With item 1 (interface in Spanish)
+
 ### Waiting on UMT
 
-- Metronome, didactic: any meter including additive ones (7/8 as 2+2+3) with accents per group, subdivisions and tuplets, polyrhythms (3:2, 4:3, 5:4), clave and Euclidean patterns, tap tempo, tempo trainer (+N BPM every N bars). Shown as a circular necklace (beats as dots, groups as arcs, current beat lit; a polyrhythm as concentric rings). Clicks synthesized with Web Audio, not the soundfont. From UMT `rhythm.ts` and `clave-patterns.ts`, which the audit found wrong in places (claves, metric modulation)
-- Movable-do solfege for didactics, from UMT `solfege.ts` (major only today)
-- Scales and modes on the fretboard and piano, with positions, from UMT `getFretboardScale` / `getFretboardScalePositions` (per-fret windows, not CAGED, per the audit). Belongs with the key explorer
-- Non-Western and microtonal systems, modes and tunings
+- Scales and modes on the fretboard and piano, with positions, from UMT `getFretboardScale` / `getFretboardScalePositions`: positions are per-fret windows, not CAGED or 3-notes-per-string. Belongs with the key explorer. Not yet requested
+- Non-Western and microtonal systems, modes and tunings: UMT has them (ragas, maqamat, EDOs, Scala); what Modus would show is not designed yet
 
 ### Song builder, frozen
 

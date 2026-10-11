@@ -41,9 +41,14 @@ For each detected chord:
 | Secondary | Degree a secondary dominant tonicizes — `→ ii` |
 | Harmonic function | Tonic / Subdominant / Dominant / Unknown |
 | Figured bass | e.g. `6/4`, `7` |
+| Voicing | Inversion, close or open, drop 2 / drop 3, doubled and missing notes |
 | Borrowed chord | Modal interchange — source mode shown |
 | Suggested scales | Ordered by fit |
 | Substitutions | As UMT proposes them — e.g. tritone, sus4, deceptive |
+| Fits | Scales that contain the notes on screen — or a melody played note by note |
+| P/L/R | Neo-Riemannian moves from the previous triad |
+| Upper structures | The triad on top of a dominant (`II UST` over C7 = D: 9 #11 13) |
+| Set class | Forte number, prime form, interval vector |
 | Cadence | vs. the previous chord: last different chord played, previous history chip, or previous song chord |
 | Key detection | Krumhansl-Schmuckler running on history note pool. With the key on Auto, the detected key drives the whole app: analysis, history and song romans, Circle of Fifths and staff key signature |
 

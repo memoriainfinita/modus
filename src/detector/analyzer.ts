@@ -1,5 +1,5 @@
-import type { DetectionResult, HarmonicAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult } from '../types'
-import { midiToNoteName, PITCH_NAMES_FLAT } from '../theory/notes'
+import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult } from '../types'
+import { midiToNoteName, pitchClassOf, PITCH_NAMES_FLAT } from '../theory/notes'
 import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from '../theory/chord'
 import { normalizeKey } from '../theory/keys'
 
@@ -45,11 +45,12 @@ export function analyzeNotes(midiNotes: number[]): DetectionResult {
     return result
   }
 
-  // ≥3 notes: chord detection. UMT may throw, and returns "Unknown Chord" when nothing
-  // matches — keep only names UMT can parse back, so '?' is the single unknown sentinel.
+  // ≥3 notes: chord detection, best reading first (UMT's score: root in the bass, nothing
+  // missing). Readings may leave out the fifth, so shells (G B F) and rootless-fifth
+  // voicings are named. Keep only names UMT can parse back: '?' is the single unknown.
   let candidates: string[] = []
   candidates = tryUMT('chord detection', () =>
-    (UMT.Harmony.detectChords(noteNames.map(n => UMT.parseNote(n))) ?? []).map(normalizeChordName).filter(isKnownChord), [])
+    (UMT.Harmony.detectChordsScored(noteNames.map(n => UMT.parseNote(n))) ?? []).map(c => normalizeChordName(c.name)).filter(isKnownChord), [])
   candidates = [...new Set(candidates)]
   const result: ChordResult = {
     kind: 'chord',
@@ -139,10 +140,90 @@ export function analyzeChordProgression(chords: string[], key: string | null): P
   return steps
 }
 
+const INVERSIONS = ['root position', '1st inversion', '2nd inversion', '3rd inversion']
+const pcName = (n: string) => n.replace(/-?\d+$/, '')
+
+/** How the chord is laid out (UMT `analyzeVoicing`), in one line. Null for fewer than 3 notes. */
+export function describeVoicing(noteNames: string[], chord: any): string | null {
+  if (noteNames.length < 3) return null
+  const v = tryUMT('voicing', () => UMT.analyzeVoicing(noteNames.map(n => UMT.parseNote(n)), chord), null)
+  if (!v) return null
+  const bass = INVERSIONS[v.inversion] ?? `${v.bassDegree ?? pcName(v.bass)} in the bass`
+  return [
+    bass, v.position, v.drop,
+    v.doubled.length ? `doubled ${v.doubled.join(' ')}` : null,
+    v.omitted.length ? `no ${v.omitted.join(' ')}` : null,
+    v.added.length ? `+ ${v.added.map(pcName).join(' ')}` : null,
+  ].filter(Boolean).join(' · ')
+}
+
+const pcOf = (name: string) => pitchClassOf(pcName(name))
+
+/**
+ * Upper-structure triads over a dominant (UMT `getUpperStructures`) whose three notes are
+ * all sounding: what a pianist's right hand is playing over the left-hand shell.
+ */
+export function presentUpperStructures(noteNames: string[], chord: any): string[] {
+  const sounding = new Set(noteNames.map(pcOf))
+  const all = tryUMT('upper structures', () => UMT.getUpperStructures(chord), [] as ReturnType<typeof UMT.getUpperStructures>)
+  return all.flatMap(u => {
+    const triad = tryUMT('upper structures', () => u.triad.getNotes().map(n => n.name), [] as string[])
+    return triad.length && triad.every(n => sounding.has(pcOf(n)))
+      ? [`${u.label} (${u.triad.name}: ${u.tensions.join(' ')})`] : []
+  })
+}
+
+/**
+ * The shortest chain of neo-Riemannian moves (P, L, R from UMT) from one triad to the
+ * next, up to three. Null when either is not a major or minor triad, or nothing that short.
+ */
+export function neoRiemannianPath(from: any, to: any): string | null {
+  const id = (c: any) => c ? `${((c.rootStep % 12) + 12) % 12}:${c.intervalsInSteps.join(',')}` : ''
+  const target = id(to)
+  const isTriad = (c: any) => !!tryUMT('neo-Riemannian', () => UMT.NeoRiemannian.P(c), null)
+  if (!target || !isTriad(from) || !isTriad(to)) return null
+  if (id(from) === target) return null
+  let frontier: { chord: any; path: string }[] = [{ chord: from, path: '' }]
+  for (let depth = 1; depth <= 3; depth++) {
+    const next: typeof frontier = []
+    for (const { chord, path } of frontier) for (const op of ['P', 'L', 'R'] as const) {
+      const c = tryUMT('neo-Riemannian', () => UMT.NeoRiemannian[op](chord), null)
+      if (!c) continue
+      if (id(c) === target) return path + op
+      next.push({ chord: c, path: path + op })
+    }
+    frontier = next
+  }
+  return null
+}
+
+/** Set class (Forte number, prime form, interval vector) and the scales that hold the notes. */
+export function analyzeNoteSet(noteNames: string[], key: string | null, fromMelody = false): NoteSetAnalysis | null {
+  const names = [...new Set(noteNames.map(pcName))]
+  if (!names.length) return null
+  const notes = names.map(n => tryUMT('notes', () => UMT.parseNote(n + '4'), null)).filter(Boolean)
+  const pcs = tryUMT('set theory', () => UMT.SetTheory.getPitchClasses(notes), [] as number[])
+  let forte: string | null = null
+  if (pcs.length >= 3) {
+    const number = tryUMT('set theory', () => UMT.SetTheory.getForteNumber(pcs), '')
+    const prime = tryUMT('set theory', () => UMT.SetTheory.primeForm(pcs), [] as number[])
+    const vector = tryUMT('set theory', () => UMT.SetTheory.intervalVector(pcs), [] as number[])
+    // Prime forms past 9 use t and e, as in Forte's tables
+    const digits = prime.map(p => p === 10 ? 't' : p === 11 ? 'e' : String(p)).join('')
+    forte = [number, prime.length ? `[${digits}]` : '', vector.length ? `<${vector.join('')}>` : ''].filter(Boolean).join(' · ') || null
+  }
+  const tonic = key?.split(' ')[0]
+  // The chromatic scale holds every set: it says nothing, so it is left out
+  const fits = tryUMT('scales', () => UMT.findScalesForNotes(notes, { tonic, limit: 7 })
+    .filter(s => s.notes.length < 12).slice(0, 6).map(s => s.name), [] as string[])
+  return { notes: names, fromMelody, forte, fits }
+}
+
 export function buildHarmonicAnalysis(
   chordSymbol: string,
   activeKey: string | null,
-  prevChordSymbol: string | null
+  prevChordSymbol: string | null,
+  noteNames: string[] = []
 ): HarmonicAnalysis {
   const chord = tryParseChord(chordSymbol)
   if (!chord) return emptyAnalysis(chordSymbol)
@@ -152,13 +233,17 @@ export function buildHarmonicAnalysis(
   const bassNote = tryUMT('notes', () => chord.getNotes()[0] ?? null, null)
   if (bassNote) result.figuredBass = tryUMT('figured bass', () => UMT.FiguredBass.fromChord(chord, bassNote), '')
   result.suggestedScales = tryUMT('scales', () => UMT.Harmony.getSuggestedScales(chord).map(s => s.scale), [])
+  result.voicing = describeVoicing(noteNames, chord)
+  result.upperStructures = presentUpperStructures(noteNames, chord)
+
+  const prevChord = tryParseChord(prevChordSymbol)
+  if (prevChord) result.transformation = neoRiemannianPath(prevChord, chord)
 
   if (!activeKey) return result
 
   const a = romanInKey(chordSymbol, activeKey)
   if (a) Object.assign(result, a)
 
-  const prevChord = tryParseChord(prevChordSymbol)
   if (prevChord) {
     const cad = tryUMT('cadence', () => UMT.Harmony.analyzeCadence(prevChord, chord, activeKey), null)
     if (cad && cad !== 'No standard cadence') result.cadence = cad
@@ -177,7 +262,7 @@ function emptyAnalysis(chordName: string): HarmonicAnalysis {
     chordName, roman: '?', function: 'unknown',
     isDiatonic: false, isBorrowed: false, isSecondary: false,
     figuredBass: '', suggestedScales: [], substitutions: [],
-    cadence: null,
+    cadence: null, voicing: null, upperStructures: [], transformation: null,
   }
 }
 

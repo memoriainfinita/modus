@@ -1,21 +1,26 @@
-import type { DetectionResult, HarmonicAnalysis } from '../types'
+import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis } from '../types'
 import { chordColor } from '../theory/chord'
 import { escapeHtml } from '../ui/html'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 
-export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','diatonic','scales','cadence','secondary','subs'] as const
+export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','voicing','diatonic','scales','fits','cadence','plr','secondary','subs','upper','forte'] as const
 export type AnalysisFieldKey = (typeof ANALYSIS_FIELD_KEYS)[number]
 
 export const ANALYSIS_FIELD_LABELS: Record<AnalysisFieldKey, string> = {
-  roman: 'Roman', function: 'Func', figbass: 'Fig', diatonic: 'Diat', scales: 'Scl', cadence: 'Cad',
-  secondary: 'Sec', subs: 'Subs'
+  roman: 'Roman', function: 'Func', figbass: 'Fig', voicing: 'Voic', diatonic: 'Diat', scales: 'Scl', fits: 'Fits',
+  cadence: 'Cad', plr: 'PLR', secondary: 'Sec', subs: 'Subs', upper: 'UST', forte: 'Set'
 }
 
 export const ANALYSIS_FIELD_TOOLTIPS: Record<AnalysisFieldKey, string> = {
   roman: 'Roman numeral', function: 'Harmonic function', figbass: 'Figured bass',
-  diatonic: 'Diatonic / borrowed', scales: 'Suggested scales', cadence: 'Cadence',
-  secondary: 'Secondary dominant', subs: 'Substitutions'
+  voicing: 'Voicing: inversion, close / open, drop, doubled and missing notes',
+  diatonic: 'Diatonic / borrowed', scales: 'Suggested scales for the chord',
+  fits: 'Scales that contain every note on screen, or of the melody played note by note',
+  cadence: 'Cadence', plr: 'Neo-Riemannian moves (P, L, R) from the previous triad',
+  secondary: 'Secondary dominant', subs: 'Substitutions',
+  upper: 'Upper-structure triads sounding over a dominant',
+  forte: 'Set class: Forte number, prime form, interval vector'
 }
 
 // ─── Chord summary (private — called only by renderZone1Analysis) ─────────────
@@ -52,6 +57,7 @@ function renderChordSummary(
 export function renderZone1Analysis(
   detection: DetectionResult,
   analysis: HarmonicAnalysis | null,
+  noteSet: NoteSetAnalysis | null,
   fieldsVisible: Record<AnalysisFieldKey, boolean>,
   scale: number,
   onAltSelect: (index: number) => void
@@ -63,7 +69,8 @@ export function renderZone1Analysis(
 
   el.style.fontSize = scale + 'px'
   const visibleCount = ANALYSIS_FIELD_KEYS.filter(f => fieldsVisible[f]).length
-  el.style.height = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + 'px'
+  // A floor, so the panel does not jump between a note and a chord; long values (Fits) wrap and grow it
+  el.style.minHeight = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + 'px'
   const colEl = document.getElementById('col-analysis')
   if (colEl) { const w = Math.round(scale * 19) + 'px'; colEl.style.width = w; colEl.style.flex = `0 0 ${w}` }
 
@@ -79,6 +86,7 @@ export function renderZone1Analysis(
 
   let roman = '—', func_ = '—', figuredBass = '—', diatonic = '—', scales = '—', cadence = '—'
   let secondary: string | null = null, subs: string | null = null
+  let voicing: string | null = null, plr: string | null = null, upper: string | null = null
   let extra = ''
 
   if (detection?.kind === 'note') {
@@ -95,16 +103,27 @@ export function renderZone1Analysis(
     // The Roman field already reads V7/x; this row names the tonicized degree.
     if (analysis.isSecondary) secondary = `→ ${analysis.secondaryTarget?.split('/')[1] ?? '?'}`
     if (analysis.substitutions?.length) subs = analysis.substitutions.join(', ')
+    voicing = analysis.voicing
+    plr = analysis.transformation
+    if (analysis.upperStructures.length) upper = analysis.upperStructures.join(', ')
   }
+  const fits = noteSet?.fits.length
+    ? (noteSet.fromMelody ? `(${noteSet.notes.join(' ')}) ` : '') + noteSet.fits.slice(0, 4).join(', ')
+    : null
 
   el.innerHTML =
     maybeRow('roman', 'Roman', roman) +
     maybeRow('function', 'Function', func_) +
     maybeRow('figbass', 'Fig. bass', figuredBass) +
+    conditionalRow('voicing', 'Voicing', voicing) +
     maybeRow('diatonic', 'Diatonic', diatonic) +
     maybeRow('scales', 'Scales', scales) +
+    conditionalRow('fits', 'Fits', fits) +
     maybeRow('cadence', 'Cadence', cadence) +
+    conditionalRow('plr', 'P/L/R', plr) +
     conditionalRow('secondary', 'Secondary', secondary) +
     conditionalRow('subs', 'Subs.', subs) +
+    conditionalRow('upper', 'Upper str.', upper) +
+    conditionalRow('forte', 'Set class', noteSet?.forte ?? null) +
     extra
 }
