@@ -6,7 +6,7 @@ import { showUndo } from '../ui/undo'
 import { spellChordSymbol } from '../theory/spelling'
 import { t, chordLabel, keyLabel, cadenceLabel } from '../i18n/i18n'
 import { explainCadence } from '../detector/explain'
-import { makeActivatable } from '../ui/a11y'
+import { makeActivatable, onLongPress } from '../ui/a11y'
 
 const MAX_ENTRIES = 200
 // Chip accent by harmonic function (T/S/D), not by chord quality: the key panel's colours
@@ -155,6 +155,7 @@ export function renderHistory(
       showUndo(t('history.removed', { chord: chordLabel(entry.symbol) }), () => restoreEntries(before))
     }
     chip.addEventListener('contextmenu', e => { e.preventDefault(); remove() })
+    onLongPress(chip, remove)
     makeActivatable(chip, t('a11y.chip', { chord: chordLabel(entry.symbol), roman }))
     chip.addEventListener('keydown', e => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return

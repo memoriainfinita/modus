@@ -521,10 +521,15 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 .module-chord .chord-name-badge { font-size: clamp(20px, 34cqh, 40vh); line-height: 1.1; }
 .module-chord .chord-notes { font-size: clamp(11px, 9cqh, 6vh); }
 
-/* A phone: the same panels in one column, in layout order, each as tall as its rows */
+/* A phone: the same panels in one column, in layout order. Diagrams as tall as their rows;
+   text panels as tall as what they say, so nothing is cut off a narrow screen */
 @media (max-width: 720px) {
   .grid { display: flex; flex-direction: column; }
   .module { height: calc(var(--h) * 30px + (var(--h) - 1) * 8px); flex-shrink: 0; }
+  :is(.module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) {
+    height: auto; min-height: calc(var(--h) * 30px + (var(--h) - 1) * 8px);
+  }
+  :is(.module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) .module-body { overflow: visible; flex: none; container-type: inline-size; }
   .module-header { cursor: default; }
   .module-resize { display: none; }
 }
@@ -1151,4 +1156,13 @@ path[role="button"]:focus-visible { outline: none; stroke: var(--cursor); stroke
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Touch screens: no double-tap zoom (the circle takes two taps), keys and buttons a finger can hit */
+body { touch-action: manipulation; }
+#piano-container svg { touch-action: none; }   /* fingers on the keys play, they do not scroll */
+@media (pointer: coarse) {
+  .ctrl-btn, .mode-btn, .size-ctrl-btn, .guitar-ctrl, .ear-answer, .ctrl-select, .module-close { min-height: 34px; min-width: 34px; }
+  .module-resize { width: 24px; height: 24px; }
+  .history-chip, .prog-chip { min-height: 40px; }
 }

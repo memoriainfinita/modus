@@ -167,6 +167,8 @@ pnpm dlx http-server . -p 8080
 
 Open `http://localhost:8080` in Chrome or Firefox. Connect your MIDI controller when prompted.
 
+On a phone or tablet the panels stack in one column and the piano takes several fingers at once; a long press removes a history chip.
+
 Everything works from the keyboard (Tab, Enter, Space; arrows on a panel title move it) and with a screen reader, which hears each chord with its degree and function.
 
 Once opened, the app works offline (a service worker keeps it), and the browser offers to install it as an app. The piano plays offline from the first visit; another instrument plays offline once it has been played online.
@@ -262,7 +264,7 @@ tests/
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
   library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
-  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts, pitch.test.ts
+  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, piano.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts, pitch.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both
