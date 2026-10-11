@@ -311,6 +311,8 @@ export const es: Record<StringKey, string> = {
   'help.theme.system': 'Como el sistema',
   'help.theme.dark': 'Oscuro',
   'help.theme.light': 'Claro',
+  'help.theme.contrast': 'Alto contraste',
+  'help.theme.paper': 'Papel',
   'help.language': 'Interfaz',
   'help.noteNames': 'Nombres de nota',
   'help.noteNames.letters': 'C D E',

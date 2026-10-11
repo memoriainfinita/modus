@@ -7,9 +7,9 @@ import { spellChordSymbol } from '../theory/spelling'
 import { t, chordLabel, keyLabel, cadenceLabel } from '../i18n/i18n'
 
 const MAX_ENTRIES = 200
-// Chip accent by harmonic function (T/S/D), not by chord quality: theme tokens
+// Chip accent by harmonic function (T/S/D), not by chord quality: the key panel's colours
 const FUNCTION_COLORS: Record<string, string> = {
-  'T': 'var(--history-t)', 'S': 'var(--history-s)', 'D': 'var(--history-d)', 'unknown': 'var(--text-dim)'
+  'T': 'var(--fn-t)', 'S': 'var(--fn-s)', 'D': 'var(--fn-d)', 'unknown': 'var(--text-dim)'
 }
 
 let entries: HistoryEntry[] = []

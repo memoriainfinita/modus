@@ -13,7 +13,7 @@ const block = (selector: string) => {
 }
 const tokensIn = (text: string) => new Set([...text.matchAll(/--([\w-]+)\s*:/g)].map(m => m[1]))
 const dark = tokensIn(block(':root, :root[data-theme="dark"]'))
-const light = tokensIn(block(':root[data-theme="light"]'))
+const others = ['light', 'contrast', 'paper'].map(name => [name, tokensIn(block(`:root[data-theme="${name}"]`))] as const)
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap(f => {
@@ -25,8 +25,8 @@ const src = resolve('src')
 const code = sources(src).map(p => readFileSync(p, 'utf8')).join('\n')
 
 describe('theme tokens', () => {
-  it('both themes define the same tokens', () => {
-    expect([...light].sort()).toEqual([...dark].sort())
+  it('every theme defines the same tokens as dark', () => {
+    for (const [name, tokens] of others) expect([...tokens].sort(), name).toEqual([...dark].sort())
   })
 
   it('every token the code uses exists', () => {
