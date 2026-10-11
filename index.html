@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Modus</title>
+  <meta name="description" content="See and understand the harmony of what you play, in real time">
+  <meta name="theme-color" content="#16162a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="stylesheet" href="dist/app.css">
   <!-- The theme before the first paint, as ui/theme.ts resolves it -->
   <script>
@@ -19,24 +24,24 @@
     This browser has no Web MIDI, so a controller cannot connect (Chrome, Edge and Firefox have it). Everything else — song builder, circle of fifths, history — still works.
     <button onclick="this.parentElement.style.display='none'" style="margin-left:12px;background:transparent;border:1px solid #fff;color:#fff;border-radius:3px;padding:2px 8px;cursor:pointer">×</button>
   </div>
-  <div id="cdn-error-banner">Failed to load a required resource. Check your internet connection.</div>
+  <div id="cdn-error-banner">A file of the app did not load. Reload the page; if it keeps failing, the copy you have is incomplete.</div>
   <div id="app"></div>
 
   <!-- Resource load errors do not reach window.onerror — capture phase listener required -->
   <script>
     window.addEventListener('error', function (e) {
       var el = e.target
-      if (el && el.tagName === 'SCRIPT' && el.src && el.src.indexOf('jsdelivr') !== -1) {
+      if (el && el.tagName === 'SCRIPT' && el.src) {
         document.getElementById('cdn-error-banner').classList.add('visible')
       }
     }, true)
   </script>
 
-  <!-- CDN dependencies — UMT pinned to a release tag, notae to a commit; bump deliberately -->
-  <script src="https://cdn.jsdelivr.net/gh/memoriainfinita/UMT@v0.5.0/dist/umt.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/memoriainfinita/notae@81b58dee532f4827ccce2146f02d9ae9cc05c471/dist/notae.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/abcjs@6.7.1/dist/abcjs-basic-min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+  <!-- Libraries served with the app (vendor/, pinned in scripts/vendor.mjs: pnpm vendor) -->
+  <script src="vendor/umt.js"></script>
+  <script src="vendor/notae.js"></script>
+  <script src="vendor/abcjs-basic-min.js"></script>
+  <script src="vendor/soundfont-player.min.js"></script>
 
   <script src="dist/app.js"></script>
 </body>

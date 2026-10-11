@@ -4,7 +4,7 @@
 export const en = {
   // Page
   'page.noMidi': 'This browser has no Web MIDI, so a controller cannot connect (Chrome, Edge and Firefox have it). Everything else — song builder, circle of fifths, history — still works.',
-  'page.cdnError': 'Failed to load a required resource. Check your internet connection.',
+  'page.cdnError': 'A file of the app did not load. Reload the page; if it keeps failing, the copy you have is incomplete.',
 
   // Toolbar: MIDI
   'midi.connected': 'MIDI: connected',

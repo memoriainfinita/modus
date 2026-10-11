@@ -4,7 +4,7 @@ import type { StringKey } from './en'
 
 export const es: Record<StringKey, string> = {
   'page.noMidi': 'Este navegador no tiene Web MIDI y no puede conectar un controlador (Chrome, Edge y Firefox sí). Todo lo demás funciona: canciones, círculo de quintas, historial.',
-  'page.cdnError': 'No se pudo cargar un recurso necesario. Comprueba la conexión a internet.',
+  'page.cdnError': 'Un archivo de la app no se cargó. Recarga la página; si sigue fallando, la copia que tienes está incompleta.',
 
   'midi.connected': 'MIDI: conectado',
   'midi.noDevices': 'MIDI: ninguno',

@@ -8,6 +8,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "node tests/e2e/smoke.mjs",
+    "vendor": "node scripts/vendor.mjs",
     "test:e2e:midi": "node --disable-warning=ExperimentalWarning tests/e2e/real-midi.mjs"
   },
   "devDependencies": {

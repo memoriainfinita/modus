@@ -71,7 +71,7 @@ declare const Soundfont: {
   instrument: (
     audioCtx: AudioContext,
     name: string,
-    options?: { soundfont?: string; destination?: AudioNode }
+    options?: { soundfont?: string; destination?: AudioNode; nameToUrl?: (name: string) => string }
   ) => Promise<{
     play: (note: number | string, when?: number, options?: { duration?: number; gain?: number }) => any
     stop: () => void

@@ -57,9 +57,21 @@ function ensureContext() {
 // so switching instrument mid-load never leaves the previous instrument active.
 let loadToken = 0
 
+// The samples shipped with the app (scripts/vendor.mjs); any other instrument comes from the
+// soundfont's host on first use, and the service worker keeps it for offline use.
+const BUNDLED_INSTRUMENTS = new Set(['acoustic_grand_piano'])
+const SAMPLE_HOST = 'https://gleitz.github.io/midi-js-soundfonts'
+
+/** Where an instrument's samples are: shipped with the app, or on the soundfont's host. */
+export function instrumentUrl(name: string): string {
+  return BUNDLED_INSTRUMENTS.has(name)
+    ? `vendor/soundfonts/FluidR3_GM/${name}-mp3.js`
+    : `${SAMPLE_HOST}/FluidR3_GM/${name}-mp3.js`
+}
+
 function loadCurrentInstrument() {
   if (!audioCtx) return
-  // The soundfont-player script comes from a CDN; without it the app still runs, silent.
+  // Without the soundfont-player script the app still runs, silent.
   if (typeof Soundfont === 'undefined') {
     if (audioStatus !== 'error') console.error('[audio] soundfont-player did not load')
     setStatus('error')
@@ -69,7 +81,7 @@ function loadCurrentInstrument() {
   loadingInstrument = true
   instrument = null
   setStatus('loading')
-  Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: 'FluidR3_GM', destination: masterGain! })
+  Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: 'FluidR3_GM', destination: masterGain!, nameToUrl: instrumentUrl })
     .then((inst: any) => {
       if (token !== loadToken) return
       instrument = inst

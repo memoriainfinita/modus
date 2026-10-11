@@ -128,7 +128,7 @@ Modus is part of the **[memoriainfinita](https://github.com/memoriainfinita)** o
 
 - **[UMT](https://github.com/memoriainfinita/UMT)** — Universal Music Theory library. Powers all harmonic analysis in Modus.
 - **[notae](https://github.com/memoriainfinita/notae)** — SVG diagram renderer for instruments. Renders piano, guitar, and fretboard diagrams.
-- **Modus** — the first integration app. Uses UMT + notae as CDN dependencies.
+- **Modus** — the first integration app. Ships UMT and notae with it (`vendor/`), pinned.
 
 All three projects are independent, GPL-3.0, and built for the music community — not for profit.
 
@@ -139,11 +139,12 @@ All three projects are independent, GPL-3.0, and built for the music community �
 | Layer | Technology |
 |---|---|
 | App | TypeScript → esbuild → `dist/app.js` |
-| Theory | [UMT](https://github.com/memoriainfinita/UMT) via jsDelivr CDN |
-| Diagrams | [notae](https://github.com/memoriainfinita/notae) via jsDelivr CDN |
-| Staff | abcjs 6.7.1 via CDN |
+| Theory | [UMT](https://github.com/memoriainfinita/UMT) v0.5.0, served with the app (`vendor/`) |
+| Diagrams | [notae](https://github.com/memoriainfinita/notae), pinned commit, served with the app |
+| Staff | abcjs 6.7.1, served with the app |
 | MIDI | Web MIDI API (Chrome, Edge, Firefox — Firefox asks for MIDI permission per site) |
-| Audio | soundfont-player 0.12.0 + FluidR3_GM |
+| Audio | soundfont-player 0.12.0 + FluidR3_GM: the piano served with the app, other instruments from the soundfont's host on first use |
+| Offline | Service worker (`sw.js`) and web manifest: installable, works offline once opened |
 | Styles | Plain CSS (`src/styles.css`, bundled by esbuild) |
 | Persistence | localStorage |
 
@@ -164,7 +165,9 @@ All three projects are independent, GPL-3.0, and built for the music community �
 pnpm dlx http-server . -p 8080
 ```
 
-Open `http://localhost:8080` in Chrome. Connect your MIDI controller when prompted.
+Open `http://localhost:8080` in Chrome or Firefox. Connect your MIDI controller when prompted.
+
+Once opened, the app works offline (a service worker keeps it), and the browser offers to install it as an app. The piano plays offline from the first visit; another instrument plays offline once it has been played online.
 
 **Rebuild from source** (pnpm):
 
@@ -173,6 +176,7 @@ pnpm install          # dev dependencies only
 pnpm dev              # watch mode — rebuilds on save
 pnpm build            # one-shot build
 pnpm exec tsc --noEmit  # type check (esbuild does not typecheck)
+pnpm vendor           # after a version bump: copies the pinned libraries and the piano into vendor/
 pnpm test             # unit tests (vitest, against the real UMT bundle)
 pnpm test:e2e         # browser walk-through: installed Chrome + fake MIDI input (needs network)
 pnpm test:e2e:midi    # real Web MIDI in Chrome and Firefox through loopMIDI ("loopMIDI Port" must exist;
@@ -189,7 +193,7 @@ UMT and notae are loaded from jsDelivr, pinned in `index.html`: UMT to a release
 src/
   app.ts                  entry point — state, detector flow, panels, keyboard actions
   types.ts                shared TypeScript types
-  globals.d.ts            CDN global declarations
+  globals.d.ts            declarations of the libraries in vendor/ (globals)
   styles.css              all styles, bundled to dist/app.css
   detector/
     analyzer.ts           chord/interval detection and harmonic analysis

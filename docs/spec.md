@@ -374,6 +374,12 @@ Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/A
 
 Every note sent is tracked: changing port or channel, turning Thru off and leaving the page release them (pedal up, note-offs, CC 123). An output on the same port the controller is read from sends nothing (it would come back as input) and the selector turns red. The internal sound keeps playing; the volume slider silences it.
 
+## Offline and installation
+
+Everything the page loads is served with it: UMT, notae, abcjs and soundfont-player in `vendor/`, and the samples of the default instrument (acoustic grand piano, FluidR3_GM). `scripts/vendor.mjs` (`pnpm vendor`) copies them at the versions pinned there; the files are tracked, as `dist/` is. Any other instrument comes from the soundfont's host (`gleitz.github.io`) the first time it is played.
+
+`sw.js` makes it work offline once opened: on install it keeps the page, the build, the libraries, the piano and the icons. Files of the page are taken from the network when there is one (a new build is seen at once) and from that cache without it; a view window is the same page. Instrument samples from the soundfont's host are kept the first time and taken from the cache after, so an instrument played once plays offline. `manifest.webmanifest` and `icons/` make it installable (standalone window, the app's dark background). A script that fails to load shows a banner. The service worker is registered over http(s) only.
+
 ## Out of scope
 
 Only what contradicts the principles:

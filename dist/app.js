@@ -621,7 +621,7 @@
   var en = {
     // Page
     "page.noMidi": "This browser has no Web MIDI, so a controller cannot connect (Chrome, Edge and Firefox have it). Everything else \u2014 song builder, circle of fifths, history \u2014 still works.",
-    "page.cdnError": "Failed to load a required resource. Check your internet connection.",
+    "page.cdnError": "A file of the app did not load. Reload the page; if it keeps failing, the copy you have is incomplete.",
     // Toolbar: MIDI
     "midi.connected": "MIDI: connected",
     "midi.noDevices": "MIDI: no devices",
@@ -1170,7 +1170,7 @@
   // src/i18n/es.ts
   var es = {
     "page.noMidi": "Este navegador no tiene Web MIDI y no puede conectar un controlador (Chrome, Edge y Firefox s\xED). Todo lo dem\xE1s funciona: canciones, c\xEDrculo de quintas, historial.",
-    "page.cdnError": "No se pudo cargar un recurso necesario. Comprueba la conexi\xF3n a internet.",
+    "page.cdnError": "Un archivo de la app no se carg\xF3. Recarga la p\xE1gina; si sigue fallando, la copia que tienes est\xE1 incompleta.",
     "midi.connected": "MIDI: conectado",
     "midi.noDevices": "MIDI: ninguno",
     "midi.disconnected": "MIDI: desconectado",
@@ -2132,6 +2132,11 @@
     masterGain.connect(audioCtx.destination);
   }
   var loadToken = 0;
+  var BUNDLED_INSTRUMENTS = /* @__PURE__ */ new Set(["acoustic_grand_piano"]);
+  var SAMPLE_HOST = "https://gleitz.github.io/midi-js-soundfonts";
+  function instrumentUrl(name) {
+    return BUNDLED_INSTRUMENTS.has(name) ? `vendor/soundfonts/FluidR3_GM/${name}-mp3.js` : `${SAMPLE_HOST}/FluidR3_GM/${name}-mp3.js`;
+  }
   function loadCurrentInstrument() {
     if (!audioCtx) return;
     if (typeof Soundfont === "undefined") {
@@ -2143,7 +2148,7 @@
     loadingInstrument = true;
     instrument = null;
     setStatus("loading");
-    Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: "FluidR3_GM", destination: masterGain }).then((inst) => {
+    Soundfont.instrument(audioCtx, currentInstrumentName, { soundfont: "FluidR3_GM", destination: masterGain, nameToUrl: instrumentUrl }).then((inst) => {
       if (token !== loadToken) return;
       instrument = inst;
       loadingInstrument = false;
@@ -6118,6 +6123,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     $2("cdn-error-banner").textContent = t("page.cdnError");
   }
   function init() {
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {
+    });
     translatePage();
     applyTheme();
     followSystemTheme();
