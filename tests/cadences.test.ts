@@ -5,7 +5,8 @@ vi.mock('../src/audio/audio', () => ({ playChord: vi.fn(), playNoteNames: vi.fn(
 import { analyzeChordProgression } from '../src/detector/analyzer'
 
 const progressionCadences = (chords: string[], key: string | null) => analyzeChordProgression(chords, key).map(s => s.cadence)
-import { addEntry, clearHistory, renderHistory, setHistoryChangeCallback, shortCadence } from '../src/history/history'
+import { addEntry, clearHistory, renderHistory, setHistoryChangeCallback } from '../src/history/history'
+import { cadenceLabel, useLang } from '../src/i18n/i18n'
 
 describe('progressionCadences', () => {
   it('cadence from each chord to the next, in playing order', () => {
@@ -58,12 +59,16 @@ describe('analyzeChordProgression: modulations', () => {
   })
 })
 
-describe('shortCadence', () => {
+describe('cadenceLabel', () => {
   it('keeps the name, drops "Cadence" and the numerals', () => {
-    expect(shortCadence('Authentic Cadence (V -> I)')).toBe('Authentic')
-    expect(shortCadence('Phrygian Half Cadence (iv -> V)')).toBe('Phrygian Half')
-    expect(shortCadence('Tritone Sub Resolution (subV7 -> I)')).toBe('Tritone Sub')
-    expect(shortCadence('Picardy Third (i -> I)')).toBe('Picardy Third')
+    expect(cadenceLabel('Authentic Cadence (V -> I)', true)).toBe('Authentic')
+    expect(cadenceLabel('Phrygian Half Cadence (iv -> V)', true)).toBe('Phrygian half')
+    expect(cadenceLabel('Tritone Sub Resolution (subV7 -> I)', true)).toBe('Tritone sub')
+    expect(cadenceLabel('Picardy Third (i -> I)', true)).toBe('Picardy third')
+    useLang('es')
+    expect(cadenceLabel('Deceptive Cadence (V -> VI)', true)).toBe('Rota')
+    expect(cadenceLabel('Deceptive Cadence (V -> VI)')).toBe('Cadencia rota (V -> VI)')
+    useLang('en')
   })
 })
 
