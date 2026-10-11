@@ -50,12 +50,12 @@ Without Web MIDI a dismissible warning says a controller cannot connect. Song bu
 
 ## Layout
 
-Single page, dark or light (see Theme): the toolbar on top, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, guitar, piano, fretboard) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
+Single page, dark or light (see Theme): the toolbar on top, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
 
-Panels: Chord (name, notes, alternatives), Staff, Analysis, Circle of fifths, Guitar, Key, Piano, Fretboard, Velocity, History, Song.
+Panels: Chord (name, notes, alternatives), Staff, Analysis, Circle of fifths, Strings, Key, Piano, Velocity, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
 
 The ▦ menu in the toolbar:
-- **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (few panels, large, made to be presented with P), Transcription (history and song next to piano and fretboard), Recording (chord, staff, guitar, piano). A preset replaces the current layout
+- **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (few panels, large, made to be presented with P), Transcription (history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
 - **Saved:** the current layout saved under a name; opened or deleted from the menu
 - **Panels:** a box per panel to show or hide it; a panel shown again goes at the bottom, at its usual size
 
@@ -150,13 +150,15 @@ Key reference: the key selector (or the detected key on Auto).
 
 Each field has a show/hide toggle; font scale 8–20 px. The panel grows when a value wraps.
 
-### Staff, circle and guitar
+### Staff, circle and strings
 
 **Staff:** detected notes in ABC notation, rendered by abcjs. Grand staff by default: notes from middle C up on the treble staff, the rest on the bass staff, split by the written letter (B♯3 sounds as C4 and goes below); an empty staff stays blank, nothing at all shows a rest on both. The clef button cycles Grand / Treble / Bass. Key signature from the active key, read from UMT's letter-spelled scale. The drawing is cropped to what abcjs draws and fills its panel. ⇠ (here or on the piano, one setting for both) writes the previous chord first, faded and in a bar of its own so its accidentals do not carry, to see each voice move.
 
 **Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Controls: b/♯, minor/dim rings, degree labels, seventh labels. The enharmonic segments are spelled by the key in effect (selected, or detected on Auto): sharps for a sharp signature, flats otherwise. b/♯ only apply with no key, and are greyed out while one decides. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring. Degrees are the ones the analysis fields give (`analyzeProgression`), counted from the tonic: F#° in C is ♯iv°.
 
-**Guitar:** `UMT.getFretboardVoicings(chord, tuning)` kept only when playable — bass lowest, contiguous strings, four-fret span, open strings only in first position — ordered along the neck; ‹/› to browse. Tunings: Standard, Drop D, Open G, custom per string. String labels: off / tuning / notes. Rendered by notae.
+**Strings:** one panel for any fretted instrument, drawn by notae. Instruments (`theory/instruments.ts`, open strings as MIDI, thickest first): guitar (standard, drop D, open G, open D, DADGAD), 7-string guitar, bass and 5-string bass (standard, drop D), ukulele (standard reentrant G4 C4 E4 A4, low G), baritone ukulele, mandolin, 5-string banjo (open G, the short string first); each with a custom tuning per string, whose octaves are the instrument's usual ones (a ukulele's G stays high). Changing the instrument goes back to its usual tuning. Two views:
+- **Shapes:** `UMT.getFretboardVoicings(chord, tuning)` kept only when playable — bass lowest (not asked of a reentrant tuning, which plays chords in any inversion), contiguous strings, four sounding strings (three on a four-string instrument), four-fret span, open strings only in first position — ordered with the open shapes first (the fullest first), then up the neck; ‹/› to browse. String labels: off / tuning / notes
+- **Neck:** horizontal, every place the sounding notes are over frets 0–12, each dot named (flats or sharps by key)
 
 ### Key panel
 
@@ -171,13 +173,12 @@ What the analysis key (selected, or detected on Auto) offers, without playing. W
 
 Controls: font scale, triads / sevenths (`7`), show/hide Neg, Par, Colt. A click plays the chord and shows it in the detector like a CoF segment; the key does not change. The chord on screen is outlined in every section where it appears (matched by pitch, so G#7 lights Ab7).
 
-### Piano, velocity and fretboard
+### Piano and velocity
 
 **Piano:** notae, C2–B5. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`. With ⇠ the keys of the previous chord that are not held now are lit in the neutral colour.
 
 **Velocity:** one bar per note on screen, highest on top, with the MIDI velocity (1–127) it was struck with on any input. Kept after release, so Hold still shows it. A chord picked from history, song or circle has none and shows nothing. No dynamic marks (p, mf…): there is no standard mapping from velocity.
 
-**Fretboard:** notae, horizontal, all positions of the active notes over frets 0–12.
 
 ## History
 
@@ -276,7 +277,7 @@ The main window sends what the detector shows over a `BroadcastChannel` (`modus-
 The interface is in English or Spanish: the browser's first language when it is Spanish, otherwise English, and changeable in the ? panel. Note names are a separate choice, letters (C D E) or fixed-do solfège (Do Re Mi): they follow the language until chosen. Changing either reloads the page; the history is carried over, songs and settings are stored anyway.
 
 - Strings: one table per language (`src/i18n/en.ts`, `es.ts`); Spanish has every English key, with the same values filled in (checked by a test)
-- Notes and chords in solfège come from UMT: `localizeNoteName` for notes, `formatChordSymbol(…, { roots: 'solfege' })` for chords (root and slash bass: Sibm7/Re). They apply wherever a note or chord is shown: detector, analysis, history, song, key panel, circle, guitar and fretboard labels, velocity, view windows and presentation. Key names are Modus's (C Major / Do mayor / C mayor)
+- Notes and chords in solfège come from UMT: `localizeNoteName` for notes, `formatChordSymbol(…, { roots: 'solfege' })` for chords (root and slash bass: Sibm7/Re). They apply wherever a note or chord is shown: detector, analysis, history, song, key panel, circle and strings labels, velocity, view windows and presentation. Key names are Modus's (C Major / Do mayor / C mayor)
 - Chords typed in solfège (chord field, song chords, pasted progressions) are stored in letters, through UMT `translateSymbol` with `SOLFEGE_ROOTS` and `QUALITY_ALIASES_ES`. A name that starts with a syllable reads as solfège first ("Do7" is C7, not D°7); when that is no chord the letters stand ("Fadd9")
 - Theory names come from UMT in the interface language: scales and modes (`scaleName`, root as notes are named: "Re dórico"), cadences (`cadenceName`, the short form on the history tags: "Rota"), substitution types (`substitutionTypeName`). With English and Do Re Mi only the root changes ("Sol mixolydian")
 - View window titles stay "Modus view: …" in every language: OBS finds the window by its title. A view reloads when the language or the note names change in the main window
@@ -287,7 +288,7 @@ The interface is in English or Spanish: the browser's first language when it is 
 Dark, light, high contrast (black ground, bright marks, for a projector or a far screen), paper (warm light ground, ink colours), or as the system (the default: dark or light), chosen in the ? panel; the change applies in place, without a reload. With "as the system" the page follows the operating system while it is open.
 
 - Every colour is a token in `src/styles.css`: one block per theme (`:root` is dark, `[data-theme="light"]` and so on), all with the same tokens; a new theme is one more block and its name in `ui/theme.ts` (checked by a test, as is that the rest of the stylesheet writes no colour)
-- The page takes the tokens through `var()`. The SVG diagrams (circle, piano, guitar, fretboard) write their colours into the drawing: they read the tokens through `ui/theme.ts` and are drawn again when the theme changes, so exported SVG and PNG carry the theme's colours
+- The page takes the tokens through `var()`. The SVG diagrams (circle, piano, strings) write their colours into the drawing: they read the tokens through `ui/theme.ts` and are drawn again when the theme changes, so exported SVG and PNG carry the theme's colours
 - A script in `index.html` sets `<html data-theme>` before the first paint: no flash of the other theme
 - Harmony colours (chord quality, function, sections) keep their hues in every theme: brighter in high contrast, ink tones in paper; labels that would not read on a light ground are darker there. The history chips take the key panel's function colours (T green, S amber, D red)
 - View windows stay dark whatever the theme: their light text and dark glow are made for chroma and the dark background. Presentation mode follows the theme
@@ -302,7 +303,7 @@ Persisted to localStorage:
 - CoF b/♯ (without a key), minor/dim rings, degrees, sevenths
 - Key panel font scale, triads / sevenths, sections shown
 - View window background
-- Guitar tuning (including custom strings), label mode
+- Strings: instrument, tuning (including custom strings), view, label mode
 - MIDI device, input channel, input mode, instrument, volume (the key is stored with each song)
 - Interface language and note names
 - Theme

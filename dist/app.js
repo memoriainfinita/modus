@@ -694,10 +694,9 @@
     "module.staff": "Staff",
     "module.analysis": "Analysis",
     "module.cof": "Circle of fifths",
-    "module.guitar": "Guitar",
+    "module.guitar": "Strings",
     "module.key": "Key",
     "module.piano": "Piano",
-    "module.neck": "Fretboard",
     "module.velocity": "Velocity",
     "module.history": "History",
     "module.song": "Song",
@@ -718,7 +717,7 @@
     "view.staff": "Staff",
     "view.cof": "Circle of Fifths",
     "view.piano": "Piano",
-    "view.guitar": "Guitar",
+    "view.guitar": "Strings",
     "help.title": "Shortcuts, gestures and language (?)",
     // Shared controls
     "ctrl.smaller": "Smaller",
@@ -877,9 +876,25 @@
     "guitar.labels.tuning.title": "Show open string notes (tuning)",
     "guitar.labels.notes.title": "Show fretted note names",
     "guitar.tuning.title": "Tuning preset",
-    "guitar.tuning.standard": "Standard",
-    "guitar.tuning.dropD": "Drop D",
-    "guitar.tuning.openG": "Open G",
+    "tuning.standard": "Standard",
+    "tuning.dropD": "Drop D",
+    "tuning.openG": "Open G",
+    "tuning.openD": "Open D",
+    "tuning.dadgad": "DADGAD",
+    "tuning.lowG": "Low G",
+    "strings.instrument.title": "Instrument",
+    "instrument.guitar": "Guitar",
+    "instrument.guitar7": "7-string guitar",
+    "instrument.bass": "Bass",
+    "instrument.bass5": "5-string bass",
+    "instrument.ukulele": "Ukulele",
+    "instrument.baritone": "Baritone ukulele",
+    "instrument.mandolin": "Mandolin",
+    "instrument.banjo": "Banjo (5-string)",
+    "strings.view.shapes": "Shapes",
+    "strings.view.shapes.title": "The chord's playable shapes, one at a time",
+    "strings.view.neck": "Neck",
+    "strings.view.neck.title": "Every place the notes sounding are on the neck, frets 0\u201312",
     "guitar.tuning.custom": "Custom",
     "guitar.tuner.title": "Edit string tuning",
     // History
@@ -1067,10 +1082,9 @@
     "module.staff": "Pentagrama",
     "module.analysis": "An\xE1lisis",
     "module.cof": "C\xEDrculo de quintas",
-    "module.guitar": "Guitarra",
+    "module.guitar": "Cuerdas",
     "module.key": "Tonalidad",
     "module.piano": "Piano",
-    "module.neck": "M\xE1stil",
     "module.velocity": "Velocidad",
     "module.history": "Historial",
     "module.song": "Canci\xF3n",
@@ -1091,7 +1105,7 @@
     "view.staff": "Pentagrama",
     "view.cof": "C\xEDrculo de quintas",
     "view.piano": "Piano",
-    "view.guitar": "Guitarra",
+    "view.guitar": "Cuerdas",
     "help.title": "Atajos, gestos e idioma (?)",
     "ctrl.smaller": "M\xE1s peque\xF1o",
     "ctrl.larger": "M\xE1s grande",
@@ -1241,9 +1255,25 @@
     "guitar.labels.tuning.title": "Mostrar las notas al aire (afinaci\xF3n)",
     "guitar.labels.notes.title": "Mostrar las notas pisadas",
     "guitar.tuning.title": "Afinaci\xF3n",
-    "guitar.tuning.standard": "Est\xE1ndar",
-    "guitar.tuning.dropD": "Drop D",
-    "guitar.tuning.openG": "Open G",
+    "tuning.standard": "Est\xE1ndar",
+    "tuning.dropD": "Drop D",
+    "tuning.openG": "Sol abierto",
+    "tuning.openD": "Re abierto",
+    "tuning.dadgad": "DADGAD",
+    "tuning.lowG": "Sol grave",
+    "strings.instrument.title": "Instrumento",
+    "instrument.guitar": "Guitarra",
+    "instrument.guitar7": "Guitarra de 7 cuerdas",
+    "instrument.bass": "Bajo",
+    "instrument.bass5": "Bajo de 5 cuerdas",
+    "instrument.ukulele": "Ukelele",
+    "instrument.baritone": "Ukelele bar\xEDtono",
+    "instrument.mandolin": "Mandolina",
+    "instrument.banjo": "Banjo (5 cuerdas)",
+    "strings.view.shapes": "Posiciones",
+    "strings.view.shapes.title": "Las posiciones tocables del acorde, una a una",
+    "strings.view.neck": "M\xE1stil",
+    "strings.view.neck.title": "Todos los sitios del m\xE1stil donde est\xE1n las notas que suenan, trastes 0\u201312",
     "guitar.tuning.custom": "Personal",
     "guitar.tuner.title": "Cambiar la afinaci\xF3n de cada cuerda",
     "history.clear": "Borrar",
@@ -2064,18 +2094,48 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     if (prevNotes?.length) container.querySelectorAll(".abcjs-note.abcjs-m0").forEach((el) => el.classList.add("staff-prev"));
   }
 
+  // src/theory/instruments.ts
+  var INSTRUMENT_IDS = ["guitar", "guitar7", "bass", "bass5", "ukulele", "baritone", "mandolin", "banjo"];
+  var INSTRUMENT_TUNINGS = {
+    guitar: {
+      standard: [40, 45, 50, 55, 59, 64],
+      // E2 A2 D3 G3 B3 E4
+      dropD: [38, 45, 50, 55, 59, 64],
+      openG: [38, 43, 50, 55, 59, 62],
+      openD: [38, 45, 50, 54, 57, 62],
+      dadgad: [38, 45, 50, 55, 57, 62]
+    },
+    guitar7: { standard: [35, 40, 45, 50, 55, 59, 64] },
+    // B1 E2 A2 D3 G3 B3 E4
+    bass: { standard: [28, 33, 38, 43], dropD: [26, 33, 38, 43] },
+    // E1 A1 D2 G2
+    bass5: { standard: [23, 28, 33, 38, 43] },
+    // B0 E1 A1 D2 G2
+    ukulele: { standard: [67, 60, 64, 69], lowG: [55, 60, 64, 69] },
+    // G4 C4 E4 A4, reentrant
+    baritone: { standard: [50, 55, 59, 64] },
+    // D3 G3 B3 E4
+    mandolin: { standard: [55, 62, 69, 76] },
+    // G3 D4 A4 E5
+    banjo: { openG: [67, 50, 55, 59, 62] }
+    // g4 D3 G3 B3 D4, the short fifth string first
+  };
+  var defaultTuning = (id) => Object.keys(INSTRUMENT_TUNINGS[id])[0];
+  var referenceStrings = (id) => INSTRUMENT_TUNINGS[id][defaultTuning(id)];
+  var isReentrant = (open2) => open2.some((m, i) => i > 0 && m < open2[i - 1]);
+
   // src/theory/voicings.ts
   var STANDARD_OPEN_MIDI = [40, 45, 50, 55, 59, 64];
   var MAX_SPAN = 3;
   var MIN_STRINGS = 4;
   var MAX_FRET_WITH_OPEN = 4;
-  function tuningToMidi(names) {
-    if (names.length !== STANDARD_OPEN_MIDI.length) return null;
+  function tuningToMidi(names, reference = STANDARD_OPEN_MIDI) {
+    if (names.length !== reference.length) return null;
     const midi = [];
     for (let i = 0; i < names.length; i++) {
       const pc2 = pitchClassOf(normalizeNoteName(names[i]) ?? "");
       if (pc2 === -1) return null;
-      const ref = STANDARD_OPEN_MIDI[i];
+      const ref = reference[i];
       const below = ref - ((ref - pc2) % 12 + 12) % 12;
       midi.push(ref - below <= 6 ? below : below + 12);
     }
@@ -2087,10 +2147,12 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   function isPlayable(v, openMidi, bassPc) {
     const sounding3 = v.frets.map((f, i) => f >= 0 ? i : -1).filter((i) => i >= 0);
-    if (sounding3.length < MIN_STRINGS) return false;
+    if (sounding3.length < Math.min(MIN_STRINGS, openMidi.length - 1)) return false;
     if (sounding3[sounding3.length - 1] - sounding3[0] + 1 !== sounding3.length) return false;
-    const lowest = openMidi[sounding3[0]] + v.frets[sounding3[0]];
-    if (lowest % 12 !== bassPc) return false;
+    if (!isReentrant(openMidi)) {
+      const lowest = Math.min(...sounding3.map((i) => openMidi[i] + v.frets[i]));
+      if (lowest % 12 !== bassPc) return false;
+    }
     const fretted = v.frets.filter((f) => f > 0);
     if (fretted.length === 0) return true;
     const lo = Math.min(...fretted), hi = Math.max(...fretted);
@@ -2099,10 +2161,11 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     if (fretted.length <= 4) return true;
     return fretted.filter((f) => f === lo).length >= 2 && fretted.filter((f) => f > lo).length <= 3;
   }
-  function position(v) {
+  function lowestFret(v) {
     const fretted = v.frets.filter((f) => f > 0);
     return fretted.length ? Math.min(...fretted) : 0;
   }
+  var position = (v) => v.frets.includes(0) ? 0 : lowestFret(v);
   function playableVoicings(voicings, openMidi, bassPc) {
     const seen = /* @__PURE__ */ new Set();
     const unique = voicings.filter((v) => {
@@ -2112,7 +2175,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       return true;
     });
     const strings = (v) => v.frets.filter((f) => f >= 0).length;
-    const byNeck = (a, b) => position(a) - position(b) || strings(b) - strings(a);
+    const byNeck = (a, b) => position(a) - position(b) || strings(b) - strings(a) || lowestFret(a) - lowestFret(b);
     const playable = unique.filter((v) => isPlayable(v, openMidi, bassPc));
     return (playable.length ? playable : unique).sort(byNeck);
   }
@@ -2138,7 +2201,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   function setGuitarControlsVisible(v) {
     guitarControlsVisible = v;
   }
-  var EMPTY_FRETBOARD = { name: "", frets: [null, null, null, null, null, null], tuning: ["E", "A", "D", "G", "B", "E"] };
   var guitarVoicingIdx = 0;
   var onVoicingChange = () => {
   };
@@ -2150,29 +2212,42 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   var lastGuitarSymbol = null;
   var lastNoteNames = [];
+  var lastPreferFlats = true;
   var guitarLabelMode = loadChoice("guitar-label-mode", ["none", "tuning", "notes"], "none");
-  var guitarTuningKey = loadChoice("guitar-tuning", ["standard", "dropD", "openG", "custom"], "standard");
+  var instrument2 = loadChoice("guitar-instrument", INSTRUMENT_IDS, "guitar");
+  var tuningKeys = () => [...Object.keys(INSTRUMENT_TUNINGS[instrument2]), "custom"];
+  var guitarTuningKey = loadChoice("guitar-tuning", tuningKeys(), defaultTuning(instrument2));
   var guitarTunerExpanded = false;
-  var guitarSpacing = 19;
-  var GUITAR_TUNINGS = {
-    standard: { notae: ["E", "A", "D", "G", "B", "E"], label: "guitar.tuning.standard" },
-    dropD: { notae: ["D", "A", "D", "G", "B", "E"], label: "guitar.tuning.dropD" },
-    openG: { notae: ["D", "G", "D", "G", "B", "D"], label: "guitar.tuning.openG" }
-  };
+  var stringsView = loadChoice("guitar-view", ["shapes", "neck"], "shapes");
+  function getStringsView() {
+    return stringsView;
+  }
+  var NECK_FRETS = 12;
+  var SHAPE_SPACING = 19;
+  var NECK_SPACING = 16;
+  var nameOf = (midi) => PITCH_NAMES_FLAT[(midi % 12 + 12) % 12];
+  function namesOf(open2) {
+    return open2.map(nameOf);
+  }
   function loadStringTuning() {
     const saved = loadJSON("guitar-string-tuning", null);
-    if (Array.isArray(saved) && saved.length === 6 && saved.every((n) => typeof n === "string" && normalizeNoteName(n))) {
+    const count = referenceStrings(instrument2).length;
+    if (guitarTuningKey === "custom" && Array.isArray(saved) && saved.length === count && saved.every((n) => typeof n === "string" && normalizeNoteName(n))) {
       return saved.map((n) => normalizeNoteName(n));
     }
-    return [...GUITAR_TUNINGS[guitarTuningKey]?.notae ?? ["E", "A", "D", "G", "B", "E"]];
+    return namesOf(INSTRUMENT_TUNINGS[instrument2][guitarTuningKey] ?? referenceStrings(instrument2));
   }
   var guitarStringTuning = loadStringTuning();
-  function detectPreset(notes) {
-    const match = Object.entries(GUITAR_TUNINGS).find(([, t2]) => t2.notae.every((n, i) => n === notes[i]));
+  function openStrings() {
+    const preset = INSTRUMENT_TUNINGS[instrument2][guitarTuningKey];
+    return preset ?? tuningToMidi(guitarStringTuning, referenceStrings(instrument2)) ?? referenceStrings(instrument2);
+  }
+  function detectPreset(names) {
+    const match = Object.entries(INSTRUMENT_TUNINGS[instrument2]).find(([, open2]) => namesOf(open2).every((n, i) => n === names[i]));
     return match ? match[0] : "custom";
   }
-  function guitarStyle() {
-    const sp = guitarSpacing;
+  function shapeStyle() {
+    const sp = SHAPE_SPACING;
     return {
       ...fretboardColors(),
       stringSpacing: sp,
@@ -2186,6 +2261,24 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       } : {}
     };
   }
+  function neckStyle(preferFlats) {
+    const sp = NECK_SPACING;
+    return {
+      ...fretboardColors(),
+      numFrets: NECK_FRETS,
+      dotColor: color("neck-dot"),
+      chordNameSize: 0,
+      chordNameY: 4,
+      chordNameGapH: 4,
+      stringSpacing: sp,
+      fretSpacing: Math.round(sp * 28 / 16),
+      dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
+      fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
+      showNoteNames: true,
+      preferFlats,
+      orientation: "horizontal"
+    };
+  }
   var FORK_ICON = `<svg width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="vertical-align:middle;display:inline-block">
   <path d="M3,7 L3,2 Q3,0.5 5.5,0.5 Q8,0.5 8,2 L8,7"/>
   <line x1="5.5" y1="7" x2="5.5" y2="12.5"/>
@@ -2193,35 +2286,49 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   var NOTE_ICON = `<span class="note-icon">\u2669</span>`;
   function guitarControls(total, idx) {
     const btn = (action, label, active, tip) => `<button class="guitar-ctrl${active ? " active" : ""}" data-action="${action}" title="${tip}">${label}</button>`;
-    const nav = total > 1 ? `
+    const nav = stringsView === "shapes" && total > 1 ? `
     <button class="guitar-nav" data-dir="-1" title="${t("guitar.prev")}">\u2039</button>
     <span class="guitar-voicing-count">${idx + 1}/${total}</span>
     <button class="guitar-nav" data-dir="1" title="${t("guitar.next")}">\u203A</button>` : "";
+    const count = guitarStringTuning.length;
     const tunerRow = guitarTunerExpanded ? `
     <div class="tuner-row">
       ${guitarStringTuning.map(
-      (note, i) => `<input class="guitar-string-input" data-string="${i}" value="${note}" title="${t("guitar.string", { n: 6 - i })}" maxlength="2">`
+      (note, i) => `<input class="guitar-string-input" data-string="${i}" value="${note}" title="${t("guitar.string", { n: count - i })}" maxlength="2">`
     ).join("")}
     </div>` : "";
     return `
     <div id="guitar-ctrl-wrap" style="display:${guitarControlsVisible ? "flex" : "none"}">
       <div class="guitar-ctrl-row">
-        ${nav || '<span class="guitar-nav-placeholder">\u2014</span>'}
+        ${btn("view-shapes", t("strings.view.shapes"), stringsView === "shapes", t("strings.view.shapes.title"))}
+        ${btn("view-neck", t("strings.view.neck"), stringsView === "neck", t("strings.view.neck.title"))}
+        ${nav}
       </div>
       <div class="guitar-ctrl-row-wrap">
-        ${btn("label-none", t("guitar.labels.off"), guitarLabelMode === "none", t("guitar.labels.off.title"))}
-        ${btn("label-tuning", FORK_ICON, guitarLabelMode === "tuning", t("guitar.labels.tuning.title"))}
-        ${btn("label-notes", NOTE_ICON, guitarLabelMode === "notes", t("guitar.labels.notes.title"))}
+        <select class="guitar-instrument-sel" title="${t("strings.instrument.title")}">
+          ${INSTRUMENT_IDS.map((id) => `<option value="${id}" ${instrument2 === id ? "selected" : ""}>${t(`instrument.${id}`)}</option>`).join("")}
+        </select>
         <select class="guitar-tuning-sel" title="${t("guitar.tuning.title")}">
-          ${Object.entries(GUITAR_TUNINGS).map(
-      ([k, tuning]) => `<option value="${k}" ${guitarTuningKey === k ? "selected" : ""}>${t(tuning.label)}</option>`
+          ${Object.keys(INSTRUMENT_TUNINGS[instrument2]).map(
+      (k) => `<option value="${k}" ${guitarTuningKey === k ? "selected" : ""}>${t(`tuning.${k}`)}</option>`
     ).join("")}
           <option value="custom" ${guitarTuningKey === "custom" ? "selected" : ""}>${t("guitar.tuning.custom")}</option>
         </select>
         ${btn("toggle-tuner", "\u270E", guitarTunerExpanded, t("guitar.tuner.title"))}
       </div>
+      <div class="guitar-ctrl-row-wrap"${stringsView === "neck" ? ' style="display:none"' : ""}>
+        ${btn("label-none", t("guitar.labels.off"), guitarLabelMode === "none", t("guitar.labels.off.title"))}
+        ${btn("label-tuning", FORK_ICON, guitarLabelMode === "tuning", t("guitar.labels.tuning.title"))}
+        ${btn("label-notes", NOTE_ICON, guitarLabelMode === "notes", t("guitar.labels.notes.title"))}
+      </div>
       ${tunerRow}
     </div>`;
+  }
+  function redrawFresh(container) {
+    const sym = lastGuitarSymbol;
+    guitarVoicingIdx = 0;
+    lastGuitarSymbol = null;
+    renderGuitar(container, sym, [...lastNoteNames], void 0, lastPreferFlats);
   }
   function wireGuitarControls(container) {
     container.querySelectorAll(".guitar-ctrl").forEach((btn) => {
@@ -2230,28 +2337,33 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         if (action.startsWith("label-")) {
           guitarLabelMode = action.replace("label-", "");
           save("guitar-label-mode", guitarLabelMode);
+        } else if (action.startsWith("view-")) {
+          stringsView = action.replace("view-", "");
+          save("guitar-view", stringsView);
         } else if (action === "toggle-tuner") {
           guitarTunerExpanded = !guitarTunerExpanded;
         }
-        renderGuitar(container, lastGuitarSymbol, lastNoteNames);
+        renderGuitar(container, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
       });
     });
+    const inst = container.querySelector(".guitar-instrument-sel");
+    inst?.addEventListener("change", () => {
+      instrument2 = inst.value;
+      save("guitar-instrument", instrument2);
+      guitarTuningKey = defaultTuning(instrument2);
+      save("guitar-tuning", guitarTuningKey);
+      guitarStringTuning = namesOf(referenceStrings(instrument2));
+      redrawFresh(container);
+    });
     const sel = container.querySelector(".guitar-tuning-sel");
-    if (sel) {
-      sel.addEventListener("change", () => {
-        const key = sel.value;
-        guitarTuningKey = key;
-        save("guitar-tuning", key);
-        if (key !== "custom" && GUITAR_TUNINGS[key]) {
-          guitarStringTuning = [...GUITAR_TUNINGS[key].notae];
-          save("guitar-string-tuning", guitarStringTuning);
-        }
-        const sym = lastGuitarSymbol;
-        guitarVoicingIdx = 0;
-        lastGuitarSymbol = null;
-        renderGuitar(container, sym, lastNoteNames);
-      });
-    }
+    sel?.addEventListener("change", () => {
+      guitarTuningKey = sel.value;
+      save("guitar-tuning", guitarTuningKey);
+      const preset = INSTRUMENT_TUNINGS[instrument2][guitarTuningKey];
+      if (preset) guitarStringTuning = namesOf(preset);
+      save("guitar-string-tuning", guitarStringTuning);
+      redrawFresh(container);
+    });
     container.querySelectorAll(".guitar-string-input").forEach((input) => {
       input.addEventListener("change", () => {
         const i = parseInt(input.dataset.string);
@@ -2266,38 +2378,43 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         save("guitar-string-tuning", guitarStringTuning);
         guitarTuningKey = detectPreset(guitarStringTuning);
         save("guitar-tuning", guitarTuningKey);
-        const sym = lastGuitarSymbol;
-        const notes = [...lastNoteNames];
-        guitarVoicingIdx = 0;
-        lastGuitarSymbol = null;
-        renderGuitar(container, sym, notes);
+        redrawFresh(container);
       });
     });
   }
-  function renderGuitar(container, chordSymbol, noteNames = [], voicingIndex) {
+  function neckSvg(noteNames, open2, preferFlats) {
+    const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
+    const frets = open2.map((o) => {
+      const pos = midi.map((n) => n - o).filter((f) => f >= 0 && f <= NECK_FRETS);
+      return pos.length ? pos : [null];
+    });
+    return tryUMT("neck", () => Notae.renderFretboard({ name: "", frets, tuning: guitarStringTuning }, neckStyle(preferFlats)), "");
+  }
+  function renderGuitar(container, chordSymbol, noteNames = [], voicingIndex, preferFlats = true) {
     lastNoteNames = noteNames;
-    if (!chordSymbol) {
-      guitarVoicingIdx = 0;
-      lastGuitarSymbol = null;
-      try {
-        const ph = { ...EMPTY_FRETBOARD, tuning: guitarStringTuning };
-        container.innerHTML = `<div class="guitar-placeholder">${Notae.renderFretboard(ph, guitarStyle())}</div>` + guitarControls(0, 0);
-      } catch {
-        container.innerHTML = guitarControls(0, 0);
-      }
-      wireGuitarControls(container);
-      return;
-    }
+    lastPreferFlats = preferFlats;
+    const open2 = openStrings();
     if (chordSymbol !== lastGuitarSymbol) {
       guitarVoicingIdx = 0;
       lastGuitarSymbol = chordSymbol;
     }
     if (voicingIndex !== void 0) guitarVoicingIdx = voicingIndex;
-    const openMidi = tuningToMidi(guitarStringTuning) ?? tuningToMidi(GUITAR_TUNINGS.standard.notae);
-    const umtTuning = openMidi.map((m) => m - 69);
+    if (stringsView === "neck") {
+      container.innerHTML = `<div>${neckSvg(noteNames, open2, preferFlats)}</div>` + guitarControls(0, 0);
+      localizeDrawnNoteNames(container.firstElementChild);
+      wireGuitarControls(container);
+      return;
+    }
+    if (!chordSymbol) {
+      const empty = { name: "", frets: open2.map(() => null), tuning: guitarStringTuning };
+      const svg2 = tryUMT("fretboard", () => Notae.renderFretboard(empty, shapeStyle()), "");
+      container.innerHTML = `<div class="guitar-placeholder">${svg2}</div>` + guitarControls(0, 0);
+      wireGuitarControls(container);
+      return;
+    }
     const chord = tryParseChord(chordSymbol);
     const bassPc = chord ? (((chord.bassStep ?? chord.rootStep) + 9) % 12 + 12) % 12 : 0;
-    const voicings = chord ? playableVoicings(tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, umtTuning) ?? [], []), openMidi, bassPc) : [];
+    const voicings = chord ? playableVoicings(tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, open2.map((m) => m - 69)) ?? [], []), open2, bassPc) : [];
     if (!voicings.length) {
       container.innerHTML = `<div class="no-voicing">${t("guitar.none")}</div>` + guitarControls(0, 0);
       wireGuitarControls(container);
@@ -2305,20 +2422,16 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     }
     const total = voicings.length;
     const idx = Math.min(guitarVoicingIdx, total - 1);
-    let svg = "";
-    try {
-      svg = Notae.renderFretboard(
-        { name: chordLabel(chordSymbol), ...voicings[idx], tuning: guitarStringTuning },
-        guitarStyle()
-      );
-    } catch {
-    }
+    const svg = tryUMT("fretboard", () => Notae.renderFretboard(
+      { name: chordLabel(chordSymbol), ...voicings[idx], tuning: guitarStringTuning },
+      shapeStyle()
+    ), "");
     container.innerHTML = `<div>${svg}</div>` + guitarControls(total, idx);
     localizeDrawnNoteNames(container.firstElementChild);
     container.querySelectorAll(".guitar-nav").forEach((btn) => {
       btn.addEventListener("click", () => {
         guitarVoicingIdx = (idx + parseInt(btn.dataset.dir) + total) % total;
-        renderGuitar(container, lastGuitarSymbol, lastNoteNames);
+        renderGuitar(container, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
         onVoicingChange(guitarVoicingIdx);
       });
     });
@@ -2537,7 +2650,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     "guitar",
     "key",
     "piano",
-    "neck",
     "velocity",
     "history",
     "song"
@@ -2550,7 +2662,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     guitar: { w: 3, h: 9 },
     key: { w: 12, h: 11 },
     piano: { w: 7, h: 5 },
-    neck: { w: 4, h: 4 },
     velocity: { w: 2, h: 5 },
     history: { w: 12, h: 3 },
     song: { w: 12, h: 12 }
@@ -2567,8 +2678,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["guitar", 9, 0, 3, 11],
       ["velocity", 6, 7, 3, 4],
       ["key", 0, 11, 12, 11],
-      ["piano", 0, 22, 8, 5],
-      ["neck", 8, 22, 4, 5],
+      ["piano", 0, 22, 12, 5],
       ["history", 0, 27, 12, 3],
       ["song", 0, 30, 12, 12]
     ]),
@@ -2596,7 +2706,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ["staff", 0, 3, 3, 8],
       ["analysis", 3, 0, 3, 11],
       ["piano", 6, 0, 6, 5],
-      ["neck", 6, 5, 6, 6],
+      ["guitar", 6, 5, 6, 6],
       ["history", 0, 11, 12, 3],
       ["song", 0, 14, 12, 14]
     ]),
@@ -2810,8 +2920,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         return '<div id="key-container"></div>';
       case "piano":
         return '<div id="piano-container" class="fit"></div>';
-      case "neck":
-        return '<div id="neck-container" class="fit"></div>';
       case "velocity":
         return '<div id="velocity-container"></div>';
       case "history":
@@ -3332,42 +3440,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       return true;
     } finally {
       URL.revokeObjectURL(url);
-    }
-  }
-
-  // src/diagrams/neck.ts
-  var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
-  var NECK_FRETS = 12;
-  var NECK_SPACING = 16;
-  function renderNeck(container, noteNames, preferFlats = true) {
-    const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
-    const frets = OPEN_MIDI.map((open2) => {
-      const pos = midi.map((n) => n - open2).filter((f) => f >= 0 && f <= NECK_FRETS);
-      return pos.length ? pos : [null];
-    });
-    const sp = NECK_SPACING;
-    const style = {
-      ...fretboardColors(),
-      numFrets: NECK_FRETS,
-      dotColor: color("neck-dot"),
-      chordNameSize: 0,
-      chordNameY: 4,
-      chordNameGapH: 4,
-      stringSpacing: sp,
-      fretSpacing: Math.round(sp * 28 / 16),
-      dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
-      fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
-      showNoteNames: true,
-      preferFlats
-    };
-    try {
-      container.innerHTML = Notae.renderFretboard(
-        { name: "", frets, tuning: ["E", "A", "D", "G", "B", "E"] },
-        { ...style, orientation: "horizontal" }
-      );
-      localizeDrawnNoteNames(container);
-    } catch {
-      container.innerHTML = "";
     }
   }
 
@@ -5524,8 +5596,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     renderIfChanged("piano", `${notes}|${chordSymbol}|${prev?.join(" ")}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress, prev));
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
-    renderIfChanged("neck", `${notes}|${keyPrefersSharps(key)}`, () => renderNeck($2("neck-container"), noteNames, !keyPrefersSharps(key)));
-    renderIfChanged("guitar", `${chordSymbol}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames));
+    const neck = getStringsView() === "neck" ? `${notes}|${keyPrefersSharps(key)}` : "";
+    renderIfChanged("guitar", `${chordSymbol}|${neck}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames, void 0, !keyPrefersSharps(key)));
     renderIfChanged("cof", `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, COF_SIZE, cofOpts));
     const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale };
     const keyTitle = key ? state.activeKey ? keyLabel(key) : t("keyPanel.auto", { key: keyLabel(key) }) : "";

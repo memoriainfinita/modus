@@ -10,13 +10,12 @@ import { renderPiano } from './diagrams/piano'
 import { renderVelocity } from './diagrams/velocity'
 import type { NoteVelocity } from './diagrams/velocity'
 import { noteNameToMidi } from './theory/notes'
-import { renderGuitar, getGuitarVoicingIndex, setGuitarVoicingChange } from './diagrams/guitar'
+import { renderGuitar, getStringsView, getGuitarVoicingIndex, setGuitarVoicingChange } from './diagrams/guitar'
 import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS } from './view/channel'
 import type { ViewName, ViewBackground, ViewState } from './view/channel'
 import { runViewerFromUrl } from './view/viewer'
 import { exportDiagram } from './ui/export'
 import type { ExportTarget } from './ui/export'
-import { renderNeck } from './diagrams/neck'
 import { renderCircleOfFifths, cofAccidentalFor } from './diagrams/cof'
 import { renderKeyExplorer } from './diagrams/key-explorer'
 import { buildKeyMap } from './theory/key-map'
@@ -674,7 +673,7 @@ function updateAutoKeyLabel() {
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
 // Each diagram is rebuilt only when its own inputs change: a MIDI note that keeps the
-// chord redraws staff, piano and neck, but not the circle or the guitar voicing.
+// chord redraws staff and piano, but not the circle or the guitar voicing.
 const lastRenderSig: Record<string, string> = {}
 function renderIfChanged(name: string, sig: string, render: () => void) {
   if (lastRenderSig[name] === sig) return
@@ -739,10 +738,10 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
     renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress, prev))
   const vel = noteVelocities(noteNames)
   renderIfChanged('velocity', JSON.stringify(vel), () => renderVelocity($('velocity-container'), vel))
-  renderIfChanged('neck', `${notes}|${keyPrefersSharps(key)}`, () =>
-    renderNeck($('neck-container'), noteNames, !keyPrefersSharps(key)))
-  renderIfChanged('guitar', `${chordSymbol}`, () =>
-    renderGuitar($('guitar-container'), chordSymbol, noteNames))
+  // The shapes follow the chord; the neck view, every note
+  const neck = getStringsView() === 'neck' ? `${notes}|${keyPrefersSharps(key)}` : ''
+  renderIfChanged('guitar', `${chordSymbol}|${neck}`, () =>
+    renderGuitar($('guitar-container'), chordSymbol, noteNames, undefined, !keyPrefersSharps(key)))
   renderIfChanged('cof', `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () =>
     renderCircleOfFifths($('cof-container'), key, chordSymbol, onCofClick, COF_SIZE, cofOpts))
   const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale }

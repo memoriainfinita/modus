@@ -80,7 +80,7 @@ describe('analyzeVoiceLeading', () => {
 describe('buildStaffAbc with the chord before', () => {
   it('writes the chord before in a bar of its own, then this one', () => {
     const abc = buildStaffAbc(['C4', 'E4', 'G4'], 'C Major', 'treble', ['B3', 'D4', 'G4'])
-    expect(abc.split('\n').at(-1)).toBe('[B,DG]1 | [CEG]1')
+    expect(abc.split('\n').pop()).toBe('[B,DG]1 | [CEG]1')
   })
 
   it('on a grand staff an empty side of either chord gets an invisible rest', () => {

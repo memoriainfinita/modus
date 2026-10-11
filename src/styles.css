@@ -659,7 +659,7 @@ body.presenting .module { border-color: transparent; }
   font-size: 10px;
   line-height: 1.6;
 }
-.guitar-tuning-sel {
+.guitar-tuning-sel, .guitar-instrument-sel {
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--border);
