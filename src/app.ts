@@ -28,6 +28,7 @@ import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import { explainDetection, renderExplanation } from './detector/explain'
+import { renderProgressions } from './ui/progressions'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames, isKnownChord, readTypedChord } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
@@ -465,6 +466,7 @@ function renderExplain() {
 function renderDetector() {
   renderAnalysisPanel()
   renderExplain()
+  renderProgressionPanel()
   renderDiagrams()
   publishView()
 }
@@ -779,6 +781,22 @@ function onCofClick(chord: string, key: string | null) {
   lastCofClick = { key, at: now }
   playChord(chord)
   showChord(chord, undefined, previousHistoryChord(chord))
+}
+
+// A progression is written in the analysis key; drawn again when the key changes
+let progressionsKey: string | null | undefined
+function renderProgressionPanel() {
+  const el = document.getElementById('progressions-container')
+  if (!el || progressionsKey === analysisKey()) return
+  progressionsKey = analysisKey()
+  renderProgressions(el, analysisKey(), {
+    play: (symbol, prev, key) => {
+      // Its chords are read in the key it is written in
+      if (analysisKey() !== key) { progressionsKey = key; applyKey(key) }
+      playChord(symbol)
+      showChord(symbol, undefined, prev ? { symbol: prev, notes: chordNoteNames(prev) } : null)
+    },
+  })
 }
 
 function renderZone2() {

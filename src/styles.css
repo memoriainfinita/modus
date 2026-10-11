@@ -699,7 +699,7 @@ body.presenting .module { border-color: transparent; }
   padding: 8px 12px;
   align-items: center;
 }
-.history-chip {
+.history-chip, .prog-chip {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -711,7 +711,7 @@ body.presenting .module { border-color: transparent; }
   min-width: 50px;
   user-select: none;
 }
-.history-chip-symbol { font-size: 12px; font-weight: 600; }
+.history-chip-symbol, .prog-chip-symbol { font-size: 12px; font-weight: 600; }
 .history-cadence {
   font-size: 10px; color: var(--cadence-text); white-space: nowrap; padding: 1px 5px;
   border: 1px dashed var(--border); border-radius: 8px; margin: 0 -2px; flex-shrink: 0;
@@ -720,7 +720,7 @@ body.presenting .module { border-color: transparent; }
   font-size: 10px; font-weight: 600; color: var(--modulation-text); white-space: nowrap; padding: 1px 6px;
   border: 1px solid var(--modulation-border); border-radius: 3px; margin: 0 -2px; flex-shrink: 0;
 }
-.history-chip-roman { font-size: 10px; color: var(--text-muted); }
+.history-chip-roman, .prog-chip-roman { font-size: 10px; color: var(--text-muted); }
 .history-clear-btn {
   padding: 4px 10px;
   border-radius: 4px;
@@ -1092,3 +1092,14 @@ body.view-mode { overflow: hidden; }
 .explain-list dt:first-child { margin-top: 0; }
 .explain-list dd { margin: .1em 0 0; color: var(--text-soft); }
 .explain-empty { color: var(--text-muted); margin: 0; }
+
+/* Progressions panel: the progression bar by bar, as history chips */
+#progressions-container { display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+.prog-head { display: flex; gap: 6px; align-items: center; }
+#prog-select { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 4px; font-size: 12px; }
+.prog-key { font-size: 12px; color: var(--text-muted); }
+.prog-about { margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-soft); }
+.prog-strip { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 4px 0; }
+.prog-chip { font: inherit; color: inherit; }
+.prog-chip.playing { border-color: var(--cursor); background: var(--surface-2); }
+.prog-bar { color: var(--text-dim); font-size: 14px; }

@@ -160,6 +160,25 @@ await check('voice leading: each voice from the chord before; staff and piano ca
   await off([48, 60, 64, 67])
 })
 
+await check('progressions: a ii-V-I in the key; a click shows the chord, ▶ walks it', async () => {
+  await setKey('F Major')
+  await page.selectOption('#prog-select', 'ii-V-I')
+  const chips = await page.locator('.prog-chip-symbol').allInnerTexts()
+  assert(chips.join(' ') === 'Gm7 C7 Fmaj7', `chips: ${chips}`)
+  assert((await text('#progressions-container .history-cadence')).length > 0, 'no cadence tag')
+  await page.locator('.prog-chip').nth(1).click()
+  assert(await text('.chord-name-badge') === 'C7', `badge: ${await text('.chord-name-badge')}`)
+  await page.click('#prog-play')
+  await page.waitForFunction(() => document.querySelector('.chord-name-badge')?.textContent === 'Gm7')
+  await page.waitForFunction(() => document.querySelector('.chord-name-badge')?.textContent === 'C7', null, { timeout: 4000 })
+  await page.click('#prog-play')
+  assert(await page.locator('.prog-chip.playing').count() === 0, 'still playing')
+  await page.selectOption('#prog-select', 'ii-V-i')
+  assert(await text('#progressions-container .prog-key') === 'F Minor', `minor key: ${await text('#progressions-container .prog-key')}`)
+  await page.selectOption('#prog-select', 'ii-V-I')
+  await setKey('')
+})
+
 await check('view window: the chord view follows the detector, alone on the chroma background', async () => {
   await page.click('#btn-views')
   const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="chord"]')])
@@ -299,15 +318,13 @@ await check('CoF click plays without changing the key; double click sets it', as
   assert(await page.inputValue('#key-select') === 'C Major', 'single click changed the key')
   assert((await text('.chord-name-badge')) === 'G', 'chord not shown')
   await page.waitForTimeout(500)
-  await g.click()
-  await g.click()
+  await g.dblclick()   // two clicks within 400 ms; two click() calls can be slower than that under load
   assert(await page.inputValue('#key-select') === 'G Major', `key: ${await page.inputValue('#key-select')}`)
 })
 
 await check('CoF minor segment double click sets the minor key', async () => {
   const em = page.locator('#cof-container [data-key="E Minor"]')
-  await em.click()
-  await em.click()
+  await em.dblclick()
   assert(await page.inputValue('#key-select') === 'E Minor', `key: ${await page.inputValue('#key-select')}`)
 })
 

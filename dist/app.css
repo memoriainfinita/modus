@@ -978,7 +978,8 @@ body.presenting .module {
   padding: 8px 12px;
   align-items: center;
 }
-.history-chip {
+.history-chip,
+.prog-chip {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -990,7 +991,8 @@ body.presenting .module {
   min-width: 50px;
   user-select: none;
 }
-.history-chip-symbol {
+.history-chip-symbol,
+.prog-chip-symbol {
   font-size: 12px;
   font-weight: 600;
 }
@@ -1015,7 +1017,8 @@ body.presenting .module {
   margin: 0 -2px;
   flex-shrink: 0;
 }
-.history-chip-roman {
+.history-chip-roman,
+.prog-chip-roman {
   font-size: 10px;
   color: var(--text-muted);
 }
@@ -1660,5 +1663,53 @@ body.view-mode {
 .explain-empty {
   color: var(--text-muted);
   margin: 0;
+}
+#progressions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+}
+.prog-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+#prog-select {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 12px;
+}
+.prog-key {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.prog-about {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-soft);
+}
+.prog-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 0;
+}
+.prog-chip {
+  font: inherit;
+  color: inherit;
+}
+.prog-chip.playing {
+  border-color: var(--cursor);
+  background: var(--surface-2);
+}
+.prog-bar {
+  color: var(--text-dim);
+  font-size: 14px;
 }
 /*# sourceMappingURL=app.css.map */
