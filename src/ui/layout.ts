@@ -5,14 +5,16 @@ import type { AppState } from '../types'
 import { ALL_KEYS } from '../theory/keys'
 import { GM_INSTRUMENT_GROUPS, getCurrentInstrument, getVolume } from '../audio/audio'
 import { setGuitarControlsVisible } from '../diagrams/guitar'
-import { ANALYSIS_FIELD_KEYS, ANALYSIS_FIELD_LABELS, ANALYSIS_FIELD_TOOLTIPS } from '../detector/analysis-panel'
+import { ANALYSIS_FIELD_KEYS, fieldLabel, fieldTooltip } from '../detector/analysis-panel'
 import type { AnalysisFieldKey } from '../detector/analysis-panel'
 import { loadBool, save } from './storage'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
+import type { ViewName, ViewBackground } from '../view/channel'
+import { t, keyLabel } from '../i18n/i18n'
 
 export type Panels = AppState['panels']
 
-const VIEW_LABELS: Record<string, string> = { chord: 'Chord', staff: 'Staff', cof: 'Circle of Fifths', piano: 'Piano', guitar: 'Guitar' }
+const viewLabel = (v: ViewName) => t(`view.${v}`)
 
 const $ = (id: string) => document.getElementById(id)!
 
@@ -64,61 +66,61 @@ function buildToolbar(): string {
     <div id="z1-toolbar" class="toolbar">
       <span id="midi-status" class="midi-status">MIDI: —</span>
       <select id="midi-device" class="ctrl-select"></select>
-      <select id="midi-in-ch" class="ctrl-select" title="Input channel: only notes on this channel are read (a keyboard split, or one track of a DAW)">
-        <option value="0">in: all ch</option>
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">in: ch ${i + 1}</option>`).join('')}
+      <select id="midi-in-ch" class="ctrl-select" title="${t('midi.inChannel.title')}">
+        <option value="0">${t('midi.inChannel.all')}</option>
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t('midi.inChannel.one', { n: i + 1 })}</option>`).join('')}
       </select>
-      <select id="midi-out" class="ctrl-select" title="MIDI out: what sounds goes to this port"><option value="">Out: off</option></select>
-      <select id="midi-out-ch" class="ctrl-select" title="MIDI out channel">
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">ch ${i + 1}</option>`).join('')}
+      <select id="midi-out" class="ctrl-select" title="${t('midi.out.title')}"><option value="">${t('midi.out.off')}</option></select>
+      <select id="midi-out-ch" class="ctrl-select" title="${t('midi.outChannel.title')}">
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t('midi.outChannel.one', { n: i + 1 })}</option>`).join('')}
       </select>
-      <button id="btn-thru" class="mode-btn" title="Thru: also send the controller's notes (off: the DAW usually hears the controller itself)">Thru</button>
-      <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
-      <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
-      <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
-      <button id="btn-keyboard" class="mode-btn" title="Play with the computer keyboard (M): A-Ñ white keys, W E T Y U O P black, Z/X octave, C/V velocity, Tab sustain">⌨</button>
+      <button id="btn-thru" class="mode-btn" title="${t('midi.thru.title')}">${t('midi.thru')}</button>
+      <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t('mode.normal.title')}">${t('mode.normal')}</button>
+      <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t('mode.hold.title')}">${t('mode.hold')}</button>
+      <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t('mode.arpeggio.title')}">${t('mode.arpeggio')}</button>
+      <button id="btn-keyboard" class="mode-btn" title="${t('keyboard.title')}">⌨</button>
       <span id="keyboard-status" class="auto-key-label"></span>
       <select id="key-select" class="ctrl-select">
-        <option value="">Key: Auto</option>
-        ${ALL_KEYS.map(k => `<option value="${k}">${k}</option>`).join('')}
+        <option value="">${t('key.auto')}</option>
+        ${ALL_KEYS.map(k => `<option value="${k}">${keyLabel(k)}</option>`).join('')}
       </select>
       <span id="auto-key-label" class="auto-key-label"></span>
-      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="Chord… (/)" title="Type a chord name and press Enter" autocomplete="off" spellcheck="false">
+      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t('typed.placeholder')}" title="${t('typed.title')}" autocomplete="off" spellcheck="false">
       <span class="toolbar-sep"></span>
-      <div id="audio-progress" class="audio-progress" title="Soundfont status">
+      <div id="audio-progress" class="audio-progress" title="${t('audio.title')}">
         <div id="audio-progress-fill" class="audio-progress-fill"></div>
-        <span id="audio-status" class="audio-status">♪ idle</span>
+        <span id="audio-status" class="audio-status">${t('audio.idle')}</span>
       </div>
-      <button id="btn-play-chord" class="ctrl-btn" title="Play current chord (Space)">▶</button>
-      <select id="audio-instrument" class="ctrl-select" title="Soundfont instrument">
+      <button id="btn-play-chord" class="ctrl-btn" title="${t('audio.play.title')}">▶</button>
+      <select id="audio-instrument" class="ctrl-select" title="${t('audio.instrument.title')}">
         ${GM_INSTRUMENT_GROUPS.map(g =>
-          `<optgroup label="${g.label}">${g.instruments.map(i =>
+          `<optgroup label="${t(g.label)}">${g.instruments.map(i =>
             `<option value="${i}"${i === getCurrentInstrument() ? ' selected' : ''}>${i.replace(/_/g,' ')}</option>`
           ).join('')}</optgroup>`
         ).join('')}
       </select>
-      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
+      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t('audio.volume.title')}" class="volume-slider">
       <div class="view-menu-wrap">
-        <button id="btn-present" class="ctrl-btn" title="Presentation: large, no controls, full screen (P; Esc to leave)">⛶</button>
-        <button id="btn-views" class="ctrl-btn" title="View windows for OBS, and diagram export (SVG, PNG)">⧉</button>
+        <button id="btn-present" class="ctrl-btn" title="${t('present.title')}">⛶</button>
+        <button id="btn-views" class="ctrl-btn" title="${t('views.title')}">⧉</button>
         <div id="view-menu" class="view-menu">
-          <div class="view-menu-title">Open a view window</div>
-          ${VIEW_NAMES.map(v => `<button class="ctrl-btn" data-view="${v}">${VIEW_LABELS[v]}</button>`).join('')}
-          <label class="view-menu-bg">Background
+          <div class="view-menu-title">${t('views.open')}</div>
+          ${VIEW_NAMES.map(v => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join('')}
+          <label class="view-menu-bg">${t('views.background')}
             <select id="view-bg" class="ctrl-select">
-              ${Object.keys(VIEW_BACKGROUNDS).map(b => `<option value="${b}">${b}</option>`).join('')}
+              ${(Object.keys(VIEW_BACKGROUNDS) as ViewBackground[]).map(b => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join('')}
             </select>
           </label>
-          <div class="view-menu-hint">In OBS: Window Capture of "Modus view: …", then a Chroma Key filter. The window follows this one live.</div>
-          <div class="view-menu-title">Save the diagram on screen (transparent)</div>
-          ${(['staff', 'cof', 'guitar', 'piano'] as const).map(t => `
-            <div class="view-menu-export"><span>${VIEW_LABELS[t]}</span>
-              <button class="ctrl-btn" data-export="${t}" data-format="svg">SVG</button>
-              <button class="ctrl-btn" data-export="${t}" data-format="png">PNG</button>
+          <div class="view-menu-hint">${t('views.hint')}</div>
+          <div class="view-menu-title">${t('views.save')}</div>
+          ${(['staff', 'cof', 'guitar', 'piano'] as const).map(v => `
+            <div class="view-menu-export"><span>${viewLabel(v)}</span>
+              <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
+              <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
             </div>`).join('')}
         </div>
       </div>
-      <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
+      <button id="btn-help" class="help-btn" title="${t('help.title')}">?</button>
     </div>`
 }
 
@@ -126,68 +128,68 @@ function buildNotationPanel(panels: Panels, fieldsVisible: Record<AnalysisFieldK
   return `
     <div id="notation-panel" class="zone-panel">
       <div class="panel-header">
-        <span>Notation</span>
+        <span>${t('notation.title')}</span>
         <div class="col-vis-row">
-          <button class="col-vis-btn${panels.colStaff ? ' active' : ''}" data-col="colStaff" title="Staff">St</button>
-          <button class="col-vis-btn${panels.colAnalysis ? ' active' : ''}" data-col="colAnalysis" title="Analysis">An</button>
-          <button class="col-vis-btn${panels.colCoF ? ' active' : ''}" data-col="colCoF" title="Circle of Fifths">CoF</button>
-          <button class="col-vis-btn${panels.colGuitar ? ' active' : ''}" data-col="colGuitar" title="Guitar">Git</button>
+          <button class="col-vis-btn${panels.colStaff ? ' active' : ''}" data-col="colStaff" title="${t('col.staff.title')}">${t('col.staff')}</button>
+          <button class="col-vis-btn${panels.colAnalysis ? ' active' : ''}" data-col="colAnalysis" title="${t('col.analysis.title')}">${t('col.analysis')}</button>
+          <button class="col-vis-btn${panels.colCoF ? ' active' : ''}" data-col="colCoF" title="${t('col.cof.title')}">${t('col.cof')}</button>
+          <button class="col-vis-btn${panels.colGuitar ? ' active' : ''}" data-col="colGuitar" title="${t('col.guitar.title')}">${t('col.guitar')}</button>
         </div>
         <button class="toggle-btn" data-panel="notation">▼</button>
       </div>
       <div id="notation-content">
         <div class="col-auto" id="col-staff">
-          <div class="col-label">Staff</div>
+          <div class="col-label">${t('staff.label')}</div>
           <div id="chord-summary"></div>
           <div id="staff-container"></div>
           <div class="ctrl-row" style="justify-content:center">
-            <button id="btn-staff-clef" class="size-ctrl-btn" title="Staves: grand (treble and bass, split at middle C), treble only, bass only">Grand</button>
-            <button id="btn-staff-minus" class="size-ctrl-btn" title="Smaller staff">−</button>
-            <button id="btn-staff-plus"  class="size-ctrl-btn" title="Larger staff">+</button>
+            <button id="btn-staff-clef" class="size-ctrl-btn" title="${t('staff.clef.title')}"></button>
+            <button id="btn-staff-minus" class="size-ctrl-btn" title="${t('staff.smaller')}">−</button>
+            <button id="btn-staff-plus"  class="size-ctrl-btn" title="${t('staff.larger')}">+</button>
           </div>
         </div>
         <div class="col-analysis" id="col-analysis">
           <div class="col-header">
-            <div class="col-label">Analysis</div>
+            <div class="col-label">${t('analysis.label')}</div>
             <button class="toggle-btn small" data-panel="analysisControls">▼</button>
           </div>
           <div id="analysis-content"></div>
           <div id="analysis-controls">
             <div class="ctrl-row">
-              <button id="btn-analysis-minus" class="size-ctrl-btn" title="Smaller">−</button>
-              <button id="btn-analysis-plus"  class="size-ctrl-btn" title="Larger">+</button>
+              <button id="btn-analysis-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
+              <button id="btn-analysis-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
             </div>
             <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
               ${ANALYSIS_FIELD_KEYS.map(f =>
                 `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? ' active' : ''}"
-                  title="${ANALYSIS_FIELD_TOOLTIPS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
+                  title="${fieldTooltip(f)}">${fieldLabel(f)}</button>`
               ).join('')}
             </div>
           </div>
         </div>
         <div class="col-auto" id="col-cof">
           <div class="col-header">
-            <div class="col-label">CoF</div>
+            <div class="col-label">${t('cof.label')}</div>
             <button class="toggle-btn small" data-panel="cofControls">▼</button>
           </div>
           <div id="cof-container"></div>
           <div id="cof-controls">
             <div class="ctrl-row">
-              <button id="btn-cof-minus" class="size-ctrl-btn" title="Smaller">−</button>
-              <button id="btn-cof-plus"  class="size-ctrl-btn" title="Larger">+</button>
+              <button id="btn-cof-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
+              <button id="btn-cof-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
             </div>
             <div class="ctrl-row">
-              <button id="btn-cof-flat"   class="size-ctrl-btn" title="Show flat enharmonics (Gb, Db…)">b</button>
-              <button id="btn-cof-sharp"  class="size-ctrl-btn" title="Show sharp enharmonics (F#, C#…)">#</button>
-              <button id="btn-cof-minor"  class="size-ctrl-btn" title="Show/hide minor and diminished rings">m</button>
-              <button id="btn-cof-deg"    class="size-ctrl-btn" title="Show scale degrees (I, IV, V…)">°</button>
-              <button id="btn-cof-7"      class="size-ctrl-btn" title="Show 7th chords (maj7, m7, ø7)">7</button>
+              <button id="btn-cof-flat"   class="size-ctrl-btn" title="${t('cof.flat.title')}">b</button>
+              <button id="btn-cof-sharp"  class="size-ctrl-btn" title="${t('cof.sharp.title')}">#</button>
+              <button id="btn-cof-minor"  class="size-ctrl-btn" title="${t('cof.minor.title')}">m</button>
+              <button id="btn-cof-deg"    class="size-ctrl-btn" title="${t('cof.degrees.title')}">°</button>
+              <button id="btn-cof-7"      class="size-ctrl-btn" title="${t('cof.sevenths.title')}">7</button>
             </div>
           </div>
         </div>
         <div class="col-auto" id="col-guitar">
           <div class="col-header">
-            <div class="col-label">Guitar</div>
+            <div class="col-label">${t('guitar.label')}</div>
             <button class="toggle-btn small" data-panel="guitarControls">▼</button>
           </div>
           <div id="guitar-container"></div>
@@ -200,14 +202,14 @@ function buildKeyPanel(): string {
   return `
     <div id="key-panel" class="zone-panel">
       <div class="panel-header">
-        <span>Key</span>
+        <span>${t('keyPanel.title')}</span>
         <div class="ctrl-row">
-          <button id="btn-key-minus" class="size-ctrl-btn" title="Smaller">−</button>
-          <button id="btn-key-plus"  class="size-ctrl-btn" title="Larger">+</button>
-          <button id="btn-key-7"     class="size-ctrl-btn" title="Seventh chords instead of triads">7</button>
-          <button id="btn-key-neg"   class="size-ctrl-btn" title="Show/hide negative harmony">Neg</button>
-          <button id="btn-key-par"   class="size-ctrl-btn" title="Show/hide parallel modes">Par</button>
-          <button id="btn-key-colt"  class="size-ctrl-btn" title="Show/hide Coltrane axis">Colt</button>
+          <button id="btn-key-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
+          <button id="btn-key-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
+          <button id="btn-key-7"     class="size-ctrl-btn" title="${t('keyPanel.sevenths.title')}">7</button>
+          <button id="btn-key-neg"   class="size-ctrl-btn" title="${t('keyPanel.neg.title')}">${t('keyPanel.neg')}</button>
+          <button id="btn-key-par"   class="size-ctrl-btn" title="${t('keyPanel.par.title')}">${t('keyPanel.par')}</button>
+          <button id="btn-key-colt"  class="size-ctrl-btn" title="${t('keyPanel.colt.title')}">${t('keyPanel.colt')}</button>
         </div>
         <button class="toggle-btn" data-panel="key">▼</button>
       </div>
@@ -219,22 +221,22 @@ function buildInstrumentsPanel(panels: Panels): string {
   return `
     <div id="instruments-panel" class="zone-panel">
       <div class="panel-header">
-        <span>Instruments</span>
+        <span>${t('instruments.title')}</span>
         <div class="col-vis-row">
-          <button class="col-vis-btn${panels.colPiano ? ' active' : ''}" data-col="colPiano" title="Piano">Pi</button>
-          <button class="col-vis-btn${panels.colNeck  ? ' active' : ''}" data-col="colNeck"  title="Fretboard">Fr</button>
-          <button class="col-vis-btn${panels.colVelocity ? ' active' : ''}" data-col="colVelocity" title="Velocity of each note">Ve</button>
+          <button class="col-vis-btn${panels.colPiano ? ' active' : ''}" data-col="colPiano" title="${t('col.piano.title')}">${t('col.piano')}</button>
+          <button class="col-vis-btn${panels.colNeck  ? ' active' : ''}" data-col="colNeck"  title="${t('col.neck.title')}">${t('col.neck')}</button>
+          <button class="col-vis-btn${panels.colVelocity ? ' active' : ''}" data-col="colVelocity" title="${t('col.velocity.title')}">${t('col.velocity')}</button>
         </div>
         <button class="toggle-btn" data-panel="instruments">▼</button>
       </div>
       <div id="instruments-content">
         <div id="col-piano"><div id="piano-container"></div></div>
-        <div id="col-velocity"><div class="col-label">Velocity</div><div id="velocity-container"></div></div>
+        <div id="col-velocity"><div class="col-label">${t('velocity.label')}</div><div id="velocity-container"></div></div>
         <div id="col-neck">
           <div id="neck-container"></div>
           <div class="ctrl-row" style="justify-content:center;margin-top:4px">
-            <button id="btn-neck-minus" class="size-ctrl-btn" title="Smaller">−</button>
-            <button id="btn-neck-plus"  class="size-ctrl-btn" title="Larger">+</button>
+            <button id="btn-neck-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
+            <button id="btn-neck-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
           </div>
         </div>
       </div>
@@ -244,14 +246,14 @@ function buildInstrumentsPanel(panels: Panels): string {
 function buildZoneHeaders() {
   $('zone2').innerHTML = `
     <div class="zone-header">
-      <span class="zone-title">History</span>
+      <span class="zone-title">${t('history.title')}</span>
       <button class="toggle-btn" data-panel="history">▼</button>
     </div>
     <div id="zone2-content"></div>`
 
   $('zone3').innerHTML = `
     <div class="zone-header">
-      <span class="zone-title">Song Structure</span>
+      <span class="zone-title">${t('song.title')}</span>
       <button class="toggle-btn" data-panel="song">▼</button>
     </div>
     <div id="zone3-content"></div>`

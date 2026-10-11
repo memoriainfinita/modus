@@ -1,6 +1,6 @@
 # Modus — UMT API contract
 
-Verified by reading the UMT TypeScript source and, on 2026-10-10, by running the pinned bundle in Node. Pinned to the release tag `v0.4.0` since 2026-10-11 (changes per version in UMT's `CHANGELOG.md`; the npm package exports the IIFE as `umt/iife`). Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
+Verified by reading the UMT TypeScript source and, on 2026-10-10, by running the pinned bundle in Node. Pinned to the release tag `v0.4.1` since 2026-10-11 (changes per version in UMT's `CHANGELOG.md`; the npm package exports the IIFE as `umt/iife`). Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
 
 ```ts
 // Convert note string to UMT Note object
@@ -85,6 +85,16 @@ UMT.spellPitchInKey(stepsFromA4: number, key: string): string  // "G#4" for MIDI
 UMT.spellChord(chord: Chord, rootName?: string): string[]       // tones by interval, getNotes() order: Cm7b5 → C4 Eb4 Gb4 Bb4
 UMT.spellChordInKey(chord: Chord, key: string): Chord           // Ab7 in A Major → G#7; unknown key → same chord
 // Chord.getNotes() and spellChord agree since ac10838; Modus names chord notes with spellChord
+
+// Names in Spanish (v0.3.0), for the interface language (src/i18n)
+UMT.localizeNoteName(name: string, language: 'en' | 'es', long?: boolean): string   // 'F#4' → 'Fa#4'; octave kept
+UMT.formatChordSymbol(chord: Chord | string, { style?, roots?: 'letters' | 'solfege' }): string  // 'Bbm7/D' → 'Sibm7/Re'; the quality as written
+UMT.translateSymbol(input: string, aliases: Record<string, string>): string  // with { ...SOLFEGE_ROOTS, ...QUALITY_ALIASES_ES }: 'Lam7' → 'Am7'
+// Greedy and case-sensitive: 'Fadd9' → 'Fdd9', so Modus keeps the letters when the translation is no chord.
+// parseChordSymbol reads 'Do' and 'Do7' as D°, D°7: Modus reads a syllable-initial name as solfège first
+UMT.SOLFEGE_ROOTS: Record<string, string>        // Do Re Mi Fa Sol La Si
+UMT.QUALITY_ALIASES_ES: Record<string, string>   // mayor, menor, disminuido, aumentado, semidisminuido, dominante
+// Spelled-out qualities ('Re menor') translate to 'D minor', which UMT parses and keeps as its name
 ```
 
 ## MIDI → UMT Note conversion

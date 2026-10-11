@@ -12,18 +12,18 @@ What is true now. What already happened lives in `state-history.md`.
 **Modus** — see and understand the harmony of what you play, in real time. Aimed at being a complete, professional, useful, universal and didactic app, for studying, transcribing songs, composing, teaching and making videos. No time or budget limits, no marketing or profit goals. GPL-3.0, part of the **memoriainfinita** ecosystem: UMT (developed for Modus, all theory) and notae (diagrams).
 
 - **Spec:** `docs/spec.md` (purpose, design, behaviour) · **UMT contract:** `docs/umt-contract.md` · Executed plans and earlier spec revisions in `.archive/` (local, gitignored)
-- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to the tag `v0.4.0`, notae to `81b58de`
+- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to the tag `v0.4.1`, notae to `81b58de`
 
 ## Status
 
 - Working: detector, analysis, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard, velocity, grand staff, presentation mode, view windows for OBS and export, MIDI out, input channel filter. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-11: TSC clean, 280 unit tests against the real UMT bundle, `pnpm test:e2e` 53/53 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
-- UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `v0.4.0` on 2026-10-11, when the UMT audit ended: all tests passed unchanged. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
+- Tests 2026-10-11: TSC clean, 294 unit tests against the real UMT bundle, `pnpm test:e2e` 58/58 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
+- UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `v0.4.0` on 2026-10-11, when the UMT audit ended (all tests passed unchanged), and to `v0.4.1` the same day. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Numerals follow the letter written (`analyzeProgression` with `spelling: 'written'`): Gb in C is ♭V, F# is ♯IV. CoF degrees come from the same call
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
-- Interface languages: English and Spanish (today English only). Docs, code and commits stay in English
+- Interface languages: English and Spanish, with note names in letters or Do Re Mi (spec → Language). Docs, code and commits stay in English
 
 ## Patterns
 
@@ -32,7 +32,7 @@ What is true now. What already happened lives in `state-history.md`.
 - [typescript] `pnpm build` does not typecheck (esbuild). Use `pnpm exec tsc --noEmit`. Confirmed 2026-05.
 - [build] `dist/` is tracked in git, same as notae and UMT. Commit it in sync with `src/`. Confirmed 2026-05.
 - [build] pnpm, not npm. Confirmed 2026-10.
-- [deps] UMT pinned to a release tag (`v0.4.0`) in `package.json` and the CDN URL, notae to a commit hash; never `@main`/`@master`. Bump deliberately, reading UMT's `CHANGELOG.md`. Confirmed 2026-10.
+- [deps] UMT pinned to a release tag (`v0.4.1`) in `package.json` and the CDN URL, notae to a commit hash; never `@main`/`@master`. Bump deliberately, reading UMT's `CHANGELOG.md`. Confirmed 2026-10.
 - [naming] Project name: Modus (Latin — mode, measure). Confirmed 2026-05.
 - [theory] Music-theory fixes go into UMT or notae, then Modus bumps the pin. No workarounds in Modus for library output. Since 2026-10-10 only the session running the UMT audit (`umt/docs/auditoria-2026-10.md`) commits to UMT: Modus writes what it needs in `umt/docs/notas-desde-modus-2026-10.md` (both local, gitignored) and waits. Confirmed 2026-10.
 - [ux] Destructive actions run at once and offer Undo (`ui/undo.ts`), never a confirmation. Confirmed 2026-10.
@@ -41,6 +41,7 @@ What is true now. What already happened lives in `state-history.md`.
 - [spelling] Display spelling goes through `theory/spelling.ts` over UMT's `spellPitchInKey` / `spellChord` / `spellChordInKey`: MIDI detections are written in the analysis key and rewritten on a key change; a chord picked from history, song or CoF keeps its symbol and its notes are named by interval; history chips render in the current key. Note names may carry any accidentals (`notes.ts`: F##4, B#3 = MIDI 60). Confirmed 2026-10.
 - [testing] `pnpm test:e2e` after each behaviour change: `tests/e2e/smoke.mjs` serves the repo, opens the installed Chrome (`channel: 'chrome'`) with a fake `navigator.requestMIDIAccess`, and plays notes through `window.__midi`. Each check releases all notes when it ends. `window.__plug(id, name|null)` hot-plugs; `__hotplug(false)` switches to Firefox behaviour. Confirmed 2026-10.
 - [testing] `pnpm test:e2e:midi` (`tests/e2e/real-midi.mjs`) for the real Web MIDI path: Node writes to "loopMIDI Port" with `jzz`; Chrome gets `grantPermissions(['midi'])`; Playwright's Firefox gets a fresh profile whose `permissions.sqlite` holds the `midi` rows the site-permission add-on would write (no pref skips the add-on; Playwright knows no `midi` permission for Firefox). Needs loopMIDI running. Browsers launch muted (`--mute-audio`, `media.volume_scale` 0). Hot-plug stays in the fake: loopMIDI's GUI cannot unplug a port. Confirmed 2026-10.
+- [testing] Every e2e browser context pins English (`locale: 'en-US'`, Firefox `intl.accept_languages`): Modus follows the browser's language, and Chrome without a locale takes the system's, Spanish on this machine. The Spanish checks switch from the ? panel. Confirmed 2026-10.
 - [view] View windows are the same page with `?view=`: `app.ts` runs `runViewerFromUrl()` instead of `init()`, so a view never opens MIDI or audio. They get the detector state over the `modus-view` BroadcastChannel (`view/channel.ts`); anything a view should follow must go through `publishView()` in `app.ts`. Confirmed 2026-10.
 - [midi] Firefox reports no hot-plug (no statechange, `inputs` frozen) but a new `requestMIDIAccess` returns the current ports: `input/midi.ts` rescans every 2 s while visible and on focus. The device the user picked (or the first used) is preferred, found by name (Chrome ids are positional, `input-0`; Firefox ids are stable hashes): a fallback never replaces it. Confirmed 2026-10.
 
@@ -65,7 +66,7 @@ What is true now. What already happened lives in `state-history.md`.
 
 Ordered by what each one makes cheaper or depends on: strings, colours and the modular layout before more UI is written, didactic text after the interface speaks Spanish, help last because it describes the finished UI.
 
-1. [ ] Interface in English and Spanish: one string table, the language picked or taken from the browser. Every later item writes its text once per language. Fixed-do note names (Do, Re, Mi) with it, if UMT `solfege.ts` names them; movable do waits on UMT (minor)
+1. [~] Interface in English and Spanish, 2026-10-11: one string table per language (`src/i18n`), the browser's language or the one picked in the ? panel; note names in letters or fixed-do solfège from UMT, chords typed in either. Every later item writes its text in both tables. Open: scale, mode, cadence and substitution names, which UMT writes in English only (asked in `umt/docs/notas-desde-modus-2026-10.md`); movable do (UMT has it since the audit) belongs with the didactic items
 2. [ ] Colours as theme tokens, then light mode and colour themes (background, dots, frets, piano keys, CoF segments). Today colours are written in CSS and in each diagram's code
 3. [ ] Modular layout (decided 2026-10-11): every element a panel on a grid, moved and resized by snapping, not floating; saved layouts with presets (study, class, transcription, recording); on a phone the same panels stack in one column. Built on the view renderers, which already fill any size; presentation mode becomes a preset. Before the items that add panels, so they are born as modules. Today's Notation / Instruments grouping goes (the CoF is not notation)
 4. [ ] Voice leading: how each voice moves from one played chord to the next, on staff and piano (voices paired bass to top). Warnings (parallels, leading tone) from UMT `checkVoiceLeading` wait on UMT: the audit found it fixed to 12-TET steps and checking overlap between any voices
@@ -86,7 +87,7 @@ Ordered by what each one makes cheaper or depends on: strings, colours and the m
 The UMT audit ended 2026-10-11 (`umt/docs/auditoria-2026-10.md`).
 
 - Metronome, didactic: any meter including additive ones (7/8 as 2+2+3) with accents per group, subdivisions and tuplets, polyrhythms (3:2, 4:3, 5:4), clave and Euclidean patterns, tap tempo, tempo trainer (+N BPM every N bars), and the cycles UMT now has (talas, flamenco compás, aksak: `RHYTHMIC_CYCLES`, `cycleStrokes`, `cycleCounts`). Shown as a circular necklace (beats as dots, groups as arcs, current beat lit; a polyrhythm as concentric rings). Clicks synthesized with Web Audio, not the soundfont. Clave patterns corrected in the audit
-- Movable-do solfege for didactics, from UMT `Solfege.movableDo` (minor la-based, modes from their major's do, since the audit). With item 1 (interface in Spanish)
+- Movable-do solfege for didactics, from UMT `Solfege.movableDo` (minor la-based, modes from their major's do, since the audit). Fixed do is in since item 1
 
 ### Waiting on UMT
 

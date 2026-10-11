@@ -9,6 +9,9 @@ import {
 import { saveSong, type SongMeta } from './library'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
+import { readTypedChord } from '../theory/chord'
+import { t, chordLabel, keyLabel } from '../i18n/i18n'
+import type { StringKey } from '../i18n/en'
 
 // ─── Song UI ─────────────────────────────────────────────────────────────────
 
@@ -71,7 +74,7 @@ function applyWithUndo(next: Song, message: string) {
 /** Removes a chord from the song, with Undo. */
 export function removeChordWithUndo(chordId: string) {
   const chord = _song.sections.flatMap(s => s.measures.flatMap(m => m.chords)).find(c => c.id === chordId)
-  if (chord) applyWithUndo(removeChord(_song, chordId), `Removed ${chord.symbol || 'chord'}`)
+  if (chord) applyWithUndo(removeChord(_song, chordId), t('chord.removed', { chord: chord.symbol ? chordLabel(chord.symbol) : t('chord.generic') }))
 }
 
 export function mountSong(container: HTMLElement, song: Song, handlers: SongEventHandlers) {
@@ -112,36 +115,37 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   // Saved songs, most recently changed first; the open one may not be saved yet
   const songSelect = document.createElement('select')
   songSelect.className = 'transpose-select song-select'
-  songSelect.title = 'Saved songs'
+  songSelect.title = t('song.saved.title')
   const metas = h.songs.some(m => m.id === song.id) ? h.songs : [{ id: song.id, title: song.title, updatedAt: song.updatedAt }, ...h.songs]
   songSelect.innerHTML = metas.map(m =>
-    `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id === song.id ? song.title : m.title) || 'Untitled'}</option>`).join('')
+    `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id === song.id ? song.title : m.title) || escapeHtml(t('song.untitled'))}</option>`).join('')
   songSelect.value = song.id
   songSelect.addEventListener('change', () => h.onOpenSong(songSelect.value))
 
-  const newBtn = makeBtn('New', '#374151', () => {
+  const newBtn = makeBtn(t('song.new'), '#374151', () => {
     if (isBlankSong(_song)) return   // already on an empty song
     h.onNewSong()
   })
-  newBtn.title = 'Start a new song; the current one stays in the list'
+  newBtn.title = t('song.new.title')
 
-  const deleteBtn = makeBtn('Delete', '#374151', () => h.onDeleteSong())
-  deleteBtn.title = 'Delete this song — can be undone'
+  const deleteBtn = makeBtn(t('song.delete'), '#374151', () => h.onDeleteSong())
+  deleteBtn.title = t('song.delete.title')
 
   // Inline paste area
   const pasteArea = document.createElement('div')
   pasteArea.className = 'paste-area'
   pasteArea.style.display = 'none'
   const pasteTA = document.createElement('textarea')
-  pasteTA.placeholder = 'Am G | C F  (| separates measures; without bars, one chord per measure)'
+  pasteTA.placeholder = t('song.paste.placeholder')
   pasteTA.rows = 2
   pasteTA.className = 'paste-textarea'
-  const pasteSubmit = makeBtn('Add chords', '#4f46e5', () => {
+  const pasteSubmit = makeBtn(t('song.paste.add'), '#4f46e5', () => {
     const text = pasteTA.value.trim()
     if (!text) return
-    const measures = parseProgressionMeasures(text)
+    // Chords may be written in Do Re Mi: stored in letters
+    const measures = parseProgressionMeasures(text).map(m => m.map(readTypedChord))
     if (!measures.length) return
-    if (!_song.sections.length) { _song = addSection(_song, 'Section', 'verse') }
+    if (!_song.sections.length) { _song = addSection(_song, t('section.default'), 'verse') }
     const section = _song.sections[_song.sections.length - 1]
     _song = appendProgression(_song, section.id, measures)
     pasteTA.value = ''
@@ -150,30 +154,32 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   })
   pasteArea.append(pasteTA, pasteSubmit)
 
-  const templates: { label: string; name: string; color: SectionColor }[] = [
-    { label: 'Intro', name: 'Intro', color: 'intro' },
-    { label: 'Verse', name: 'Verse', color: 'verse' },
-    { label: 'Pre', name: 'Pre-Chorus', color: 'prechorus' },
-    { label: 'Chorus', name: 'Chorus', color: 'chorus' },
-    { label: 'Bridge', name: 'Bridge', color: 'bridge' },
-    { label: 'Outro', name: 'Outro', color: 'outro' },
+  // A new section is named in the interface language; the name is the user's from then on
+  const templates: { label: StringKey; name: StringKey; color: SectionColor }[] = [
+    { label: 'section.intro', name: 'section.intro', color: 'intro' },
+    { label: 'section.verse', name: 'section.verse', color: 'verse' },
+    { label: 'section.pre', name: 'section.prechorus', color: 'prechorus' },
+    { label: 'section.chorus', name: 'section.chorus', color: 'chorus' },
+    { label: 'section.bridge', name: 'section.bridge', color: 'bridge' },
+    { label: 'section.outro', name: 'section.outro', color: 'outro' },
   ]
   const templateWrap = document.createElement('div')
   templateWrap.className = 'template-wrap'
-  templates.forEach(t => {
-    const btn = makeBtn(`+ ${t.label}`, SECTION_COLORS[t.color], () => {
-      _song = addSection(_song, t.name, t.color); saveSong(_song); h.onSongChange(_song)
+  templates.forEach(tpl => {
+    const name = t(tpl.name)
+    const btn = makeBtn(`+ ${t(tpl.label)}`, SECTION_COLORS[tpl.color], () => {
+      _song = addSection(_song, name, tpl.color); saveSong(_song); h.onSongChange(_song)
     })
     btn.style.fontSize = '11px'
-    btn.title = `Add ${t.name} section`
+    btn.title = t('song.addSection.title', { name })
     templateWrap.appendChild(btn)
   })
 
   const transposeSelect = document.createElement('select')
-  transposeSelect.title = 'Transpose all chords up by semitones'
+  transposeSelect.title = t('song.transpose.title')
   transposeSelect.className = 'transpose-select'
-  transposeSelect.innerHTML = '<option value="">⇄ Transpose</option>' +
-    Array.from({length:11},(_,i)=>`<option value="${i+1}">+${i+1} st</option>`).join('')
+  transposeSelect.innerHTML = `<option value="">${t('song.transpose')}</option>` +
+    Array.from({length:11},(_,i)=>`<option value="${i+1}">${t('song.transpose.step', { n: i + 1 })}</option>`).join('')
   transposeSelect.addEventListener('change', () => {
     const n = parseInt(transposeSelect.value)
     if (n) {
@@ -183,21 +189,21 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
     transposeSelect.value = ''
   })
 
-  const exportBtn = makeBtn('⎙ Export', '#374151', () => {
+  const exportBtn = makeBtn(t('song.export'), '#374151', () => {
     const printWin = window.open('', '_blank')
-    if (!printWin) { showNotice('Pop-up blocked — allow pop-ups for this page to export.', 'warn'); return }
+    if (!printWin) { showNotice(t('song.popupBlocked'), 'warn'); return }
     printWin.document.write(buildPrintHTML(_song, h.activeKey))
     printWin.document.close()
     printWin.print()
   })
-  exportBtn.title = 'Print / export song to PDF'
+  exportBtn.title = t('song.export.title')
 
-  const pasteBtn = makeBtn('Paste', '#374151', () => {
+  const pasteBtn = makeBtn(t('song.paste'), '#374151', () => {
     const open = pasteArea.style.display === 'none'
     pasteArea.style.display = open ? 'block' : 'none'
     if (open) pasteTA.focus()
   })
-  pasteBtn.title = 'Paste a chord progression as text'
+  pasteBtn.title = t('song.paste.title')
 
   header.append(songSelect, titleInput, newBtn, deleteBtn, templateWrap, transposeSelect, exportBtn, pasteBtn)
   root.appendChild(header)
@@ -207,8 +213,8 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   const formInfo = document.createElement('div')
   formInfo.className = 'song-form-info'
   const form = detectForm(_song.sections.map(s => s.name))
-  const keyStr = h.activeKey ? ` · Key: ${h.activeKey}` : ''
-  formInfo.textContent = _song.sections.length ? `Form: ${form}${keyStr}` : ''
+  const keyStr = h.activeKey ? ` · ${t('song.key', { key: keyLabel(h.activeKey) })}` : ''
+  formInfo.textContent = _song.sections.length ? t('song.form', { form }) + keyStr : ''
   root.appendChild(formInfo)
 
   const measureNums = computeMeasureNumbers(song)
@@ -257,7 +263,7 @@ function buildSectionDOM(
   const swatchEl = document.createElement('button')
   swatchEl.className = 'section-swatch'
   swatchEl.style.background = color
-  swatchEl.title = 'Change section color'
+  swatchEl.title = t('section.color.title')
   swatchEl.addEventListener('click', (e) => {
     e.stopPropagation()
     document.querySelector('.color-picker-popup')?.remove()
@@ -265,7 +271,7 @@ function buildSectionDOM(
     picker.className = 'color-picker-popup'
     PRESET_COLORS.forEach(c => {
       const dot = document.createElement('button')
-      dot.title = c
+      dot.title = t(`section.${c}`)
       dot.className = 'color-picker-dot'
       dot.style.background = SECTION_COLORS[c]
       dot.style.borderColor = c === section.color ? '#fff' : 'transparent'
@@ -290,7 +296,7 @@ function buildSectionDOM(
   // Repeat count badge — click to edit inline
   const repeatBadge = document.createElement('span')
   repeatBadge.textContent = `×${section.repeatCount}`
-  repeatBadge.title = 'Repeat count — click to edit'
+  repeatBadge.title = t('section.repeat.title')
   repeatBadge.className = 'section-repeat-badge'
   repeatBadge.addEventListener('click', (e) => {
     e.stopPropagation()
@@ -311,23 +317,23 @@ function buildSectionDOM(
 
   const dragHandle = document.createElement('span')
   dragHandle.textContent = '⠿'
-  dragHandle.title = 'Drag to reorder section'
+  dragHandle.title = t('section.drag.title')
   dragHandle.className = 'section-drag-handle'
 
   const dupBtn = makeSmallBtn('⧉', () => { _song = duplicateSection(_song, section.id); saveSong(_song); h.onSongChange(_song) })
-  dupBtn.title = 'Duplicate section'
+  dupBtn.title = t('section.duplicate.title')
   const delBtn = makeSmallBtn('×', () => {
-    applyWithUndo(removeSection(_song, section.id), `Deleted section ${section.name}`)
+    applyWithUndo(removeSection(_song, section.id), t('section.deleted', { name: section.name }))
   })
   delBtn.style.color = '#f87171'
-  delBtn.title = 'Delete section — can be undone'
+  delBtn.title = t('section.delete.title')
 
   secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn)
 
-  const addMeasureBtn = makeSmallBtn('+ Bar', () => {
+  const addMeasureBtn = makeSmallBtn(t('section.addBar'), () => {
     _song = addMeasure(_song, section.id); saveSong(_song); h.onSongChange(_song)
   })
-  addMeasureBtn.title = 'Add a measure to this section'
+  addMeasureBtn.title = t('section.addBar.title')
   secHeader.appendChild(addMeasureBtn)
 
   wrap.appendChild(secHeader)
@@ -459,9 +465,9 @@ function buildMeasureDOM(
   wrap.appendChild(chordsRow)
 
   const delMBtn = makeSmallBtn('×', () => {
-    applyWithUndo(removeMeasure(_song, section.id, measure.id), `Deleted measure ${measureNum}`)
+    applyWithUndo(removeMeasure(_song, section.id, measure.id), t('measure.deleted', { n: measureNum }))
   })
-  delMBtn.title = 'Delete measure — can be undone'
+  delMBtn.title = t('measure.delete.title')
   delMBtn.style.color = '#f87171'
   delMBtn.style.alignSelf = 'center'
   const sectionObj = _song.sections.find(s => s.id === section.id)
@@ -493,7 +499,7 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
     const prevValue = chord.symbol
 
     const confirmInput = () => {
-      const val = input.value.trim()
+      const val = readTypedChord(input.value)
       if (val) {
         _song = updateChord(_song, chord.id, val)
       } else {
@@ -518,7 +524,7 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   }
 
   const symbolEl = document.createElement('div')
-  symbolEl.textContent = chord.symbol
+  symbolEl.textContent = chordLabel(chord.symbol)
   symbolEl.className = 'chord-chip-symbol'
   if (!chord.valid) symbolEl.style.color = '#ef4444'
 
@@ -545,7 +551,7 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
     input.value = chord.symbol
 
     const commit = () => {
-      const symbol = input.value.trim() || prevVal
+      const symbol = readTypedChord(input.value) || prevVal
       // A stored voicing belongs to the old symbol — drop it when the symbol changes.
       _song = updateChord(_song, chord.id, symbol, symbol === prevVal ? notesState : undefined)
       saveSong(_song); h.onSongChange(_song)
@@ -566,7 +572,7 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
       notesText.style.textOverflow = 'ellipsis'
       const clearBtn = document.createElement('button')
       clearBtn.textContent = '×'
-      clearBtn.title = 'Clear stored voicing'
+      clearBtn.title = t('chord.clearVoicing.title')
       clearBtn.style.cssText = 'background:none;border:none;color:#6b7280;cursor:pointer;padding:0 2px;font-size:10px;flex-shrink:0'
       clearBtn.addEventListener('mousedown', e => {
         e.preventDefault()
@@ -581,13 +587,13 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
     wrap.appendChild(editWrap)
     input.focus()
   })
-  editBtn.title = 'Edit chord symbol'
+  editBtn.title = t('chord.edit.title')
   const dupBtn = makeSmallBtn('⧉', () => { _song = duplicateChord(_song, chord.id); saveSong(_song); h.onSongChange(_song) })
-  dupBtn.title = 'Duplicate chord'
+  dupBtn.title = t('chord.duplicate.title')
   const delBtn = makeSmallBtn('×', () => removeChordWithUndo(chord.id))
-  delBtn.title = 'Remove chord (Del) — can be undone'
+  delBtn.title = t('chord.remove.title')
   const captureBtn = makeSmallBtn('⊙', () => h.onChordCapture(chord.id))
-  captureBtn.title = 'MIDI fill: next chord played on MIDI keyboard replaces this slot'
+  captureBtn.title = t('chord.capture.title')
   if (isCapture) { captureBtn.style.color = '#818cf8'; captureBtn.style.fontWeight = '700' }
 
   controls.append(editBtn, dupBtn, captureBtn, delBtn)
@@ -683,7 +689,7 @@ function buildPrintHTML(song: Song, activeKey: string | null): string {
     .bar-num{font-size:10px;color:#999;margin-bottom:4px} .chord{font-size:13px;font-weight:600} .degree{font-size:10px;color:#666}
   </style></head><body>
     <h1>${escapeHtml(song.title)}</h1>
-    <div class="key">${activeKey ? 'Key: ' + activeKey : ''}</div>`
+    <div class="key">${activeKey ? escapeHtml(t('song.key', { key: keyLabel(activeKey) })) : ''}</div>`
   for (const section of song.sections) {
     html += `<div class="section"><div class="section-name">${escapeHtml(section.name)}${section.repeatCount > 1 ? ` ×${section.repeatCount}` : ''}</div><div class="measures">`
     for (const measure of section.measures) {
@@ -691,7 +697,7 @@ function buildPrintHTML(song: Song, activeKey: string | null): string {
       html += `<div class="measure"><div class="bar-num">${num}</div>`
       for (const chord of measure.chords) {
         const degree = activeKey ? computeDegree(chord.symbol, activeKey) : '—'
-        html += `<div class="chord">${escapeHtml(chord.symbol)}</div><div class="degree">${degree}</div>`
+        html += `<div class="chord">${escapeHtml(chordLabel(chord.symbol))}</div><div class="degree">${degree}</div>`
       }
       html += '</div>'
     }

@@ -12,8 +12,7 @@ import type { CofOptions } from '../diagrams/cof'
 import { chordColor, NEUTRAL_COLOR } from '../theory/chord'
 import { escapeHtml } from '../ui/html'
 import { loadBool, loadChoice } from '../ui/storage'
-
-const FUNCTION_NAMES: Record<string, string> = { T: 'Tonic', S: 'Subdominant', D: 'Dominant' }
+import { t, applyDocumentLang } from '../i18n/i18n'
 
 /** Makes an SVG scale to its container: a viewBox from its size, no fixed width or height. */
 function fitSvg(svg: SVGSVGElement | null) {
@@ -41,7 +40,7 @@ function renderChordView(el: HTMLElement, s: ViewState) {
   if (!s.label) { el.innerHTML = ''; return }
   const color = s.symbol ? chordColor(s.symbol) : NEUTRAL_COLOR
   const detail = s.kind === 'chord' && s.roman && s.roman !== '?'
-    ? [s.roman, s.function ? FUNCTION_NAMES[s.function] : null].filter(Boolean).join(' · ')
+    ? [s.roman, s.function && s.function !== 'unknown' ? t(`fn.${s.function}`) : null].filter(Boolean).join(' · ')
     : ''
   el.innerHTML = `
     <div class="view-chord-name" style="color:${color}">${escapeHtml(s.label)}</div>
@@ -74,8 +73,9 @@ export function runViewerFromUrl(): boolean {
   const bg = (params.get('bg') ?? 'green') as ViewBackground
   const background = VIEW_BACKGROUNDS[bg] ?? VIEW_BACKGROUNDS.green
 
-  // A stable title: OBS window capture finds the window by it.
+  // A stable title, in English whatever the language: OBS window capture finds the window by it.
   document.title = `Modus view: ${view}`
+  applyDocumentLang()
   document.body.classList.add('view-mode')
   document.body.style.background = background
   document.getElementById('app')!.style.display = 'none'
@@ -85,10 +85,10 @@ export function runViewerFromUrl(): boolean {
   document.body.appendChild(el)
 
   subscribeView(s => renderView(view, el, s))
-  // Guitar tuning, CoF options and the staff clef live in localStorage: when the main window changes
-  // them, the view reloads with them (songs are saved there too, and are ignored).
+  // Guitar tuning, CoF options, the staff clef, language and note names live in localStorage: when
+  // the main window changes them, the view reloads with them (songs are saved there too, and are ignored).
   window.addEventListener('storage', e => {
-    if (e.key && /^(guitar-|cof-|staff-clef)/.test(e.key)) location.reload()
+    if (e.key && /^(guitar-|cof-|staff-clef|lang$|note-names$)/.test(e.key)) location.reload()
   })
   return true
 }

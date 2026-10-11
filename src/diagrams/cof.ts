@@ -1,6 +1,7 @@
 import { pitchClassOf } from '../theory/notes'
 import { romanInKey } from '../detector/analyzer'
 import { keyPrefersSharps } from '../theory/keys'
+import { t, chordLabel, noteLabel } from '../i18n/i18n'
 
 const CIRCLE_KEYS_FLAT  = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F']
 // Sharps only where they name a standard key: G# and D# major would need double sharps.
@@ -78,7 +79,7 @@ export function renderCircleOfFifths(
     ? `<text x="${x}" y="${y - font * 0.5}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text>` +
       `<text x="${x}" y="${y + font * 0.72}" text-anchor="middle" dominant-baseline="middle" font-size="${font * 0.85}" fill="${subFill}" pointer-events="none">${sub}</text>`
     : `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text>`
-  const TIP = 'Click: play · double-click: set as key'
+  const TIP = t('cof.segment.tip')
 
   const diatonicPos = activePos !== -1
     ? new Set([(activePos + 11) % 12, activePos, (activePos + 1) % 12])
@@ -106,7 +107,7 @@ export function renderCircleOfFifths(
     svg += `<path d="${ring(outerR, innerR, angle, nextAngle)}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
       data-chord="${key + suffix7}" data-key="${key} Major"><title>${TIP}</title></path>`
     svg += label(cx + labelR * Math.cos(midAngle), cy + labelR * Math.sin(midAngle), majorFont, '#e0e0e0',
-      key + suffix7, showDeg ? degreeOf(key) : null, '#a5b4fc')
+      chordLabel(key + suffix7), showDeg ? degreeOf(key) : null, '#a5b4fc')
 
     if (!opts.showMinor) return
 
@@ -121,7 +122,7 @@ export function renderCircleOfFifths(
       pointer-events="all" style="cursor:pointer" data-chord="${minorChord}" data-key="${minorRoot} Minor"><title>${TIP}</title></path>`
     const minorFill = isMinorTonic || isMinorChordHere ? '#e0e0e0' : isDiatonic ? '#c4b5fd' : '#9ca3af'
     svg += label(cx + minorR * Math.cos(midAngle), cy + minorR * Math.sin(midAngle), minorFont, minorFill,
-      minorChord, showDeg ? degreeOf(minorKeys[i]) : null, '#818cf8')
+      chordLabel(minorChord), showDeg ? degreeOf(minorKeys[i]) : null, '#818cf8')
 
     // Diminished ring: the leading-tone chord of the major key on this segment
     const dimRoot = CIRCLE_DIM[i]
@@ -130,8 +131,8 @@ export function renderCircleOfFifths(
     const dimChord = `${dimRoot}${opts.show7ths ? 'm7b5' : 'dim'}`
     svg += `<path d="${ring(dimOutR, dimInR, angle, nextAngle)}"
       fill="${isDimChordHere ? '#0d9488' : isDiatonicDim ? '#2a2a5a' : '#1e1e35'}" stroke="${isDiatonicDim ? '#a0a0d8' : '#3a3a5c'}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
-      pointer-events="all" style="cursor:pointer" data-chord="${dimChord}"><title>Click: play</title></path>`
-    const dimText = opts.show7ths ? `${dimRoot}ø7` : `${dimRoot}°`
+      pointer-events="all" style="cursor:pointer" data-chord="${dimChord}"><title>${t('cof.segment.play')}</title></path>`
+    const dimText = `${noteLabel(dimRoot)}${opts.show7ths ? 'ø7' : '°'}`
     svg += label(cx + dimLabR * Math.cos(midAngle), cy + dimLabR * Math.sin(midAngle), dimFont,
       isDimChordHere ? '#e0e0e0' : isDiatonicDim ? '#a78bfa' : '#6b7280',
       dimText, showDeg ? degreeOf(`${dimRoot}dim`) : null, '#818cf8')

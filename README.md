@@ -222,9 +222,12 @@ src/
   input/
     midi.ts               Web MIDI: device selection, note on/off, sustain, modes; the input path the other inputs share
     computer-keyboard.ts  the computer keyboard as a piano (M), by physical key
-    shortcuts.ts          keyboard handling, shortcuts and gestures help popup
+    shortcuts.ts          keyboard handling; help popup with gestures, language and note names
   audio/
     audio.ts              soundfont-player playback: controller notes, previews, volume
+  i18n/
+    i18n.ts               interface language, note names (letters or Do Re Mi, from UMT)
+    en.ts, es.ts          interface strings, one table per language
   ui/
     layout.ts             page structure and panel visibility
     undo.ts               Undo toast for destructive actions
@@ -235,7 +238,8 @@ tests/
   setup-umt.ts        loads the real UMT bundle (pinned devDependency) as the UMT global
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
-  library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts
+  library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
+  structure.test.ts, i18n.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both
@@ -262,7 +266,7 @@ docs/
 | `M` | Computer keyboard as a piano (M or Esc to stop) |
 | `P` | Presentation: large, no controls, full screen (P or Esc to leave) |
 | `/` | Type a chord name |
-| `?` | Show / hide shortcuts and mouse gestures |
+| `?` | Show / hide shortcuts, mouse gestures, language and note names |
 
 Shortcuts are disabled while typing in input fields or with a dropdown focused, and never fire with Ctrl/Cmd/Alt held.
 

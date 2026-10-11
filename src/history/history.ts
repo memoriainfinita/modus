@@ -4,6 +4,7 @@ import { playChord, playNoteNames } from '../audio/audio'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
 import { spellChordSymbol } from '../theory/spelling'
+import { t, chordLabel, keyLabel } from '../i18n/i18n'
 
 const MAX_ENTRIES = 200
 // Chip accent by harmonic function (T/S/D), not by chord quality
@@ -21,6 +22,24 @@ let onChange: HistoryChangeCallback = () => {}
 export function setHistoryChangeCallback(cb: HistoryChangeCallback) { onChange = cb }
 
 export function getEntries(): HistoryEntry[] { return entries }
+
+// A reload for a language change keeps the strip: it waits in sessionStorage for the new page.
+const CARRY_KEY = 'modus-history-carry'
+
+export function carryHistoryOverReload() {
+  try { sessionStorage.setItem(CARRY_KEY, JSON.stringify(entries)) } catch { }
+}
+
+/** Puts back the strip carried over a reload, once. */
+export function restoreCarriedHistory() {
+  let carried: unknown = null
+  try {
+    carried = JSON.parse(sessionStorage.getItem(CARRY_KEY) ?? 'null')
+    sessionStorage.removeItem(CARRY_KEY)
+  } catch { }
+  const list = Array.isArray(carried) ? carried as HistoryEntry[] : []
+  if (list.length && list.every(e => e && typeof e.id === 'string' && typeof e.symbol === 'string' && Array.isArray(e.notes))) restoreEntries(list)
+}
 
 export function addEntry(symbol: string, notes: string[]) {
   const entry: HistoryEntry = { id: crypto.randomUUID(), symbol, notes }
@@ -47,7 +66,7 @@ export function clearHistoryWithUndo() {
   if (!entries.length) return
   const before = entries
   clearHistory()
-  showUndo(`History cleared (${before.length})`, () => restoreEntries(before))
+  showUndo(t('history.cleared', { n: before.length }), () => restoreEntries(before))
 }
 
 export function clearHistory() {
@@ -111,7 +130,7 @@ export function renderHistory(
     chip.classList.toggle('active-cursor', activeCursorEntryId === entry.id)
     chip.style.borderLeft = `3px solid ${color}`
     chip.innerHTML = `
-      <span class="history-chip-symbol">${escapeHtml(entry.symbol)}</span>
+      <span class="history-chip-symbol">${escapeHtml(chordLabel(entry.symbol))}</span>
       <span class="history-chip-roman">${escapeHtml(roman)}</span>
     `
 
@@ -120,7 +139,8 @@ export function renderHistory(
       if (entry.notes.length > 0) playNoteNames(entry.notes)
       else playChord(entry.symbol)
     })
-    chip.title = `${entry.symbol}${steps[i].key ? ` (${roman} in ${steps[i].key})` : ''} — click to play, drag to song, right-click to remove`
+    const inKey = steps[i].key ? ` (${t('history.chip.inKey', { roman, key: keyLabel(steps[i].key!) })})` : ''
+    chip.title = `${chordLabel(entry.symbol)}${inKey} — ${t('history.chip.actions')}`
 
     // Drag to song
     chip.draggable = true
@@ -136,7 +156,7 @@ export function renderHistory(
       e.preventDefault()
       const before = entries
       removeEntry(entry.id)
-      showUndo(`Removed ${entry.symbol}`, () => restoreEntries(before))
+      showUndo(t('history.removed', { chord: chordLabel(entry.symbol) }), () => restoreEntries(before))
     })
 
     strip.appendChild(chip)
@@ -146,22 +166,22 @@ export function renderHistory(
     if (modulation) {
       const tag = document.createElement('span')
       tag.className = 'history-modulation'
-      tag.textContent = `→ ${modulation}`
-      tag.title = `Modulation to ${modulation}: from here the numerals are read in it`
+      tag.textContent = `→ ${keyLabel(modulation)}`
+      tag.title = t('history.modulation', { key: keyLabel(modulation) })
       strip.appendChild(tag)
     }
     if (cadence) {
       const tag = document.createElement('span')
       tag.className = 'history-cadence'
       tag.textContent = shortCadence(cadence)
-      tag.title = `${cadence}: ${shown[i + 1].symbol} → ${entry.symbol}`
+      tag.title = `${cadence}: ${chordLabel(shown[i + 1].symbol)} → ${chordLabel(entry.symbol)}`
       strip.appendChild(tag)
     }
   })
 
   const clearBtn = document.createElement('button')
-  clearBtn.textContent = 'Clear'
-  clearBtn.title = 'Clear history (C) — can be undone'
+  clearBtn.textContent = t('history.clear')
+  clearBtn.title = t('history.clear.title')
   clearBtn.className = 'history-clear-btn'
   clearBtn.addEventListener('click', clearHistoryWithUndo)
 

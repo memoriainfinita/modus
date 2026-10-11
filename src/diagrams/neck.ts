@@ -1,6 +1,7 @@
 import { noteNameToMidi } from '../theory/notes'
 import { loadNumber, save } from '../ui/storage'
 import { DARK_FRETBOARD_STYLE } from './fretboard-style'
+import { localizeDrawnNoteNames } from '../i18n/i18n'
 
 const OPEN_MIDI = [40, 45, 50, 55, 59, 64]  // E2 A2 D3 G3 B3 E4
 const NECK_FRETS = 12
@@ -40,6 +41,7 @@ export function renderNeck(container: HTMLElement, noteNames: string[], preferFl
       { name: '', frets, tuning: ['E','A','D','G','B','E'] } as any,
       { ...style, orientation: 'horizontal' }
     )
+    localizeDrawnNoteNames(container)
   } catch {
     container.innerHTML = ''
   }

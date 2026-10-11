@@ -349,8 +349,8 @@
     if (!on) releaseAll();
     onChange();
   }
-  function isTyping(t) {
-    return t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || t instanceof HTMLElement && t.isContentEditable;
+  function isTyping(t2) {
+    return t2 instanceof HTMLInputElement || t2 instanceof HTMLTextAreaElement || t2 instanceof HTMLSelectElement || t2 instanceof HTMLElement && t2.isContentEditable;
   }
   function wireComputerKeyboard() {
     document.addEventListener("keydown", (e) => {
@@ -503,6 +503,17 @@
     if (!chord) return [];
     return tryUMT("chord tones", () => UMT.spellChord(chord), []).filter(Boolean);
   }
+  var typedAliases = null;
+  var SOLFEGE_START = /^(Do|Re|Mi|Fa|Sol|La|Si)/;
+  function readTypedChord(text) {
+    const s = normalizeChordName(text.trim());
+    if (SOLFEGE_START.test(s)) {
+      typedAliases ??= tryUMT("typed chords", () => ({ ...UMT.SOLFEGE_ROOTS, ...UMT.QUALITY_ALIASES_ES }), {});
+      const translated = normalizeChordName(tryUMT("typed chords", () => UMT.translateSymbol(s, typedAliases), s));
+      if (translated !== s && isKnownChord(translated)) return translated;
+    }
+    return s;
+  }
 
   // src/theory/keys.ts
   var MAJOR_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
@@ -546,25 +557,726 @@
     return Object.values(keySignature(key ?? null).accidentals).includes("#");
   }
 
+  // src/i18n/en.ts
+  var en = {
+    // Page
+    "page.noMidi": "This browser has no Web MIDI, so a controller cannot connect (Chrome, Edge and Firefox have it). Everything else \u2014 song builder, circle of fifths, history \u2014 still works.",
+    "page.cdnError": "Failed to load a required resource. Check your internet connection.",
+    // Toolbar: MIDI
+    "midi.connected": "MIDI: connected",
+    "midi.noDevices": "MIDI: no devices",
+    "midi.disconnected": "MIDI: disconnected",
+    "midi.noDeviceOption": "No MIDI devices",
+    "midi.denied": "MIDI access denied. Grant permission in browser settings to use a controller.",
+    "midi.inChannel.title": "Input channel: only notes on this channel are read (a keyboard split, or one track of a DAW)",
+    "midi.inChannel.all": "in: all ch",
+    "midi.inChannel.one": "in: ch {n}",
+    "midi.out.title": "MIDI out: what sounds goes to this port",
+    "midi.out.loops": "Same port as the input: nothing is sent, it would come back as input",
+    "midi.out.off": "Out: off",
+    "midi.out.port": "Out: {name}",
+    "midi.out.absent": "Out: {name} (absent)",
+    "midi.outChannel.title": "MIDI out channel",
+    "midi.outChannel.one": "ch {n}",
+    "midi.thru": "Thru",
+    "midi.thru.title": "Thru: also send the controller's notes (off: the DAW usually hears the controller itself)",
+    // Toolbar: modes and input
+    "mode.normal": "Normal",
+    "mode.hold": "Hold",
+    "mode.arpeggio": "Arpeggio",
+    "mode.normal.title": "Normal: the detector shows the keys held down",
+    "mode.hold.title": "Hold: the chord stays after the keys are released; the next note after a full release starts a new one (H)",
+    "mode.arpeggio.title": "Arpeggio: notes add up to one chord until 1.2 s pass without a new one (A)",
+    "keyboard.title": "Play with the computer keyboard (M): A-\xD1 white keys, W E T Y U O P black, Z/X octave, C/V velocity, Tab sustain",
+    "key.auto": "Key: Auto",
+    "key.autoDetected": "auto: {key}",
+    "key.major": "Major",
+    "key.minor": "Minor",
+    "typed.placeholder": "Chord\u2026 (/)",
+    "typed.title": "Type a chord name and press Enter (letters or Do Re Mi: Am7, Lam7)",
+    // Toolbar: audio
+    "audio.title": "Soundfont status",
+    "audio.idle": "\u266A idle",
+    "audio.loading": "\u266A loading\u2026",
+    "audio.suspended": "\u266A click to activate",
+    "audio.ready": "\u266A ready",
+    "audio.error": "\u266A error",
+    "audio.play.title": "Play current chord (Space)",
+    "audio.instrument.title": "Soundfont instrument",
+    "audio.volume.title": "Volume",
+    "gm.piano": "Piano",
+    "gm.chromatic": "Chromatic Perc",
+    "gm.organ": "Organ",
+    "gm.guitar": "Guitar",
+    "gm.bass": "Bass",
+    "gm.strings": "Strings",
+    "gm.ensemble": "Ensemble",
+    "gm.brass": "Brass",
+    "gm.reed": "Reed",
+    "gm.pipe": "Pipe",
+    "gm.lead": "Synth Lead",
+    "gm.pad": "Synth Pad",
+    "gm.fx": "Synth FX",
+    "gm.ethnic": "Ethnic",
+    "gm.percussive": "Percussive",
+    "gm.soundFx": "Sound FX",
+    // Toolbar: views, presentation, help
+    "present.title": "Presentation: large, no controls, full screen (P; Esc to leave)",
+    "present.close": "Leave presentation (Esc)",
+    "views.title": "View windows for OBS, and diagram export (SVG, PNG)",
+    "views.open": "Open a view window",
+    "views.background": "Background",
+    "views.bg.green": "green",
+    "views.bg.magenta": "magenta",
+    "views.bg.black": "black",
+    "views.bg.dark": "dark",
+    "views.hint": 'In OBS: Window Capture of "Modus view: \u2026", then a Chroma Key filter. The window follows this one live.',
+    "views.save": "Save the diagram on screen (transparent)",
+    "view.chord": "Chord",
+    "view.staff": "Staff",
+    "view.cof": "Circle of Fifths",
+    "view.piano": "Piano",
+    "view.guitar": "Guitar",
+    "help.title": "Shortcuts, gestures and language (?)",
+    // Shared controls
+    "ctrl.smaller": "Smaller",
+    "ctrl.larger": "Larger",
+    // Notation panel
+    "notation.title": "Notation",
+    "col.staff": "St",
+    "col.analysis": "An",
+    "col.cof": "CoF",
+    "col.guitar": "Git",
+    "col.staff.title": "Staff",
+    "col.analysis.title": "Analysis",
+    "col.cof.title": "Circle of Fifths",
+    "col.guitar.title": "Guitar",
+    "staff.label": "Staff",
+    "staff.clef.title": "Staves: grand (treble and bass, split at middle C), treble only, bass only",
+    "staff.clef.grand": "Grand",
+    "staff.clef.treble": "Treble",
+    "staff.clef.bass": "Bass",
+    "staff.smaller": "Smaller staff",
+    "staff.larger": "Larger staff",
+    "analysis.label": "Analysis",
+    "cof.label": "CoF",
+    "cof.flat.title": "Show flat enharmonics (Gb, Db\u2026)",
+    "cof.sharp.title": "Show sharp enharmonics (F#, C#\u2026)",
+    "cof.spelledInKey": "Spelled as in {key}; b / # apply without a key",
+    "cof.minor.title": "Show/hide minor and diminished rings",
+    "cof.degrees.title": "Show scale degrees (I, IV, V\u2026)",
+    "cof.sevenths.title": "Show 7th chords (maj7, m7, \xF87)",
+    "cof.segment.tip": "Click: play \xB7 double-click: set as key",
+    "cof.segment.play": "Click: play",
+    "guitar.label": "Guitar",
+    // Analysis fields: button label, tooltip, row label
+    "field.roman": "Roman",
+    "field.roman.title": "Roman numeral",
+    "field.roman.row": "Roman",
+    "field.function": "Func",
+    "field.function.title": "Harmonic function",
+    "field.function.row": "Function",
+    "field.figbass": "Fig",
+    "field.figbass.title": "Figured bass",
+    "field.figbass.row": "Fig. bass",
+    "field.voicing": "Voic",
+    "field.voicing.title": "Voicing: inversion, close / open, drop, doubled and missing notes",
+    "field.voicing.row": "Voicing",
+    "field.diatonic": "Diat",
+    "field.diatonic.title": "Diatonic / borrowed",
+    "field.diatonic.row": "Diatonic",
+    "field.scales": "Scl",
+    "field.scales.title": "Suggested scales for the chord",
+    "field.scales.row": "Scales",
+    "field.fits": "Fits",
+    "field.fits.title": "Scales that contain every note on screen, or of the melody played note by note",
+    "field.fits.row": "Fits",
+    "field.cadence": "Cad",
+    "field.cadence.title": "Cadence",
+    "field.cadence.row": "Cadence",
+    "field.plr": "PLR",
+    "field.plr.title": "Neo-Riemannian moves (P, L, R) from the previous triad",
+    "field.plr.row": "P/L/R",
+    "field.secondary": "Sec",
+    "field.secondary.title": "Secondary dominant",
+    "field.secondary.row": "Secondary",
+    "field.subs": "Subs",
+    "field.subs.title": "Substitutions",
+    "field.subs.row": "Subs.",
+    "field.upper": "UST",
+    "field.upper.title": "Upper-structure triads sounding over a dominant",
+    "field.upper.row": "Upper str.",
+    "field.forte": "Set",
+    "field.forte.title": "Set class: Forte number, prime form, interval vector",
+    "field.forte.row": "Set class",
+    // Analysis values
+    "analysis.note": "Note",
+    "analysis.interval": "Interval",
+    "analysis.inversion": "Inversion",
+    "analysis.semitones": "{n} st",
+    "analysis.yes": "Yes",
+    "analysis.borrowed": "Borrowed ({mode})",
+    "analysis.chromatic": "Chromatic",
+    "fn.T": "Tonic",
+    "fn.S": "Subdominant",
+    "fn.D": "Dominant",
+    "fn.unknown": "Unknown",
+    "fn.unknownLong": "Unknown function",
+    // Intervals
+    "interval.0": "Unison",
+    "interval.1": "Minor 2nd",
+    "interval.2": "Major 2nd",
+    "interval.3": "Minor 3rd",
+    "interval.4": "Major 3rd",
+    "interval.5": "Perfect 4th",
+    "interval.6": "Tritone",
+    "interval.7": "Perfect 5th",
+    "interval.8": "Minor 6th",
+    "interval.9": "Major 6th",
+    "interval.10": "Minor 7th",
+    "interval.11": "Major 7th",
+    "interval.octave": "Octave",
+    // Voicing
+    "voicing.inversion0": "root position",
+    "voicing.inversion1": "1st inversion",
+    "voicing.inversion2": "2nd inversion",
+    "voicing.inversion3": "3rd inversion",
+    "voicing.inBass": "{degree} in the bass",
+    "voicing.close": "close",
+    "voicing.open": "open",
+    "voicing.doubled": "doubled {notes}",
+    "voicing.missing": "no {notes}",
+    // Key panel
+    "keyPanel.title": "Key",
+    "keyPanel.sevenths.title": "Seventh chords instead of triads",
+    "keyPanel.neg": "Neg",
+    "keyPanel.neg.title": "Show/hide negative harmony",
+    "keyPanel.par": "Par",
+    "keyPanel.par.title": "Show/hide parallel modes",
+    "keyPanel.colt": "Colt",
+    "keyPanel.colt.title": "Show/hide Coltrane axis",
+    "keyPanel.empty": "Pick a key, or play: on Auto the detected key shows here.",
+    "keyPanel.auto": "{key} (auto)",
+    "keyPanel.also": "also {roman}",
+    "keyPanel.harmonicMinor": "harmonic minor, raised 7th",
+    "keyPanel.negative": "Negative harmony",
+    "keyPanel.negative.title": "Each diatonic chord mirrored around the axis between the minor and major 3rd of the tonic (Harmony.getNegativeHarmony)",
+    "keyPanel.negativeOf": "Negative of {chord}",
+    "keyPanel.coltrane": "Coltrane axis",
+    "keyPanel.coltrane.title": "Tonics a major third apart (Harmony.getColtraneAxis)",
+    "keyPanel.parallel": "Parallel modes",
+    "keyPanel.parallel.title": "Chords of each mode on the same tonic that use a note outside the key (Harmony.getBorrowedChords). Bold: the ones with the note that sets the mode apart",
+    "keyPanel.from": "from {mode}",
+    "keyPanel.characteristic": "carries its characteristic note",
+    // Instruments panel
+    "instruments.title": "Instruments",
+    "col.piano": "Pi",
+    "col.neck": "Fr",
+    "col.velocity": "Ve",
+    "col.piano.title": "Piano",
+    "col.neck.title": "Fretboard",
+    "col.velocity.title": "Velocity of each note",
+    "velocity.label": "Velocity",
+    "velocity.empty": "Play to see how hard each note is struck",
+    "velocity.bar": "{note}: velocity {v} of 127",
+    // Guitar
+    "guitar.none": "No voicings",
+    "guitar.prev": "Previous voicing",
+    "guitar.next": "Next voicing",
+    "guitar.string": "String {n}",
+    "guitar.smaller": "Smaller diagram",
+    "guitar.larger": "Larger diagram",
+    "guitar.labels.off": "Off",
+    "guitar.labels.off.title": "Hide string labels",
+    "guitar.labels.tuning.title": "Show open string notes (tuning)",
+    "guitar.labels.notes.title": "Show fretted note names",
+    "guitar.tuning.title": "Tuning preset",
+    "guitar.tuning.standard": "Standard",
+    "guitar.tuning.dropD": "Drop D",
+    "guitar.tuning.openG": "Open G",
+    "guitar.tuning.custom": "Custom",
+    "guitar.tuner.title": "Edit string tuning",
+    // History
+    "history.title": "History",
+    "history.clear": "Clear",
+    "history.clear.title": "Clear history (C) \u2014 can be undone",
+    "history.cleared": "History cleared ({n})",
+    "history.removed": "Removed {chord}",
+    "history.chip.inKey": "{roman} in {key}",
+    "history.chip.actions": "click to play, drag to song, right-click to remove",
+    "history.modulation": "Modulation to {key}: from here the numerals are read in it",
+    // Song
+    "song.title": "Song Structure",
+    "song.untitled": "Untitled",
+    "song.saved.title": "Saved songs",
+    "song.new": "New",
+    "song.new.title": "Start a new song; the current one stays in the list",
+    "song.delete": "Delete",
+    "song.delete.title": "Delete this song \u2014 can be undone",
+    "song.deleted": 'Deleted "{title}"',
+    "song.paste": "Paste",
+    "song.paste.title": "Paste a chord progression as text",
+    "song.paste.placeholder": "Am G | C F  (| separates measures; without bars, one chord per measure)",
+    "song.paste.add": "Add chords",
+    "song.addSection.title": "Add {name} section",
+    "song.transpose": "\u21C4 Transpose",
+    "song.transpose.title": "Transpose all chords up by semitones",
+    "song.transpose.step": "+{n} st",
+    "song.export": "\u2399 Export",
+    "song.export.title": "Print / export song to PDF",
+    "song.popupBlocked": "Pop-up blocked \u2014 allow pop-ups for this page to export.",
+    "song.form": "Form: {form}",
+    "song.key": "Key: {key}",
+    "section.intro": "Intro",
+    "section.verse": "Verse",
+    "section.pre": "Pre",
+    "section.prechorus": "Pre-Chorus",
+    "section.chorus": "Chorus",
+    "section.bridge": "Bridge",
+    "section.outro": "Outro",
+    "section.custom": "Custom",
+    "section.default": "Section",
+    "section.color.title": "Change section color",
+    "section.repeat.title": "Repeat count \u2014 click to edit",
+    "section.drag.title": "Drag to reorder section",
+    "section.duplicate.title": "Duplicate section",
+    "section.delete.title": "Delete section \u2014 can be undone",
+    "section.deleted": "Deleted section {name}",
+    "section.addBar": "+ Bar",
+    "section.addBar.title": "Add a measure to this section",
+    "measure.delete.title": "Delete measure \u2014 can be undone",
+    "measure.deleted": "Deleted measure {n}",
+    "chord.edit.title": "Edit chord symbol",
+    "chord.duplicate.title": "Duplicate chord",
+    "chord.remove.title": "Remove chord (Del) \u2014 can be undone",
+    "chord.capture.title": "MIDI fill: next chord played on MIDI keyboard replaces this slot",
+    "chord.clearVoicing.title": "Clear stored voicing",
+    "chord.removed": "Removed {chord}",
+    "chord.generic": "chord",
+    "form.empty": "Empty",
+    "form.verseChorus": "Verse-Chorus ({p})",
+    "form.ternary": "Ternary ({p})",
+    "form.single": "Single section (A)",
+    "form.strophic": "Strophic ({p})",
+    // Undo
+    "undo": "Undo",
+    // Help
+    "help.heading": "Shortcuts and gestures",
+    "help.mouse": "Mouse",
+    "help.settings": "Language",
+    "help.language": "Interface",
+    "help.noteNames": "Note names",
+    "help.noteNames.letters": "C D E",
+    "help.noteNames.solfege": "Do Re Mi",
+    "help.reloads": "Changing either reloads the page; history and songs stay.",
+    "kbd.space": "Space",
+    "kbd.del": "Del",
+    "kbd.esc": "Esc",
+    "shortcut.play": "Play current chord (or last if none active)",
+    "shortcut.step": "Previous / next chord in the song (or history) \u2014 plays it",
+    "shortcut.delete": "Remove the selected song chord (undo in the toast)",
+    "shortcut.hold": "Toggle Hold mode",
+    "shortcut.arpeggio": "Toggle Arpeggio mode",
+    "shortcut.send": "Send history chip \u2192 Song",
+    "shortcut.clear": "Clear history (undo in the toast)",
+    "shortcut.escape": "Drop a held chord, clear cursor, stop MIDI fill",
+    "shortcut.keyboard": "Play with the computer keyboard (M or Esc to stop)",
+    "shortcut.present": "Presentation: large, no controls, full screen (P or Esc to leave)",
+    "shortcut.type": "Type a chord name",
+    "shortcut.candidate": "Select chord candidate",
+    "shortcut.help": "Show / hide this panel",
+    "gesture.click": "Click a history chip, song chord or circle segment to play it and show it in the detector.",
+    "gesture.doubleClick": "Double-click a major or minor circle segment to make it the key.",
+    "gesture.logged": "A chord is logged to history once held steady for 0.8 s, and not twice in a row.",
+    "gesture.drag": "Drag a history chip onto a song measure to insert it; drag song chords and section headers to reorder.",
+    "gesture.fill": "\u2299 on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.",
+    "gesture.remove": "Right-click a history chip to remove it. Removals and Clear can be undone from the toast.",
+    "gesture.piano": "Click the on-screen piano to play: in Hold each click adds or removes a note of the chord."
+  };
+
+  // src/i18n/es.ts
+  var es = {
+    "page.noMidi": "Este navegador no tiene Web MIDI y no puede conectar un controlador (Chrome, Edge y Firefox s\xED). Todo lo dem\xE1s funciona: canciones, c\xEDrculo de quintas, historial.",
+    "page.cdnError": "No se pudo cargar un recurso necesario. Comprueba la conexi\xF3n a internet.",
+    "midi.connected": "MIDI: conectado",
+    "midi.noDevices": "MIDI: ninguno",
+    "midi.disconnected": "MIDI: desconectado",
+    "midi.noDeviceOption": "Sin dispositivos MIDI",
+    "midi.denied": "Acceso MIDI denegado. Da permiso en los ajustes del navegador para usar un controlador.",
+    "midi.inChannel.title": "Canal de entrada: solo se leen las notas de este canal (un teclado dividido o una pista del DAW)",
+    "midi.inChannel.all": "ent: todos",
+    "midi.inChannel.one": "ent: c{n}",
+    "midi.out.title": "Salida MIDI: lo que suena se env\xEDa a este puerto",
+    "midi.out.loops": "Es el mismo puerto que la entrada: no se env\xEDa nada, volver\xEDa como entrada",
+    "midi.out.off": "Sal: no",
+    "midi.out.port": "Sal: {name}",
+    "midi.out.absent": "Sal: {name} (ausente)",
+    "midi.outChannel.title": "Canal de salida MIDI",
+    "midi.outChannel.one": "c{n}",
+    "midi.thru": "Thru",
+    "midi.thru.title": "Thru: env\xEDa tambi\xE9n las notas del controlador (apagado: el DAW suele o\xEDr el controlador directamente)",
+    "mode.normal": "Normal",
+    "mode.hold": "Mantener",
+    "mode.arpeggio": "Arpegio",
+    "mode.normal.title": "Normal: el detector muestra las teclas pulsadas",
+    "mode.hold.title": "Mantener: el acorde se queda al soltar las teclas; la siguiente nota tras soltarlas todas empieza otro (H)",
+    "mode.arpeggio.title": "Arpegio: las notas se suman en un acorde hasta que pasan 1,2 s sin otra nueva (A)",
+    "keyboard.title": "Tocar con el teclado del ordenador (M): A-\xD1 teclas blancas, W E T Y U O P negras, Z/X octava, C/V velocidad, Tab pedal",
+    "key.auto": "Tono: auto",
+    "key.autoDetected": "auto: {key}",
+    "key.major": "mayor",
+    "key.minor": "menor",
+    "typed.placeholder": "Acorde\u2026 (/)",
+    "typed.title": "Escribe un acorde y pulsa Intro (en letras o en Do Re Mi: Am7, Lam7)",
+    "audio.title": "Estado del soundfont",
+    "audio.idle": "\u266A en espera",
+    "audio.loading": "\u266A cargando\u2026",
+    "audio.suspended": "\u266A clic para activar",
+    "audio.ready": "\u266A listo",
+    "audio.error": "\u266A error",
+    "audio.play.title": "Tocar el acorde actual (Espacio)",
+    "audio.instrument.title": "Instrumento del soundfont",
+    "audio.volume.title": "Volumen",
+    "gm.piano": "Piano",
+    "gm.chromatic": "Percusi\xF3n crom\xE1tica",
+    "gm.organ": "\xD3rgano",
+    "gm.guitar": "Guitarra",
+    "gm.bass": "Bajo",
+    "gm.strings": "Cuerdas",
+    "gm.ensemble": "Conjunto",
+    "gm.brass": "Metales",
+    "gm.reed": "Leng\xFCeta",
+    "gm.pipe": "Viento",
+    "gm.lead": "Sinte solista",
+    "gm.pad": "Sinte pad",
+    "gm.fx": "Sinte efectos",
+    "gm.ethnic": "\xC9tnicos",
+    "gm.percussive": "Percusi\xF3n",
+    "gm.soundFx": "Efectos de sonido",
+    "present.title": "Presentaci\xF3n: grande, sin controles, a pantalla completa (P; Esc para salir)",
+    "present.close": "Salir de la presentaci\xF3n (Esc)",
+    "views.title": "Ventanas de vista para OBS y exportar diagramas (SVG, PNG)",
+    "views.open": "Abrir una ventana de vista",
+    "views.background": "Fondo",
+    "views.bg.green": "verde",
+    "views.bg.magenta": "magenta",
+    "views.bg.black": "negro",
+    "views.bg.dark": "oscuro",
+    "views.hint": 'En OBS: Captura de ventana de "Modus view: \u2026" y despu\xE9s un filtro Chroma Key. La ventana sigue a esta en directo.',
+    "views.save": "Guardar el diagrama en pantalla (fondo transparente)",
+    "view.chord": "Acorde",
+    "view.staff": "Pentagrama",
+    "view.cof": "C\xEDrculo de quintas",
+    "view.piano": "Piano",
+    "view.guitar": "Guitarra",
+    "help.title": "Atajos, gestos e idioma (?)",
+    "ctrl.smaller": "M\xE1s peque\xF1o",
+    "ctrl.larger": "M\xE1s grande",
+    "notation.title": "Notaci\xF3n",
+    "col.staff": "Pe",
+    "col.analysis": "An",
+    "col.cof": "C\xEDr",
+    "col.guitar": "Gui",
+    "col.staff.title": "Pentagrama",
+    "col.analysis.title": "An\xE1lisis",
+    "col.cof.title": "C\xEDrculo de quintas",
+    "col.guitar.title": "Guitarra",
+    "staff.label": "Pentagrama",
+    "staff.clef.title": "Pentagramas: doble (clave de sol y de fa, separados en el Do central), solo clave de sol, solo clave de fa",
+    "staff.clef.grand": "Doble",
+    "staff.clef.treble": "Sol",
+    "staff.clef.bass": "Fa",
+    "staff.smaller": "Pentagrama m\xE1s peque\xF1o",
+    "staff.larger": "Pentagrama m\xE1s grande",
+    "analysis.label": "An\xE1lisis",
+    "cof.label": "Quintas",
+    "cof.flat.title": "Enarm\xF3nicos con bemoles (Solb, Reb\u2026)",
+    "cof.sharp.title": "Enarm\xF3nicos con sostenidos (Fa#, Do#\u2026)",
+    "cof.spelledInKey": "Escrito como en {key}; b / # sirven sin tonalidad",
+    "cof.minor.title": "Mostrar u ocultar los anillos menor y disminuido",
+    "cof.degrees.title": "Mostrar los grados (I, IV, V\u2026)",
+    "cof.sevenths.title": "Mostrar cuatr\xEDadas (maj7, m7, \xF87)",
+    "cof.segment.tip": "Clic: tocar \xB7 doble clic: usar como tonalidad",
+    "cof.segment.play": "Clic: tocar",
+    "guitar.label": "Guitarra",
+    "field.roman": "Grado",
+    "field.roman.title": "Grado en n\xFAmeros romanos",
+    "field.roman.row": "Grado",
+    "field.function": "Func",
+    "field.function.title": "Funci\xF3n arm\xF3nica",
+    "field.function.row": "Funci\xF3n",
+    "field.figbass": "Cifr",
+    "field.figbass.title": "Bajo cifrado",
+    "field.figbass.row": "Bajo cifr.",
+    "field.voicing": "Disp",
+    "field.voicing.title": "Disposici\xF3n: inversi\xF3n, cerrada / abierta, drop, notas dobladas y que faltan",
+    "field.voicing.row": "Disposici\xF3n",
+    "field.diatonic": "Diat",
+    "field.diatonic.title": "Diat\xF3nico / prestado",
+    "field.diatonic.row": "Diat\xF3nico",
+    "field.scales": "Esc",
+    "field.scales.title": "Escalas sugeridas para el acorde",
+    "field.scales.row": "Escalas",
+    "field.fits": "Enc",
+    "field.fits.title": "Escalas que contienen todas las notas en pantalla, o las de la melod\xEDa tocada nota a nota",
+    "field.fits.row": "Encaja en",
+    "field.cadence": "Cad",
+    "field.cadence.title": "Cadencia",
+    "field.cadence.row": "Cadencia",
+    "field.plr": "PLR",
+    "field.plr.title": "Movimientos neorriemannianos (P, L, R) desde la tr\xEDada anterior",
+    "field.plr.row": "P/L/R",
+    "field.secondary": "Sec",
+    "field.secondary.title": "Dominante secundaria",
+    "field.secondary.row": "Secundaria",
+    "field.subs": "Sust",
+    "field.subs.title": "Sustituciones",
+    "field.subs.row": "Sustit.",
+    "field.upper": "UST",
+    "field.upper.title": "Tr\xEDadas de estructura superior que suenan sobre un dominante",
+    "field.upper.row": "Estr. sup.",
+    "field.forte": "Conj",
+    "field.forte.title": "Clase de conjunto: n\xFAmero de Forte, forma prima, vector interv\xE1lico",
+    "field.forte.row": "Conjunto",
+    "analysis.note": "Nota",
+    "analysis.interval": "Intervalo",
+    "analysis.inversion": "Inversi\xF3n",
+    "analysis.semitones": "{n} semit.",
+    "analysis.yes": "S\xED",
+    "analysis.borrowed": "Prestado ({mode})",
+    "analysis.chromatic": "Crom\xE1tico",
+    "fn.T": "T\xF3nica",
+    "fn.S": "Subdominante",
+    "fn.D": "Dominante",
+    "fn.unknown": "Desconocida",
+    "fn.unknownLong": "Funci\xF3n desconocida",
+    "interval.0": "Un\xEDsono",
+    "interval.1": "2\xAA menor",
+    "interval.2": "2\xAA mayor",
+    "interval.3": "3\xAA menor",
+    "interval.4": "3\xAA mayor",
+    "interval.5": "4\xAA justa",
+    "interval.6": "Tritono",
+    "interval.7": "5\xAA justa",
+    "interval.8": "6\xAA menor",
+    "interval.9": "6\xAA mayor",
+    "interval.10": "7\xAA menor",
+    "interval.11": "7\xAA mayor",
+    "interval.octave": "Octava",
+    "voicing.inversion0": "estado fundamental",
+    "voicing.inversion1": "1.\xAA inversi\xF3n",
+    "voicing.inversion2": "2.\xAA inversi\xF3n",
+    "voicing.inversion3": "3.\xAA inversi\xF3n",
+    "voicing.inBass": "{degree} en el bajo",
+    "voicing.close": "cerrada",
+    "voicing.open": "abierta",
+    "voicing.doubled": "doblada {notes}",
+    "voicing.missing": "sin {notes}",
+    "keyPanel.title": "Tonalidad",
+    "keyPanel.sevenths.title": "Cuatr\xEDadas en lugar de tr\xEDadas",
+    "keyPanel.neg": "Neg",
+    "keyPanel.neg.title": "Mostrar u ocultar la armon\xEDa negativa",
+    "keyPanel.par": "Par",
+    "keyPanel.par.title": "Mostrar u ocultar los modos paralelos",
+    "keyPanel.colt": "Colt",
+    "keyPanel.colt.title": "Mostrar u ocultar el eje de Coltrane",
+    "keyPanel.empty": "Elige una tonalidad o toca: en auto aparece aqu\xED la tonalidad detectada.",
+    "keyPanel.auto": "{key} (auto)",
+    "keyPanel.also": "tambi\xE9n {roman}",
+    "keyPanel.harmonicMinor": "menor arm\xF3nica, 7.\xBA elevado",
+    "keyPanel.negative": "Armon\xEDa negativa",
+    "keyPanel.negative.title": "Cada acorde diat\xF3nico reflejado sobre el eje entre la 3.\xAA menor y la 3.\xAA mayor de la t\xF3nica (Harmony.getNegativeHarmony)",
+    "keyPanel.negativeOf": "Negativo de {chord}",
+    "keyPanel.coltrane": "Eje de Coltrane",
+    "keyPanel.coltrane.title": "T\xF3nicas a distancia de tercera mayor (Harmony.getColtraneAxis)",
+    "keyPanel.parallel": "Modos paralelos",
+    "keyPanel.parallel.title": "Acordes de cada modo sobre la misma t\xF3nica que usan una nota fuera de la tonalidad (Harmony.getBorrowedChords). En negrita, los que llevan la nota propia del modo",
+    "keyPanel.from": "de {mode}",
+    "keyPanel.characteristic": "lleva su nota caracter\xEDstica",
+    "instruments.title": "Instrumentos",
+    "col.piano": "Pi",
+    "col.neck": "M\xE1",
+    "col.velocity": "Ve",
+    "col.piano.title": "Piano",
+    "col.neck.title": "M\xE1stil",
+    "col.velocity.title": "Velocidad de cada nota",
+    "velocity.label": "Velocidad",
+    "velocity.empty": "Toca para ver con qu\xE9 fuerza suena cada nota",
+    "velocity.bar": "{note}: velocidad {v} de 127",
+    "guitar.none": "Sin posiciones",
+    "guitar.prev": "Posici\xF3n anterior",
+    "guitar.next": "Posici\xF3n siguiente",
+    "guitar.string": "Cuerda {n}",
+    "guitar.smaller": "Diagrama m\xE1s peque\xF1o",
+    "guitar.larger": "Diagrama m\xE1s grande",
+    "guitar.labels.off": "No",
+    "guitar.labels.off.title": "Ocultar los nombres de las cuerdas",
+    "guitar.labels.tuning.title": "Mostrar las notas al aire (afinaci\xF3n)",
+    "guitar.labels.notes.title": "Mostrar las notas pisadas",
+    "guitar.tuning.title": "Afinaci\xF3n",
+    "guitar.tuning.standard": "Est\xE1ndar",
+    "guitar.tuning.dropD": "Drop D",
+    "guitar.tuning.openG": "Open G",
+    "guitar.tuning.custom": "Personal",
+    "guitar.tuner.title": "Cambiar la afinaci\xF3n de cada cuerda",
+    "history.title": "Historial",
+    "history.clear": "Borrar",
+    "history.clear.title": "Borrar el historial (C); se puede deshacer",
+    "history.cleared": "Historial borrado ({n})",
+    "history.removed": "Quitado {chord}",
+    "history.chip.inKey": "{roman} en {key}",
+    "history.chip.actions": "clic para tocar, arrastra a la canci\xF3n, clic derecho para quitar",
+    "history.modulation": "Modulaci\xF3n a {key}: desde aqu\xED los grados se leen en ella",
+    "song.title": "Estructura de la canci\xF3n",
+    "song.untitled": "Sin t\xEDtulo",
+    "song.saved.title": "Canciones guardadas",
+    "song.new": "Nueva",
+    "song.new.title": "Empezar una canci\xF3n nueva; la actual sigue en la lista",
+    "song.delete": "Borrar",
+    "song.delete.title": "Borrar esta canci\xF3n; se puede deshacer",
+    "song.deleted": "Borrada \xAB{title}\xBB",
+    "song.paste": "Pegar",
+    "song.paste.title": "Pegar una progresi\xF3n de acordes como texto",
+    "song.paste.placeholder": "Am G | C F  (| separa compases; sin barras, un acorde por comp\xE1s)",
+    "song.paste.add": "A\xF1adir acordes",
+    "song.addSection.title": "A\xF1adir secci\xF3n {name}",
+    "song.transpose": "\u21C4 Transportar",
+    "song.transpose.title": "Transportar todos los acordes hacia arriba, en semitonos",
+    "song.transpose.step": "+{n} semit.",
+    "song.export": "\u2399 Exportar",
+    "song.export.title": "Imprimir o exportar la canci\xF3n a PDF",
+    "song.popupBlocked": "Ventana emergente bloqueada: permite las ventanas emergentes de esta p\xE1gina para exportar.",
+    "song.form": "Forma: {form}",
+    "song.key": "Tonalidad: {key}",
+    "section.intro": "Intro",
+    "section.verse": "Estrofa",
+    "section.pre": "Pre",
+    "section.prechorus": "Preestribillo",
+    "section.chorus": "Estribillo",
+    "section.bridge": "Puente",
+    "section.outro": "Final",
+    "section.custom": "Otra",
+    "section.default": "Secci\xF3n",
+    "section.color.title": "Cambiar el color de la secci\xF3n",
+    "section.repeat.title": "Repeticiones: clic para cambiar",
+    "section.drag.title": "Arrastra para mover la secci\xF3n",
+    "section.duplicate.title": "Duplicar la secci\xF3n",
+    "section.delete.title": "Borrar la secci\xF3n; se puede deshacer",
+    "section.deleted": "Borrada la secci\xF3n {name}",
+    "section.addBar": "+ Comp.",
+    "section.addBar.title": "A\xF1adir un comp\xE1s a esta secci\xF3n",
+    "measure.delete.title": "Borrar el comp\xE1s; se puede deshacer",
+    "measure.deleted": "Borrado el comp\xE1s {n}",
+    "chord.edit.title": "Editar el acorde",
+    "chord.duplicate.title": "Duplicar el acorde",
+    "chord.remove.title": "Quitar el acorde (Supr); se puede deshacer",
+    "chord.capture.title": "Relleno MIDI: el siguiente acorde que toques en el teclado MIDI ocupa este hueco",
+    "chord.clearVoicing.title": "Quitar la disposici\xF3n guardada",
+    "chord.removed": "Quitado {chord}",
+    "chord.generic": "acorde",
+    "form.empty": "Vac\xEDa",
+    "form.verseChorus": "Estrofa-estribillo ({p})",
+    "form.ternary": "Ternaria ({p})",
+    "form.single": "Secci\xF3n \xFAnica (A)",
+    "form.strophic": "Estr\xF3fica ({p})",
+    "undo": "Deshacer",
+    "help.heading": "Atajos y gestos",
+    "help.mouse": "Rat\xF3n",
+    "help.settings": "Idioma",
+    "help.language": "Interfaz",
+    "help.noteNames": "Nombres de nota",
+    "help.noteNames.letters": "C D E",
+    "help.noteNames.solfege": "Do Re Mi",
+    "help.reloads": "Al cambiar cualquiera se recarga la p\xE1gina; el historial y las canciones se mantienen.",
+    "kbd.space": "Espacio",
+    "kbd.del": "Supr",
+    "kbd.esc": "Esc",
+    "shortcut.play": "Tocar el acorde actual (o el \xFAltimo si no hay ninguno)",
+    "shortcut.step": "Acorde anterior / siguiente de la canci\xF3n (o del historial), y lo toca",
+    "shortcut.delete": "Quitar el acorde seleccionado de la canci\xF3n (se deshace en el aviso)",
+    "shortcut.hold": "Activar o desactivar Mantener",
+    "shortcut.arpeggio": "Activar o desactivar Arpegio",
+    "shortcut.send": "Enviar el acorde del historial a la canci\xF3n",
+    "shortcut.clear": "Borrar el historial (se deshace en el aviso)",
+    "shortcut.escape": "Soltar un acorde mantenido, quitar el cursor, parar el relleno MIDI",
+    "shortcut.keyboard": "Tocar con el teclado del ordenador (M o Esc para parar)",
+    "shortcut.present": "Presentaci\xF3n: grande, sin controles, a pantalla completa (P o Esc para salir)",
+    "shortcut.type": "Escribir un acorde",
+    "shortcut.candidate": "Elegir otra lectura del acorde",
+    "shortcut.help": "Mostrar u ocultar este panel",
+    "gesture.click": "Clic en un acorde del historial, de la canci\xF3n o del c\xEDrculo para tocarlo y verlo en el detector.",
+    "gesture.doubleClick": "Doble clic en un sector mayor o menor del c\xEDrculo para usarlo como tonalidad.",
+    "gesture.logged": "Un acorde pasa al historial cuando se mantiene 0,8 s, y nunca dos veces seguidas.",
+    "gesture.drag": "Arrastra un acorde del historial a un comp\xE1s de la canci\xF3n para insertarlo; arrastra acordes y cabeceras de secci\xF3n para reordenarlos.",
+    "gesture.fill": "\u2299 en un acorde de la canci\xF3n activa el relleno MIDI: cada acorde que tocas ocupa un hueco y pasa al siguiente, hasta el final o Esc.",
+    "gesture.remove": "Clic derecho en un acorde del historial para quitarlo. Lo quitado y el borrado se deshacen desde el aviso.",
+    "gesture.piano": "Clic en el piano de la pantalla para tocar: en Mantener cada clic a\xF1ade o quita una nota del acorde."
+  };
+
+  // src/i18n/i18n.ts
+  var LANGS = ["en", "es"];
+  var LANG_NAMES = { en: "English", es: "Espa\xF1ol" };
+  var NOTE_NAMINGS = ["letters", "solfege"];
+  var TABLES = { en, es };
+  function browserLang() {
+    const first = typeof navigator === "undefined" ? "" : navigator.languages?.[0] ?? navigator.language ?? "";
+    return first.toLowerCase().startsWith("es") ? "es" : "en";
+  }
+  var lang = loadChoice("lang", LANGS, browserLang());
+  var naming = loadChoice("note-names", NOTE_NAMINGS, lang === "es" ? "solfege" : "letters");
+  function getLang() {
+    return lang;
+  }
+  function getNoteNaming() {
+    return naming;
+  }
+  function saveLang(l) {
+    save("lang", l);
+  }
+  function saveNoteNaming(n) {
+    save("note-names", n);
+  }
+  function t(key, vars) {
+    const s = TABLES[lang][key] ?? en[key];
+    return vars ? s.replace(/\{(\w+)\}/g, (m, k) => k in vars ? String(vars[k]) : m) : s;
+  }
+  var NOTE_RE = /^[A-G](?:#|b|x|##|bb)*-?\d*$/;
+  function noteLabel(name) {
+    if (naming === "letters" || !NOTE_RE.test(name)) return name;
+    return tryUMT("note names", () => UMT.localizeNoteName(name, "es"), name);
+  }
+  function chordLabel(symbol) {
+    if (naming === "letters" || !/^[A-G]/.test(symbol)) return symbol;
+    return tryUMT("chord names", () => UMT.formatChordSymbol(symbol, { roots: "solfege" }), symbol);
+  }
+  function localizeDrawnNoteNames(container) {
+    if (naming === "letters") return;
+    container.querySelectorAll("text").forEach((el) => {
+      const s = el.textContent?.trim() ?? "";
+      if (NOTE_RE.test(s)) el.textContent = noteLabel(s);
+    });
+  }
+  function keyLabel(key) {
+    const [root, mode2] = key.split(" ");
+    if (!mode2) return noteLabel(key);
+    const m = mode2.toLowerCase();
+    const modeName = m === "major" ? t("key.major") : m === "minor" ? t("key.minor") : mode2;
+    return `${noteLabel(root)} ${modeName}`;
+  }
+  function scaleLabel(name) {
+    const m = name.match(/^([A-G](?:#|b)*)(\s.*)$/);
+    return m ? noteLabel(m[1]) + m[2] : name;
+  }
+  function applyDocumentLang() {
+    if (typeof document !== "undefined") document.documentElement.lang = lang;
+  }
+
   // src/detector/analyzer.ts
-  var INTERVAL_NAMES = [
-    "Unison",
-    "Minor 2nd",
-    "Major 2nd",
-    "Minor 3rd",
-    "Major 3rd",
-    "Perfect 4th",
-    "Tritone",
-    "Perfect 5th",
-    "Minor 6th",
-    "Major 6th",
-    "Minor 7th",
-    "Major 7th"
-  ];
+  var intervalName = (n) => t(`interval.${n}`);
   function semitonesToInterval(semitones) {
     const n = (semitones % 12 + 12) % 12;
-    if (n === 0) return semitones === 0 ? { name: "Unison", inversionName: "Octave" } : { name: "Octave", inversionName: "Unison" };
-    return { name: INTERVAL_NAMES[n], inversionName: INTERVAL_NAMES[12 - n] };
+    if (n === 0) return semitones === 0 ? { name: intervalName(0), inversionName: t("interval.octave") } : { name: t("interval.octave"), inversionName: intervalName(0) };
+    return { name: intervalName(n), inversionName: intervalName(12 - n) };
   }
   function analyzeNotes(midiNotes) {
     if (midiNotes.length === 0) return null;
@@ -650,19 +1362,18 @@
     });
     return steps;
   }
-  var INVERSIONS = ["root position", "1st inversion", "2nd inversion", "3rd inversion"];
   var pcName = (n) => n.replace(/-?\d+$/, "");
   function describeVoicing(noteNames, chord) {
     if (noteNames.length < 3) return null;
     const v = tryUMT("voicing", () => UMT.analyzeVoicing(noteNames.map((n) => UMT.parseNote(n)), chord), null);
     if (!v) return null;
-    const bass = INVERSIONS[v.inversion] ?? `${v.bassDegree ?? pcName(v.bass)} in the bass`;
+    const bass = v.inversion >= 0 && v.inversion <= 3 ? t(`voicing.inversion${v.inversion}`) : t("voicing.inBass", { degree: v.bassDegree ?? pcName(v.bass) });
     return [
       bass,
-      v.position,
+      t(`voicing.${v.position}`),
       v.drop,
-      v.doubled.length ? `doubled ${v.doubled.join(" ")}` : null,
-      v.omitted.length ? `no ${v.omitted.join(" ")}` : null,
+      v.doubled.length ? t("voicing.doubled", { notes: v.doubled.join(" ") }) : null,
+      v.omitted.length ? t("voicing.missing", { notes: v.omitted.join(" ") }) : null,
       v.added.length ? `+ ${v.added.map(pcName).join(" ")}` : null
     ].filter(Boolean).join(" \xB7 ");
   }
@@ -672,7 +1383,7 @@
     const all = tryUMT("upper structures", () => UMT.getUpperStructures(chord), []);
     return all.flatMap((u) => {
       const triad = tryUMT("upper structures", () => u.triad.getNotes().map((n) => n.name), []);
-      return triad.length && triad.every((n) => sounding3.has(pcOf(n))) ? [`${u.label} (${u.triad.name}: ${u.tensions.join(" ")})`] : [];
+      return triad.length && triad.every((n) => sounding3.has(pcOf(n))) ? [`${u.label} (${chordLabel(u.triad.name)}: ${u.tensions.join(" ")})`] : [];
     });
   }
   function neoRiemannianPath(from, to) {
@@ -708,7 +1419,7 @@
       forte = [number, prime.length ? `[${digits}]` : "", vector.length ? `<${vector.join("")}>` : ""].filter(Boolean).join(" \xB7 ") || null;
     }
     const tonic = key?.split(" ")[0];
-    const fits = tryUMT("scales", () => UMT.findScalesForNotes(notes, { tonic, limit: 7 }).filter((s) => s.notes.length < 12).slice(0, 6).map((s) => s.name), []);
+    const fits = tryUMT("scales", () => UMT.findScalesForNotes(notes, { tonic, limit: 7 }).filter((s) => s.notes.length < 12).slice(0, 6).map((s) => scaleLabel(s.name)), []);
     return { notes: names, fromMelody, forte, fits };
   }
   function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol, noteNames = []) {
@@ -717,7 +1428,7 @@
     const result = emptyAnalysis(chordSymbol);
     const bassNote = tryUMT("notes", () => chord.getNotes()[0] ?? null, null);
     if (bassNote) result.figuredBass = tryUMT("figured bass", () => UMT.FiguredBass.fromChord(chord, bassNote), "");
-    result.suggestedScales = tryUMT("scales", () => UMT.Harmony.getSuggestedScales(chord).map((s) => s.scale), []);
+    result.suggestedScales = tryUMT("scales", () => UMT.Harmony.getSuggestedScales(chord).map((s) => scaleLabel(s.scale)), []);
     result.voicing = describeVoicing(noteNames, chord);
     result.upperStructures = presentUpperStructures(noteNames, chord);
     const prevChord = tryParseChord(prevChordSymbol);
@@ -730,7 +1441,7 @@
       if (cad && cad !== "No standard cadence") result.cadence = cad;
     }
     result.substitutions = tryUMT("substitutions", () => UMT.getSubstitutions(chord, activeKey).map((s) => {
-      const name = s.chord?.name ?? s.name ?? String(s);
+      const name = chordLabel(s.chord?.name ?? s.name ?? String(s));
       return s.type ? `${name} (${s.type})` : name;
     }), []);
     return result;
@@ -781,22 +1492,22 @@
     onStatusChange?.(s);
   }
   var GM_INSTRUMENT_GROUPS = [
-    { label: "Piano", instruments: ["acoustic_grand_piano", "bright_acoustic_piano", "electric_grand_piano", "honkytonk_piano", "electric_piano_1", "electric_piano_2", "harpsichord", "clavinet"] },
-    { label: "Chromatic Perc", instruments: ["celesta", "glockenspiel", "music_box", "vibraphone", "marimba", "xylophone", "tubular_bells", "dulcimer"] },
-    { label: "Organ", instruments: ["drawbar_organ", "percussive_organ", "rock_organ", "church_organ", "reed_organ", "accordion", "harmonica", "tango_accordion"] },
-    { label: "Guitar", instruments: ["acoustic_guitar_nylon", "acoustic_guitar_steel", "electric_guitar_jazz", "electric_guitar_clean", "electric_guitar_muted", "overdriven_guitar", "distortion_guitar", "guitar_harmonics"] },
-    { label: "Bass", instruments: ["acoustic_bass", "electric_bass_finger", "electric_bass_pick", "fretless_bass", "slap_bass_1", "slap_bass_2", "synth_bass_1", "synth_bass_2"] },
-    { label: "Strings", instruments: ["violin", "viola", "cello", "contrabass", "tremolo_strings", "pizzicato_strings", "orchestral_harp", "timpani"] },
-    { label: "Ensemble", instruments: ["string_ensemble_1", "string_ensemble_2", "synth_strings_1", "synth_strings_2", "choir_aahs", "voice_oohs", "synth_voice", "orchestra_hit"] },
-    { label: "Brass", instruments: ["trumpet", "trombone", "tuba", "muted_trumpet", "french_horn", "brass_section", "synth_brass_1", "synth_brass_2"] },
-    { label: "Reed", instruments: ["soprano_sax", "alto_sax", "tenor_sax", "baritone_sax", "oboe", "english_horn", "bassoon", "clarinet"] },
-    { label: "Pipe", instruments: ["piccolo", "flute", "recorder", "pan_flute", "blown_bottle", "shakuhachi", "whistle", "ocarina"] },
-    { label: "Synth Lead", instruments: ["lead_1_square", "lead_2_sawtooth", "lead_3_calliope", "lead_4_chiff", "lead_5_charang", "lead_6_voice", "lead_7_fifths", "lead_8_bass_lead"] },
-    { label: "Synth Pad", instruments: ["pad_1_new_age", "pad_2_warm", "pad_3_polysynth", "pad_4_choir", "pad_5_bowed", "pad_6_metallic", "pad_7_halo", "pad_8_sweep"] },
-    { label: "Synth FX", instruments: ["fx_1_rain", "fx_2_soundtrack", "fx_3_crystal", "fx_4_atmosphere", "fx_5_brightness", "fx_6_goblins", "fx_7_echoes", "fx_8_sci-fi"] },
-    { label: "Ethnic", instruments: ["sitar", "banjo", "shamisen", "koto", "kalimba", "bag_pipe", "fiddle", "shanai"] },
-    { label: "Percussive", instruments: ["tinkle_bell", "agogo", "steel_drums", "woodblock", "taiko_drum", "melodic_tom", "synth_drum", "reverse_cymbal"] },
-    { label: "Sound FX", instruments: ["guitar_fret_noise", "breath_noise", "seashore", "bird_tweet", "telephone_ring", "helicopter", "applause", "gunshot"] }
+    { label: "gm.piano", instruments: ["acoustic_grand_piano", "bright_acoustic_piano", "electric_grand_piano", "honkytonk_piano", "electric_piano_1", "electric_piano_2", "harpsichord", "clavinet"] },
+    { label: "gm.chromatic", instruments: ["celesta", "glockenspiel", "music_box", "vibraphone", "marimba", "xylophone", "tubular_bells", "dulcimer"] },
+    { label: "gm.organ", instruments: ["drawbar_organ", "percussive_organ", "rock_organ", "church_organ", "reed_organ", "accordion", "harmonica", "tango_accordion"] },
+    { label: "gm.guitar", instruments: ["acoustic_guitar_nylon", "acoustic_guitar_steel", "electric_guitar_jazz", "electric_guitar_clean", "electric_guitar_muted", "overdriven_guitar", "distortion_guitar", "guitar_harmonics"] },
+    { label: "gm.bass", instruments: ["acoustic_bass", "electric_bass_finger", "electric_bass_pick", "fretless_bass", "slap_bass_1", "slap_bass_2", "synth_bass_1", "synth_bass_2"] },
+    { label: "gm.strings", instruments: ["violin", "viola", "cello", "contrabass", "tremolo_strings", "pizzicato_strings", "orchestral_harp", "timpani"] },
+    { label: "gm.ensemble", instruments: ["string_ensemble_1", "string_ensemble_2", "synth_strings_1", "synth_strings_2", "choir_aahs", "voice_oohs", "synth_voice", "orchestra_hit"] },
+    { label: "gm.brass", instruments: ["trumpet", "trombone", "tuba", "muted_trumpet", "french_horn", "brass_section", "synth_brass_1", "synth_brass_2"] },
+    { label: "gm.reed", instruments: ["soprano_sax", "alto_sax", "tenor_sax", "baritone_sax", "oboe", "english_horn", "bassoon", "clarinet"] },
+    { label: "gm.pipe", instruments: ["piccolo", "flute", "recorder", "pan_flute", "blown_bottle", "shakuhachi", "whistle", "ocarina"] },
+    { label: "gm.lead", instruments: ["lead_1_square", "lead_2_sawtooth", "lead_3_calliope", "lead_4_chiff", "lead_5_charang", "lead_6_voice", "lead_7_fifths", "lead_8_bass_lead"] },
+    { label: "gm.pad", instruments: ["pad_1_new_age", "pad_2_warm", "pad_3_polysynth", "pad_4_choir", "pad_5_bowed", "pad_6_metallic", "pad_7_halo", "pad_8_sweep"] },
+    { label: "gm.fx", instruments: ["fx_1_rain", "fx_2_soundtrack", "fx_3_crystal", "fx_4_atmosphere", "fx_5_brightness", "fx_6_goblins", "fx_7_echoes", "fx_8_sci-fi"] },
+    { label: "gm.ethnic", instruments: ["sitar", "banjo", "shamisen", "koto", "kalimba", "bag_pipe", "fiddle", "shanai"] },
+    { label: "gm.percussive", instruments: ["tinkle_bell", "agogo", "steel_drums", "woodblock", "taiko_drum", "melodic_tom", "synth_drum", "reverse_cymbal"] },
+    { label: "gm.soundFx", instruments: ["guitar_fret_noise", "breath_noise", "seashore", "bird_tweet", "telephone_ring", "helicopter", "applause", "gunshot"] }
   ];
   function ensureContext() {
     if (audioCtx) return;
@@ -1248,9 +1959,9 @@ ${lower.length ? chordOf(lower) : empty}`;
   var guitarTunerExpanded = false;
   var guitarSpacing = loadNumber("guitar-spacing", 19, 12, 32);
   var GUITAR_TUNINGS = {
-    standard: { notae: ["E", "A", "D", "G", "B", "E"], label: "Standard" },
-    dropD: { notae: ["D", "A", "D", "G", "B", "E"], label: "Drop D" },
-    openG: { notae: ["D", "G", "D", "G", "B", "D"], label: "Open G" }
+    standard: { notae: ["E", "A", "D", "G", "B", "E"], label: "guitar.tuning.standard" },
+    dropD: { notae: ["D", "A", "D", "G", "B", "E"], label: "guitar.tuning.dropD" },
+    openG: { notae: ["D", "G", "D", "G", "B", "D"], label: "guitar.tuning.openG" }
   };
   function loadStringTuning() {
     const saved = loadJSON("guitar-string-tuning", null);
@@ -1261,7 +1972,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
   var guitarStringTuning = loadStringTuning();
   function detectPreset(notes) {
-    const match = Object.entries(GUITAR_TUNINGS).find(([, t]) => t.notae.every((n, i) => n === notes[i]));
+    const match = Object.entries(GUITAR_TUNINGS).find(([, t2]) => t2.notae.every((n, i) => n === notes[i]));
     return match ? match[0] : "custom";
   }
   function guitarStyle() {
@@ -1288,33 +1999,33 @@ ${lower.length ? chordOf(lower) : empty}`;
   function guitarControls(total, idx) {
     const btn = (action, label, active, tip) => `<button class="guitar-ctrl${active ? " active" : ""}" data-action="${action}" title="${tip}">${label}</button>`;
     const nav = total > 1 ? `
-    <button class="guitar-nav" data-dir="-1" title="Previous voicing">\u2039</button>
+    <button class="guitar-nav" data-dir="-1" title="${t("guitar.prev")}">\u2039</button>
     <span class="guitar-voicing-count">${idx + 1}/${total}</span>
-    <button class="guitar-nav" data-dir="1" title="Next voicing">\u203A</button>` : "";
+    <button class="guitar-nav" data-dir="1" title="${t("guitar.next")}">\u203A</button>` : "";
     const tunerRow = guitarTunerExpanded ? `
     <div class="tuner-row">
       ${guitarStringTuning.map(
-      (note, i) => `<input class="guitar-string-input" data-string="${i}" value="${note}" title="String ${6 - i}" maxlength="2">`
+      (note, i) => `<input class="guitar-string-input" data-string="${i}" value="${note}" title="${t("guitar.string", { n: 6 - i })}" maxlength="2">`
     ).join("")}
     </div>` : "";
     return `
     <div id="guitar-ctrl-wrap" style="display:${guitarControlsVisible ? "flex" : "none"}">
       <div class="guitar-ctrl-row">
         ${nav || '<span class="guitar-nav-placeholder">\u2014</span>'}
-        <button class="guitar-size-btn guitar-ctrl" data-action="size-minus" title="Smaller diagram">\u2212</button>
-        <button class="guitar-size-btn guitar-ctrl" data-action="size-plus"  title="Larger diagram">+</button>
+        <button class="guitar-size-btn guitar-ctrl" data-action="size-minus" title="${t("guitar.smaller")}">\u2212</button>
+        <button class="guitar-size-btn guitar-ctrl" data-action="size-plus"  title="${t("guitar.larger")}">+</button>
       </div>
       <div class="guitar-ctrl-row-wrap">
-        ${btn("label-none", "Off", guitarLabelMode === "none", "Hide string labels")}
-        ${btn("label-tuning", FORK_ICON, guitarLabelMode === "tuning", "Show open string notes (tuning)")}
-        ${btn("label-notes", NOTE_ICON, guitarLabelMode === "notes", "Show fretted note names")}
-        <select class="guitar-tuning-sel" title="Tuning preset">
+        ${btn("label-none", t("guitar.labels.off"), guitarLabelMode === "none", t("guitar.labels.off.title"))}
+        ${btn("label-tuning", FORK_ICON, guitarLabelMode === "tuning", t("guitar.labels.tuning.title"))}
+        ${btn("label-notes", NOTE_ICON, guitarLabelMode === "notes", t("guitar.labels.notes.title"))}
+        <select class="guitar-tuning-sel" title="${t("guitar.tuning.title")}">
           ${Object.entries(GUITAR_TUNINGS).map(
-      ([k, t]) => `<option value="${k}" ${guitarTuningKey === k ? "selected" : ""}>${t.label}</option>`
+      ([k, tuning]) => `<option value="${k}" ${guitarTuningKey === k ? "selected" : ""}>${t(tuning.label)}</option>`
     ).join("")}
-          <option value="custom" ${guitarTuningKey === "custom" ? "selected" : ""}>Custom</option>
+          <option value="custom" ${guitarTuningKey === "custom" ? "selected" : ""}>${t("guitar.tuning.custom")}</option>
         </select>
-        ${btn("toggle-tuner", "\u270E", guitarTunerExpanded, "Edit string tuning")}
+        ${btn("toggle-tuner", "\u270E", guitarTunerExpanded, t("guitar.tuner.title"))}
       </div>
       ${tunerRow}
     </div>`;
@@ -1401,7 +2112,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const bassPc = chord ? (((chord.bassStep ?? chord.rootStep) + 9) % 12 + 12) % 12 : 0;
     const voicings = chord ? playableVoicings(tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, umtTuning) ?? [], []), openMidi, bassPc) : [];
     if (!voicings.length) {
-      container.innerHTML = '<div class="no-voicing">No voicings</div>' + guitarControls(0, 0);
+      container.innerHTML = `<div class="no-voicing">${t("guitar.none")}</div>` + guitarControls(0, 0);
       wireGuitarControls(container);
       return;
     }
@@ -1410,12 +2121,13 @@ ${lower.length ? chordOf(lower) : empty}`;
     let svg = "";
     try {
       svg = Notae.renderFretboard(
-        { name: chordSymbol, ...voicings[idx], tuning: guitarStringTuning },
+        { name: chordLabel(chordSymbol), ...voicings[idx], tuning: guitarStringTuning },
         guitarStyle()
       );
     } catch {
     }
     container.innerHTML = `<div>${svg}</div>` + guitarControls(total, idx);
+    localizeDrawnNoteNames(container.firstElementChild);
     container.querySelectorAll(".guitar-nav").forEach((btn) => {
       btn.addEventListener("click", () => {
         guitarVoicingIdx = (idx + parseInt(btn.dataset.dir) + total) % total;
@@ -1467,7 +2179,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       return `M${p(rIn, a1)} L${p(rOut, a1)} A${rOut},${rOut} 0 0,1 ${p(rOut, a2)} L${p(rIn, a2)} A${rIn},${rIn} 0 0,0 ${p(rIn, a1)}`;
     };
     const label = (x, y, font, fill, main, sub, subFill) => sub ? `<text x="${x}" y="${y - font * 0.5}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text><text x="${x}" y="${y + font * 0.72}" text-anchor="middle" dominant-baseline="middle" font-size="${font * 0.85}" fill="${subFill}" pointer-events="none">${sub}</text>` : `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text>`;
-    const TIP = "Click: play \xB7 double-click: set as key";
+    const TIP = t("cof.segment.tip");
     const diatonicPos = activePos !== -1 ? /* @__PURE__ */ new Set([(activePos + 11) % 12, activePos, (activePos + 1) % 12]) : /* @__PURE__ */ new Set();
     let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`;
     if (opts.backdrop) svg += `<circle cx="${size / 2}" cy="${size / 2}" r="${size * 0.43}" fill="${opts.backdrop}"/>`;
@@ -1490,7 +2202,7 @@ ${lower.length ? chordOf(lower) : empty}`;
         cy + labelR * Math.sin(midAngle),
         majorFont,
         "#e0e0e0",
-        key + suffix7,
+        chordLabel(key + suffix7),
         showDeg ? degreeOf(key) : null,
         "#a5b4fc"
       );
@@ -1509,7 +2221,7 @@ ${lower.length ? chordOf(lower) : empty}`;
         cy + minorR * Math.sin(midAngle),
         minorFont,
         minorFill,
-        minorChord,
+        chordLabel(minorChord),
         showDeg ? degreeOf(minorKeys[i]) : null,
         "#818cf8"
       );
@@ -1519,8 +2231,8 @@ ${lower.length ? chordOf(lower) : empty}`;
       const dimChord = `${dimRoot}${opts.show7ths ? "m7b5" : "dim"}`;
       svg += `<path d="${ring(dimOutR, dimInR, angle, nextAngle)}"
       fill="${isDimChordHere ? "#0d9488" : isDiatonicDim ? "#2a2a5a" : "#1e1e35"}" stroke="${isDiatonicDim ? "#a0a0d8" : "#3a3a5c"}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
-      pointer-events="all" style="cursor:pointer" data-chord="${dimChord}"><title>Click: play</title></path>`;
-      const dimText = opts.show7ths ? `${dimRoot}\xF87` : `${dimRoot}\xB0`;
+      pointer-events="all" style="cursor:pointer" data-chord="${dimChord}"><title>${t("cof.segment.play")}</title></path>`;
+      const dimText = `${noteLabel(dimRoot)}${opts.show7ths ? "\xF87" : "\xB0"}`;
       svg += label(
         cx + dimLabR * Math.cos(midAngle),
         cy + dimLabR * Math.sin(midAngle),
@@ -1544,7 +2256,6 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
 
   // src/view/viewer.ts
-  var FUNCTION_NAMES = { T: "Tonic", S: "Subdominant", D: "Dominant" };
   function fitSvg(svg) {
     if (!svg) return;
     if (!svg.getAttribute("viewBox")) {
@@ -1570,7 +2281,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       return;
     }
     const color = s.symbol ? chordColor(s.symbol) : NEUTRAL_COLOR;
-    const detail = s.kind === "chord" && s.roman && s.roman !== "?" ? [s.roman, s.function ? FUNCTION_NAMES[s.function] : null].filter(Boolean).join(" \xB7 ") : "";
+    const detail = s.kind === "chord" && s.roman && s.roman !== "?" ? [s.roman, s.function && s.function !== "unknown" ? t(`fn.${s.function}`) : null].filter(Boolean).join(" \xB7 ") : "";
     el.innerHTML = `
     <div class="view-chord-name" style="color:${color}">${escapeHtml(s.label)}</div>
     ${detail ? `<div class="view-chord-detail">${escapeHtml(detail)}</div>` : ""}`;
@@ -1596,6 +2307,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const bg = params.get("bg") ?? "green";
     const background = VIEW_BACKGROUNDS[bg] ?? VIEW_BACKGROUNDS.green;
     document.title = `Modus view: ${view}`;
+    applyDocumentLang();
     document.body.classList.add("view-mode");
     document.body.style.background = background;
     document.getElementById("app").style.display = "none";
@@ -1605,7 +2317,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     document.body.appendChild(el);
     subscribeView((s) => renderView(view, el, s));
     window.addEventListener("storage", (e) => {
-      if (e.key && /^(guitar-|cof-|staff-clef)/.test(e.key)) location.reload();
+      if (e.key && /^(guitar-|cof-|staff-clef|lang$|note-names$)/.test(e.key)) location.reload();
     });
     return true;
   }
@@ -1626,7 +2338,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     overlay.id = "presentation";
     const diagrams = views.filter((v) => v !== "chord" && v !== "piano");
     overlay.innerHTML = `
-    <button class="presentation-close" title="Leave presentation (Esc)">\xD7</button>
+    <button class="presentation-close" title="${t("present.close")}">\xD7</button>
     <div class="pres-tile pres-chord view-chord" data-view="chord"></div>
     ${diagrams.length ? `<div class="pres-row">${diagrams.map((v) => `<div class="pres-tile view-${v}" data-view="${v}"></div>`).join("")}</div>` : ""}
     ${views.includes("piano") ? '<div class="pres-tile pres-piano view-piano" data-view="piano"></div>' : ""}`;
@@ -1665,13 +2377,13 @@ ${lower.length ? chordOf(lower) : empty}`;
   // src/diagrams/velocity.ts
   function renderVelocity(container, notes) {
     if (!notes.length) {
-      container.innerHTML = '<div class="vel-empty">Play to see how hard each note is struck</div>';
+      container.innerHTML = `<div class="vel-empty">${escapeHtml(t("velocity.empty"))}</div>`;
       return;
     }
     const sorted = [...notes].sort((a, b) => b.midi - a.midi);
     container.innerHTML = sorted.map((n) => `
-    <div class="vel-row" title="${escapeHtml(n.name)}: velocity ${n.velocity} of 127">
-      <span class="vel-note">${escapeHtml(n.name)}</span>
+    <div class="vel-row" title="${escapeHtml(t("velocity.bar", { note: noteLabel(n.name), v: n.velocity }))}">
+      <span class="vel-note">${escapeHtml(noteLabel(n.name))}</span>
       <span class="vel-bar"><span style="width:${(n.velocity / 127 * 100).toFixed(1)}%"></span></span>
       <span class="vel-num">${n.velocity}</span>
     </div>`).join("");
@@ -1785,6 +2497,7 @@ ${lower.length ? chordOf(lower) : empty}`;
         { name: "", frets, tuning: ["E", "A", "D", "G", "B", "E"] },
         { ...style, orientation: "horizontal" }
       );
+      localizeDrawnNoteNames(container);
     } catch {
       container.innerHTML = "";
     }
@@ -1812,8 +2525,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     const chord = symbol ? tryParseChord(symbol) : null;
     const toneByPc = /* @__PURE__ */ new Map();
     if (chord) {
-      for (const t of tryUMT("chord tones", () => UMT.spellChord(chord), [])) {
-        const base = t.replace(/-?\d+$/, "");
+      for (const t2 of tryUMT("chord tones", () => UMT.spellChord(chord), [])) {
+        const base = t2.replace(/-?\d+$/, "");
         toneByPc.set(pitchClassOf(base), base);
       }
     }
@@ -1892,45 +2605,45 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
 
   // src/diagrams/key-explorer.ts
-  var FUNCTION_NAMES2 = { T: "Tonic", S: "Subdominant", D: "Dominant", unknown: "Unknown function" };
-  var describe = (c) => [c.roman, c.secondary && `also ${c.secondary}`, FUNCTION_NAMES2[c.function]].filter(Boolean).join(" \xB7 ");
-  function renderKeyExplorer(container, map, keyLabel, activeChord, onChordClick, opts) {
+  var functionName = (fn) => fn === "unknown" ? t("fn.unknownLong") : t(`fn.${fn}`);
+  var describe = (c) => [c.roman, c.secondary && t("keyPanel.also", { roman: c.secondary }), functionName(c.function)].filter(Boolean).join(" \xB7 ");
+  function renderKeyExplorer(container, map, keyLabel2, activeChord, onChordClick, opts) {
     container.style.fontSize = opts.fontScale + "px";
     if (!map) {
-      container.innerHTML = `<div class="key-empty">Pick a key, or play: on Auto the detected key shows here.</div>`;
+      container.innerHTML = `<div class="key-empty">${escapeHtml(t("keyPanel.empty"))}</div>`;
       return;
     }
     const button = (symbol, cls, title) => `<button class="key-chord ${cls}${sameChord(symbol, activeChord) ? " active" : ""}" data-chord="${escapeHtml(symbol)}"
-      title="${escapeHtml(title)}" style="border-left-color:${chordColor(symbol)}">${escapeHtml(symbol)}</button>`;
+      title="${escapeHtml(title)}" style="border-left-color:${chordColor(symbol)}">${escapeHtml(chordLabel(symbol))}</button>`;
     const cell = (c) => `
     <div class="key-cell">
       <span class="key-roman">${escapeHtml(c.roman)}</span>
       ${button(c.symbol, "", describe(c))}
-      ${c.alternative ? button(c.alternative.symbol, "key-alt", `${describe(c.alternative)} \xB7 harmonic minor, raised 7th`) : ""}
-      <span class="key-function key-fn-${c.function}" title="${FUNCTION_NAMES2[c.function]}">${c.function === "unknown" ? "\xB7" : c.function}</span>
+      ${c.alternative ? button(c.alternative.symbol, "key-alt", `${describe(c.alternative)} \xB7 ${t("keyPanel.harmonicMinor")}`) : ""}
+      <span class="key-function key-fn-${c.function}" title="${functionName(c.function)}">${c.function === "unknown" ? "\xB7" : c.function}</span>
     </div>`;
-    let html = `<div class="key-main"><div class="key-title">${escapeHtml(keyLabel)}</div>`;
+    let html = `<div class="key-main"><div class="key-title">${escapeHtml(keyLabel2)}</div>`;
     html += `<div class="key-grid">${map.diatonic.map(cell).join("")}</div>`;
     if (opts.showNegative) {
-      html += `<div class="key-section-label" title="Each diatonic chord mirrored around the axis between the minor and major 3rd of the tonic (Harmony.getNegativeHarmony)">Negative harmony</div>
+      html += `<div class="key-section-label" title="${t("keyPanel.negative.title")}">${t("keyPanel.negative")}</div>
       <div class="key-grid">${map.negative.map(
-        (n, i) => `<div class="key-cell">${n ? button(n, "", `Negative of ${map.diatonic[i].symbol}`) : '<span class="key-roman">\u2014</span>'}</div>`
+        (n, i) => `<div class="key-cell">${n ? button(n, "", t("keyPanel.negativeOf", { chord: chordLabel(map.diatonic[i].symbol) })) : '<span class="key-roman">\u2014</span>'}</div>`
       ).join("")}</div>`;
     }
     if (opts.showColtrane && map.coltraneAxis) {
-      html += `<div class="key-axis" title="Tonics a major third apart (Harmony.getColtraneAxis)">
-      <span class="key-section-label">Coltrane axis</span> ${map.coltraneAxis.map(escapeHtml).join(" \xB7 ")}</div>`;
+      html += `<div class="key-axis" title="${t("keyPanel.coltrane.title")}">
+      <span class="key-section-label">${t("keyPanel.coltrane")}</span> ${map.coltraneAxis.map((n) => escapeHtml(noteLabel(n))).join(" \xB7 ")}</div>`;
     }
     html += "</div>";
     if (opts.showParallel && map.parallel.length) {
-      html += `<div class="key-parallel"><div class="key-section-label" title="Chords of each mode on the same tonic that use a note outside the key (Harmony.getBorrowedChords). Bold: the ones with the note that sets the mode apart">Parallel modes</div><div class="key-mode-grid">`;
+      html += `<div class="key-parallel"><div class="key-section-label" title="${t("keyPanel.parallel.title")}">${t("keyPanel.parallel")}</div><div class="key-mode-grid">`;
       html += map.parallel.map((row) => `
       <div class="key-mode-row">
         <span class="key-mode-name">${escapeHtml(row.mode)}</span>
         <div class="key-mode-chords">${row.chords.map((c) => `
           <span class="key-mode-chord">
             <span class="key-roman">${escapeHtml(c.roman)}</span>
-            ${button(c.symbol, c.characteristic ? "key-characteristic" : "", `${describe(c)} \xB7 from ${row.mode}${c.characteristic ? " \xB7 carries its characteristic note" : ""}`)}
+            ${button(c.symbol, c.characteristic ? "key-characteristic" : "", [describe(c), t("keyPanel.from", { mode: row.mode }), c.characteristic ? t("keyPanel.characteristic") : ""].filter(Boolean).join(" \xB7 "))}
           </span>`).join("")}
         </div>
       </div>`).join("") + "</div></div>";
@@ -1954,7 +2667,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     dismiss();
     const el = document.createElement("div");
     el.className = "undo-toast";
-    el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">Undo</button>`;
+    el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">${escapeHtml(t("undo"))}</button>`;
     el.querySelector("button").addEventListener("click", () => {
       dismiss();
       undo();
@@ -1979,6 +2692,23 @@ ${lower.length ? chordOf(lower) : empty}`;
   function setHistoryChangeCallback(cb) {
     onChange2 = cb;
   }
+  var CARRY_KEY = "modus-history-carry";
+  function carryHistoryOverReload() {
+    try {
+      sessionStorage.setItem(CARRY_KEY, JSON.stringify(entries));
+    } catch {
+    }
+  }
+  function restoreCarriedHistory() {
+    let carried = null;
+    try {
+      carried = JSON.parse(sessionStorage.getItem(CARRY_KEY) ?? "null");
+      sessionStorage.removeItem(CARRY_KEY);
+    } catch {
+    }
+    const list = Array.isArray(carried) ? carried : [];
+    if (list.length && list.every((e) => e && typeof e.id === "string" && typeof e.symbol === "string" && Array.isArray(e.notes))) restoreEntries(list);
+  }
   function addEntry(symbol, notes) {
     const entry = { id: crypto.randomUUID(), symbol, notes };
     entries = [entry, ...entries].slice(0, MAX_ENTRIES);
@@ -1998,7 +2728,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     if (!entries.length) return;
     const before = entries;
     clearHistory();
-    showUndo(`History cleared (${before.length})`, () => restoreEntries(before));
+    showUndo(t("history.cleared", { n: before.length }), () => restoreEntries(before));
   }
   function clearHistory() {
     entries = [];
@@ -2041,7 +2771,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       chip.classList.toggle("active-cursor", activeCursorEntryId === entry.id);
       chip.style.borderLeft = `3px solid ${color}`;
       chip.innerHTML = `
-      <span class="history-chip-symbol">${escapeHtml(entry.symbol)}</span>
+      <span class="history-chip-symbol">${escapeHtml(chordLabel(entry.symbol))}</span>
       <span class="history-chip-roman">${escapeHtml(roman)}</span>
     `;
       chip.addEventListener("click", () => {
@@ -2049,7 +2779,8 @@ ${lower.length ? chordOf(lower) : empty}`;
         if (entry.notes.length > 0) playNoteNames(entry.notes);
         else playChord(entry.symbol);
       });
-      chip.title = `${entry.symbol}${steps[i].key ? ` (${roman} in ${steps[i].key})` : ""} \u2014 click to play, drag to song, right-click to remove`;
+      const inKey = steps[i].key ? ` (${t("history.chip.inKey", { roman, key: keyLabel(steps[i].key) })})` : "";
+      chip.title = `${chordLabel(entry.symbol)}${inKey} \u2014 ${t("history.chip.actions")}`;
       chip.draggable = true;
       chip.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol, notes: entry.notes }));
@@ -2063,27 +2794,27 @@ ${lower.length ? chordOf(lower) : empty}`;
         e.preventDefault();
         const before = entries;
         removeEntry(entry.id);
-        showUndo(`Removed ${entry.symbol}`, () => restoreEntries(before));
+        showUndo(t("history.removed", { chord: chordLabel(entry.symbol) }), () => restoreEntries(before));
       });
       strip.appendChild(chip);
       if (modulation) {
         const tag = document.createElement("span");
         tag.className = "history-modulation";
-        tag.textContent = `\u2192 ${modulation}`;
-        tag.title = `Modulation to ${modulation}: from here the numerals are read in it`;
+        tag.textContent = `\u2192 ${keyLabel(modulation)}`;
+        tag.title = t("history.modulation", { key: keyLabel(modulation) });
         strip.appendChild(tag);
       }
       if (cadence) {
         const tag = document.createElement("span");
         tag.className = "history-cadence";
         tag.textContent = shortCadence(cadence);
-        tag.title = `${cadence}: ${shown[i + 1].symbol} \u2192 ${entry.symbol}`;
+        tag.title = `${cadence}: ${chordLabel(shown[i + 1].symbol)} \u2192 ${chordLabel(entry.symbol)}`;
         strip.appendChild(tag);
       }
     });
     const clearBtn = document.createElement("button");
-    clearBtn.textContent = "Clear";
-    clearBtn.title = "Clear history (C) \u2014 can be undone";
+    clearBtn.textContent = t("history.clear");
+    clearBtn.title = t("history.clear.title");
     clearBtn.className = "history-clear-btn";
     clearBtn.addEventListener("click", clearHistoryWithUndo);
     const wrap = document.createElement("div");
@@ -2096,10 +2827,11 @@ ${lower.length ? chordOf(lower) : empty}`;
 
   // src/song/model.ts
   function createSong() {
-    return { schemaVersion: 2, id: newId(), title: "Untitled", key: null, updatedAt: Date.now(), sections: [] };
+    return { schemaVersion: 2, id: newId(), title: t("song.untitled"), key: null, updatedAt: Date.now(), sections: [] };
   }
+  var UNTITLED = /* @__PURE__ */ new Set([en["song.untitled"], es["song.untitled"]]);
   function isBlankSong(song) {
-    return !song.sections.length && song.title === "Untitled";
+    return !song.sections.length && UNTITLED.has(song.title);
   }
   function newId() {
     return crypto.randomUUID();
@@ -2280,7 +3012,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     return map;
   }
   function parseProgressionText(text) {
-    return text.split(/[\s,\n|]+/).map((t) => t.trim()).filter(Boolean);
+    return text.split(/[\s,\n|]+/).map((t2) => t2.trim()).filter(Boolean);
   }
   function parseProgressionMeasures(text) {
     if (!text.includes("|")) return parseProgressionText(text).map((sym) => [sym]);
@@ -2331,8 +3063,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     const transposeNote = (note) => {
       const midi = noteNameToMidi(note);
       if (midi === null) return note;
-      const t = midi + semitones;
-      return names[(t % 12 + 12) % 12] + (Math.floor(t / 12) - 1);
+      const t2 = midi + semitones;
+      return names[(t2 % 12 + 12) % 12] + (Math.floor(t2 / 12) - 1);
     };
     return {
       ...song,
@@ -2363,7 +3095,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     };
   }
   function detectForm(sectionNames) {
-    if (sectionNames.length === 0) return "Empty";
+    if (sectionNames.length === 0) return t("form.empty");
     const map = /* @__PURE__ */ new Map();
     let letter = 65;
     const letters = sectionNames.map((name) => {
@@ -2372,11 +3104,11 @@ ${lower.length ? chordOf(lower) : empty}`;
       return map.get(key);
     });
     const pattern = letters.join("");
-    if (/^(AB)+$/.test(pattern)) return `Verse-Chorus (${pattern})`;
+    if (/^(AB)+$/.test(pattern)) return t("form.verseChorus", { p: pattern });
     if (/^AABA/.test(pattern)) return `AABA (${pattern})`;
-    if (/^(A+B+A+)$/.test(pattern)) return `Ternary (${pattern})`;
-    if (pattern === "A") return "Single section (A)";
-    if (/^A+$/.test(pattern)) return `Strophic (${pattern})`;
+    if (/^(A+B+A+)$/.test(pattern)) return t("form.ternary", { p: pattern });
+    if (pattern === "A") return t("form.single");
+    if (/^A+$/.test(pattern)) return t("form.strophic", { p: pattern });
     return `${pattern}`;
   }
 
@@ -2413,7 +3145,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       key = normalizeKey(localStorage.getItem(LEGACY_KEY_KEY));
     } catch {
     }
-    return withoutEmptyChords({ ...createSong(), title: legacy.title ?? "Untitled", key, sections: legacy.sections });
+    return withoutEmptyChords({ ...createSong(), title: legacy.title ?? createSong().title, key, sections: legacy.sections });
   }
   function ensureIndex() {
     const index = readIndex();
@@ -2528,7 +3260,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
   function removeChordWithUndo(chordId) {
     const chord = _song.sections.flatMap((s) => s.measures.flatMap((m) => m.chords)).find((c) => c.id === chordId);
-    if (chord) applyWithUndo(removeChord(_song, chordId), `Removed ${chord.symbol || "chord"}`);
+    if (chord) applyWithUndo(removeChord(_song, chordId), t("chord.removed", { chord: chord.symbol ? chordLabel(chord.symbol) : t("chord.generic") }));
   }
   function mountSong(container, song, handlers) {
     _song = song;
@@ -2560,32 +3292,32 @@ ${lower.length ? chordOf(lower) : empty}`;
     });
     const songSelect = document.createElement("select");
     songSelect.className = "transpose-select song-select";
-    songSelect.title = "Saved songs";
+    songSelect.title = t("song.saved.title");
     const metas = h.songs.some((m) => m.id === song.id) ? h.songs : [{ id: song.id, title: song.title, updatedAt: song.updatedAt }, ...h.songs];
-    songSelect.innerHTML = metas.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id === song.id ? song.title : m.title) || "Untitled"}</option>`).join("");
+    songSelect.innerHTML = metas.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id === song.id ? song.title : m.title) || escapeHtml(t("song.untitled"))}</option>`).join("");
     songSelect.value = song.id;
     songSelect.addEventListener("change", () => h.onOpenSong(songSelect.value));
-    const newBtn = makeBtn("New", "#374151", () => {
+    const newBtn = makeBtn(t("song.new"), "#374151", () => {
       if (isBlankSong(_song)) return;
       h.onNewSong();
     });
-    newBtn.title = "Start a new song; the current one stays in the list";
-    const deleteBtn = makeBtn("Delete", "#374151", () => h.onDeleteSong());
-    deleteBtn.title = "Delete this song \u2014 can be undone";
+    newBtn.title = t("song.new.title");
+    const deleteBtn = makeBtn(t("song.delete"), "#374151", () => h.onDeleteSong());
+    deleteBtn.title = t("song.delete.title");
     const pasteArea = document.createElement("div");
     pasteArea.className = "paste-area";
     pasteArea.style.display = "none";
     const pasteTA = document.createElement("textarea");
-    pasteTA.placeholder = "Am G | C F  (| separates measures; without bars, one chord per measure)";
+    pasteTA.placeholder = t("song.paste.placeholder");
     pasteTA.rows = 2;
     pasteTA.className = "paste-textarea";
-    const pasteSubmit = makeBtn("Add chords", "#4f46e5", () => {
+    const pasteSubmit = makeBtn(t("song.paste.add"), "#4f46e5", () => {
       const text = pasteTA.value.trim();
       if (!text) return;
-      const measures = parseProgressionMeasures(text);
+      const measures = parseProgressionMeasures(text).map((m) => m.map(readTypedChord));
       if (!measures.length) return;
       if (!_song.sections.length) {
-        _song = addSection(_song, "Section", "verse");
+        _song = addSection(_song, t("section.default"), "verse");
       }
       const section = _song.sections[_song.sections.length - 1];
       _song = appendProgression(_song, section.id, measures);
@@ -2596,29 +3328,30 @@ ${lower.length ? chordOf(lower) : empty}`;
     });
     pasteArea.append(pasteTA, pasteSubmit);
     const templates = [
-      { label: "Intro", name: "Intro", color: "intro" },
-      { label: "Verse", name: "Verse", color: "verse" },
-      { label: "Pre", name: "Pre-Chorus", color: "prechorus" },
-      { label: "Chorus", name: "Chorus", color: "chorus" },
-      { label: "Bridge", name: "Bridge", color: "bridge" },
-      { label: "Outro", name: "Outro", color: "outro" }
+      { label: "section.intro", name: "section.intro", color: "intro" },
+      { label: "section.verse", name: "section.verse", color: "verse" },
+      { label: "section.pre", name: "section.prechorus", color: "prechorus" },
+      { label: "section.chorus", name: "section.chorus", color: "chorus" },
+      { label: "section.bridge", name: "section.bridge", color: "bridge" },
+      { label: "section.outro", name: "section.outro", color: "outro" }
     ];
     const templateWrap = document.createElement("div");
     templateWrap.className = "template-wrap";
-    templates.forEach((t) => {
-      const btn = makeBtn(`+ ${t.label}`, SECTION_COLORS[t.color], () => {
-        _song = addSection(_song, t.name, t.color);
+    templates.forEach((tpl) => {
+      const name = t(tpl.name);
+      const btn = makeBtn(`+ ${t(tpl.label)}`, SECTION_COLORS[tpl.color], () => {
+        _song = addSection(_song, name, tpl.color);
         saveSong(_song);
         h.onSongChange(_song);
       });
       btn.style.fontSize = "11px";
-      btn.title = `Add ${t.name} section`;
+      btn.title = t("song.addSection.title", { name });
       templateWrap.appendChild(btn);
     });
     const transposeSelect = document.createElement("select");
-    transposeSelect.title = "Transpose all chords up by semitones";
+    transposeSelect.title = t("song.transpose.title");
     transposeSelect.className = "transpose-select";
-    transposeSelect.innerHTML = '<option value="">\u21C4 Transpose</option>' + Array.from({ length: 11 }, (_, i) => `<option value="${i + 1}">+${i + 1} st</option>`).join("");
+    transposeSelect.innerHTML = `<option value="">${t("song.transpose")}</option>` + Array.from({ length: 11 }, (_, i) => `<option value="${i + 1}">${t("song.transpose.step", { n: i + 1 })}</option>`).join("");
     transposeSelect.addEventListener("change", () => {
       const n = parseInt(transposeSelect.value);
       if (n) {
@@ -2629,31 +3362,31 @@ ${lower.length ? chordOf(lower) : empty}`;
       }
       transposeSelect.value = "";
     });
-    const exportBtn = makeBtn("\u2399 Export", "#374151", () => {
+    const exportBtn = makeBtn(t("song.export"), "#374151", () => {
       const printWin = window.open("", "_blank");
       if (!printWin) {
-        showNotice("Pop-up blocked \u2014 allow pop-ups for this page to export.", "warn");
+        showNotice(t("song.popupBlocked"), "warn");
         return;
       }
       printWin.document.write(buildPrintHTML(_song, h.activeKey));
       printWin.document.close();
       printWin.print();
     });
-    exportBtn.title = "Print / export song to PDF";
-    const pasteBtn = makeBtn("Paste", "#374151", () => {
+    exportBtn.title = t("song.export.title");
+    const pasteBtn = makeBtn(t("song.paste"), "#374151", () => {
       const open2 = pasteArea.style.display === "none";
       pasteArea.style.display = open2 ? "block" : "none";
       if (open2) pasteTA.focus();
     });
-    pasteBtn.title = "Paste a chord progression as text";
+    pasteBtn.title = t("song.paste.title");
     header.append(songSelect, titleInput, newBtn, deleteBtn, templateWrap, transposeSelect, exportBtn, pasteBtn);
     root.appendChild(header);
     root.appendChild(pasteArea);
     const formInfo = document.createElement("div");
     formInfo.className = "song-form-info";
     const form = detectForm(_song.sections.map((s) => s.name));
-    const keyStr = h.activeKey ? ` \xB7 Key: ${h.activeKey}` : "";
-    formInfo.textContent = _song.sections.length ? `Form: ${form}${keyStr}` : "";
+    const keyStr = h.activeKey ? ` \xB7 ${t("song.key", { key: keyLabel(h.activeKey) })}` : "";
+    formInfo.textContent = _song.sections.length ? t("song.form", { form }) + keyStr : "";
     root.appendChild(formInfo);
     const measureNums = computeMeasureNumbers(song);
     song.sections.forEach((section) => {
@@ -2691,7 +3424,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const swatchEl = document.createElement("button");
     swatchEl.className = "section-swatch";
     swatchEl.style.background = color;
-    swatchEl.title = "Change section color";
+    swatchEl.title = t("section.color.title");
     swatchEl.addEventListener("click", (e) => {
       e.stopPropagation();
       document.querySelector(".color-picker-popup")?.remove();
@@ -2699,7 +3432,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       picker.className = "color-picker-popup";
       PRESET_COLORS.forEach((c) => {
         const dot = document.createElement("button");
-        dot.title = c;
+        dot.title = t(`section.${c}`);
         dot.className = "color-picker-dot";
         dot.style.background = SECTION_COLORS[c];
         dot.style.borderColor = c === section.color ? "#fff" : "transparent";
@@ -2728,7 +3461,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     });
     const repeatBadge = document.createElement("span");
     repeatBadge.textContent = `\xD7${section.repeatCount}`;
-    repeatBadge.title = "Repeat count \u2014 click to edit";
+    repeatBadge.title = t("section.repeat.title");
     repeatBadge.className = "section-repeat-badge";
     repeatBadge.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -2760,26 +3493,26 @@ ${lower.length ? chordOf(lower) : empty}`;
     });
     const dragHandle = document.createElement("span");
     dragHandle.textContent = "\u283F";
-    dragHandle.title = "Drag to reorder section";
+    dragHandle.title = t("section.drag.title");
     dragHandle.className = "section-drag-handle";
     const dupBtn = makeSmallBtn("\u29C9", () => {
       _song = duplicateSection(_song, section.id);
       saveSong(_song);
       h.onSongChange(_song);
     });
-    dupBtn.title = "Duplicate section";
+    dupBtn.title = t("section.duplicate.title");
     const delBtn = makeSmallBtn("\xD7", () => {
-      applyWithUndo(removeSection(_song, section.id), `Deleted section ${section.name}`);
+      applyWithUndo(removeSection(_song, section.id), t("section.deleted", { name: section.name }));
     });
     delBtn.style.color = "#f87171";
-    delBtn.title = "Delete section \u2014 can be undone";
+    delBtn.title = t("section.delete.title");
     secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn);
-    const addMeasureBtn = makeSmallBtn("+ Bar", () => {
+    const addMeasureBtn = makeSmallBtn(t("section.addBar"), () => {
       _song = addMeasure(_song, section.id);
       saveSong(_song);
       h.onSongChange(_song);
     });
-    addMeasureBtn.title = "Add a measure to this section";
+    addMeasureBtn.title = t("section.addBar.title");
     secHeader.appendChild(addMeasureBtn);
     wrap.appendChild(secHeader);
     secHeader.draggable = true;
@@ -2898,9 +3631,9 @@ ${lower.length ? chordOf(lower) : empty}`;
     });
     wrap.appendChild(chordsRow);
     const delMBtn = makeSmallBtn("\xD7", () => {
-      applyWithUndo(removeMeasure(_song, section.id, measure.id), `Deleted measure ${measureNum}`);
+      applyWithUndo(removeMeasure(_song, section.id, measure.id), t("measure.deleted", { n: measureNum }));
     });
-    delMBtn.title = "Delete measure \u2014 can be undone";
+    delMBtn.title = t("measure.delete.title");
     delMBtn.style.color = "#f87171";
     delMBtn.style.alignSelf = "center";
     const sectionObj = _song.sections.find((s) => s.id === section.id);
@@ -2926,7 +3659,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       input.placeholder = "Am7";
       const prevValue = chord.symbol;
       const confirmInput = () => {
-        const val = input.value.trim();
+        const val = readTypedChord(input.value);
         if (val) {
           _song = updateChord(_song, chord.id, val);
         } else {
@@ -2956,7 +3689,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       return wrap;
     }
     const symbolEl = document.createElement("div");
-    symbolEl.textContent = chord.symbol;
+    symbolEl.textContent = chordLabel(chord.symbol);
     symbolEl.className = "chord-chip-symbol";
     if (!chord.valid) symbolEl.style.color = "#ef4444";
     const degreeEl = document.createElement("div");
@@ -2976,7 +3709,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       input.className = "chord-input";
       input.value = chord.symbol;
       const commit = () => {
-        const symbol = input.value.trim() || prevVal;
+        const symbol = readTypedChord(input.value) || prevVal;
         _song = updateChord(_song, chord.id, symbol, symbol === prevVal ? notesState : void 0);
         saveSong(_song);
         h.onSongChange(_song);
@@ -2996,7 +3729,7 @@ ${lower.length ? chordOf(lower) : empty}`;
         notesText.style.textOverflow = "ellipsis";
         const clearBtn = document.createElement("button");
         clearBtn.textContent = "\xD7";
-        clearBtn.title = "Clear stored voicing";
+        clearBtn.title = t("chord.clearVoicing.title");
         clearBtn.style.cssText = "background:none;border:none;color:#6b7280;cursor:pointer;padding:0 2px;font-size:10px;flex-shrink:0";
         clearBtn.addEventListener("mousedown", (e) => {
           e.preventDefault();
@@ -3010,17 +3743,17 @@ ${lower.length ? chordOf(lower) : empty}`;
       wrap.appendChild(editWrap);
       input.focus();
     });
-    editBtn.title = "Edit chord symbol";
+    editBtn.title = t("chord.edit.title");
     const dupBtn = makeSmallBtn("\u29C9", () => {
       _song = duplicateChord(_song, chord.id);
       saveSong(_song);
       h.onSongChange(_song);
     });
-    dupBtn.title = "Duplicate chord";
+    dupBtn.title = t("chord.duplicate.title");
     const delBtn = makeSmallBtn("\xD7", () => removeChordWithUndo(chord.id));
-    delBtn.title = "Remove chord (Del) \u2014 can be undone";
+    delBtn.title = t("chord.remove.title");
     const captureBtn = makeSmallBtn("\u2299", () => h.onChordCapture(chord.id));
-    captureBtn.title = "MIDI fill: next chord played on MIDI keyboard replaces this slot";
+    captureBtn.title = t("chord.capture.title");
     if (isCapture) {
       captureBtn.style.color = "#818cf8";
       captureBtn.style.fontWeight = "700";
@@ -3115,7 +3848,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     .bar-num{font-size:10px;color:#999;margin-bottom:4px} .chord{font-size:13px;font-weight:600} .degree{font-size:10px;color:#666}
   </style></head><body>
     <h1>${escapeHtml(song.title)}</h1>
-    <div class="key">${activeKey ? "Key: " + activeKey : ""}</div>`;
+    <div class="key">${activeKey ? escapeHtml(t("song.key", { key: keyLabel(activeKey) })) : ""}</div>`;
     for (const section of song.sections) {
       html += `<div class="section"><div class="section-name">${escapeHtml(section.name)}${section.repeatCount > 1 ? ` \xD7${section.repeatCount}` : ""}</div><div class="measures">`;
       for (const measure of section.measures) {
@@ -3123,7 +3856,7 @@ ${lower.length ? chordOf(lower) : empty}`;
         html += `<div class="measure"><div class="bar-num">${num}</div>`;
         for (const chord of measure.chords) {
           const degree = activeKey ? computeDegree(chord.symbol, activeKey) : "\u2014";
-          html += `<div class="chord">${escapeHtml(chord.symbol)}</div><div class="degree">${degree}</div>`;
+          html += `<div class="chord">${escapeHtml(chordLabel(chord.symbol))}</div><div class="degree">${degree}</div>`;
         }
         html += "</div>";
       }
@@ -3135,29 +3868,35 @@ ${lower.length ? chordOf(lower) : empty}`;
 
   // src/input/shortcuts.ts
   var SHORTCUTS = [
-    { key: "Space", action: "Play current chord (or last if none active)" },
-    { key: "\u2190 \u2192", action: "Previous / next chord in the song (or history) \u2014 plays it" },
-    { key: "Del", action: "Remove the selected song chord (undo in the toast)" },
-    { key: "H", action: "Toggle Hold mode" },
-    { key: "A", action: "Toggle Arpeggio mode" },
-    { key: "S", action: "Send history chip \u2192 Song" },
-    { key: "C", action: "Clear history (undo in the toast)" },
-    { key: "Esc", action: "Drop a held chord, clear cursor, stop MIDI fill" },
-    { key: "M", action: "Play with the computer keyboard (M or Esc to stop)" },
-    { key: "P", action: "Presentation: large, no controls, full screen (P or Esc to leave)" },
-    { key: "/", action: "Type a chord name" },
-    { key: "1\u20139", action: "Select chord candidate" },
-    { key: "?", action: "Show / hide this panel" }
+    { key: "kbd.space", action: "shortcut.play" },
+    { key: "\u2190 \u2192", action: "shortcut.step" },
+    { key: "kbd.del", action: "shortcut.delete" },
+    { key: "H", action: "shortcut.hold" },
+    { key: "A", action: "shortcut.arpeggio" },
+    { key: "S", action: "shortcut.send" },
+    { key: "C", action: "shortcut.clear" },
+    { key: "kbd.esc", action: "shortcut.escape" },
+    { key: "M", action: "shortcut.keyboard" },
+    { key: "P", action: "shortcut.present" },
+    { key: "/", action: "shortcut.type" },
+    { key: "1\u20139", action: "shortcut.candidate" },
+    { key: "?", action: "shortcut.help" }
   ];
   var GESTURES = [
-    "Click a history chip, song chord or circle segment to play it and show it in the detector.",
-    "Double-click a major or minor circle segment to make it the key.",
-    "A chord is logged to history once held steady for 0.8 s, and not twice in a row.",
-    "Drag a history chip onto a song measure to insert it; drag song chords and section headers to reorder.",
-    "\u2299 on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.",
-    "Right-click a history chip to remove it. Removals and Clear can be undone from the toast.",
-    "Click the on-screen piano to play: in Hold each click adds or removes a note of the chord."
+    "gesture.click",
+    "gesture.doubleClick",
+    "gesture.logged",
+    "gesture.drag",
+    "gesture.fill",
+    "gesture.remove",
+    "gesture.piano"
   ];
+  var keyText = (k) => k.startsWith("kbd.") ? t(k) : k;
+  function reloadWith(apply) {
+    apply();
+    carryHistoryOverReload();
+    location.reload();
+  }
   var helpVisible = false;
   function closeHelp() {
     if (!helpVisible) return false;
@@ -3177,18 +3916,32 @@ ${lower.length ? chordOf(lower) : empty}`;
     popup.className = "shortcut-help-popup";
     popup.innerHTML = `
     <div class="shortcut-help-header">
-      <span>Shortcuts and gestures</span>
+      <span>${t("help.heading")}</span>
       <button class="shortcut-help-close">\xD7</button>
     </div>
     ${SHORTCUTS.map((s) => `
       <div class="shortcut-row">
-        <kbd class="shortcut-key">${s.key}</kbd>
-        <span class="shortcut-action">${s.action}</span>
+        <kbd class="shortcut-key">${escapeHtml(keyText(s.key))}</kbd>
+        <span class="shortcut-action">${escapeHtml(t(s.action))}</span>
       </div>`).join("")}
-    <div class="shortcut-section">Mouse</div>
-    ${GESTURES.map((g) => `<div class="gesture-row">${g}</div>`).join("")}`;
+    <div class="shortcut-section">${t("help.mouse")}</div>
+    ${GESTURES.map((g) => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join("")}
+    <div class="shortcut-section">${t("help.settings")}</div>
+    <div class="help-setting"><label for="help-lang">${t("help.language")}</label>
+      <select id="help-lang" class="ctrl-select">
+        ${LANGS.map((l) => `<option value="${l}"${l === getLang() ? " selected" : ""}>${LANG_NAMES[l]}</option>`).join("")}
+      </select></div>
+    <div class="help-setting"><label for="help-note-names">${t("help.noteNames")}</label>
+      <select id="help-note-names" class="ctrl-select">
+        ${NOTE_NAMINGS.map((n) => `<option value="${n}"${n === getNoteNaming() ? " selected" : ""}>${t(`help.noteNames.${n}`)}</option>`).join("")}
+      </select></div>
+    <div class="gesture-row">${escapeHtml(t("help.reloads"))}</div>`;
     document.body.appendChild(popup);
     popup.querySelector(".shortcut-help-close").addEventListener("click", closeHelp);
+    const langSel = popup.querySelector("#help-lang");
+    langSel.addEventListener("change", () => reloadWith(() => saveLang(langSel.value)));
+    const namesSel = popup.querySelector("#help-note-names");
+    namesSel.addEventListener("change", () => reloadWith(() => saveNoteNaming(namesSel.value)));
     document.addEventListener("mousedown", closeHelpOnOutsideClick);
   }
   function closeHelpOnOutsideClick(e) {
@@ -3200,9 +3953,9 @@ ${lower.length ? chordOf(lower) : empty}`;
   function wireKeyboard(actions) {
     document.addEventListener("keydown", (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const t = e.target;
-      if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return;
-      if (t instanceof HTMLElement && t.isContentEditable) return;
+      const t2 = e.target;
+      if (t2 instanceof HTMLInputElement || t2 instanceof HTMLTextAreaElement || t2 instanceof HTMLSelectElement) return;
+      if (t2 instanceof HTMLElement && t2.isContentEditable) return;
       switch (e.key) {
         case "h":
         case "H":
@@ -3260,36 +4013,9 @@ ${lower.length ? chordOf(lower) : empty}`;
 
   // src/detector/analysis-panel.ts
   var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "secondary", "subs", "upper", "forte"];
-  var ANALYSIS_FIELD_LABELS = {
-    roman: "Roman",
-    function: "Func",
-    figbass: "Fig",
-    voicing: "Voic",
-    diatonic: "Diat",
-    scales: "Scl",
-    fits: "Fits",
-    cadence: "Cad",
-    plr: "PLR",
-    secondary: "Sec",
-    subs: "Subs",
-    upper: "UST",
-    forte: "Set"
-  };
-  var ANALYSIS_FIELD_TOOLTIPS = {
-    roman: "Roman numeral",
-    function: "Harmonic function",
-    figbass: "Figured bass",
-    voicing: "Voicing: inversion, close / open, drop, doubled and missing notes",
-    diatonic: "Diatonic / borrowed",
-    scales: "Suggested scales for the chord",
-    fits: "Scales that contain every note on screen, or of the melody played note by note",
-    cadence: "Cadence",
-    plr: "Neo-Riemannian moves (P, L, R) from the previous triad",
-    secondary: "Secondary dominant",
-    subs: "Substitutions",
-    upper: "Upper-structure triads sounding over a dominant",
-    forte: "Set class: Forte number, prime form, interval vector"
-  };
+  var fieldLabel = (f) => t(`field.${f}`);
+  var fieldTooltip = (f) => t(`field.${f}.title`);
+  var rowLabel = (f) => t(`field.${f}.row`);
   function renderChordSummary(detection, onAltSelect2) {
     const el = document.getElementById("chord-summary");
     if (!el) return;
@@ -3297,16 +4023,17 @@ ${lower.length ? chordOf(lower) : empty}`;
       el.innerHTML = "";
       return;
     }
-    const chordName = escapeHtml(detection.candidates[detection.selectedIndex]);
-    const color = chordColor(chordName);
-    const notes = detection.notes.map((n) => n.replace(/(-?\d+)$/, "")).join(" \xB7 ");
+    const symbol = detection.candidates[detection.selectedIndex];
+    const chordName = escapeHtml(chordLabel(symbol));
+    const color = chordColor(symbol);
+    const notes = escapeHtml(detection.notes.map((n) => noteLabel(n.replace(/(-?\d+)$/, ""))).join(" \xB7 "));
     const alts = detection.candidates.slice(1, 7);
     el.innerHTML = `
     <div class="chord-summary-row">
       <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
       <span class="chord-notes">${notes}</span>
       ${alts.map(
-      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(c)}</button>`
+      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(chordLabel(c))}</button>`
     ).join("")}
     </div>`;
     el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
@@ -3330,21 +4057,20 @@ ${lower.length ? chordOf(lower) : empty}`;
       <span class="analysis-label">${label}</span>
       <span class="analysis-value">${escapeHtml(val)}</span>
     </div>`;
-    const maybeRow = (f, label, val) => fieldsVisible[f] ? row(label, val) : "";
-    const conditionalRow = (f, label, val) => fieldsVisible[f] ? row(label, val ?? "\u2014") : "";
+    const fieldRow = (f, val) => fieldsVisible[f] ? row(rowLabel(f), val ?? "\u2014") : "";
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
     let secondary = null, subs = null;
     let voicing = null, plr = null, upper = null;
     let extra = "";
     if (detection?.kind === "note") {
-      extra = row("Note", `${detection.noteName} \xB7 MIDI ${detection.midiNumber}`);
+      extra = row(t("analysis.note"), `${noteLabel(detection.noteName)} \xB7 MIDI ${detection.midiNumber}`);
     } else if (detection?.kind === "interval") {
-      extra = row("Interval", `${detection.intervalName} \xB7 ${detection.semitones} st`) + row("Inversion", detection.inversionName);
+      extra = row(t("analysis.interval"), `${detection.intervalName} \xB7 ${t("analysis.semitones", { n: detection.semitones })}`) + row(t("analysis.inversion"), detection.inversionName);
     } else if (detection?.kind === "chord" && analysis) {
       roman = analysis.roman;
-      func_ = { T: "Tonic", S: "Subdominant", D: "Dominant", unknown: "Unknown" }[analysis.function];
+      func_ = t(`fn.${analysis.function}`);
       figuredBass = analysis.figuredBass || "\u2014";
-      diatonic = analysis.isDiatonic ? "Yes" : analysis.isBorrowed ? `Borrowed (${analysis.borrowedFrom ?? "?"})` : "Chromatic";
+      diatonic = analysis.isDiatonic ? t("analysis.yes") : analysis.isBorrowed ? t("analysis.borrowed", { mode: analysis.borrowedFrom ?? "?" }) : t("analysis.chromatic");
       scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
       cadence = analysis.cadence || "\u2014";
       if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget?.split("/")[1] ?? "?"}`;
@@ -3353,12 +4079,12 @@ ${lower.length ? chordOf(lower) : empty}`;
       plr = analysis.transformation;
       if (analysis.upperStructures.length) upper = analysis.upperStructures.join(", ");
     }
-    const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
-    el.innerHTML = maybeRow("roman", "Roman", roman) + maybeRow("function", "Function", func_) + maybeRow("figbass", "Fig. bass", figuredBass) + conditionalRow("voicing", "Voicing", voicing) + maybeRow("diatonic", "Diatonic", diatonic) + maybeRow("scales", "Scales", scales) + conditionalRow("fits", "Fits", fits) + maybeRow("cadence", "Cadence", cadence) + conditionalRow("plr", "P/L/R", plr) + conditionalRow("secondary", "Secondary", secondary) + conditionalRow("subs", "Subs.", subs) + conditionalRow("upper", "Upper str.", upper) + conditionalRow("forte", "Set class", noteSet2?.forte ?? null) + extra;
+    const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.map(noteLabel).join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
+    el.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
   }
 
   // src/ui/layout.ts
-  var VIEW_LABELS = { chord: "Chord", staff: "Staff", cof: "Circle of Fifths", piano: "Piano", guitar: "Guitar" };
+  var viewLabel = (v) => t(`view.${v}`);
   var $ = (id) => document.getElementById(id);
   function loadPanels() {
     return {
@@ -3399,129 +4125,129 @@ ${lower.length ? chordOf(lower) : empty}`;
     <div id="z1-toolbar" class="toolbar">
       <span id="midi-status" class="midi-status">MIDI: \u2014</span>
       <select id="midi-device" class="ctrl-select"></select>
-      <select id="midi-in-ch" class="ctrl-select" title="Input channel: only notes on this channel are read (a keyboard split, or one track of a DAW)">
-        <option value="0">in: all ch</option>
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">in: ch ${i + 1}</option>`).join("")}
+      <select id="midi-in-ch" class="ctrl-select" title="${t("midi.inChannel.title")}">
+        <option value="0">${t("midi.inChannel.all")}</option>
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.inChannel.one", { n: i + 1 })}</option>`).join("")}
       </select>
-      <select id="midi-out" class="ctrl-select" title="MIDI out: what sounds goes to this port"><option value="">Out: off</option></select>
-      <select id="midi-out-ch" class="ctrl-select" title="MIDI out channel">
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">ch ${i + 1}</option>`).join("")}
+      <select id="midi-out" class="ctrl-select" title="${t("midi.out.title")}"><option value="">${t("midi.out.off")}</option></select>
+      <select id="midi-out-ch" class="ctrl-select" title="${t("midi.outChannel.title")}">
+        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.outChannel.one", { n: i + 1 })}</option>`).join("")}
       </select>
-      <button id="btn-thru" class="mode-btn" title="Thru: also send the controller's notes (off: the DAW usually hears the controller itself)">Thru</button>
-      <button id="btn-normal" class="mode-btn" data-mode="normal">Normal</button>
-      <button id="btn-hold" class="mode-btn" data-mode="hold">Hold</button>
-      <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio">Arpeggio</button>
-      <button id="btn-keyboard" class="mode-btn" title="Play with the computer keyboard (M): A-\xD1 white keys, W E T Y U O P black, Z/X octave, C/V velocity, Tab sustain">\u2328</button>
+      <button id="btn-thru" class="mode-btn" title="${t("midi.thru.title")}">${t("midi.thru")}</button>
+      <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t("mode.normal.title")}">${t("mode.normal")}</button>
+      <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t("mode.hold.title")}">${t("mode.hold")}</button>
+      <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t("mode.arpeggio.title")}">${t("mode.arpeggio")}</button>
+      <button id="btn-keyboard" class="mode-btn" title="${t("keyboard.title")}">\u2328</button>
       <span id="keyboard-status" class="auto-key-label"></span>
       <select id="key-select" class="ctrl-select">
-        <option value="">Key: Auto</option>
-        ${ALL_KEYS.map((k) => `<option value="${k}">${k}</option>`).join("")}
+        <option value="">${t("key.auto")}</option>
+        ${ALL_KEYS.map((k) => `<option value="${k}">${keyLabel(k)}</option>`).join("")}
       </select>
       <span id="auto-key-label" class="auto-key-label"></span>
-      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="Chord\u2026 (/)" title="Type a chord name and press Enter" autocomplete="off" spellcheck="false">
+      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t("typed.placeholder")}" title="${t("typed.title")}" autocomplete="off" spellcheck="false">
       <span class="toolbar-sep"></span>
-      <div id="audio-progress" class="audio-progress" title="Soundfont status">
+      <div id="audio-progress" class="audio-progress" title="${t("audio.title")}">
         <div id="audio-progress-fill" class="audio-progress-fill"></div>
-        <span id="audio-status" class="audio-status">\u266A idle</span>
+        <span id="audio-status" class="audio-status">${t("audio.idle")}</span>
       </div>
-      <button id="btn-play-chord" class="ctrl-btn" title="Play current chord (Space)">\u25B6</button>
-      <select id="audio-instrument" class="ctrl-select" title="Soundfont instrument">
+      <button id="btn-play-chord" class="ctrl-btn" title="${t("audio.play.title")}">\u25B6</button>
+      <select id="audio-instrument" class="ctrl-select" title="${t("audio.instrument.title")}">
         ${GM_INSTRUMENT_GROUPS.map(
-      (g) => `<optgroup label="${g.label}">${g.instruments.map(
+      (g) => `<optgroup label="${t(g.label)}">${g.instruments.map(
         (i) => `<option value="${i}"${i === getCurrentInstrument() ? " selected" : ""}>${i.replace(/_/g, " ")}</option>`
       ).join("")}</optgroup>`
     ).join("")}
       </select>
-      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="Volume" class="volume-slider">
+      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t("audio.volume.title")}" class="volume-slider">
       <div class="view-menu-wrap">
-        <button id="btn-present" class="ctrl-btn" title="Presentation: large, no controls, full screen (P; Esc to leave)">\u26F6</button>
-        <button id="btn-views" class="ctrl-btn" title="View windows for OBS, and diagram export (SVG, PNG)">\u29C9</button>
+        <button id="btn-present" class="ctrl-btn" title="${t("present.title")}">\u26F6</button>
+        <button id="btn-views" class="ctrl-btn" title="${t("views.title")}">\u29C9</button>
         <div id="view-menu" class="view-menu">
-          <div class="view-menu-title">Open a view window</div>
-          ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${VIEW_LABELS[v]}</button>`).join("")}
-          <label class="view-menu-bg">Background
+          <div class="view-menu-title">${t("views.open")}</div>
+          ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join("")}
+          <label class="view-menu-bg">${t("views.background")}
             <select id="view-bg" class="ctrl-select">
-              ${Object.keys(VIEW_BACKGROUNDS).map((b) => `<option value="${b}">${b}</option>`).join("")}
+              ${Object.keys(VIEW_BACKGROUNDS).map((b) => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join("")}
             </select>
           </label>
-          <div class="view-menu-hint">In OBS: Window Capture of "Modus view: \u2026", then a Chroma Key filter. The window follows this one live.</div>
-          <div class="view-menu-title">Save the diagram on screen (transparent)</div>
-          ${["staff", "cof", "guitar", "piano"].map((t) => `
-            <div class="view-menu-export"><span>${VIEW_LABELS[t]}</span>
-              <button class="ctrl-btn" data-export="${t}" data-format="svg">SVG</button>
-              <button class="ctrl-btn" data-export="${t}" data-format="png">PNG</button>
+          <div class="view-menu-hint">${t("views.hint")}</div>
+          <div class="view-menu-title">${t("views.save")}</div>
+          ${["staff", "cof", "guitar", "piano"].map((v) => `
+            <div class="view-menu-export"><span>${viewLabel(v)}</span>
+              <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
+              <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
             </div>`).join("")}
         </div>
       </div>
-      <button id="btn-help" class="help-btn" title="Keyboard shortcuts">?</button>
+      <button id="btn-help" class="help-btn" title="${t("help.title")}">?</button>
     </div>`;
   }
   function buildNotationPanel(panels, fieldsVisible) {
     return `
     <div id="notation-panel" class="zone-panel">
       <div class="panel-header">
-        <span>Notation</span>
+        <span>${t("notation.title")}</span>
         <div class="col-vis-row">
-          <button class="col-vis-btn${panels.colStaff ? " active" : ""}" data-col="colStaff" title="Staff">St</button>
-          <button class="col-vis-btn${panels.colAnalysis ? " active" : ""}" data-col="colAnalysis" title="Analysis">An</button>
-          <button class="col-vis-btn${panels.colCoF ? " active" : ""}" data-col="colCoF" title="Circle of Fifths">CoF</button>
-          <button class="col-vis-btn${panels.colGuitar ? " active" : ""}" data-col="colGuitar" title="Guitar">Git</button>
+          <button class="col-vis-btn${panels.colStaff ? " active" : ""}" data-col="colStaff" title="${t("col.staff.title")}">${t("col.staff")}</button>
+          <button class="col-vis-btn${panels.colAnalysis ? " active" : ""}" data-col="colAnalysis" title="${t("col.analysis.title")}">${t("col.analysis")}</button>
+          <button class="col-vis-btn${panels.colCoF ? " active" : ""}" data-col="colCoF" title="${t("col.cof.title")}">${t("col.cof")}</button>
+          <button class="col-vis-btn${panels.colGuitar ? " active" : ""}" data-col="colGuitar" title="${t("col.guitar.title")}">${t("col.guitar")}</button>
         </div>
         <button class="toggle-btn" data-panel="notation">\u25BC</button>
       </div>
       <div id="notation-content">
         <div class="col-auto" id="col-staff">
-          <div class="col-label">Staff</div>
+          <div class="col-label">${t("staff.label")}</div>
           <div id="chord-summary"></div>
           <div id="staff-container"></div>
           <div class="ctrl-row" style="justify-content:center">
-            <button id="btn-staff-clef" class="size-ctrl-btn" title="Staves: grand (treble and bass, split at middle C), treble only, bass only">Grand</button>
-            <button id="btn-staff-minus" class="size-ctrl-btn" title="Smaller staff">\u2212</button>
-            <button id="btn-staff-plus"  class="size-ctrl-btn" title="Larger staff">+</button>
+            <button id="btn-staff-clef" class="size-ctrl-btn" title="${t("staff.clef.title")}"></button>
+            <button id="btn-staff-minus" class="size-ctrl-btn" title="${t("staff.smaller")}">\u2212</button>
+            <button id="btn-staff-plus"  class="size-ctrl-btn" title="${t("staff.larger")}">+</button>
           </div>
         </div>
         <div class="col-analysis" id="col-analysis">
           <div class="col-header">
-            <div class="col-label">Analysis</div>
+            <div class="col-label">${t("analysis.label")}</div>
             <button class="toggle-btn small" data-panel="analysisControls">\u25BC</button>
           </div>
           <div id="analysis-content"></div>
           <div id="analysis-controls">
             <div class="ctrl-row">
-              <button id="btn-analysis-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
-              <button id="btn-analysis-plus"  class="size-ctrl-btn" title="Larger">+</button>
+              <button id="btn-analysis-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
+              <button id="btn-analysis-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
             </div>
             <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
               ${ANALYSIS_FIELD_KEYS.map(
       (f) => `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? " active" : ""}"
-                  title="${ANALYSIS_FIELD_TOOLTIPS[f]}">${ANALYSIS_FIELD_LABELS[f]}</button>`
+                  title="${fieldTooltip(f)}">${fieldLabel(f)}</button>`
     ).join("")}
             </div>
           </div>
         </div>
         <div class="col-auto" id="col-cof">
           <div class="col-header">
-            <div class="col-label">CoF</div>
+            <div class="col-label">${t("cof.label")}</div>
             <button class="toggle-btn small" data-panel="cofControls">\u25BC</button>
           </div>
           <div id="cof-container"></div>
           <div id="cof-controls">
             <div class="ctrl-row">
-              <button id="btn-cof-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
-              <button id="btn-cof-plus"  class="size-ctrl-btn" title="Larger">+</button>
+              <button id="btn-cof-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
+              <button id="btn-cof-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
             </div>
             <div class="ctrl-row">
-              <button id="btn-cof-flat"   class="size-ctrl-btn" title="Show flat enharmonics (Gb, Db\u2026)">b</button>
-              <button id="btn-cof-sharp"  class="size-ctrl-btn" title="Show sharp enharmonics (F#, C#\u2026)">#</button>
-              <button id="btn-cof-minor"  class="size-ctrl-btn" title="Show/hide minor and diminished rings">m</button>
-              <button id="btn-cof-deg"    class="size-ctrl-btn" title="Show scale degrees (I, IV, V\u2026)">\xB0</button>
-              <button id="btn-cof-7"      class="size-ctrl-btn" title="Show 7th chords (maj7, m7, \xF87)">7</button>
+              <button id="btn-cof-flat"   class="size-ctrl-btn" title="${t("cof.flat.title")}">b</button>
+              <button id="btn-cof-sharp"  class="size-ctrl-btn" title="${t("cof.sharp.title")}">#</button>
+              <button id="btn-cof-minor"  class="size-ctrl-btn" title="${t("cof.minor.title")}">m</button>
+              <button id="btn-cof-deg"    class="size-ctrl-btn" title="${t("cof.degrees.title")}">\xB0</button>
+              <button id="btn-cof-7"      class="size-ctrl-btn" title="${t("cof.sevenths.title")}">7</button>
             </div>
           </div>
         </div>
         <div class="col-auto" id="col-guitar">
           <div class="col-header">
-            <div class="col-label">Guitar</div>
+            <div class="col-label">${t("guitar.label")}</div>
             <button class="toggle-btn small" data-panel="guitarControls">\u25BC</button>
           </div>
           <div id="guitar-container"></div>
@@ -3533,14 +4259,14 @@ ${lower.length ? chordOf(lower) : empty}`;
     return `
     <div id="key-panel" class="zone-panel">
       <div class="panel-header">
-        <span>Key</span>
+        <span>${t("keyPanel.title")}</span>
         <div class="ctrl-row">
-          <button id="btn-key-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
-          <button id="btn-key-plus"  class="size-ctrl-btn" title="Larger">+</button>
-          <button id="btn-key-7"     class="size-ctrl-btn" title="Seventh chords instead of triads">7</button>
-          <button id="btn-key-neg"   class="size-ctrl-btn" title="Show/hide negative harmony">Neg</button>
-          <button id="btn-key-par"   class="size-ctrl-btn" title="Show/hide parallel modes">Par</button>
-          <button id="btn-key-colt"  class="size-ctrl-btn" title="Show/hide Coltrane axis">Colt</button>
+          <button id="btn-key-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
+          <button id="btn-key-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
+          <button id="btn-key-7"     class="size-ctrl-btn" title="${t("keyPanel.sevenths.title")}">7</button>
+          <button id="btn-key-neg"   class="size-ctrl-btn" title="${t("keyPanel.neg.title")}">${t("keyPanel.neg")}</button>
+          <button id="btn-key-par"   class="size-ctrl-btn" title="${t("keyPanel.par.title")}">${t("keyPanel.par")}</button>
+          <button id="btn-key-colt"  class="size-ctrl-btn" title="${t("keyPanel.colt.title")}">${t("keyPanel.colt")}</button>
         </div>
         <button class="toggle-btn" data-panel="key">\u25BC</button>
       </div>
@@ -3551,22 +4277,22 @@ ${lower.length ? chordOf(lower) : empty}`;
     return `
     <div id="instruments-panel" class="zone-panel">
       <div class="panel-header">
-        <span>Instruments</span>
+        <span>${t("instruments.title")}</span>
         <div class="col-vis-row">
-          <button class="col-vis-btn${panels.colPiano ? " active" : ""}" data-col="colPiano" title="Piano">Pi</button>
-          <button class="col-vis-btn${panels.colNeck ? " active" : ""}" data-col="colNeck"  title="Fretboard">Fr</button>
-          <button class="col-vis-btn${panels.colVelocity ? " active" : ""}" data-col="colVelocity" title="Velocity of each note">Ve</button>
+          <button class="col-vis-btn${panels.colPiano ? " active" : ""}" data-col="colPiano" title="${t("col.piano.title")}">${t("col.piano")}</button>
+          <button class="col-vis-btn${panels.colNeck ? " active" : ""}" data-col="colNeck"  title="${t("col.neck.title")}">${t("col.neck")}</button>
+          <button class="col-vis-btn${panels.colVelocity ? " active" : ""}" data-col="colVelocity" title="${t("col.velocity.title")}">${t("col.velocity")}</button>
         </div>
         <button class="toggle-btn" data-panel="instruments">\u25BC</button>
       </div>
       <div id="instruments-content">
         <div id="col-piano"><div id="piano-container"></div></div>
-        <div id="col-velocity"><div class="col-label">Velocity</div><div id="velocity-container"></div></div>
+        <div id="col-velocity"><div class="col-label">${t("velocity.label")}</div><div id="velocity-container"></div></div>
         <div id="col-neck">
           <div id="neck-container"></div>
           <div class="ctrl-row" style="justify-content:center;margin-top:4px">
-            <button id="btn-neck-minus" class="size-ctrl-btn" title="Smaller">\u2212</button>
-            <button id="btn-neck-plus"  class="size-ctrl-btn" title="Larger">+</button>
+            <button id="btn-neck-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
+            <button id="btn-neck-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
           </div>
         </div>
       </div>
@@ -3575,13 +4301,13 @@ ${lower.length ? chordOf(lower) : empty}`;
   function buildZoneHeaders() {
     $("zone2").innerHTML = `
     <div class="zone-header">
-      <span class="zone-title">History</span>
+      <span class="zone-title">${t("history.title")}</span>
       <button class="toggle-btn" data-panel="history">\u25BC</button>
     </div>
     <div id="zone2-content"></div>`;
     $("zone3").innerHTML = `
     <div class="zone-header">
-      <span class="zone-title">Song Structure</span>
+      <span class="zone-title">${t("song.title")}</span>
       <button class="toggle-btn" data-panel="song">\u25BC</button>
     </div>
     <div id="zone3-content"></div>`;
@@ -3660,7 +4386,14 @@ ${lower.length ? chordOf(lower) : empty}`;
     panels: loadPanels()
   };
   var $2 = (id) => document.getElementById(id);
+  function translatePage() {
+    applyDocumentLang();
+    const warning = $2("browser-warning");
+    warning.firstChild.textContent = t("page.noMidi") + " ";
+    $2("cdn-error-banner").textContent = t("page.cdnError");
+  }
   function init() {
+    translatePage();
     if (!navigator.requestMIDIAccess) {
       $2("browser-warning").style.display = "block";
     }
@@ -3688,7 +4421,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     renderDetector();
     initMidi().then((result) => {
       if (result.denied) {
-        showMidiBanner("MIDI access denied. Grant permission in browser settings to use a controller.");
+        showMidiBanner(t("midi.denied"));
       }
       if (!result.unsupported) {
         refreshDeviceDropdown();
@@ -3714,6 +4447,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     setPreviewListener(outPreview);
     wireMidiOut();
     setHistoryChangeCallback(onHistoryChange);
+    restoreCarriedHistory();
     setAudioMissedCallback(() => {
       const el = document.getElementById("audio-progress");
       if (!el) return;
@@ -3727,8 +4461,8 @@ ${lower.length ? chordOf(lower) : empty}`;
       const el = document.getElementById("audio-status");
       const fill = document.getElementById("audio-progress-fill");
       if (!el || !fill) return;
-      const labels = { idle: "\u266A idle", loading: "\u266A loading\u2026", suspended: "\u266A click to activate", ready: "\u266A ready", error: "\u266A error" };
-      el.textContent = labels[status2] ?? status2;
+      const known = ["idle", "loading", "suspended", "ready", "error"];
+      el.textContent = known.includes(status2) ? t(`audio.${status2}`) : status2;
       if (progressTimer) {
         clearInterval(progressTimer);
         progressTimer = null;
@@ -3792,7 +4526,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       onDeleteSong: () => {
         const { deleted, open: open2 } = deleteSong(state.song.id);
         showSong(open2);
-        if (deleted) showUndo(`Deleted "${deleted.title}"`, () => {
+        if (deleted) showUndo(t("song.deleted", { title: deleted.title }), () => {
           restoreSong(deleted);
           showSong(deleted);
         });
@@ -3814,7 +4548,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       const btn = $2(id);
       btn.classList.toggle("active", used === acc);
       btn.disabled = !!key;
-      btn.title = key ? `Spelled as in ${key}; b / # apply without a key` : acc === "flat" ? "Show flat enharmonics (Gb, Db\u2026)" : "Show sharp enharmonics (F#, C#\u2026)";
+      btn.title = key ? t("cof.spelledInKey", { key: keyLabel(key) }) : acc === "flat" ? t("cof.flat.title") : t("cof.sharp.title");
     }
   }
   function wireLayoutEvents() {
@@ -3877,7 +4611,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     };
     const clefBtn = $2("btn-staff-clef");
     const showClef = () => {
-      clefBtn.textContent = CLEF_LABELS[staffClef];
+      clefBtn.textContent = t(`staff.clef.${staffClef}`);
     };
     showClef();
     clefBtn.addEventListener("click", () => {
@@ -3980,7 +4714,6 @@ ${lower.length ? chordOf(lower) : empty}`;
     const sym = d.candidates[d.selectedIndex];
     return sym && sym !== "?" ? sym : null;
   }
-  var CLEF_LABELS = { grand: "Grand", treble: "Treble", bass: "Bass" };
   function displayedNotes() {
     const d = state.detection;
     if (!d) return [];
@@ -4043,7 +4776,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     return {
       key: analysisKey(),
       kind: d?.kind ?? null,
-      label: !d ? "" : d.kind === "note" ? d.pitchClass : d.kind === "interval" ? d.intervalName : selectedSymbol() ?? "",
+      // Written as the page writes it: the views take no language of their own
+      label: !d ? "" : d.kind === "note" ? noteLabel(d.pitchClass) : d.kind === "interval" ? d.intervalName : chordLabel(selectedSymbol() ?? ""),
       symbol: selectedSymbol(),
       notes: displayedNotes(),
       roman: state.analysis?.roman ?? null,
@@ -4217,7 +4951,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     renderZone2();
   }
   function updateAutoKeyLabel() {
-    $2("auto-key-label").textContent = !state.activeKey && autoKey ? `auto: ${autoKey}` : "";
+    $2("auto-key-label").textContent = !state.activeKey && autoKey ? t("key.autoDetected", { key: keyLabel(autoKey) }) : "";
   }
   var lastRenderSig = {};
   function renderIfChanged(name, sig, render) {
@@ -4238,7 +4972,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     pianoNote = null;
   }
   function submitTypedChord(input) {
-    const symbol = normalizeChordName(input.value.trim());
+    const symbol = readTypedChord(input.value);
     if (!symbol) return;
     const valid = isKnownChord(symbol);
     input.classList.toggle("invalid", !valid);
@@ -4272,8 +5006,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     renderIfChanged("guitar", `${chordSymbol}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames));
     renderIfChanged("cof", `${key}|${chordSymbol}|${cofSize}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, cofSize, cofOpts));
     const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale };
-    const keyLabel = key ? state.activeKey ? key : `${key} (auto)` : "";
-    renderIfChanged("key", `${keyLabel}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () => renderKeyExplorer($2("key-container"), key ? buildKeyMap(key, keySevenths) : null, keyLabel, chordSymbol, onKeyChordClick, keyOpts));
+    const keyTitle = key ? state.activeKey ? keyLabel(key) : t("keyPanel.auto", { key: keyLabel(key) }) : "";
+    renderIfChanged("key", `${keyTitle}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () => renderKeyExplorer($2("key-container"), key ? buildKeyMap(key, keySevenths) : null, keyTitle, chordSymbol, onKeyChordClick, keyOpts));
   }
   function onKeyChordClick(chord) {
     playChord(chord);
@@ -4310,7 +5044,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
   function sendToSong(entry) {
     if (!state.song.sections.length) {
-      state.song = addSection(state.song, "Verse", "verse");
+      state.song = addSection(state.song, t("section.verse"), "verse");
     }
     if (state.activeCursorId) {
       state.song = insertChordAfter(state.song, state.activeCursorId, entry.symbol, entry.notes);
@@ -4336,12 +5070,12 @@ ${lower.length ? chordOf(lower) : empty}`;
   function refreshDeviceDropdown() {
     const sel = $2("midi-device");
     const devices = getDevices();
-    sel.innerHTML = devices.length ? devices.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join("") : "<option>No MIDI devices</option>";
+    sel.innerHTML = devices.length ? devices.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join("") : `<option>${escapeHtml(t("midi.noDeviceOption"))}</option>`;
     sel.onchange = () => chooseDevice(sel.value);
     const target = resolveDevice();
     if (target) sel.value = target;
-    $2("midi-status").textContent = devices.length ? "MIDI" : "MIDI: no devices";
-    $2("midi-status").title = devices.length ? "MIDI: connected" : "MIDI: no devices";
+    $2("midi-status").textContent = devices.length ? "MIDI" : t("midi.noDevices");
+    $2("midi-status").title = devices.length ? t("midi.connected") : t("midi.noDevices");
     $2("midi-status").style.color = devices.length ? "#4ade80" : "#6b7280";
     if (!deviceListenersAttached) {
       deviceListenersAttached = true;
@@ -4350,8 +5084,8 @@ ${lower.length ? chordOf(lower) : empty}`;
         refreshOutputDropdown();
       });
       window.addEventListener("midi-device-disconnected", () => {
-        $2("midi-status").textContent = "MIDI: disconnected";
-        $2("midi-status").title = "MIDI: disconnected";
+        $2("midi-status").textContent = t("midi.disconnected");
+        $2("midi-status").title = t("midi.disconnected");
         $2("midi-status").style.color = "#f87171";
       });
     }
@@ -4361,12 +5095,12 @@ ${lower.length ? chordOf(lower) : empty}`;
     const { port } = getOutputSettings();
     const outputs = getOutputs();
     const present = port && outputs.find((o) => o.name === port.name);
-    sel.innerHTML = '<option value="">Out: off</option>' + outputs.map((o) => `<option value="${escapeHtml(o.id)}">Out: ${escapeHtml(o.name)}</option>`).join("") + // A chosen port that is unplugged stays chosen and comes back when it reappears
-    (port && !present ? `<option value="__missing" disabled>Out: ${escapeHtml(port.name)} (absent)</option>` : "");
+    sel.innerHTML = `<option value="">${t("midi.out.off")}</option>` + outputs.map((o) => `<option value="${escapeHtml(o.id)}">${escapeHtml(t("midi.out.port", { name: o.name }))}</option>`).join("") + // A chosen port that is unplugged stays chosen and comes back when it reappears
+    (port && !present ? `<option value="__missing" disabled>${escapeHtml(t("midi.out.absent", { name: port.name }))}</option>` : "");
     sel.value = present ? present.id : port ? "__missing" : "";
     const loops = outputLoops();
     sel.classList.toggle("invalid", loops);
-    sel.title = loops ? "Same port as the input: nothing is sent, it would come back as input" : "MIDI out: what sounds goes to this port";
+    sel.title = loops ? t("midi.out.loops") : t("midi.out.title");
   }
   function wireMidiOut() {
     const inCh = $2("midi-in-ch");

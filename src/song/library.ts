@@ -43,7 +43,7 @@ function migrateLegacySong(): Song {
   if (!legacy) return createSong()
   let key: string | null = null
   try { key = normalizeKey(localStorage.getItem(LEGACY_KEY_KEY)) } catch { }
-  return withoutEmptyChords({ ...createSong(), title: legacy.title ?? 'Untitled', key, sections: legacy.sections })
+  return withoutEmptyChords({ ...createSong(), title: legacy.title ?? createSong().title, key, sections: legacy.sections })
 }
 
 function ensureIndex(): Index {
