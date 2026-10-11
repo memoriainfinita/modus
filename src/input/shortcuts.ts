@@ -4,6 +4,8 @@ import type { StringKey } from '../i18n/en'
 import { carryHistoryOverReload } from '../history/history'
 import { escapeHtml } from '../ui/html'
 import { keyBelongsToControl } from '../ui/a11y'
+import { startTour } from '../ui/tour'
+import { MODULE_IDS } from '../layout/presets'
 import { getThemeChoice, saveThemeChoice, THEME_CHOICES } from '../ui/theme'
 import type { ThemeChoice } from '../ui/theme'
 
@@ -74,6 +76,8 @@ export function toggleHelp() {
       </div>`).join('')}
     <div class="shortcut-section">${t('help.mouse')}</div>
     ${GESTURES.map(g => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join('')}
+    <div class="shortcut-section">${t('help.panels')}</div>
+    ${MODULE_IDS.map(id => `<div class="gesture-row"><b>${escapeHtml(t(`module.${id}`))}</b> — ${escapeHtml(t(`help.panel.${id}`))}</div>`).join('')}
     <div class="shortcut-section">${t('help.settings')}</div>
     <div class="help-setting"><label for="help-theme">${t('help.theme')}</label>
       <select id="help-theme" class="ctrl-select">
@@ -87,9 +91,11 @@ export function toggleHelp() {
       <select id="help-note-names" class="ctrl-select">
         ${NOTE_NAMINGS.map(n => `<option value="${n}"${n === getNoteNaming() ? ' selected' : ''}>${t(`help.noteNames.${n}`)}</option>`).join('')}
       </select></div>
-    <div class="gesture-row">${escapeHtml(t('help.reloads'))}</div>`
+    <div class="gesture-row">${escapeHtml(t('help.reloads'))}</div>
+    <div class="help-setting"><button id="help-tour" class="ctrl-btn" title="${escapeHtml(t('tour.start.title'))}">${escapeHtml(t('tour.start'))}</button></div>`
   document.body.appendChild(popup)
   popup.querySelector('.shortcut-help-close')!.addEventListener('click', closeHelp)
+  popup.querySelector('#help-tour')!.addEventListener('click', () => { closeHelp(); startTour() })
   // The theme changes in place: no reload
   const themeSel = popup.querySelector<HTMLSelectElement>('#help-theme')!
   themeSel.addEventListener('change', () => saveThemeChoice(themeSel.value as ThemeChoice))

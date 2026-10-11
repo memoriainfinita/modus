@@ -32,6 +32,7 @@ import { renderProgressions } from './ui/progressions'
 import { renderEar, type EarQuestion } from './ui/ear'
 import { renderPlayer } from './ui/player'
 import { renderTuner, updateTuner } from './ui/tuner'
+import { maybeStartTour } from './ui/tour'
 import { startMic, stopMic, isMicOn } from './input/mic'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames, isKnownChord, readTypedChord, tryParseChord, tryUMT } from './theory/chord'
@@ -138,6 +139,7 @@ function init() {
   const player = document.getElementById('player-container')
   if (player) renderPlayer(player)
   drawTuner()
+  maybeStartTour()
 
   initMidi().then(result => {
     if (result.denied) {
@@ -652,25 +654,45 @@ let captureTimer: ReturnType<typeof setTimeout> | null = null
 // a chord one key at a time passes through its subsets, which must not fill the next slot.
 let captureArmed = true
 
+// The chord waiting to fill, and since when it has held
+let pendingCapture: { symbol: string; notes: string[]; since: number } | null = null
+
 function scheduleCapture(symbol: string, notes: string[]) {
   if (captureTimer) clearTimeout(captureTimer)
-  captureTimer = setTimeout(() => {
-    captureTimer = null
-    const targetId = state.captureTargetId
-    if (!targetId) return
-    state.song = updateChord(state.song, targetId, symbol, notes)
-    saveSong(state.song)
-    captureArmed = false
-    // Fill keeps going: the next slot (across measures and sections) waits for the next chord.
-    const next = findChordAfter(state.song, targetId)?.id ?? null
-    state.activeCursorId = next
-    state.captureTargetId = next
-    renderZone3()
-  }, CAPTURE_SETTLE_MS)
+  pendingCapture = { symbol, notes, since: performance.now() }
+  captureTimer = setTimeout(commitCapture, CAPTURE_SETTLE_MS)
 }
 
+function commitCapture() {
+  if (captureTimer) clearTimeout(captureTimer)
+  captureTimer = null
+  const pending = pendingCapture
+  pendingCapture = null
+  const targetId = state.captureTargetId
+  if (!pending || !targetId) return
+  state.song = updateChord(state.song, targetId, pending.symbol, pending.notes)
+  saveSong(state.song)
+  captureArmed = false
+  // Fill keeps going: the next slot (across measures and sections) waits for the next chord.
+  const next = findChordAfter(state.song, targetId)?.id ?? null
+  state.activeCursorId = next
+  state.captureTargetId = next
+  renderZone3()
+}
+
+/** No fill: the song or the capture changed (Esc, another song). */
 function cancelCapture() {
   if (captureTimer) { clearTimeout(captureTimer); captureTimer = null }
+  pendingCapture = null
+}
+
+/**
+ * The chord changed before its fill: dropped, unless it already held long enough. A busy
+ * page can run the timer late, after the release that follows; that chord still counts.
+ */
+function chordChangedBeforeFill() {
+  if (pendingCapture && performance.now() - pendingCapture.since >= CAPTURE_SETTLE_MS) commitCapture()
+  else cancelCapture()
 }
 
 function onNoteChange(notes: number[]) {
@@ -682,8 +704,11 @@ function onNoteChange(notes: number[]) {
 
   if (state.captureTargetId) {
     if (notes.length < 3) captureArmed = true
-    if (captureArmed && known && result?.kind === 'chord') scheduleCapture(known, result.notes)
-    else cancelCapture()
+    if (captureArmed && known && result?.kind === 'chord') {
+      // A different chord: the one held before it may already count
+      if (pendingCapture && pendingCapture.symbol !== known) chordChangedBeforeFill()
+      if (state.captureTargetId && captureArmed) scheduleCapture(known, result.notes)
+    } else chordChangedBeforeFill()
   }
 
   showDetection(result, known ? previousHistoryChord(known) : null)

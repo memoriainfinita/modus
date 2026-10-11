@@ -167,6 +167,8 @@ pnpm dlx http-server . -p 8080
 
 Open `http://localhost:8080` in Chrome or Firefox. Connect your MIDI controller when prompted.
 
+The first visit opens a guided tour of the page; the ? panel lists the shortcuts and gestures, says what each panel is for and starts the tour again.
+
 On a phone or tablet the panels stack in one column and the piano takes several fingers at once; a long press removes a history chip.
 
 Everything works from the keyboard (Tab, Enter, Space; arrows on a panel title move it) and with a screen reader, which hears each chord with its degree and function.
@@ -253,6 +255,8 @@ src/
     ear.ts                the Ear training panel: intervals, chords, cadences
     player.ts             the Player panel: a recording, its waveform, loop and speed
     tuner.ts              the Tuner panel
+    tour.ts               the guided tour of the first visit
+    a11y.ts               keyboard and screen reader: live region, names, Enter / Space, long press
     undo.ts               Undo toast for destructive actions
     html.ts               HTML escaping
     storage.ts            localStorage preferences with safe fallbacks
