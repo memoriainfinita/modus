@@ -7,8 +7,8 @@ import { spellChordSymbol } from '../theory/spelling'
 import { t, chordLabel, keyLabel, cadenceLabel } from '../i18n/i18n'
 import { explainCadence } from '../detector/explain'
 import { makeActivatable, onLongPress } from '../ui/a11y'
+import { getPref } from '../settings/prefs'
 
-const MAX_ENTRIES = 200
 // Chip accent by harmonic function (T/S/D), not by chord quality: the key panel's colours
 const FUNCTION_COLORS: Record<string, string> = {
   'T': 'var(--fn-t)', 'S': 'var(--fn-s)', 'D': 'var(--fn-d)', 'unknown': 'var(--text-dim)'
@@ -45,7 +45,7 @@ export function restoreCarriedHistory() {
 
 export function addEntry(symbol: string, notes: string[]) {
   const entry: HistoryEntry = { id: crypto.randomUUID(), symbol, notes }
-  entries = [entry, ...entries].slice(0, MAX_ENTRIES)
+  entries = [entry, ...entries].slice(0, getPref('history-max'))
   onChange(entries)
 }
 
@@ -58,7 +58,7 @@ export function removeEntry(id: string) {
 
 /** Puts back a previous list (undo). Dedup re-arms against its newest entry. */
 export function restoreEntries(list: HistoryEntry[]) {
-  entries = list.slice(0, MAX_ENTRIES)
+  entries = list.slice(0, getPref('history-max'))
   lastAutoAppended = entries[0]?.symbol ?? null
   onChange(entries)
 }
@@ -84,7 +84,7 @@ export function notifyChordDetected(symbol: string, notes: string[]) {
       addEntry(symbol, notes)
       lastAutoAppended = symbol
     }
-  }, 800)
+  }, getPref('history-hold-ms'))
 }
 
 // ─── Rendering ────────────────────────────────────────────────────────────────

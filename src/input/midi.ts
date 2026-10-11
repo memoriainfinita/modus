@@ -1,5 +1,6 @@
 import type { MidiMode } from '../types'
 import { loadNumber, save } from '../ui/storage'
+import { getPref } from '../settings/prefs'
 
 export function isNoteOff(status: number, velocity: number): boolean {
   return (status & 0xF0) === 0x80 || ((status & 0xF0) === 0x90 && velocity === 0)
@@ -302,7 +303,7 @@ function handleNoteOn(note: number) {
       arpeggioNotes = []
       arpeggioTimer = null
       onNoteChange([])
-    }, 1200)
+    }, getPref('arpeggio-ms'))
   }
 }
 

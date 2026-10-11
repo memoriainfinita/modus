@@ -36,6 +36,62 @@
     }
   }
 
+  // src/settings/prefs.ts
+  var choice = (options, d) => ({ kind: "choice", options, default: d });
+  var num = (min, max, step2, d, unit = "") => ({ kind: "number", min, max, step: step2, default: d, unit });
+  var EAR_CHORD_TYPES = ["", "m", "dim", "aug", "sus4", "7", "maj7", "m7", "m7b5", "dim7"];
+  var EAR_CADENCE_TYPES = ["authentic", "plagal", "deceptive", "half"];
+  var PREFS = {
+    // Theory
+    "chord-style": choice(["standard", "symbols", "short"], "standard"),
+    // Cmaj7 / CΔ7 / CM7
+    "key-profile": choice(["krumhansl", "temperley", "aarden", "bellman", "simple"], "krumhansl"),
+    "voice-rules": choice(["strict", "contemporary", "species"], "strict"),
+    "movable-do": { kind: "bool", default: false },
+    // Detector and history
+    "history-hold-ms": num(300, 2e3, 100, 800, "ms"),
+    "history-max": num(20, 1e3, 10, 200),
+    "arpeggio-ms": num(500, 3e3, 100, 1200, "ms"),
+    "melody-gap-s": num(2, 15, 1, 6, "s"),
+    "capture-ms": num(100, 800, 50, 250, "ms"),
+    // Sound
+    "preview-s": num(0.5, 4, 0.5, 2, "s"),
+    "piano-velocity": num(20, 127, 1, 90),
+    // Practice
+    "progression-bpm": num(60, 160, 5, 100, "bpm"),
+    "ear-interval-play": choice(["up", "down", "harmonic"], "up"),
+    "ear-chords": { kind: "set", options: EAR_CHORD_TYPES, default: EAR_CHORD_TYPES },
+    "ear-cadences": { kind: "set", options: EAR_CADENCE_TYPES, default: EAR_CADENCE_TYPES },
+    // Microphone and tuner
+    "a4-hz": num(415, 466, 1, 440, "Hz"),
+    "mic-sensitivity": choice(["low", "normal", "high"], "normal"),
+    "mic-response": choice(["fast", "normal", "steady"], "normal"),
+    // Interface
+    "ui-zoom": num(80, 150, 10, 100, "%")
+  };
+  var storageKey = (name) => `pref-${name}`;
+  function valid(def, v) {
+    switch (def.kind) {
+      case "choice":
+        return typeof v === "string" && def.options.includes(v);
+      case "bool":
+        return typeof v === "boolean";
+      case "number":
+        return typeof v === "number" && Number.isFinite(v) && v >= def.min && v <= def.max;
+      case "set":
+        return Array.isArray(v) && v.every((x) => def.options.includes(x));
+    }
+  }
+  var cache = /* @__PURE__ */ new Map();
+  function getPref(name) {
+    if (cache.has(name)) return cache.get(name);
+    const def = PREFS[name];
+    const stored = loadJSON(storageKey(name), void 0);
+    const v = valid(def, stored) ? stored : Array.isArray(def.default) ? [...def.default] : def.default;
+    cache.set(name, v);
+    return v;
+  }
+
   // src/input/midi.ts
   function isNoteOff(status2, velocity2) {
     return (status2 & 240) === 128 || (status2 & 240) === 144 && velocity2 === 0;
@@ -280,7 +336,7 @@
         arpeggioNotes = [];
         arpeggioTimer = null;
         onNoteChange([]);
-      }, 1200);
+      }, getPref("arpeggio-ms"));
     }
   }
   function handleNoteOff(note) {
@@ -469,21 +525,21 @@
       return false;
     }
   }
-  function resolveTheme(choice = getThemeChoice()) {
-    return choice === "system" ? systemPrefersLight() ? "light" : "dark" : choice;
+  function resolveTheme(choice2 = getThemeChoice()) {
+    return choice2 === "system" ? systemPrefersLight() ? "light" : "dark" : choice2;
   }
-  var cache = /* @__PURE__ */ new Map();
+  var cache2 = /* @__PURE__ */ new Map();
   function color(token) {
-    let v = cache.get(token);
+    let v = cache2.get(token);
     if (v === void 0) {
       v = getComputedStyle(document.documentElement).getPropertyValue(`--${token}`).trim();
-      cache.set(token, v);
+      cache2.set(token, v);
     }
     return v;
   }
   function applyTheme(theme = resolveTheme()) {
     document.documentElement.dataset.theme = theme;
-    cache.clear();
+    cache2.clear();
   }
   var listeners = [];
   function onThemeChange(onChange3) {
@@ -493,8 +549,8 @@
     applyTheme();
     listeners.forEach((f) => f());
   }
-  function saveThemeChoice(choice) {
-    save(KEY, choice);
+  function saveThemeChoice(choice2) {
+    save(KEY, choice2);
     changed();
   }
   function followSystemTheme() {
@@ -2392,7 +2448,6 @@
   }
 
   // src/output/midi-out.ts
-  var PREVIEW_VELOCITY = 90;
   var preferred = loadJSON("midi-out", null) ?? {};
   var channel = loadNumber("midi-out-channel", 1, 1, 16);
   var thru = loadBool("midi-out-thru", false);
@@ -2470,7 +2525,7 @@
     }
     for (const n of notes) {
       if (sounding2.has(n)) noteOff(n);
-      noteOn(n, PREVIEW_VELOCITY);
+      noteOn(n, getPref("piano-velocity"));
     }
     const these = notes;
     previewNotes = [.../* @__PURE__ */ new Set([...previewNotes, ...notes])];
@@ -4107,13 +4162,13 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     const secondary = a && a.roman !== a.degree ? a.roman : void 0;
     return { symbol, roman: a?.degree ?? "?", secondary, function: a?.function ?? "unknown" };
   }
-  var cache2 = /* @__PURE__ */ new Map();
+  var cache3 = /* @__PURE__ */ new Map();
   function buildKeyMap(key, sevenths) {
     const cacheKey = `${key}|${sevenths}`;
-    if (cache2.has(cacheKey)) return cache2.get(cacheKey);
+    if (cache3.has(cacheKey)) return cache3.get(cacheKey);
     const chords = tryUMT("diatonic chords", () => UMT.parseScaleSymbol(key).getDiatonicChords(sevenths ? "seventh" : "triad"), []);
     if (!chords.length) {
-      cache2.set(cacheKey, null);
+      cache3.set(cacheKey, null);
       return null;
     }
     const diatonic = chords.map((c) => keyChord(c.name, key));
@@ -4144,7 +4199,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     const axis = tryUMT("coltrane axis", () => UMT.Harmony.getColtraneAxis(key).majorThirds, null);
     const coltraneAxis = axis ? axis.map((n) => spellPitchClassInKey(n, key)) : null;
     const map = { key, diatonic, negative, parallel, coltraneAxis };
-    cache2.set(cacheKey, map);
+    cache3.set(cacheKey, map);
     return map;
   }
   function sameChord(a, b) {
@@ -4350,7 +4405,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
 
   // src/history/history.ts
-  var MAX_ENTRIES = 200;
   var FUNCTION_COLORS = {
     "T": "var(--fn-t)",
     "S": "var(--fn-s)",
@@ -4384,7 +4438,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   function addEntry(symbol, notes) {
     const entry = { id: crypto.randomUUID(), symbol, notes };
-    entries = [entry, ...entries].slice(0, MAX_ENTRIES);
+    entries = [entry, ...entries].slice(0, getPref("history-max"));
     onChange2(entries);
   }
   function removeEntry(id) {
@@ -4393,7 +4447,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     onChange2(entries);
   }
   function restoreEntries(list) {
-    entries = list.slice(0, MAX_ENTRIES);
+    entries = list.slice(0, getPref("history-max"));
     lastAutoAppended = entries[0]?.symbol ?? null;
     onChange2(entries);
   }
@@ -4415,7 +4469,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         addEntry(symbol, notes);
         lastAutoAppended = symbol;
       }
-    }, 800);
+    }, getPref("history-hold-ms"));
   }
   function markActiveHistoryEntry(container, entryId) {
     container.querySelectorAll(".history-chip").forEach((el) => {
@@ -4575,8 +4629,8 @@ ${explainCadence(cadence)}` : "");
     };
   }
   function addChord(song, sectionId, measureId, symbol, notes, beforeChordId) {
-    const valid = isValidChordSymbol(symbol);
-    const chord = { id: newId(), symbol, valid, ...notes?.length ? { notes } : {} };
+    const valid2 = isValidChordSymbol(symbol);
+    const chord = { id: newId(), symbol, valid: valid2, ...notes?.length ? { notes } : {} };
     return {
       ...song,
       sections: song.sections.map((s) => s.id !== sectionId ? s : {
@@ -4592,8 +4646,8 @@ ${explainCadence(cadence)}` : "");
     };
   }
   function insertChordAfter(song, afterChordId, symbol, notes) {
-    const valid = isValidChordSymbol(symbol);
-    const newChord = { id: newId(), symbol, valid, ...notes?.length ? { notes } : {} };
+    const valid2 = isValidChordSymbol(symbol);
+    const newChord = { id: newId(), symbol, valid: valid2, ...notes?.length ? { notes } : {} };
     return {
       ...song,
       sections: song.sections.map((s) => ({
@@ -4609,14 +4663,14 @@ ${explainCadence(cadence)}` : "");
     };
   }
   function updateChord(song, chordId, symbol, notes) {
-    const valid = isValidChordSymbol(symbol);
+    const valid2 = isValidChordSymbol(symbol);
     return {
       ...song,
       sections: song.sections.map((s) => ({
         ...s,
         measures: s.measures.map((m) => ({
           ...m,
-          chords: m.chords.map((c) => c.id === chordId ? { ...c, symbol, valid, ...notes?.length ? { notes } : { notes: void 0 } } : c)
+          chords: m.chords.map((c) => c.id === chordId ? { ...c, symbol, valid: valid2, ...notes?.length ? { notes } : { notes: void 0 } } : c)
         }))
       }))
     };
@@ -5543,8 +5597,8 @@ ${explainCadence(cadence)}` : "");
     for (const section of song.sections) {
       html += `<div class="section"><div class="section-name">${escapeHtml(section.name)}${section.repeatCount > 1 ? ` \xD7${section.repeatCount}` : ""}</div><div class="measures">`;
       for (const measure of section.measures) {
-        const num = measureNums.get(measure.id) ?? "";
-        html += `<div class="measure"><div class="bar-num">${num}</div>`;
+        const num2 = measureNums.get(measure.id) ?? "";
+        html += `<div class="measure"><div class="bar-num">${num2}</div>`;
         for (const chord of measure.chords) {
           const degree = activeKey ? computeDegree(chord.symbol, activeKey) : "\u2014";
           html += `<div class="chord">${escapeHtml(chordLabel(chord.symbol))}</div><div class="degree">${degree}</div>`;
@@ -6855,7 +6909,6 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   var lastAnalysisSig = "";
   var noteSet = null;
-  var MELODY_GAP_MS = 6e3;
   var melody = [];
   var melodyAt = 0;
   var melodyHeld = /* @__PURE__ */ new Set();
@@ -6868,7 +6921,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       return;
     }
     const now = Date.now();
-    if (now - melodyAt > MELODY_GAP_MS) melody = [];
+    if (now - melodyAt > getPref("melody-gap-s") * 1e3) melody = [];
     melodyAt = now;
     const names = detection.kind === "note" ? [detection.noteName] : detection.notes;
     const midis = detection.kind === "note" ? [detection.midiNumber] : notes;
@@ -7048,14 +7101,13 @@ ${explainCadence(c.cadence)}` : ""}`;
     const i = chords.findIndex((c) => c.id === chordId);
     return i > 0 ? chords[i - 1] : null;
   }
-  var CAPTURE_SETTLE_MS = 250;
   var captureTimer = null;
   var captureArmed = true;
   var pendingCapture = null;
   function scheduleCapture(symbol, notes) {
     if (captureTimer) clearTimeout(captureTimer);
     pendingCapture = { symbol, notes, since: performance.now() };
-    captureTimer = setTimeout(commitCapture, CAPTURE_SETTLE_MS);
+    captureTimer = setTimeout(commitCapture, getPref("capture-ms"));
   }
   function commitCapture() {
     if (captureTimer) clearTimeout(captureTimer);
@@ -7080,7 +7132,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     pendingCapture = null;
   }
   function chordChangedBeforeFill() {
-    if (pendingCapture && performance.now() - pendingCapture.since >= CAPTURE_SETTLE_MS) commitCapture();
+    if (pendingCapture && performance.now() - pendingCapture.since >= getPref("capture-ms")) commitCapture();
     else cancelCapture();
   }
   function onNoteChange2(notes) {
@@ -7122,13 +7174,12 @@ ${explainCadence(c.cadence)}` : ""}`;
     lastRenderSig[name] = sig;
     render();
   }
-  var PIANO_VELOCITY = 90;
   var pianoNotes = /* @__PURE__ */ new Map();
   function onPianoPress(midi, pointerId) {
     const held2 = pianoNotes.get(pointerId);
     if (held2 !== void 0) pointerUp(held2);
     pianoNotes.set(pointerId, midi);
-    pointerDown(midi, PIANO_VELOCITY);
+    pointerDown(midi, getPref("piano-velocity"));
   }
   function onPianoRelease(e) {
     const held2 = pianoNotes.get(e.pointerId);
@@ -7139,9 +7190,9 @@ ${explainCadence(c.cadence)}` : ""}`;
   function submitTypedChord(input) {
     const symbol = readTypedChord(input.value);
     if (!symbol) return;
-    const valid = isKnownChord(symbol);
-    input.classList.toggle("invalid", !valid);
-    if (!valid) return;
+    const valid2 = isKnownChord(symbol);
+    input.classList.toggle("invalid", !valid2);
+    if (!valid2) return;
     showChord(symbol, void 0, null);
     playChord(symbol);
   }
