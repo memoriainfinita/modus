@@ -4,13 +4,13 @@
 // itself. Every note sent on is tracked, so a change of port or channel, or leaving the
 // page, never leaves a note hanging.
 
+import { getPref } from '../settings/prefs'
 import { getMidiAccess, getSelectedInputName } from '../input/midi'
 import type { NoteSource } from '../input/midi'
 import { loadBool, loadJSON, loadNumber, save } from '../ui/storage'
 
 type Port = { id: string; name: string }
 
-const PREVIEW_VELOCITY = 90
 
 let preferred: Partial<Port> = loadJSON<Partial<Port> | null>('midi-out', null) ?? {}
 let channel = loadNumber('midi-out-channel', 1, 1, 16)   // 1–16 as shown; 0–15 on the wire
@@ -103,7 +103,7 @@ export function outPreview(notes: number[], seconds: number, cut: boolean) {
     previewNotes = []
   }
   // A note already on (held key, earlier preview) is retriggered
-  for (const n of notes) { if (sounding.has(n)) noteOff(n); noteOn(n, PREVIEW_VELOCITY) }
+  for (const n of notes) { if (sounding.has(n)) noteOff(n); noteOn(n, getPref('piano-velocity')) }
   const these = notes
   previewNotes = [...new Set([...previewNotes, ...notes])]
   const end = () => {

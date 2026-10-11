@@ -31,6 +31,7 @@ import { explainDetection, renderExplanation } from './detector/explain'
 import { renderProgressions } from './ui/progressions'
 import { renderEar, type EarQuestion } from './ui/ear'
 import { renderPlayer } from './ui/player'
+import { getPref } from './settings/prefs'
 import { renderTuner, updateTuner } from './ui/tuner'
 import { maybeStartTour } from './ui/tour'
 import { startMic, stopMic, isMicOn } from './input/mic'
@@ -431,7 +432,6 @@ let noteSet: NoteSetAnalysis | null = null
 // A melody played note by note: the pitch classes of single notes (and two-note overlaps,
 // as legato playing gives), so Fits can name the scales it comes from. A chord, Esc, or a
 // pause longer than MELODY_GAP_MS starts it again.
-const MELODY_GAP_MS = 6000
 let melody: string[] = []
 let melodyAt = 0
 
@@ -444,7 +444,7 @@ function trackMelody(notes: number[], detection: DetectionResult) {
   if (!detection || !struck.length) return
   if (detection.kind === 'chord') { melody = []; return }
   const now = Date.now()
-  if (now - melodyAt > MELODY_GAP_MS) melody = []
+  if (now - melodyAt > getPref('melody-gap-s') * 1000) melody = []
   melodyAt = now
   const names = detection.kind === 'note' ? [detection.noteName] : detection.notes
   const midis = detection.kind === 'note' ? [detection.midiNumber] : notes
@@ -648,7 +648,6 @@ function previousSongChord(chordId: string): SongChord | null {
 // MIDI capture-to-fill: notes of a chord arrive one by one, so the slot is filled only
 // once the chord has been stable for CAPTURE_SETTLE_MS (otherwise a 4-note chord is
 // captured as the triad formed by its first three notes).
-const CAPTURE_SETTLE_MS = 250
 let captureTimer: ReturnType<typeof setTimeout> | null = null
 // After a fill, the keys must drop below a chord before the next one counts: releasing
 // a chord one key at a time passes through its subsets, which must not fill the next slot.
@@ -660,7 +659,7 @@ let pendingCapture: { symbol: string; notes: string[]; since: number } | null = 
 function scheduleCapture(symbol: string, notes: string[]) {
   if (captureTimer) clearTimeout(captureTimer)
   pendingCapture = { symbol, notes, since: performance.now() }
-  captureTimer = setTimeout(commitCapture, CAPTURE_SETTLE_MS)
+  captureTimer = setTimeout(commitCapture, getPref('capture-ms'))
 }
 
 function commitCapture() {
@@ -691,7 +690,7 @@ function cancelCapture() {
  * page can run the timer late, after the release that follows; that chord still counts.
  */
 function chordChangedBeforeFill() {
-  if (pendingCapture && performance.now() - pendingCapture.since >= CAPTURE_SETTLE_MS) commitCapture()
+  if (pendingCapture && performance.now() - pendingCapture.since >= getPref('capture-ms')) commitCapture()
   else cancelCapture()
 }
 
@@ -749,14 +748,13 @@ function renderIfChanged(name: string, sig: string, render: () => void) {
 // On-screen piano: a press goes through the input path like a controller key. The key
 // that was pressed is rebuilt when the detector lights it, so the release is watched on
 // the window. Each finger holds its own key, so a chord can be pressed on a touch screen.
-const PIANO_VELOCITY = 90
 const pianoNotes = new Map<number, number>()   // pointer id → MIDI note it holds
 
 function onPianoPress(midi: number, pointerId: number) {
   const held = pianoNotes.get(pointerId)
   if (held !== undefined) pointerUp(held)
   pianoNotes.set(pointerId, midi)
-  pointerDown(midi, PIANO_VELOCITY)
+  pointerDown(midi, getPref('piano-velocity'))
 }
 
 function onPianoRelease(e: PointerEvent) {
