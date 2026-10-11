@@ -3,6 +3,7 @@ import { romanInKey } from '../detector/analyzer'
 import { keyPrefersSharps } from '../theory/keys'
 import { t, chordLabel, noteLabel } from '../i18n/i18n'
 import { color } from '../ui/theme'
+import { makeActivatable } from '../ui/a11y'
 
 const CIRCLE_KEYS_FLAT  = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F']
 // Sharps only where they name a standard key: G# and D# major would need double sharps.
@@ -153,5 +154,8 @@ export function renderCircleOfFifths(
 
   container.querySelectorAll<SVGPathElement>('[data-chord]').forEach(el => {
     el.addEventListener('click', () => onSegmentClick(el.dataset.chord!, el.dataset.key ?? null))
+    makeActivatable(el, chordLabel(el.dataset.chord!))
   })
+  container.querySelector('svg')?.setAttribute('aria-label', t('a11y.cof'))
+  container.querySelector('svg')?.setAttribute('role', 'group')
 }

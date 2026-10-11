@@ -7,6 +7,7 @@ import {
   computeDegree, isBorrowedChord, transposeSong, transposeKey, detectForm,
 } from './model'
 import { saveSong, type SongMeta } from './library'
+import { makeActivatable } from '../ui/a11y'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
 import { readTypedChord } from '../theory/chord'
@@ -603,6 +604,8 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   wrap.addEventListener('mouseenter', () => controls.style.display = 'flex')
   wrap.addEventListener('mouseleave', () => controls.style.display = 'none')
 
+  makeActivatable(wrap)
+  wrap.addEventListener('focus', () => controls.style.display = 'flex')
   wrap.addEventListener('click', () => {
     h.onChordClick(chord.id, chord.symbol, chord.notes)
     if (chord.notes?.length) playNoteNames(chord.notes)

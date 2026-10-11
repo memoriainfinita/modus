@@ -167,6 +167,8 @@ pnpm dlx http-server . -p 8080
 
 Open `http://localhost:8080` in Chrome or Firefox. Connect your MIDI controller when prompted.
 
+Everything works from the keyboard (Tab, Enter, Space; arrows on a panel title move it) and with a screen reader, which hears each chord with its degree and function.
+
 Once opened, the app works offline (a service worker keeps it), and the browser offers to install it as an app. The piano plays offline from the first visit; another instrument plays offline once it has been played online.
 
 **Rebuild from source** (pnpm):

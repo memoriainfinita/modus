@@ -1876,4 +1876,24 @@ body.view-mode {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
+:where(button, select, input, [role=button], .module-header, [tabindex]):focus-visible {
+  outline: 2px solid var(--cursor);
+  outline-offset: 1px;
+}
+path[role=button]:focus-visible {
+  outline: none;
+  stroke: var(--cursor);
+  stroke-width: 3px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
 /*# sourceMappingURL=app.css.map */

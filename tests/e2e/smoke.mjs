@@ -258,6 +258,37 @@ await check('microphone: a sung A3 shows on the tuner and in the detector as a n
   assert(!(await text('#analysis-content')).includes('MIDI 57'), 'the note is still held')
 })
 
+await check('keyboard and screen reader: circle, buttons, panels and chips work from the keyboard; the chord is announced', async () => {
+  await setKey('C Major')
+  await page.focus('#cof-container [data-chord="G"]')
+  await page.keyboard.press('Enter')
+  assert(await text('.chord-name-badge') === 'G', `Enter on the circle: ${await text('.chord-name-badge')}`)
+  await page.waitForFunction(() => document.getElementById('sr-live')?.textContent?.startsWith('G major, V, Dominant'), null, { timeout: 2000 })
+  // Space on a focused button presses it, and does not play the chord
+  await page.focus('#btn-hold')
+  await page.keyboard.press(' ')
+  assert((await page.getAttribute('#btn-hold', 'class')).includes('active'), 'Space did not press Hold')
+  await page.click('#btn-normal')
+  // Panels: arrows move, Shift + arrows resize
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('layout') ?? 'null')?.find(c => c.id === 'chord') ?? null)
+  await page.focus('#mod-chord .module-header')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('Shift+ArrowDown')
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('layout')).find(c => c.id === 'chord'))
+  assert(after.x === (before?.x ?? 0) + 1 && after.h === (before?.h ?? 3) + 1, `moved: ${JSON.stringify(before)} → ${JSON.stringify(after)}`)
+  assert((await page.textContent('#sr-live')).startsWith('Chord: column'), `announced: ${await page.textContent('#sr-live')}`)
+  await page.click('#btn-layout'); await page.click('#layout-menu [data-preset="standard"]'); await page.mouse.click(5, 990)
+  // History chips: Enter shows the chord
+  await page.focus('#mod-history .history-chip')
+  await page.keyboard.press('Enter')
+  assert((await text('.chord-name-badge')).length > 0, 'Enter on a chip')
+  // Icon buttons have a name; diagrams are named images
+  assert((await page.getAttribute('#btn-play-chord', 'aria-label'))?.length > 3, 'play button has no name')
+  assert((await page.getAttribute('#staff-container', 'aria-label'))?.startsWith('Staff:'), 'staff has no name')
+  assert(await page.getAttribute('#btn-layout', 'aria-expanded') === 'false', 'menu state')
+  await setKey('')
+})
+
 await check('view window: the chord view follows the detector, alone on the chroma background', async () => {
   await page.click('#btn-views')
   const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="chord"]')])

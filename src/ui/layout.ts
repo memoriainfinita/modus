@@ -11,6 +11,7 @@ import type { AnalysisFieldKey } from '../detector/analysis-panel'
 import { loadBool, loadJSON, save } from './storage'
 import { escapeHtml } from './html'
 import { fitSvg } from './fit'
+import { announce } from './a11y'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
 import type { ViewName, ViewBackground } from '../view/channel'
 import { t, keyLabel } from '../i18n/i18n'
@@ -78,7 +79,7 @@ export function renderLayout(panels: Panels, fieldsVisible: Record<AnalysisField
   $('app').innerHTML =
     buildToolbar() +
     '<div id="midi-banner"></div>' +
-    `<div id="grid" class="grid">${MODULE_IDS.map(id => moduleFrame(id, panels, fieldsVisible)).join('')}</div>`
+    `<main id="grid" class="grid" aria-label="${t('a11y.panels')}">${MODULE_IDS.map(id => moduleFrame(id, panels, fieldsVisible)).join('')}</main>`
   applyGrid()
   wireGrid()
   wireLayoutMenu()
@@ -110,9 +111,9 @@ export function applyPanelVisibility(panels: Panels) {
 
 function buildToolbar(): string {
   return `
-    <div id="z1-toolbar" class="toolbar">
+    <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t('a11y.toolbar')}">
       <span id="midi-status" class="midi-status">MIDI: —</span>
-      <select id="midi-device" class="ctrl-select"></select>
+      <select id="midi-device" class="ctrl-select" aria-label="${t('a11y.midiDevice')}"></select>
       <select id="midi-in-ch" class="ctrl-select" title="${t('midi.inChannel.title')}">
         <option value="0">${t('midi.inChannel.all')}</option>
         ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t('midi.inChannel.one', { n: i + 1 })}</option>`).join('')}
@@ -128,7 +129,7 @@ function buildToolbar(): string {
       <button id="btn-keyboard" class="mode-btn" title="${t('keyboard.title')}">⌨</button>
       <button id="btn-mic" class="mode-btn" title="${t('mic.title')}">🎤</button>
       <span id="keyboard-status" class="auto-key-label"></span>
-      <select id="key-select" class="ctrl-select">
+      <select id="key-select" class="ctrl-select" aria-label="${t('a11y.key')}">
         <option value="">${t('key.auto')}</option>
         ${ALL_KEYS.map(k => `<option value="${k}">${keyLabel(k)}</option>`).join('')}
       </select>
@@ -149,12 +150,12 @@ function buildToolbar(): string {
       </select>
       <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t('audio.volume.title')}" class="volume-slider">
       <div class="view-menu-wrap">
-        <button id="btn-layout" class="ctrl-btn" title="${t('layout.title')}">▦</button>
+        <button id="btn-layout" class="ctrl-btn" title="${t('layout.title')}" aria-haspopup="true" aria-expanded="false">▦</button>
         <div id="layout-menu" class="view-menu"></div>
       </div>
       <div class="view-menu-wrap">
         <button id="btn-present" class="ctrl-btn" title="${t('present.title')}">⛶</button>
-        <button id="btn-views" class="ctrl-btn" title="${t('views.title')}">⧉</button>
+        <button id="btn-views" class="ctrl-btn" title="${t('views.title')}" aria-haspopup="true" aria-expanded="false">⧉</button>
         <div id="view-menu" class="view-menu">
           <div class="view-menu-title">${t('views.open')}</div>
           ${VIEW_NAMES.map(v => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join('')}
@@ -246,9 +247,9 @@ function moduleBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolea
 
 function moduleFrame(id: ModuleId, _panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
   return `
-    <section id="mod-${id}" class="module module-${id}" data-module="${id}">
-      <header class="module-header" title="${t('module.drag')}">
-        <span class="module-title">${t(`module.${id}`)}</span>
+    <section id="mod-${id}" class="module module-${id}" data-module="${id}" aria-labelledby="mod-${id}-title">
+      <header class="module-header" title="${t('module.drag')}" tabindex="0" aria-label="${t('a11y.panelKeys', { name: t(`module.${id}`) })}">
+        <span class="module-title" id="mod-${id}-title">${t(`module.${id}`)}</span>
         <span class="module-tools">${headerTools(id)}</span>
         <button class="module-close" data-close="${id}" title="${t('module.hide')}">×</button>
       </header>
@@ -282,6 +283,21 @@ const narrow = () => matchMedia('(max-width: 720px)').matches
 
 function wireGrid() {
   const gridEl = $('grid')
+  // A focused header: arrows move the panel a cell, Shift + arrows resize it
+  gridEl.addEventListener('keydown', e => {
+    const header = e.target as HTMLElement
+    if (!header.classList?.contains('module-header') || !e.key.startsWith('Arrow') || narrow()) return
+    const id = header.closest<HTMLElement>('.module')!.dataset.module as ModuleId
+    const cell = grid.find(c => c.id === id)
+    if (!cell) return
+    e.preventDefault()
+    const dx = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0
+    const dy = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0
+    const next = e.shiftKey ? { ...cell, w: cell.w + dx, h: cell.h + dy } : { ...cell, x: cell.x + dx, y: cell.y + dy }
+    setGrid(placeCell(grid, next), true)
+    const now = grid.find(c => c.id === id)!
+    announce(t('a11y.moved', { name: t(`module.${id}`), x: now.x + 1, y: now.y + 1, w: now.w, h: now.h }), 0)
+  })
   gridEl.addEventListener('click', e => {
     const close = (e.target as HTMLElement).closest<HTMLElement>('[data-close]')
     if (close) showModule(close.dataset.close as ModuleId, false)

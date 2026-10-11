@@ -10,6 +10,7 @@ import { fretboardColors } from './fretboard-style'
 import { color } from '../ui/theme'
 import { t, chordLabel, localizeDrawnNoteNames } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
+import { escapeHtml as escapeAttr } from '../ui/html'
 
 let guitarControlsVisible = loadBool('panel-guitarControls', true)
 export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v }
@@ -241,7 +242,7 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
   if (voicingIndex !== undefined) guitarVoicingIdx = voicingIndex
 
   if (stringsView === 'neck') {
-    container.innerHTML = `<div>${neckSvg(noteNames, open, preferFlats)}</div>` + guitarControls(0, 0)
+    container.innerHTML = `<div role="img" aria-label="${escapeAttr(t('a11y.strings', { chord: chordSymbol ? chordLabel(chordSymbol) : t('a11y.nothing') }))}">${neckSvg(noteNames, open, preferFlats)}</div>` + guitarControls(0, 0)
     localizeDrawnNoteNames(container.firstElementChild!)
     wireGuitarControls(container)
     return
@@ -275,7 +276,7 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
     shapeStyle()
   ), '')
 
-  container.innerHTML = `<div>${svg}</div>` + guitarControls(total, idx)
+  container.innerHTML = `<div role="img" aria-label="${escapeAttr(t('a11y.strings', { chord: `${chordLabel(chordSymbol)} ${voicings[idx].frets.map((f: number) => f < 0 ? 'x' : f).join(' ')}` }))}">${svg}</div>` + guitarControls(total, idx)
   localizeDrawnNoteNames(container.firstElementChild!)
 
   container.querySelectorAll<HTMLElement>('.guitar-nav').forEach(btn => {

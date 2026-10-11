@@ -34,14 +34,15 @@ import { renderPlayer } from './ui/player'
 import { renderTuner, updateTuner } from './ui/tuner'
 import { startMic, stopMic, isMicOn } from './input/mic'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
-import { chordNoteNames, isKnownChord, readTypedChord } from './theory/chord'
+import { chordNoteNames, isKnownChord, readTypedChord, tryParseChord, tryUMT } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
 import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps } from './theory/keys'
 import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid } from './ui/layout'
 import { applyTheme, onThemeChange, followSystemTheme } from './ui/theme'
-import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang } from './i18n/i18n'
+import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang, getLang } from './i18n/i18n'
+import { announce, watchIconButtons, syncExpanded } from './ui/a11y'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -114,6 +115,9 @@ function init() {
   preloadAudio()
 
   buildLayout()
+  watchIconButtons($('app'))
+  syncExpanded($('btn-layout'), $('layout-menu'))
+  syncExpanded($('btn-views'), $('view-menu'))
   wireShortcuts()
   wireComputerKeyboard()
   setComputerKeyboardChange(updateComputerKeyboardButton)
@@ -475,7 +479,22 @@ function renderExplain() {
   if (el) renderExplanation(el, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev))
 }
 
+/** What a screen reader hears when the detector changes: the chord with its degree and function, a note, an interval. */
+function announceDetection() {
+  const d = state.detection
+  if (!d) return
+  if (d.kind === 'note') { announce(t('a11y.note', { note: noteLabel(d.noteName) })); return }
+  if (d.kind === 'interval') { announce(d.intervalName); return }
+  const sym = selectedSymbol()
+  if (!sym) return
+  const chord = tryParseChord(sym)
+  const name = chord ? tryUMT('chord names', () => UMT.chordLongName(chord, getLang()), chordLabel(sym)) : chordLabel(sym)
+  const a = state.analysis
+  announce(a && a.roman !== '?' ? t('a11y.chord', { chord: name, roman: a.roman, fn: t(`fn.${a.function}`) }) : name)
+}
+
 function renderDetector() {
+  announceDetection()
   renderAnalysisPanel()
   renderExplain()
   renderProgressionPanel()
@@ -757,6 +776,13 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
     renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef, prev))
   renderIfChanged('piano', `${notes}|${chordSymbol}|${prev?.join(' ')}`, () =>
     renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress, prev))
+  // The drawings by name, for a screen reader: the notes they show
+  const spoken = noteNames.map(noteLabel).join(' ') || t('a11y.nothing')
+  for (const [id, key] of [['staff-container', 'a11y.staff'], ['piano-container', 'a11y.piano']] as const) {
+    const el = $(id)
+    el.setAttribute('role', 'img')
+    el.setAttribute('aria-label', t(key, { notes: spoken }))
+  }
   const vel = noteVelocities(noteNames)
   renderIfChanged('velocity', JSON.stringify(vel), () => renderVelocity($('velocity-container'), vel))
   // The shapes follow the chord; the neck view, every note
