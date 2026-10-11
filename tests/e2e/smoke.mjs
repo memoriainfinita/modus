@@ -199,6 +199,45 @@ await check('ear training: a chord plays unseen; once named, the score counts an
   await setKey('')
 })
 
+// A WAV file of `seconds` of a quiet 220 Hz tone, mono 8 kHz 16-bit: something the player can open
+function testWav(seconds) {
+  const rate = 8000, n = rate * seconds, buf = Buffer.alloc(44 + n * 2)
+  buf.write('RIFF', 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write('WAVEfmt ', 8)
+  buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22)
+  buf.writeUInt32LE(rate, 24); buf.writeUInt32LE(rate * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34)
+  buf.write('data', 36); buf.writeUInt32LE(n * 2, 40)
+  for (let i = 0; i < n; i++) buf.writeInt16LE(Math.round(Math.sin(2 * Math.PI * 220 * i / rate) * 3000), 44 + i * 2)
+  return buf
+}
+
+await check('player: a recording opens with its length and waveform; speed, A–B loop, back 5 s', async () => {
+  assert(await page.locator('#player-container [data-act="play"]').isDisabled(), 'play before a file')
+  await page.setInputFiles('#player-container input[type=file]', { name: 'take.wav', mimeType: 'audio/wav', buffer: testWav(3) })
+  await page.waitForFunction(() => document.querySelector('.player-time')?.textContent?.endsWith('/ 0:03'))
+  assert(await text('.player-name') === 'take.wav', 'file name')
+  await page.waitForFunction(() => {
+    const c = document.querySelector('.player-wave')
+    const g = c.getContext('2d').getImageData(0, 0, c.width, c.height).data
+    let lit = 0
+    for (let i = 3; i < g.length; i += 4) if (g[i]) lit++
+    return lit > c.width * 4
+  }, null, { timeout: 5000 })
+  await page.selectOption('.player-speed', '0.5')
+  await page.click('#player-container [data-act="play"]')
+  await page.waitForTimeout(600)
+  await page.click('#player-container [data-act="a"]')
+  await page.waitForTimeout(400)
+  await page.click('#player-container [data-act="b"]')
+  const a = await text('#player-container [data-act="a"]'), b = await text('#player-container [data-act="b"]')
+  assert(a.startsWith('A 0:00') && b.startsWith('B 0:00'), `loop: ${a} ${b}`)
+  await page.waitForTimeout(900)
+  const t = await text('.player-time')
+  assert(t.startsWith('0:00.') || t.startsWith('0:01.'), `the loop did not hold it: ${t}`)
+  await page.click('#player-container [data-act="play"]')
+  await page.click('#player-container [data-act="clear"]')
+  await page.selectOption('.player-speed', '1')
+})
+
 await check('view window: the chord view follows the detector, alone on the chroma background', async () => {
   await page.click('#btn-views')
   const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="chord"]')])

@@ -1770,4 +1770,53 @@ body.view-mode {
 .ear-feedback.ear-wrong {
   color: var(--fn-d);
 }
+#player-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  font-size: 12px;
+}
+.player-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+.player-open {
+  cursor: pointer;
+}
+.player-name {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.player-wave {
+  width: 100%;
+  flex: 1;
+  min-height: 40px;
+  background: var(--surface);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.player-ctrl {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.player-time {
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+  min-width: 6.5em;
+  text-align: center;
+}
+.player-speed {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+}
 /*# sourceMappingURL=app.css.map */
