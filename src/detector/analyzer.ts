@@ -2,7 +2,7 @@ import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis, HistoryEntry, 
 import { midiToNoteName, pitchClassOf, PITCH_NAMES_FLAT } from '../theory/notes'
 import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from '../theory/chord'
 import { normalizeKey } from '../theory/keys'
-import { t, chordLabel, scaleLabel } from '../i18n/i18n'
+import { t, chordLabel, scaleLabel, substitutionTypeLabel } from '../i18n/i18n'
 
 const intervalName = (n: number) => t(`interval.${n}` as `interval.${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}`)
 
@@ -250,7 +250,7 @@ export function buildHarmonicAnalysis(
 
   result.substitutions = tryUMT('substitutions', () => UMT.getSubstitutions(chord, activeKey).map((s: any) => {
     const name = chordLabel(s.chord?.name ?? s.name ?? String(s))
-    return s.type ? `${name} (${s.type})` : name
+    return s.type ? `${name} (${substitutionTypeLabel(s.type)})` : name
   }), [])
 
   return result

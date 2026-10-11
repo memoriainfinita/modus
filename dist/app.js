@@ -1322,8 +1322,13 @@
     return `${noteLabel(root)} ${modeName}`;
   }
   function scaleLabel(name) {
-    const m = name.match(/^([A-G](?:#|b)*)(\s.*)$/);
-    return m ? noteLabel(m[1]) + m[2] : name;
+    return UMT.scaleName(name, lang, { roots: naming });
+  }
+  function cadenceLabel(cadence, short = false) {
+    return UMT.cadenceName(cadence, lang, { short });
+  }
+  function substitutionTypeLabel(type) {
+    return UMT.substitutionTypeName(type, lang);
   }
   function applyDocumentLang() {
     if (typeof document !== "undefined") document.documentElement.lang = lang;
@@ -1500,7 +1505,7 @@
     }
     result.substitutions = tryUMT("substitutions", () => UMT.getSubstitutions(chord, activeKey).map((s) => {
       const name = chordLabel(s.chord?.name ?? s.name ?? String(s));
-      return s.type ? `${name} (${s.type})` : name;
+      return s.type ? `${name} (${substitutionTypeLabel(s.type)})` : name;
     }), []);
     return result;
   }
@@ -2836,9 +2841,6 @@ ${lower.length ? chordOf(lower) : empty}`;
       }
     }, 800);
   }
-  function shortCadence(name) {
-    return name.replace(/\s*\(.*\)$/, "").replace(/ Cadence$/, "").replace(/ Resolution$/, "");
-  }
   function markActiveHistoryEntry(container, entryId) {
     container.querySelectorAll(".history-chip").forEach((el) => {
       el.classList.toggle("active-cursor", el.dataset.id === entryId);
@@ -2899,8 +2901,8 @@ ${lower.length ? chordOf(lower) : empty}`;
       if (cadence) {
         const tag = document.createElement("span");
         tag.className = "history-cadence";
-        tag.textContent = shortCadence(cadence);
-        tag.title = `${cadence}: ${chordLabel(shown[i + 1].symbol)} \u2192 ${chordLabel(entry.symbol)}`;
+        tag.textContent = cadenceLabel(cadence, true);
+        tag.title = `${cadenceLabel(cadence)}: ${chordLabel(shown[i + 1].symbol)} \u2192 ${chordLabel(entry.symbol)}`;
         strip.appendChild(tag);
       }
     });
@@ -4171,7 +4173,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       figuredBass = analysis.figuredBass || "\u2014";
       diatonic = analysis.isDiatonic ? t("analysis.yes") : analysis.isBorrowed ? t("analysis.borrowed", { mode: analysis.borrowedFrom ?? "?" }) : t("analysis.chromatic");
       scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
-      cadence = analysis.cadence || "\u2014";
+      cadence = analysis.cadence ? cadenceLabel(analysis.cadence) : "\u2014";
       if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget?.split("/")[1] ?? "?"}`;
       if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
       voicing = analysis.voicing;

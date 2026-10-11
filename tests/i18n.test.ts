@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { en } from '../src/i18n/en'
 import { es } from '../src/i18n/es'
-import { t, useLang, noteLabel, chordLabel, keyLabel, scaleLabel } from '../src/i18n/i18n'
+import { t, useLang, noteLabel, chordLabel, keyLabel, scaleLabel, cadenceLabel } from '../src/i18n/i18n'
 import { readTypedChord } from '../src/theory/chord'
-import { analyzeNotes, describeVoicing } from '../src/detector/analyzer'
+import { analyzeNotes, describeVoicing, buildHarmonicAnalysis } from '../src/detector/analyzer'
 import { detectForm, createSong, isBlankSong } from '../src/song/model'
 
 afterEach(() => useLang('en'))
@@ -45,13 +45,20 @@ describe('note, chord and key names', () => {
     expect(chordLabel('Bbm7/D')).toBe('Sibm7/Re')
     expect(chordLabel('?')).toBe('?')
     expect(keyLabel('A Minor')).toBe('La menor')
-    expect(scaleLabel('D dorian')).toBe('Re dorian')
+    expect(scaleLabel('D dorian')).toBe('Re dórico')
+    expect(scaleLabel('A harmonic minor')).toBe('La menor armónica')
   })
 
   it('Spanish with letters keeps C D E and translates the mode', () => {
     useLang('es', 'letters')
     expect(chordLabel('Am7')).toBe('Am7')
     expect(keyLabel('G Major')).toBe('G mayor')
+    expect(scaleLabel('G mixolydian')).toBe('G mixolidio')
+  })
+
+  it('English with Do Re Mi names the root only', () => {
+    useLang('en', 'solfege')
+    expect(scaleLabel('G mixolydian')).toBe('Sol mixolydian')
   })
 
   it('leaves what is not a note alone', () => {
@@ -84,6 +91,14 @@ describe('analysis text in Spanish', () => {
     const r = analyzeNotes([60, 67])
     expect(r?.kind === 'interval' && r.intervalName).toBe('5ª justa')
     expect(r?.kind === 'interval' && r.inversionName).toBe('4ª justa')
+  })
+
+  it('names substitutions and cadences', () => {
+    useLang('es')
+    const a = buildHarmonicAnalysis('C', 'C Major', 'G7')
+    expect(a.substitutions.join(' ')).toContain('Lam (diatónica)')
+    expect(buildHarmonicAnalysis('G7', 'C Major', 'Dm').substitutions.join(' ')).toContain('(tritonal)')
+    expect(cadenceLabel(a.cadence!)).toBe('Cadencia auténtica (V -> I)')
   })
 
   it('describes the voicing', () => {

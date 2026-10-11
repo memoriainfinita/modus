@@ -1,6 +1,6 @@
 # Modus — UMT API contract
 
-Verified by reading the UMT TypeScript source and, on 2026-10-10, by running the pinned bundle in Node. Pinned to the release tag `v0.4.1` since 2026-10-11 (changes per version in UMT's `CHANGELOG.md`; the npm package exports the IIFE as `umt/iife`). Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
+Verified by reading the UMT TypeScript source and, on 2026-10-10, by running the pinned bundle in Node. Pinned to the release tag `v0.5.0` since 2026-10-11 (changes per version in UMT's `CHANGELOG.md`; the npm package exports the IIFE as `umt/iife`). Do not assume — use these exact signatures. Tests load the real bundle (`tests/setup-umt.ts`), so drift shows up as a failing test.
 
 ```ts
 // Convert note string to UMT Note object
@@ -94,6 +94,10 @@ UMT.translateSymbol(input: string, aliases: Record<string, string>): string  // 
 // parseChordSymbol reads 'Do' and 'Do7' as D°, D°7: Modus reads a syllable-initial name as solfège first
 UMT.SOLFEGE_ROOTS: Record<string, string>        // Do Re Mi Fa Sol La Si
 UMT.QUALITY_ALIASES_ES: Record<string, string>   // mayor, menor, disminuido, aumentado, semidisminuido, dominante
+// Theory names (v0.5.0); an unknown name is returned unchanged
+UMT.scaleName(name: string, language?: 'en' | 'es', { roots?: 'letters' | 'solfege' }): string  // 'D dorian' → 'Re dórico'; without root too
+UMT.cadenceName(cadence: string, language?: 'en' | 'es', { short?: boolean }): string  // 'Deceptive Cadence (V -> VI)' → 'Cadencia rota (V -> VI)', short 'Rota'; en short 'Phrygian half'
+UMT.substitutionTypeName(type: string, language?: 'en' | 'es'): string   // 'tritone' → 'tritonal', 'chromatic-mediant' → 'mediante cromática'
 // Spelled-out qualities ('Re menor') translate to 'D minor', which UMT parses and keeps as its name
 ```
 

@@ -80,10 +80,19 @@ export function keyLabel(key: string): string {
   return `${noteLabel(root)} ${modeName}`
 }
 
-/** A scale or mode as UMT names it ("C major", "D dorian"): the root as notes are named. */
+/** A scale or mode as UMT names it ("D dorian"), in the language and with the root as notes are named: "Re dórico". */
 export function scaleLabel(name: string): string {
-  const m = name.match(/^([A-G](?:#|b)*)(\s.*)$/)
-  return m ? noteLabel(m[1]) + m[2] : name
+  return UMT.scaleName(name, lang, { roots: naming })
+}
+
+/** A cadence as UMT names it ("Authentic Cadence (V -> I)"); `short` for a tag: "Authentic", "Auténtica". */
+export function cadenceLabel(cadence: string, short = false): string {
+  return UMT.cadenceName(cadence, lang, { short })
+}
+
+/** A substitution type from UMT ('tritone', 'chromatic-mediant'): "tritone", "tritonal". */
+export function substitutionTypeLabel(type: string): string {
+  return UMT.substitutionTypeName(type, lang)
 }
 
 /** The page's own language attribute, for screen readers and hyphenation. */

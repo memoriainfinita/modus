@@ -1,7 +1,7 @@
 import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis } from '../types'
 import { chordColor } from '../theory/chord'
 import { escapeHtml } from '../ui/html'
-import { t, noteLabel, chordLabel } from '../i18n/i18n'
+import { t, noteLabel, chordLabel, cadenceLabel } from '../i18n/i18n'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 
@@ -88,7 +88,7 @@ export function renderZone1Analysis(
     figuredBass = analysis.figuredBass || '—'
     diatonic = analysis.isDiatonic ? t('analysis.yes') : analysis.isBorrowed ? t('analysis.borrowed', { mode: analysis.borrowedFrom ?? '?' }) : t('analysis.chromatic')
     scales = analysis.suggestedScales.slice(0, 4).join(', ') || '—'
-    cadence = analysis.cadence || '—'
+    cadence = analysis.cadence ? cadenceLabel(analysis.cadence) : '—'
     // The Roman field already reads V7/x; this row names the tonicized degree.
     if (analysis.isSecondary) secondary = `→ ${analysis.secondaryTarget?.split('/')[1] ?? '?'}`
     if (analysis.substitutions?.length) subs = analysis.substitutions.join(', ')

@@ -298,7 +298,7 @@ The interface is in English or Spanish: the browser's first language when it is 
 - Strings: one table per language (`src/i18n/en.ts`, `es.ts`); Spanish has every English key, with the same values filled in (checked by a test)
 - Notes and chords in solfège come from UMT: `localizeNoteName` for notes, `formatChordSymbol(…, { roots: 'solfege' })` for chords (root and slash bass: Sibm7/Re). They apply wherever a note or chord is shown: detector, analysis, history, song, key panel, circle, guitar and fretboard labels, velocity, view windows and presentation. Key names are Modus's (C Major / Do mayor / C mayor)
 - Chords typed in solfège (chord field, song chords, pasted progressions) are stored in letters, through UMT `translateSymbol` with `SOLFEGE_ROOTS` and `QUALITY_ALIASES_ES`. A name that starts with a syllable reads as solfège first ("Do7" is C7, not D°7); when that is no chord the letters stand ("Fadd9")
-- Theory names UMT writes in English (scales and modes, cadences, substitution types) stay English in Spanish too, with the root in solfège when that is chosen; asked of UMT
+- Theory names come from UMT in the interface language: scales and modes (`scaleName`, root as notes are named: "Re dórico"), cadences (`cadenceName`, the short form on the history tags: "Rota"), substitution types (`substitutionTypeName`). With English and Do Re Mi only the root changes ("Sol mixolydian")
 - View window titles stay "Modus view: …" in every language: OBS finds the window by its title. A view reloads when the language or the note names change in the main window
 - A new song and new sections are named in the interface language (Sin título, Estrofa); after that the name is the user's
 

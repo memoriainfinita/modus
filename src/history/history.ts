@@ -4,7 +4,7 @@ import { playChord, playNoteNames } from '../audio/audio'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
 import { spellChordSymbol } from '../theory/spelling'
-import { t, chordLabel, keyLabel } from '../i18n/i18n'
+import { t, chordLabel, keyLabel, cadenceLabel } from '../i18n/i18n'
 
 const MAX_ENTRIES = 200
 // Chip accent by harmonic function (T/S/D), not by chord quality: theme tokens
@@ -87,11 +87,6 @@ export function notifyChordDetected(symbol: string, notes: string[]) {
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
-/** "Authentic Cadence (V -> I)" → "Authentic"; the full name goes in the tooltip. */
-export function shortCadence(name: string): string {
-  return name.replace(/\s*\(.*\)$/, '').replace(/ Cadence$/, '').replace(/ Resolution$/, '')
-}
-
 /** Moves the cursor highlight without rebuilding the strip. */
 export function markActiveHistoryEntry(container: HTMLElement, entryId: string | null) {
   container.querySelectorAll<HTMLElement>('.history-chip').forEach(el => {
@@ -173,8 +168,9 @@ export function renderHistory(
     if (cadence) {
       const tag = document.createElement('span')
       tag.className = 'history-cadence'
-      tag.textContent = shortCadence(cadence)
-      tag.title = `${cadence}: ${chordLabel(shown[i + 1].symbol)} → ${chordLabel(entry.symbol)}`
+      // The short name on the strip ("Authentic"), the full one in the tooltip
+      tag.textContent = cadenceLabel(cadence, true)
+      tag.title = `${cadenceLabel(cadence)}: ${chordLabel(shown[i + 1].symbol)} → ${chordLabel(entry.symbol)}`
       strip.appendChild(tag)
     }
   })

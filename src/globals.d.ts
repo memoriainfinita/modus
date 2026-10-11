@@ -46,6 +46,9 @@ declare const UMT: {
   localizeNoteName: (name: string, language: 'en' | 'es', long?: boolean) => string
   formatChordSymbol: (chord: any, opts?: { style?: 'standard' | 'symbols' | 'short'; roots?: 'letters' | 'solfege' }) => string
   chordLongName: (chord: any, language?: 'en' | 'es') => string
+  scaleName: (name: string, language?: 'en' | 'es', options?: { roots?: 'letters' | 'solfege' }) => string
+  cadenceName: (cadence: string, language?: 'en' | 'es', options?: { short?: boolean }) => string
+  substitutionTypeName: (type: string, language?: 'en' | 'es') => string
   translateSymbol: (input: string, aliases: Record<string, string>) => string
   SOLFEGE_ROOTS: Record<string, string>
   QUALITY_ALIASES_ES: Record<string, string>
