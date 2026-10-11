@@ -1,5 +1,5 @@
 import './styles.css'
-import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes, getVelocity, getInputChannel, setInputChannel } from './input/midi'
+import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes, getVelocity, getInputChannel, setInputChannel, setHeardNotes } from './input/midi'
 import { wireComputerKeyboard, toggleComputerKeyboard, isComputerKeyboardOn, computerKeyboardStatus, setComputerKeyboardChange } from './input/computer-keyboard'
 import { analyzeNotes, buildHarmonicAnalysis, analyzeNoteSet, getAutoKey } from './detector/analyzer'
 import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
@@ -31,6 +31,8 @@ import { explainDetection, renderExplanation } from './detector/explain'
 import { renderProgressions } from './ui/progressions'
 import { renderEar, type EarQuestion } from './ui/ear'
 import { renderPlayer } from './ui/player'
+import { renderTuner, updateTuner } from './ui/tuner'
+import { startMic, stopMic, isMicOn } from './input/mic'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames, isKnownChord, readTypedChord } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
@@ -114,6 +116,7 @@ function init() {
   wireComputerKeyboard()
   setComputerKeyboardChange(updateComputerKeyboardButton)
   $('btn-keyboard').addEventListener('click', () => { initAudioOnGesture(); toggleComputerKeyboard() })
+  $('btn-mic').addEventListener('click', toggleMic)
   window.addEventListener('pointerup', onPianoRelease)
   window.addEventListener('pointercancel', onPianoRelease)
   const chordInput = $('typed-chord') as HTMLInputElement
@@ -128,6 +131,7 @@ function init() {
   if (ear) renderEar(ear, { show: showEarAnswer })
   const player = document.getElementById('player-container')
   if (player) renderPlayer(player)
+  drawTuner()
 
   initMidi().then(result => {
     if (result.denied) {
@@ -787,6 +791,23 @@ function onCofClick(chord: string, key: string | null) {
   lastCofClick = { key, at: now }
   playChord(chord)
   showChord(chord, undefined, previousHistoryChord(chord))
+}
+
+// ─── Microphone ──────────────────────────────────────────────────────────────
+
+function drawTuner(error?: string) {
+  $('btn-mic').classList.toggle('active-mode', isMicOn())
+  const el = document.getElementById('tuner-container')
+  if (el) renderTuner(el, { toggle: toggleMic }, error)
+}
+
+function toggleMic() {
+  if (isMicOn()) { stopMic(); return }
+  startMic({
+    notes: (midis, velocity) => setHeardNotes(midis, velocity),
+    frame: heard => { const el = document.getElementById('tuner-container'); if (el) updateTuner(el, heard) },
+    state: (_on, error) => drawTuner(error),
+  })
 }
 
 /** An ear-training answer, once given, in the detector: the notes, or the chord (with the one before it for a cadence, in its key). */

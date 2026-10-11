@@ -126,6 +126,7 @@ function buildToolbar(): string {
       <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t('mode.hold.title')}">${t('mode.hold')}</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t('mode.arpeggio.title')}">${t('mode.arpeggio')}</button>
       <button id="btn-keyboard" class="mode-btn" title="${t('keyboard.title')}">⌨</button>
+      <button id="btn-mic" class="mode-btn" title="${t('mic.title')}">🎤</button>
       <span id="keyboard-status" class="auto-key-label"></span>
       <select id="key-select" class="ctrl-select">
         <option value="">${t('key.auto')}</option>
@@ -235,6 +236,7 @@ function moduleBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolea
     case 'progressions': return '<div id="progressions-container"></div>'
     case 'ear': return '<div id="ear-container"></div>'
     case 'player': return '<div id="player-container"></div>'
+    case 'tuner': return '<div id="tuner-container"></div>'
     case 'piano': return '<div id="piano-container" class="fit"></div>'
     case 'velocity': return '<div id="velocity-container"></div>'
     case 'history': return '<div id="zone2-content"></div>'
