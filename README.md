@@ -139,7 +139,7 @@ All three projects are independent, GPL-3.0, and built for the music community �
 | Layer | Technology |
 |---|---|
 | App | TypeScript → esbuild → `dist/app.js` |
-| Theory | [UMT](https://github.com/memoriainfinita/UMT) v0.5.0, served with the app (`vendor/`) |
+| Theory | [UMT](https://github.com/memoriainfinita/UMT) v0.6.0, served with the app (`vendor/`) |
 | Diagrams | [notae](https://github.com/memoriainfinita/notae), pinned commit, served with the app |
 | Staff | abcjs 6.7.1, served with the app |
 | MIDI | Web MIDI API (Chrome, Edge, Firefox — Firefox asks for MIDI permission per site) |
