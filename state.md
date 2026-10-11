@@ -12,13 +12,13 @@ What is true now. What already happened lives in `state-history.md`.
 **Modus** — see and understand the harmony of what you play, in real time. Aimed at being a complete, professional, useful, universal and didactic app, for studying, transcribing songs, composing, teaching and making videos. No time or budget limits, no marketing or profit goals. GPL-3.0, part of the **memoriainfinita** ecosystem: UMT (developed for Modus, all theory) and notae (diagrams).
 
 - **Spec:** `docs/spec.md` (purpose, design, behaviour) · **UMT contract:** `docs/umt-contract.md` · Executed plans and earlier spec revisions in `.archive/` (local, gitignored)
-- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to the tag `v0.5.0`, notae to `81b58de`
+- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to the tag `v0.5.0`, notae to `81b58de`, both served from `vendor/`
 
 ## Status
 
 - Working: detector, analysis, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, guitar voicings, piano/fretboard, velocity, grand staff, presentation mode, view windows for OBS and export, MIDI out, input channel filter. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-11: TSC clean, 359 unit tests against the real UMT bundle, `pnpm test:e2e` 68/68 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
+- Tests 2026-10-11: TSC clean, 358 unit tests against the real UMT bundle, `pnpm test:e2e` 69/69 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `v0.4.0` on 2026-10-11, when the UMT audit ended (all tests passed unchanged), and to `v0.4.1` and `v0.5.0` (theory names in Spanish) the same day. The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Numerals follow the letter written (`analyzeProgression` with `spelling: 'written'`): Gb in C is ♭V, F# is ♯IV. CoF degrees come from the same call
 - Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
@@ -32,7 +32,7 @@ What is true now. What already happened lives in `state-history.md`.
 - [typescript] `pnpm build` does not typecheck (esbuild). Use `pnpm exec tsc --noEmit`. Confirmed 2026-05.
 - [build] `dist/` is tracked in git, same as notae and UMT. Commit it in sync with `src/`. Confirmed 2026-05.
 - [build] pnpm, not npm. Confirmed 2026-10.
-- [deps] UMT pinned to a release tag (`v0.5.0`) in `package.json` and the CDN URL, notae to a commit hash; never `@main`/`@master`. Bump deliberately, reading UMT's `CHANGELOG.md`. Confirmed 2026-10.
+- [deps] UMT pinned to a release tag (`v0.5.0`) in `package.json` and `scripts/vendor.mjs`, notae to a commit hash there; never `@main`/`@master`. The page loads them from `vendor/` (tracked): after a bump, `pnpm vendor`, then the tests. Bump deliberately, reading UMT's `CHANGELOG.md`. Confirmed 2026-10.
 - [naming] Project name: Modus (Latin — mode, measure). Confirmed 2026-05.
 - [theory] Music-theory fixes go into UMT or notae, then Modus bumps the pin. No workarounds in Modus for library output. Since 2026-10-10 only the session running the UMT audit (`umt/docs/auditoria-2026-10.md`) commits to UMT: Modus writes what it needs in `umt/docs/notas-desde-modus-2026-10.md` (both local, gitignored) and waits. Confirmed 2026-10.
 - [ux] Destructive actions run at once and offer Undo (`ui/undo.ts`), never a confirmation. Confirmed 2026-10.
@@ -76,7 +76,7 @@ Ordered by what each one makes cheaper or depends on: strings, colours and the m
 8. [x] Ear training, 2026-10-11: panel with intervals, chord qualities (10) and cadences (authentic, plagal, deceptive, half in a random major key), a score per kind, the answer shown in the detector. Later: answering by playing it, scale degrees, more cadences and minor keys
 9. [x] Audio player, 2026-10-11: Player panel with a local file (open or drop), waveform with click to seek, A–B loop, speed 50–125 % keeping the pitch, back 5 s; on top of the Transcription layout. The file is not kept across reloads. Later: pitch shift (a recording a semitone off), markers, the chord heard at the playhead (with the microphone item's audio analysis)
 10. [~] Microphone input, 2026-10-11. Done: notes by YIN held in the detector (feeds Fits, history, analysis), never sounded; Tuner panel (note, cents, Hz); chords from a chromagram, experimental. Checked with Chrome's fake capture (a WAV of A3) and Firefox's fake stream (1 kHz → B5 +22 ¢); not yet with a real voice or guitar. Open: chords from audio that hold up on a real guitar (a better model than a chromagram threshold), the chord heard at the Player's playhead
-11. [ ] Works offline and installable: UMT, notae, abcjs, soundfont-player and the samples served with the app instead of from CDNs (also removes the `gleitz.github.io` risk). Before publication
+11. [x] Offline and installable, 2026-10-11: libraries and the piano samples in `vendor/` (`pnpm vendor`), service worker (network first for the app, cache first for samples), manifest and icons. Checked offline in Chrome (e2e) and Firefox. The other 127 instruments still come from `gleitz.github.io` on first use; shipping them all is ~250 MB
 12. [ ] Accessibility: full keyboard use and screen reader
 13. [ ] Mobile and touch
 14. [ ] Built-in help and a first-run guided tour

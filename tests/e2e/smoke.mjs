@@ -949,6 +949,27 @@ await check('without the soundfont-player script the app still renders, audio in
   assert(r.status === '♪ error', `audio status: ${r.status}`)
 })
 
+await check('offline: once opened, the app loads and plays without a network', async () => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'en-US' })
+  await context.addInitScript(FAKE_MIDI)
+  const p = await context.newPage()
+  await p.goto(URL_)
+  await p.waitForFunction(() => navigator.serviceWorker?.controller || navigator.serviceWorker.ready.then(() => true), null, { timeout: 10000 })
+  await p.evaluate(() => navigator.serviceWorker.ready)
+  await context.setOffline(true)
+  await p.reload()
+  await p.waitForFunction(() => window.UMT && window.Notae && window.ABCJS && window.Soundfont, null, { timeout: 10000 })
+  await p.waitForFunction(() => !/loading/.test(document.getElementById('audio-status')?.textContent ?? ''), null, { timeout: 10000 })
+  const r = await p.evaluate(() => ({
+    panels: document.querySelectorAll('.module').length,
+    banner: document.getElementById('cdn-error-banner').classList.contains('visible'),
+    status: document.getElementById('audio-status')?.textContent,
+  }))
+  await context.close()
+  assert(r.panels > 5 && !r.banner, `offline page: ${JSON.stringify(r)}`)
+  assert(r.status !== '♪ error', `the bundled piano did not load offline: ${r.status}`)
+})
+
 await browser.close()
 server.close()
 

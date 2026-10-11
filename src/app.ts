@@ -96,6 +96,8 @@ function translatePage() {
 }
 
 function init() {
+  // Offline and installable (sw.js); service workers run over http(s), not from a file
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {})
   translatePage()
   applyTheme()
   followSystemTheme()
