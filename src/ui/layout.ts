@@ -184,6 +184,7 @@ function headerTools(id: ModuleId): string {
   if (id === 'analysis') return toggle('analysisControls')
   if (id === 'cof') return toggle('cofControls')
   if (id === 'guitar') return toggle('guitarControls')
+  if (id === 'piano') return `<button id="btn-piano-prev" class="size-ctrl-btn" title="${t('piano.prev.title')}">⇠</button>`
   if (id === 'key') return `
     <button id="btn-key-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
     <button id="btn-key-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
@@ -201,6 +202,7 @@ function moduleBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolea
       <div id="staff-container" class="fit"></div>
       <div class="ctrl-row module-controls" style="justify-content:center">
         <button id="btn-staff-clef" class="size-ctrl-btn" title="${t('staff.clef.title')}"></button>
+        <button id="btn-staff-prev" class="size-ctrl-btn" title="${t('staff.prev.title')}">⇠</button>
       </div>`
     case 'analysis': return `
       <div id="analysis-content"></div>

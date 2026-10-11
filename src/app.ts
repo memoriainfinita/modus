@@ -48,6 +48,8 @@ let cofAccidental = loadChoice('cof-accidental', ['flat', 'sharp'] as const, 'fl
 let cofShowMinor   = loadBool('cof-show-minor', true)
 let cofShowDegrees = loadBool('cof-show-degrees', false)
 let cofShow7ths    = loadBool('cof-show-7ths', false)
+// Staff and piano also show the chord before, to see each voice move
+let showPrevChord  = loadBool('show-prev-chord', false)
 
 const analysisFieldsVisible = Object.fromEntries(
   ANALYSIS_FIELD_KEYS.map(f => [f, loadBool(`analysis-field-${f}`, true)])
@@ -204,7 +206,7 @@ function makeSongHandlers() {
     onChordClick: (id: string, symbol: string, notes?: string[]) => {
       state.activeCursorId = id
       markActiveChord(id)
-      if (symbol) showChord(symbol, notes, previousSongSymbol(id))
+      if (symbol) showChord(symbol, notes, previousSongChord(id))
     },
     onChordCapture: (id: string) => {
       state.captureTargetId = id
@@ -298,6 +300,16 @@ function wireLayoutEvents() {
     renderZone1Diagrams(displayedNotes(), selectedSymbol())
   })
 
+  const prevButtons = [$('btn-staff-prev'), $('btn-piano-prev')]
+  const showPrev = () => prevButtons.forEach(b => b.classList.toggle('active', showPrevChord))
+  showPrev()
+  prevButtons.forEach(b => b.addEventListener('click', () => {
+    showPrevChord = !showPrevChord
+    save('show-prev-chord', showPrevChord)
+    showPrev()
+    renderZone1Diagrams(displayedNotes(), selectedSymbol())
+  }))
+
   ANALYSIS_FIELD_KEYS.forEach(f => {
     $(`btn-field-${f}`).addEventListener('click', () => {
       analysisFieldsVisible[f] = !analysisFieldsVisible[f]
@@ -373,6 +385,7 @@ function buildLayout() {
 
 let autoKey: string | null = null       // Krumhansl-Schmuckler on history; recomputed when history changes
 let cadencePrev: string | null = null   // chord the cadence field compares against, chosen by the source
+let prevVoicing: string[] | null = null // its notes, when known: voice leading is read from them
 let lastChordNotes: string[] = []       // last known chord shown — what Space plays after the keys are released
 
 function analysisKey(): string | null {
@@ -425,10 +438,10 @@ function trackMelody(notes: number[], detection: DetectionResult) {
 function refreshAnalysis() {
   const sym = selectedSymbol()
   const notes = displayedNotes()
-  const sig = `${sym}|${analysisKey()}|${cadencePrev}|${notes.join(' ')}|${melody.join(' ')}`
+  const sig = `${sym}|${analysisKey()}|${cadencePrev}|${prevVoicing?.join(' ')}|${notes.join(' ')}|${melody.join(' ')}`
   if (sig === lastAnalysisSig) return
   lastAnalysisSig = sig
-  state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev, notes) : null
+  state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev, notes, prevVoicing) : null
   // Single notes and intervals are read with the melody they belong to
   const kind = state.detection?.kind
   const useMelody = (kind === 'note' || kind === 'interval') && melody.length >= 2
@@ -522,16 +535,20 @@ function respellMidiDetection() {
   if (detectionFromMidi) state.detection = spellDetection(state.detection, analysisKey())
 }
 
-function showDetection(detection: DetectionResult, prev: string | null) {
+/** The chord a detection is compared with (cadence, P/L/R, voice leading), with its notes when they are known. */
+type PrevChord = { symbol: string; notes?: string[] } | null
+
+function showDetection(detection: DetectionResult, prev: PrevChord) {
   state.detection = detection
-  cadencePrev = prev
+  cadencePrev = prev?.symbol ?? null
+  prevVoicing = prev?.notes?.length ? spellVoicing(prev.notes, prev.symbol, analysisKey()) : null
   if (selectedSymbol()) lastChordNotes = displayedNotes()
   refreshAnalysis()
   renderDetector()
 }
 
 /** Shows a chord picked from history, song or CoF. Without a stored voicing, UMT's spelling is shown and played. */
-function showChord(symbol: string, notes: string[] | undefined, prev: string | null) {
+function showChord(symbol: string, notes: string[] | undefined, prev: PrevChord) {
   detectionFromMidi = false
   showDetection({
     kind: 'chord',
@@ -575,14 +592,14 @@ function playCurrent() {
 
 // Cadence references: live play compares with the last different chord logged;
 // a history chip with the chip logged before it; a song chord with the one before it.
-function previousHistorySymbol(symbol: string): string | null {
-  return state.history.find(e => e.symbol !== symbol)?.symbol ?? null
+function previousHistoryChord(symbol: string): HistoryEntry | null {
+  return state.history.find(e => e.symbol !== symbol) ?? null
 }
 
-function previousSongSymbol(chordId: string): string | null {
+function previousSongChord(chordId: string): SongChord | null {
   const chords = songChords(state.song).filter(c => c.symbol)
   const i = chords.findIndex(c => c.id === chordId)
-  return i > 0 ? chords[i - 1].symbol : null
+  return i > 0 ? chords[i - 1] : null
 }
 
 // ─── MIDI callbacks ───────────────────────────────────────────────────────────
@@ -630,7 +647,7 @@ function onNoteChange(notes: number[]) {
     else cancelCapture()
   }
 
-  showDetection(result, known ? previousHistorySymbol(known) : null)
+  showDetection(result, known ? previousHistoryChord(known) : null)
   if (known && result?.kind === 'chord') notifyChordDetected(known, result.notes)
 }
 
@@ -715,10 +732,11 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const notes = noteNames.join(' ')
   syncCofAccidentalButtons()
   const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths }
-  renderIfChanged('staff', `${notes}|${key}|${staffClef}`, () =>
-    renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef))
-  renderIfChanged('piano', `${notes}|${chordSymbol}`, () =>
-    renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress))
+  const prev = showPrevChord && chordSymbol ? prevVoicing : null
+  renderIfChanged('staff', `${notes}|${key}|${staffClef}|${prev?.join(' ')}`, () =>
+    renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef, prev))
+  renderIfChanged('piano', `${notes}|${chordSymbol}|${prev?.join(' ')}`, () =>
+    renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress, prev))
   const vel = noteVelocities(noteNames)
   renderIfChanged('velocity', JSON.stringify(vel), () => renderVelocity($('velocity-container'), vel))
   renderIfChanged('neck', `${notes}|${keyPrefersSharps(key)}`, () =>
@@ -736,7 +754,7 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
 /** A chord picked in the key explorer: played and shown like a CoF segment; the key stays. */
 function onKeyChordClick(chord: string) {
   playChord(chord)
-  showChord(chord, undefined, previousHistorySymbol(chord))
+  showChord(chord, undefined, previousHistoryChord(chord))
 }
 
 // A click plays and shows the segment's chord; a second click on the same segment within
@@ -754,7 +772,7 @@ function onCofClick(chord: string, key: string | null) {
   }
   lastCofClick = { key, at: now }
   playChord(chord)
-  showChord(chord, undefined, previousHistorySymbol(chord))
+  showChord(chord, undefined, previousHistoryChord(chord))
 }
 
 function renderZone2() {
@@ -764,7 +782,7 @@ function renderZone2() {
     (entry) => {
       state.historyActiveCursorId = entry.id
       const i = state.history.findIndex(e => e.id === entry.id)
-      showChord(entry.symbol, entry.notes, state.history[i + 1]?.symbol ?? null)
+      showChord(entry.symbol, entry.notes, state.history[i + 1] ?? null)
       markActiveHistoryEntry($('zone2-content'), entry.id)
     },
     state.historyActiveCursorId
@@ -934,7 +952,7 @@ function stepCursor(dir: 1 | -1) {
     if (!next) return
     state.activeCursorId = next.id
     markActiveChord(next.id)
-    showChord(next.symbol, next.notes, previousSongSymbol(next.id))
+    showChord(next.symbol, next.notes, previousSongChord(next.id))
     playChordOrNotes(next.symbol, next.notes)
     return
   }
@@ -945,7 +963,7 @@ function stepCursor(dir: 1 | -1) {
   const at = state.history.indexOf(entry)
   state.historyActiveCursorId = entry.id
   markActiveHistoryEntry($('zone2-content'), entry.id)
-  showChord(entry.symbol, entry.notes, state.history[at + 1]?.symbol ?? null)
+  showChord(entry.symbol, entry.notes, state.history[at + 1] ?? null)
   playChordOrNotes(entry.symbol, entry.notes)
 }
 

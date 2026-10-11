@@ -47,6 +47,8 @@ For each detected chord:
 | Substitutions | As UMT proposes them — e.g. tritone, sus4, deceptive |
 | Fits | Scales that contain the notes on screen — or a melody played note by note |
 | P/L/R | Neo-Riemannian moves from the previous triad |
+| Voices | How each voice moves from the previous chord: `B→C ↑1  G =`, outer motion, total motion, notes held |
+| Rules | Four-part rules broken: parallel fifths and octaves, hidden ones, crossing, leading tone, seventh |
 | Upper structures | The triad on top of a dominant (`II UST` over C7 = D: 9 #11 13) |
 | Set class | Forte number, prime form, interval vector |
 | Cadence | vs. the previous chord: last different chord played, previous history chip, or previous song chord |
@@ -61,7 +63,7 @@ Each field can be toggled individually. Font scale adjustable with +/−.
 Every element is a panel on a grid: drag it by its title, resize it from its corner, hide it with ×; it snaps to the grid and the others make room. Diagrams fill their panel. The ▦ menu has ready-made layouts (Standard, Study, Class, Transcription, Recording), layouts you save under a name, and a box per panel to show or hide it. On a phone the panels stack in one column.
 
 - **Chord** — the name, its notes and the alternative readings; it grows with its panel
-- **Staff** (abcjs) — grand staff (treble and bass, split at middle C), or treble or bass alone; key signature follows the active key
+- **Staff** (abcjs) — grand staff (treble and bass, split at middle C), or treble or bass alone; key signature follows the active key; ⇠ writes the previous chord before it, faded, to see the voices move (on the piano it lights the previous keys)
 - **Analysis** — all harmonic analysis fields, each field individually togglable; font scale +/−
 - **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels
 - **Guitar voicing** (notae) — Standard / Drop D / Open G / Custom tuning. Out of every fingering UMT finds, only playable ones are kept (chord bass lowest, no muted string in between, four-fret hand, open strings only in first position), ordered along the neck from the open shapes up; next/prev to browse. Custom tuning accepts note names per string and gets real voicings too
@@ -188,6 +190,7 @@ src/
   detector/
     analyzer.ts           chord/interval detection and harmonic analysis
     analysis-panel.ts     harmonic analysis fields rendering
+    voice-leading.ts      how each voice moves from the previous chord, and the rules broken
   theory/
     notes.ts              note names ↔ MIDI numbers
     chord.ts              adapters over UMT chords: family/colour, name normalization, notes
@@ -242,7 +245,7 @@ tests/
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
   library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
-  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts
+  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both

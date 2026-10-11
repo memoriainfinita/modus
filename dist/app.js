@@ -430,9 +430,9 @@
     return ((LETTER_SEMITONE[m[1]] + accidentalSemitones(m[2])) % 12 + 12) % 12;
   }
   function midiToNoteName(midiNote) {
-    const pc = midiNote % 12;
+    const pc2 = midiNote % 12;
     const octave = Math.floor(midiNote / 12) - 1;
-    return PITCH_NAMES_FLAT[pc] + octave;
+    return PITCH_NAMES_FLAT[pc2] + octave;
   }
   function noteNameToMidi(name) {
     const m = name.match(/^([A-G])([#b]*)(-?\d+)$/);
@@ -568,15 +568,15 @@
   // src/theory/keys.ts
   var MAJOR_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
   var MINOR_ROOTS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
-  var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc) => [`${root} Major`, `${MINOR_ROOTS[pc]} Minor`]);
+  var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc2) => [`${root} Major`, `${MINOR_ROOTS[pc2]} Minor`]);
   function parseKey(key) {
     const [root, mode2] = key.split(" ");
-    const pc = pitchClassOf(root ?? "");
-    if (pc === -1) return null;
-    return { pc, minor: mode2?.toLowerCase() === "minor" };
+    const pc2 = pitchClassOf(root ?? "");
+    if (pc2 === -1) return null;
+    return { pc: pc2, minor: mode2?.toLowerCase() === "minor" };
   }
-  function keyName(pc, minor) {
-    const p = (pc % 12 + 12) % 12;
+  function keyName(pc2, minor) {
+    const p = (pc2 % 12 + 12) % 12;
     return minor ? `${MINOR_ROOTS[p]} Minor` : `${MAJOR_ROOTS[p]} Major`;
   }
   function normalizeKey(key) {
@@ -728,6 +728,8 @@
     "staff.clef.grand": "Grand",
     "staff.clef.treble": "Treble",
     "staff.clef.bass": "Bass",
+    "staff.prev.title": "Write the chord before next to this one, to see each voice move",
+    "piano.prev.title": "Mark the keys of the chord before, to see each voice move",
     "cof.flat.title": "Show flat enharmonics (Gb, Db\u2026)",
     "cof.sharp.title": "Show sharp enharmonics (F#, C#\u2026)",
     "cof.spelledInKey": "Spelled as in {key}; b / # apply without a key",
@@ -776,6 +778,12 @@
     "field.forte": "Set",
     "field.forte.title": "Set class: Forte number, prime form, interval vector",
     "field.forte.row": "Set class",
+    "field.voices": "Voic\u2192",
+    "field.voices.title": "Voice leading: how each voice moves from the chord before, bass first",
+    "field.voices.row": "Voices",
+    "field.rules": "Rules",
+    "field.rules.title": "Rules of four-part writing broken from the chord before: parallels, crossing, leading tone, seventh",
+    "field.rules.row": "Rules",
     // Analysis values
     "analysis.note": "Note",
     "analysis.interval": "Interval",
@@ -813,6 +821,28 @@
     "voicing.open": "open",
     "voicing.doubled": "doubled {notes}",
     "voicing.missing": "no {notes}",
+    "vl.bass": "bass",
+    "vl.top": "top",
+    "vl.voice": "voice {n}",
+    "vl.and": " and ",
+    "vl.outer.parallel": "outer voices parallel",
+    "vl.outer.similar": "outer voices similar",
+    "vl.outer.contrary": "outer voices contrary",
+    "vl.outer.oblique": "outer voices oblique",
+    "vl.outer.static": "outer voices held",
+    "vl.total": "{n} semitones in all",
+    "vl.common": "{n} held",
+    "vl.none": "none broken",
+    "vl.issue.parallel5": "parallel fifths ({voices})",
+    "vl.issue.parallel8": "parallel octaves ({voices})",
+    "vl.issue.hidden5": "hidden fifth in the outer voices",
+    "vl.issue.hidden8": "hidden octave in the outer voices",
+    "vl.issue.crossing": "voices cross ({voices})",
+    "vl.issue.overlap": "voices overlap ({voices})",
+    "vl.issue.leap": "leap too wide ({voices})",
+    "vl.issue.leadingTone": "leading tone does not rise to the tonic ({voices})",
+    "vl.issue.doubledLeadingTone": "leading tone doubled ({voices})",
+    "vl.issue.seventh": "seventh does not fall by step ({voices})",
     // Key panel
     "keyPanel.sevenths.title": "Seventh chords instead of triads",
     "keyPanel.neg": "Neg",
@@ -1069,6 +1099,8 @@
     "staff.clef.grand": "Doble",
     "staff.clef.treble": "Sol",
     "staff.clef.bass": "Fa",
+    "staff.prev.title": "Escribir el acorde anterior junto a este, para ver moverse cada voz",
+    "piano.prev.title": "Marcar las teclas del acorde anterior, para ver moverse cada voz",
     "cof.flat.title": "Enarm\xF3nicos con bemoles (Solb, Reb\u2026)",
     "cof.sharp.title": "Enarm\xF3nicos con sostenidos (Fa#, Do#\u2026)",
     "cof.spelledInKey": "Escrito como en {key}; b / # sirven sin tonalidad",
@@ -1116,6 +1148,12 @@
     "field.forte": "Conj",
     "field.forte.title": "Clase de conjunto: n\xFAmero de Forte, forma prima, vector interv\xE1lico",
     "field.forte.row": "Conjunto",
+    "field.voices": "Voces",
+    "field.voices.title": "Conducci\xF3n de voces: c\xF3mo se mueve cada voz desde el acorde anterior, desde el bajo",
+    "field.voices.row": "Voces",
+    "field.rules": "Reglas",
+    "field.rules.title": "Reglas de la escritura a cuatro voces que se rompen desde el acorde anterior: paralelas, cruces, sensible, s\xE9ptima",
+    "field.rules.row": "Reglas",
     "analysis.note": "Nota",
     "analysis.interval": "Intervalo",
     "analysis.inversion": "Inversi\xF3n",
@@ -1150,6 +1188,28 @@
     "voicing.open": "abierta",
     "voicing.doubled": "doblada {notes}",
     "voicing.missing": "sin {notes}",
+    "vl.bass": "bajo",
+    "vl.top": "voz superior",
+    "vl.voice": "voz {n}",
+    "vl.and": " y ",
+    "vl.outer.parallel": "extremas paralelas",
+    "vl.outer.similar": "extremas directas",
+    "vl.outer.contrary": "extremas contrarias",
+    "vl.outer.oblique": "extremas oblicuas",
+    "vl.outer.static": "extremas quietas",
+    "vl.total": "{n} semitonos en total",
+    "vl.common": "{n} comunes",
+    "vl.none": "ninguna rota",
+    "vl.issue.parallel5": "quintas paralelas ({voices})",
+    "vl.issue.parallel8": "octavas paralelas ({voices})",
+    "vl.issue.hidden5": "quinta directa en las extremas",
+    "vl.issue.hidden8": "octava directa en las extremas",
+    "vl.issue.crossing": "voces cruzadas ({voices})",
+    "vl.issue.overlap": "voces superpuestas ({voices})",
+    "vl.issue.leap": "salto demasiado amplio ({voices})",
+    "vl.issue.leadingTone": "la sensible no sube a la t\xF3nica ({voices})",
+    "vl.issue.doubledLeadingTone": "sensible doblada ({voices})",
+    "vl.issue.seventh": "la s\xE9ptima no baja por grado conjunto ({voices})",
     "keyPanel.sevenths.title": "Cuatr\xEDadas en lugar de tr\xEDadas",
     "keyPanel.neg": "Neg",
     "keyPanel.neg.title": "Mostrar u ocultar la armon\xEDa negativa",
@@ -1348,6 +1408,114 @@
     if (typeof document !== "undefined") document.documentElement.lang = lang;
   }
 
+  // src/detector/voice-leading.ts
+  var voices = (names) => names.flatMap((name) => {
+    const midi = noteNameToMidi(name);
+    return midi === null ? [] : [{ name, midi }];
+  }).sort((a, b) => a.midi - b.midi);
+  function matchInner(short, long) {
+    const n = short.length, m = long.length;
+    const cost = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(Infinity));
+    for (let j = 0; j <= m; j++) cost[0][j] = 0;
+    for (let i = 1; i <= n; i++) for (let j = i; j <= m; j++)
+      cost[i][j] = Math.min(cost[i][j - 1], cost[i - 1][j - 1] + Math.abs(short[i - 1].midi - long[j - 1].midi));
+    const pick = [];
+    for (let i = n, j = m; i > 0; j--) {
+      if (cost[i][j] === cost[i][j - 1] && j > i) continue;
+      pick.unshift(j - 1);
+      i--;
+    }
+    return pick;
+  }
+  function pairVoices(fromNames, toNames) {
+    const a = voices(fromNames), b = voices(toNames);
+    const move = (x, y) => ({ from: x?.name ?? null, to: y?.name ?? null, semitones: x && y ? y.midi - x.midi : null });
+    if (!a.length || !b.length) return [];
+    if (a.length === b.length) return a.map((x, i) => move(x, b[i]));
+    if (a.length === 1 || b.length === 1) return [move(a[0], b[0])];
+    const shortIsFrom = a.length < b.length;
+    const [short, long] = shortIsFrom ? [a, b] : [b, a];
+    const pick = matchInner(short.slice(1, -1), long.slice(1, -1)).map((j) => j + 1);
+    const paired = /* @__PURE__ */ new Map([[0, 0], [long.length - 1, short.length - 1]]);
+    pick.forEach((j, i) => paired.set(j, i + 1));
+    return long.map((voice, j) => {
+      const other = paired.has(j) ? short[paired.get(j)] : null;
+      return shortIsFrom ? move(other, voice) : move(voice, other);
+    });
+  }
+  function outerMotion(moves) {
+    const ends = moves.filter((m) => m.semitones !== null);
+    if (ends.length < 2) return null;
+    const bass = ends[0].semitones, top = ends[ends.length - 1].semitones;
+    if (!bass && !top) return "static";
+    if (!bass || !top) return "oblique";
+    if (Math.sign(bass) !== Math.sign(top)) return "contrary";
+    return bass === top ? "parallel" : "similar";
+  }
+  var ISSUE_KEYS = {
+    "Parallel 5th": "parallel5",
+    "Parallel Octave": "parallel8",
+    "Hidden Fifth": "hidden5",
+    "Direct Fifth": "hidden5",
+    "Hidden Octave": "hidden8",
+    "Direct Octave": "hidden8",
+    "Voice Crossing": "crossing",
+    "Voice Overlap": "overlap",
+    "Forbidden Leap": "leap",
+    "Leading Tone Unresolved": "leadingTone",
+    "Doubled Leading Tone": "doubledLeadingTone",
+    "7th Unresolved": "seventh"
+  };
+  function voiceName(index, count) {
+    if (index === 0) return t("vl.bass");
+    if (index === count - 1) return t("vl.top");
+    return t("vl.voice", { n: index + 1 });
+  }
+  function ruleIssues(fromNames, toNames, key, fromSymbol, toSymbol) {
+    const a = voices(fromNames), b = voices(toNames);
+    if (a.length !== b.length || a.length < 2) return [];
+    const parse = (v) => v.map((x) => UMT.parseNote(x.name));
+    const context = { keySymbol: key ?? void 0, chordA: tryParseChord(fromSymbol) ?? void 0, chordB: tryParseChord(toSymbol) ?? void 0 };
+    const found = tryUMT("voice leading", () => UMT.Harmony.checkVoiceLeading(parse(a), parse(b), "strict", context) ?? [], []);
+    const seen = /* @__PURE__ */ new Set();
+    return found.flatMap((issue) => {
+      const k = ISSUE_KEYS[issue.type];
+      if (!k) return [];
+      const text = t(`vl.issue.${k}`, { voices: issue.voices.map((v) => voiceName(v, a.length)).join(t("vl.and")) });
+      if (seen.has(text)) return [];
+      seen.add(text);
+      return [text];
+    });
+  }
+  function analyzeVoiceLeading(fromNames, toNames, key, fromSymbol = null, toSymbol = null) {
+    if (!fromNames?.length || toNames.length < 2) return null;
+    const moves = pairVoices(fromNames, toNames);
+    if (!moves.length) return null;
+    const paired = moves.filter((m) => m.semitones !== null);
+    return {
+      moves,
+      total: paired.reduce((s, m) => s + Math.abs(m.semitones), 0),
+      common: paired.filter((m) => m.semitones === 0).length,
+      outer: outerMotion(moves),
+      issues: ruleIssues(fromNames, toNames, key, fromSymbol, toSymbol)
+    };
+  }
+  var pc = (name) => noteLabel(name.replace(/-?\d+$/, ""));
+  function moveText(m) {
+    if (!m.from) return `+ ${pc(m.to)}`;
+    if (!m.to) return `\u2212 ${pc(m.from)}`;
+    if (m.semitones === 0) return `${pc(m.to)} =`;
+    return `${pc(m.from)}\u2192${pc(m.to)} ${m.semitones > 0 ? "\u2191" : "\u2193"}${Math.abs(m.semitones)}`;
+  }
+  function describeVoiceLeading(vl) {
+    const summary = [
+      vl.outer ? t(`vl.outer.${vl.outer}`) : null,
+      t("vl.total", { n: vl.total }),
+      vl.common ? t("vl.common", { n: vl.common }) : null
+    ].filter(Boolean).join(" \xB7 ");
+    return `${vl.moves.map(moveText).join("  ")} \u2014 ${summary}`;
+  }
+
   // src/detector/analyzer.ts
   var intervalName = (n) => t(`interval.${n}`);
   function semitonesToInterval(semitones) {
@@ -1499,7 +1667,7 @@
     const fits = tryUMT("scales", () => UMT.findScalesForNotes(notes, { tonic, limit: 7 }).filter((s) => s.notes.length < 12).slice(0, 6).map((s) => scaleLabel(s.name)), []);
     return { notes: names, fromMelody, forte, fits };
   }
-  function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol, noteNames = []) {
+  function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol, noteNames = [], prevNotes = null) {
     const chord = tryParseChord(chordSymbol);
     if (!chord) return emptyAnalysis(chordSymbol);
     const result = emptyAnalysis(chordSymbol);
@@ -1510,6 +1678,11 @@
     result.upperStructures = presentUpperStructures(noteNames, chord);
     const prevChord = tryParseChord(prevChordSymbol);
     if (prevChord) result.transformation = neoRiemannianPath(prevChord, chord);
+    const vl = analyzeVoiceLeading(prevNotes, noteNames, activeKey, prevChordSymbol, chordSymbol);
+    if (vl) {
+      result.voiceLeading = describeVoiceLeading(vl);
+      result.voiceRules = vl.issues;
+    }
     if (!activeKey) return result;
     const a = romanInKey(chordSymbol, activeKey);
     if (a) Object.assign(result, a);
@@ -1537,7 +1710,9 @@
       cadence: null,
       voicing: null,
       upperStructures: [],
-      transformation: null
+      transformation: null,
+      voiceLeading: null,
+      voiceRules: null
     };
   }
   function getAutoKey(history) {
@@ -1855,32 +2030,38 @@
   }
   var chordOf = (notes) => `[${notes.map((n) => n.mark + n.pitch).join("")}]1`;
   var MIDDLE_C = 4 * 7;
-  function buildStaffAbc(noteNames, keyStr, clef = "treble") {
+  function buildStaffAbc(noteNames, keyStr, clef = "treble", prevNotes = null) {
     const { abcKey, accidentals } = keySignature(keyStr);
     const notes = parseNotes(noteNames, accidentals);
+    const prev = prevNotes?.length ? parseNotes(prevNotes, accidentals) : null;
+    const bar = (before, now, empty2) => {
+      const chord = (ns) => ns.length ? chordOf(ns) : empty2;
+      return before ? `${chord(before)} | ${chord(now)}` : chord(now);
+    };
     if (clef !== "grand") {
       const header = `X:1
 M:none
 L:1
 K:${abcKey}${clef === "bass" ? " clef=bass" : ""}
 `;
-      return header + (notes.length ? chordOf(notes) : "z");
+      return header + bar(prev, notes, notes.length || prev ? "x" : "z");
     }
-    const upper = notes.filter((n) => n.step >= MIDDLE_C);
-    const lower = notes.filter((n) => n.step < MIDDLE_C);
-    const empty = notes.length ? "x" : "z";
+    const upper = (ns) => ns.filter((n) => n.step >= MIDDLE_C);
+    const lower = (ns) => ns.filter((n) => n.step < MIDDLE_C);
+    const empty = notes.length || prev ? "x" : "z";
     return `X:1
 M:none
 L:1
 %%staves {RH LH}
 K:${abcKey}
 V:RH clef=treble
-${upper.length ? chordOf(upper) : empty}
+${bar(prev && upper(prev), upper(notes), empty)}
 V:LH clef=bass
-${lower.length ? chordOf(lower) : empty}`;
+${bar(prev && lower(prev), lower(notes), empty)}`;
   }
-  function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2, clef = "treble") {
-    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr, clef), { staffwidth: width - 20, scale });
+  function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2, clef = "treble", prevNotes = null) {
+    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr, clef, prevNotes), { staffwidth: width - 20, scale, add_classes: !!prevNotes?.length });
+    if (prevNotes?.length) container.querySelectorAll(".abcjs-note.abcjs-m0").forEach((el) => el.classList.add("staff-prev"));
   }
 
   // src/theory/voicings.ts
@@ -1892,10 +2073,10 @@ ${lower.length ? chordOf(lower) : empty}`;
     if (names.length !== STANDARD_OPEN_MIDI.length) return null;
     const midi = [];
     for (let i = 0; i < names.length; i++) {
-      const pc = pitchClassOf(normalizeNoteName(names[i]) ?? "");
-      if (pc === -1) return null;
+      const pc2 = pitchClassOf(normalizeNoteName(names[i]) ?? "");
+      if (pc2 === -1) return null;
       const ref = STANDARD_OPEN_MIDI[i];
-      const below = ref - ((ref - pc) % 12 + 12) % 12;
+      const below = ref - ((ref - pc2) % 12 + 12) % 12;
       midi.push(ref - below <= 6 ? below : below + 12);
     }
     return midi;
@@ -2150,7 +2331,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
 
   // src/detector/analysis-panel.ts
-  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "secondary", "subs", "upper", "forte"];
+  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "voices", "rules", "secondary", "subs", "upper", "forte"];
   var fieldLabel = (f) => t(`field.${f}`);
   var fieldTooltip = (f) => t(`field.${f}.title`);
   var rowLabel = (f) => t(`field.${f}.row`);
@@ -2199,6 +2380,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
     let secondary = null, subs = null;
     let voicing = null, plr = null, upper = null;
+    let voices2 = null, rules = null;
     let extra = "";
     if (detection?.kind === "note") {
       extra = row(t("analysis.note"), `${noteLabel(detection.noteName)} \xB7 MIDI ${detection.midiNumber}`);
@@ -2215,10 +2397,12 @@ ${lower.length ? chordOf(lower) : empty}`;
       if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
       voicing = analysis.voicing;
       plr = analysis.transformation;
+      voices2 = analysis.voiceLeading;
+      if (analysis.voiceRules) rules = analysis.voiceRules.length ? analysis.voiceRules.join(", ") : t("vl.none");
       if (analysis.upperStructures.length) upper = analysis.upperStructures.join(", ");
     }
     const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.map(noteLabel).join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
-    el.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
+    el.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("voices", voices2) + fieldRow("rules", rules) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
   }
 
   // src/ui/fit.ts
@@ -2572,6 +2756,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     if (id === "analysis") return toggle("analysisControls");
     if (id === "cof") return toggle("cofControls");
     if (id === "guitar") return toggle("guitarControls");
+    if (id === "piano") return `<button id="btn-piano-prev" class="size-ctrl-btn" title="${t("piano.prev.title")}">\u21E0</button>`;
     if (id === "key") return `
     <button id="btn-key-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
     <button id="btn-key-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
@@ -2590,6 +2775,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       <div id="staff-container" class="fit"></div>
       <div class="ctrl-row module-controls" style="justify-content:center">
         <button id="btn-staff-clef" class="size-ctrl-btn" title="${t("staff.clef.title")}"></button>
+        <button id="btn-staff-prev" class="size-ctrl-btn" title="${t("staff.prev.title")}">\u21E0</button>
       </div>`;
       case "analysis":
         return `
@@ -2840,12 +3026,15 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
 
   // src/diagrams/piano.ts
-  function renderPiano(container, noteNames, chordSymbol, onPress) {
+  function renderPiano(container, noteNames, chordSymbol, onPress, prevNotes = null) {
     const color2 = chordSymbol ? chordColor(chordSymbol) : neutralColor();
-    const colors = noteNames.map(() => color2);
+    const now = new Set(noteNames.map(noteNameToMidi));
+    const before = (prevNotes ?? []).filter((n) => !now.has(noteNameToMidi(n)));
+    const keys = [...noteNames, ...before];
+    const colors = [...noteNames.map(() => color2), ...before.map(() => neutralColor())];
     container.innerHTML = Notae.renderPiano({
       name: "",
-      keys: noteNames,
+      keys,
       colors,
       range: { from: "C2", to: "B5" }
     }, {
@@ -3192,8 +3381,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     return midi === null ? name : spellMidi(midi, key) || name;
   }
   function spellPitchClassInKey(name, key) {
-    const pc = pitchClassOf(name);
-    return pc === -1 ? name : spellMidi(60 + pc, key).replace(/-?\d+$/, "") || name;
+    const pc2 = pitchClassOf(name);
+    return pc2 === -1 ? name : spellMidi(60 + pc2, key).replace(/-?\d+$/, "") || name;
   }
   function spellChordSymbol(symbol, key) {
     if (!key || symbol === "?") return symbol;
@@ -3279,8 +3468,8 @@ ${lower.length ? chordOf(lower) : empty}`;
     if (a === b) return true;
     const ca = tryParseChord(a), cb = tryParseChord(b);
     if (!ca || !cb) return false;
-    const pc = (s) => s === void 0 ? -1 : (s % 12 + 12) % 12;
-    return pc(ca.rootStep) === pc(cb.rootStep) && (ca.intervalsInSteps ?? []).join() === (cb.intervalsInSteps ?? []).join() && pc(ca.bassStep) === pc(cb.bassStep);
+    const pc2 = (s) => s === void 0 ? -1 : (s % 12 + 12) % 12;
+    return pc2(ca.rootStep) === pc2(cb.rootStep) && (ca.intervalsInSteps ?? []).join() === (cb.intervalsInSteps ?? []).join() && pc2(ca.bassStep) === pc2(cb.bassStep);
   }
 
   // src/diagrams/key-explorer.ts
@@ -4703,6 +4892,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   var cofShowMinor = loadBool("cof-show-minor", true);
   var cofShowDegrees = loadBool("cof-show-degrees", false);
   var cofShow7ths = loadBool("cof-show-7ths", false);
+  var showPrevChord = loadBool("show-prev-chord", false);
   var analysisFieldsVisible = Object.fromEntries(
     ANALYSIS_FIELD_KEYS.map((f) => [f, loadBool(`analysis-field-${f}`, true)])
   );
@@ -4848,7 +5038,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       onChordClick: (id, symbol, notes) => {
         state.activeCursorId = id;
         markActiveChord(id);
-        if (symbol) showChord(symbol, notes, previousSongSymbol(id));
+        if (symbol) showChord(symbol, notes, previousSongChord(id));
       },
       onChordCapture: (id) => {
         state.captureTargetId = id;
@@ -4953,6 +5143,15 @@ ${lower.length ? chordOf(lower) : empty}`;
       showClef();
       renderZone1Diagrams(displayedNotes(), selectedSymbol());
     });
+    const prevButtons = [$2("btn-staff-prev"), $2("btn-piano-prev")];
+    const showPrev = () => prevButtons.forEach((b) => b.classList.toggle("active", showPrevChord));
+    showPrev();
+    prevButtons.forEach((b) => b.addEventListener("click", () => {
+      showPrevChord = !showPrevChord;
+      save("show-prev-chord", showPrevChord);
+      showPrev();
+      renderZone1Diagrams(displayedNotes(), selectedSymbol());
+    }));
     ANALYSIS_FIELD_KEYS.forEach((f) => {
       $2(`btn-field-${f}`).addEventListener("click", () => {
         analysisFieldsVisible[f] = !analysisFieldsVisible[f];
@@ -5034,6 +5233,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
   var autoKey = null;
   var cadencePrev = null;
+  var prevVoicing = null;
   var lastChordNotes = [];
   function analysisKey() {
     return state.activeKey ?? autoKey;
@@ -5069,17 +5269,17 @@ ${lower.length ? chordOf(lower) : empty}`;
     const names = detection.kind === "note" ? [detection.noteName] : detection.notes;
     const midis = detection.kind === "note" ? [detection.midiNumber] : notes;
     names.forEach((name, i) => {
-      const pc = name.replace(/-?\d+$/, "");
-      if (struck.includes(midis[i]) && !melody.includes(pc)) melody.push(pc);
+      const pc2 = name.replace(/-?\d+$/, "");
+      if (struck.includes(midis[i]) && !melody.includes(pc2)) melody.push(pc2);
     });
   }
   function refreshAnalysis() {
     const sym = selectedSymbol();
     const notes = displayedNotes();
-    const sig = `${sym}|${analysisKey()}|${cadencePrev}|${notes.join(" ")}|${melody.join(" ")}`;
+    const sig = `${sym}|${analysisKey()}|${cadencePrev}|${prevVoicing?.join(" ")}|${notes.join(" ")}|${melody.join(" ")}`;
     if (sig === lastAnalysisSig) return;
     lastAnalysisSig = sig;
-    state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev, notes) : null;
+    state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev, notes, prevVoicing) : null;
     const kind = state.detection?.kind;
     const useMelody = (kind === "note" || kind === "interval") && melody.length >= 2;
     noteSet = useMelody ? analyzeNoteSet(melody, analysisKey(), true) : notes.length >= 2 ? analyzeNoteSet(notes, analysisKey()) : null;
@@ -5166,7 +5366,8 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
   function showDetection(detection, prev) {
     state.detection = detection;
-    cadencePrev = prev;
+    cadencePrev = prev?.symbol ?? null;
+    prevVoicing = prev?.notes?.length ? spellVoicing(prev.notes, prev.symbol, analysisKey()) : null;
     if (selectedSymbol()) lastChordNotes = displayedNotes();
     refreshAnalysis();
     renderDetector();
@@ -5210,13 +5411,13 @@ ${lower.length ? chordOf(lower) : empty}`;
     const notes = selectedSymbol() ? displayedNotes() : lastChordNotes;
     if (notes.length) playNoteNames(notes);
   }
-  function previousHistorySymbol(symbol) {
-    return state.history.find((e) => e.symbol !== symbol)?.symbol ?? null;
+  function previousHistoryChord(symbol) {
+    return state.history.find((e) => e.symbol !== symbol) ?? null;
   }
-  function previousSongSymbol(chordId) {
+  function previousSongChord(chordId) {
     const chords = songChords(state.song).filter((c) => c.symbol);
     const i = chords.findIndex((c) => c.id === chordId);
-    return i > 0 ? chords[i - 1].symbol : null;
+    return i > 0 ? chords[i - 1] : null;
   }
   var CAPTURE_SETTLE_MS = 250;
   var captureTimer = null;
@@ -5253,7 +5454,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       if (captureArmed && known && result?.kind === "chord") scheduleCapture(known, result.notes);
       else cancelCapture();
     }
-    showDetection(result, known ? previousHistorySymbol(known) : null);
+    showDetection(result, known ? previousHistoryChord(known) : null);
     if (known && result?.kind === "chord") notifyChordDetected(known, result.notes);
   }
   function onHistoryChange(entries2) {
@@ -5318,8 +5519,9 @@ ${lower.length ? chordOf(lower) : empty}`;
     const notes = noteNames.join(" ");
     syncCofAccidentalButtons();
     const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
-    renderIfChanged("staff", `${notes}|${key}|${staffClef}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef));
-    renderIfChanged("piano", `${notes}|${chordSymbol}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress));
+    const prev = showPrevChord && chordSymbol ? prevVoicing : null;
+    renderIfChanged("staff", `${notes}|${key}|${staffClef}|${prev?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev));
+    renderIfChanged("piano", `${notes}|${chordSymbol}|${prev?.join(" ")}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress, prev));
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
     renderIfChanged("neck", `${notes}|${keyPrefersSharps(key)}`, () => renderNeck($2("neck-container"), noteNames, !keyPrefersSharps(key)));
@@ -5331,7 +5533,7 @@ ${lower.length ? chordOf(lower) : empty}`;
   }
   function onKeyChordClick(chord) {
     playChord(chord);
-    showChord(chord, void 0, previousHistorySymbol(chord));
+    showChord(chord, void 0, previousHistoryChord(chord));
   }
   var COF_DOUBLE_MS = 400;
   var lastCofClick = { key: null, at: 0 };
@@ -5344,7 +5546,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     }
     lastCofClick = { key, at: now };
     playChord(chord);
-    showChord(chord, void 0, previousHistorySymbol(chord));
+    showChord(chord, void 0, previousHistoryChord(chord));
   }
   function renderZone2() {
     renderHistory(
@@ -5353,7 +5555,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       (entry) => {
         state.historyActiveCursorId = entry.id;
         const i = state.history.findIndex((e) => e.id === entry.id);
-        showChord(entry.symbol, entry.notes, state.history[i + 1]?.symbol ?? null);
+        showChord(entry.symbol, entry.notes, state.history[i + 1] ?? null);
         markActiveHistoryEntry($2("zone2-content"), entry.id);
       },
       state.historyActiveCursorId
@@ -5498,7 +5700,7 @@ ${lower.length ? chordOf(lower) : empty}`;
       if (!next) return;
       state.activeCursorId = next.id;
       markActiveChord(next.id);
-      showChord(next.symbol, next.notes, previousSongSymbol(next.id));
+      showChord(next.symbol, next.notes, previousSongChord(next.id));
       playChordOrNotes(next.symbol, next.notes);
       return;
     }
@@ -5509,7 +5711,7 @@ ${lower.length ? chordOf(lower) : empty}`;
     const at = state.history.indexOf(entry);
     state.historyActiveCursorId = entry.id;
     markActiveHistoryEntry($2("zone2-content"), entry.id);
-    showChord(entry.symbol, entry.notes, state.history[at + 1]?.symbol ?? null);
+    showChord(entry.symbol, entry.notes, state.history[at + 1] ?? null);
     playChordOrNotes(entry.symbol, entry.notes);
   }
   function playChordOrNotes(symbol, notes) {
