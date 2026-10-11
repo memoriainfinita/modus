@@ -61,7 +61,9 @@ The ▦ menu in the toolbar:
 
 The current layout is kept as it is left (`layout`), saved ones under `layouts`; a stored layout that cannot be read falls back to Standard, and unknown panels in it are dropped.
 
-**Phone** (720 px wide or less): the same panels in one column, in layout order (top to bottom, left to right), each as tall as its rows; no dragging.
+**Phone** (720 px wide or less): the same panels in one column, in layout order (top to bottom, left to right); diagrams as tall as their rows, text panels (analysis, explanation, key, progressions, ear training, history, song) as tall as their content, so nothing is cut off; no dragging.
+
+**Touch:** each finger on the on-screen piano holds its own key, so a chord can be pressed with several; on a phone the piano shows two octaves (C3–B4), widened to every note shown. A long press on a history chip removes it, as a right click does; a tap on a song chord shows its buttons, which a mouse gets on hover. No double-tap zoom (the circle sets a key with two taps); buttons, selects and chips are at least 34 px with a coarse pointer, and the corner that resizes a panel is larger.
 
 ## Detector
 
@@ -208,7 +210,7 @@ Controls: font scale, triads / sevenths (`7`), show/hide Neg, Par, Colt. A click
 
 ### Piano and velocity
 
-**Piano:** notae, C2–B5. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`. With ⇠ the keys of the previous chord that are not held now are lit in the neutral colour.
+**Piano:** notae, C2–B5 (two octaves on a phone, see Layout); key labels in the note names chosen. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`. With ⇠ the keys of the previous chord that are not held now are lit in the neutral colour.
 
 **Velocity:** one bar per note on screen, highest on top, with the MIDI velocity (1–127) it was struck with on any input. Kept after release, so Hold still shows it. A chord picked from history, song or circle has none and shows nothing. No dynamic marks (p, mf…): there is no standard mapping from velocity.
 

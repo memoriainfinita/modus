@@ -667,6 +667,15 @@ body {
     height: calc(var(--h) * 30px + (var(--h) - 1) * 8px);
     flex-shrink: 0;
   }
+  :is(.module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) {
+    height: auto;
+    min-height: calc(var(--h) * 30px + (var(--h) - 1) * 8px);
+  }
+  :is(.module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) .module-body {
+    overflow: visible;
+    flex: none;
+    container-type: inline-size;
+  }
   .module-header {
     cursor: default;
   }
@@ -1895,5 +1904,31 @@ path[role=button]:focus-visible {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+body {
+  touch-action: manipulation;
+}
+#piano-container svg {
+  touch-action: none;
+}
+@media (pointer: coarse) {
+  .ctrl-btn,
+  .mode-btn,
+  .size-ctrl-btn,
+  .guitar-ctrl,
+  .ear-answer,
+  .ctrl-select,
+  .module-close {
+    min-height: 34px;
+    min-width: 34px;
+  }
+  .module-resize {
+    width: 24px;
+    height: 24px;
+  }
+  .history-chip,
+  .prog-chip {
+    min-height: 40px;
+  }
 }
 /*# sourceMappingURL=app.css.map */

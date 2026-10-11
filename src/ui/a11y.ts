@@ -55,6 +55,29 @@ export function makeActivatable(el: Element, label?: string) {
   })
 }
 
+const LONG_PRESS_MS = 600
+
+/**
+ * A finger held still on `el` for 600 ms: what a right click does with a mouse. The click
+ * that follows the lift is swallowed. Android also fires contextmenu, which is not counted twice.
+ */
+export function onLongPress(el: HTMLElement, fn: () => void) {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let fired = false
+  const cancel = () => { if (timer) clearTimeout(timer); timer = null }
+  el.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return
+    fired = false
+    cancel()
+    timer = setTimeout(() => { timer = null; fired = true; fn() }, LONG_PRESS_MS)
+  })
+  el.addEventListener('pointerup', cancel)
+  el.addEventListener('pointercancel', cancel)
+  el.addEventListener('pointermove', e => { if (Math.abs(e.movementX) + Math.abs(e.movementY) > 6) cancel() })
+  el.addEventListener('contextmenu', e => { if (fired) { e.preventDefault(); e.stopImmediatePropagation() } }, true)
+  el.addEventListener('click', e => { if (fired) { e.preventDefault(); e.stopImmediatePropagation(); fired = false } }, true)
+}
+
 /** A menu button tells whether its menu is open (the menu opens and closes by its `open` class). */
 export function syncExpanded(button: HTMLElement, menu: HTMLElement) {
   const sync = () => button.setAttribute('aria-expanded', String(menu.classList.contains('open')))

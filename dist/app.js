@@ -2956,6 +2956,43 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
   }
+  var LONG_PRESS_MS = 600;
+  function onLongPress(el, fn) {
+    let timer3 = null;
+    let fired = false;
+    const cancel = () => {
+      if (timer3) clearTimeout(timer3);
+      timer3 = null;
+    };
+    el.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse") return;
+      fired = false;
+      cancel();
+      timer3 = setTimeout(() => {
+        timer3 = null;
+        fired = true;
+        fn();
+      }, LONG_PRESS_MS);
+    });
+    el.addEventListener("pointerup", cancel);
+    el.addEventListener("pointercancel", cancel);
+    el.addEventListener("pointermove", (e) => {
+      if (Math.abs(e.movementX) + Math.abs(e.movementY) > 6) cancel();
+    });
+    el.addEventListener("contextmenu", (e) => {
+      if (fired) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    }, true);
+    el.addEventListener("click", (e) => {
+      if (fired) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        fired = false;
+      }
+    }, true);
+  }
   function syncExpanded(button, menu) {
     const sync = () => button.setAttribute("aria-expanded", String(menu.classList.contains("open")));
     sync();
@@ -3612,6 +3649,13 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
 
   // src/diagrams/piano.ts
+  var isNarrow = () => typeof matchMedia !== "undefined" && matchMedia("(max-width: 720px)").matches;
+  function pianoRange(noteNames, narrow2) {
+    if (!narrow2) return { from: "C2", to: "B5" };
+    const octaves = noteNames.map(noteNameToMidi).filter((m) => m !== null).map((m) => Math.floor(m / 12) - 1);
+    const low = Math.min(3, ...octaves), high = Math.max(4, ...octaves);
+    return { from: `C${Math.max(0, low)}`, to: `B${Math.min(8, high)}` };
+  }
   function renderPiano(container, noteNames, chordSymbol, onPress, prevNotes = null) {
     const color2 = chordSymbol ? chordColor(chordSymbol) : neutralColor();
     const now = new Set(noteNames.map(noteNameToMidi));
@@ -3622,7 +3666,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       name: "",
       keys,
       colors,
-      range: { from: "C2", to: "B5" }
+      range: pianoRange([...noteNames, ...before], isNarrow())
     }, {
       pianoWhiteKeyColor: color("piano-white"),
       pianoWhiteKeyStrokeColor: color("piano-white-stroke"),
@@ -3631,6 +3675,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       stringLabelColor: color("piano-label"),
       pianoBlackKeyLabelColor: color("piano-black-label")
     });
+    localizeDrawnNoteNames(container);
     container.querySelectorAll("rect[data-note]").forEach((el) => {
       const midi = noteNameToMidi(el.dataset.note);
       if (midi === null) return;
@@ -3638,7 +3683,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       el.addEventListener("pointerdown", (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
-        onPress?.(midi);
+        onPress?.(midi, e.pointerId);
       });
     });
   }
@@ -4338,6 +4383,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         e.preventDefault();
         remove();
       });
+      onLongPress(chip, remove);
       makeActivatable(chip, t("a11y.chip", { chord: chordLabel(entry.symbol), roman }));
       chip.addEventListener("keydown", (e) => {
         if (e.key !== "Delete" && e.key !== "Backspace") return;
@@ -5315,6 +5361,12 @@ ${explainCadence(cadence)}` : "");
     wrap.addEventListener("mouseleave", () => controls.style.display = "none");
     makeActivatable(wrap);
     wrap.addEventListener("focus", () => controls.style.display = "flex");
+    wrap.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "mouse") controls.style.display = "flex";
+    });
+    wrap.addEventListener("focusout", (e) => {
+      if (!wrap.contains(e.relatedTarget)) controls.style.display = "none";
+    });
     wrap.addEventListener("click", () => {
       h.onChordClick(chord.id, chord.symbol, chord.notes);
       if (chord.notes?.length) playNoteNames(chord.notes);
@@ -6850,16 +6902,18 @@ ${explainCadence(c.cadence)}` : ""}`;
     render();
   }
   var PIANO_VELOCITY = 90;
-  var pianoNote = null;
-  function onPianoPress(midi) {
-    if (pianoNote !== null) pointerUp(pianoNote);
-    pianoNote = midi;
+  var pianoNotes = /* @__PURE__ */ new Map();
+  function onPianoPress(midi, pointerId) {
+    const held2 = pianoNotes.get(pointerId);
+    if (held2 !== void 0) pointerUp(held2);
+    pianoNotes.set(pointerId, midi);
     pointerDown(midi, PIANO_VELOCITY);
   }
-  function onPianoRelease() {
-    if (pianoNote === null) return;
-    pointerUp(pianoNote);
-    pianoNote = null;
+  function onPianoRelease(e) {
+    const held2 = pianoNotes.get(e.pointerId);
+    if (held2 === void 0) return;
+    pianoNotes.delete(e.pointerId);
+    pointerUp(held2);
   }
   function submitTypedChord(input) {
     const symbol = readTypedChord(input.value);
@@ -6890,7 +6944,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
     const prev = showPrevChord && chordSymbol ? prevVoicing : null;
     renderIfChanged("staff", `${notes}|${key}|${staffClef}|${prev?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev));
-    renderIfChanged("piano", `${notes}|${chordSymbol}|${prev?.join(" ")}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress, prev));
+    renderIfChanged("piano", `${notes}|${chordSymbol}|${prev?.join(" ")}|${isNarrow()}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress, prev));
     const spoken = noteNames.map(noteLabel).join(" ") || t("a11y.nothing");
     for (const [id, key2] of [["staff-container", "a11y.staff"], ["piano-container", "a11y.piano"]]) {
       const el = $2(id);

@@ -606,6 +606,9 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
 
   makeActivatable(wrap)
   wrap.addEventListener('focus', () => controls.style.display = 'flex')
+  // No hover on a touch screen: a tap shows the buttons, leaving the chip hides them
+  wrap.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') controls.style.display = 'flex' })
+  wrap.addEventListener('focusout', e => { if (!wrap.contains(e.relatedTarget as Node | null)) controls.style.display = 'none' })
   wrap.addEventListener('click', () => {
     h.onChordClick(chord.id, chord.symbol, chord.notes)
     if (chord.notes?.length) playNoteNames(chord.notes)

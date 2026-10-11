@@ -980,6 +980,39 @@ await check('without the soundfont-player script the app still renders, audio in
   assert(r.status === '♪ error', `audio status: ${r.status}`)
 })
 
+await check('touch: two fingers press a chord on a phone piano of two octaves; a long press removes a chip', async () => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: 'en-US' })
+  await context.addInitScript(FAKE_MIDI)
+  const p = await context.newPage()
+  await p.goto(URL_)
+  await p.waitForFunction(() => window.UMT && window.Notae)
+  await p.waitForTimeout(300)
+  const keys = await p.locator('#piano-container rect[data-note]').count()
+  assert(keys === 24, `phone piano keys: ${keys}`)
+  // Two fingers down, as a touch screen sends them: one pointer each
+  const press = (note, id, type) => p.evaluate(([note, id, type]) => {
+    const key = document.querySelector(`#piano-container rect[data-note="${note}"]`)
+    const target = type === 'pointerdown' ? key : window
+    target.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', bubbles: true, button: 0 }))
+  }, [note, id, type])
+  await press('C4', 11, 'pointerdown')
+  await press('E4', 12, 'pointerdown')
+  await press('G4', 13, 'pointerdown')
+  await p.waitForFunction(() => document.querySelector('.chord-name-badge')?.textContent === 'C')
+  for (const id of [11, 12, 13]) await press('', id, 'pointerup')
+  await p.waitForTimeout(900)
+  // The chord was logged; a long press on its chip removes it
+  const chip = p.locator('#mod-history .history-chip').first()
+  await chip.scrollIntoViewIfNeeded()
+  const before = await p.locator('#mod-history .history-chip').count()
+  await chip.dispatchEvent('pointerdown', { pointerId: 21, pointerType: 'touch', button: 0 })
+  await p.waitForTimeout(750)
+  await chip.dispatchEvent('pointerup', { pointerId: 21, pointerType: 'touch', button: 0 }).catch(() => {})
+  const after = await p.locator('#mod-history .history-chip').count()
+  await context.close()
+  assert(before >= 1 && after === before - 1, `chips ${before} → ${after}`)
+})
+
 await check('offline: once opened, the app loads and plays without a network', async () => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'en-US' })
   await context.addInitScript(FAKE_MIDI)

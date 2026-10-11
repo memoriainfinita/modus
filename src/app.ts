@@ -6,7 +6,7 @@ import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn,
 import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
 import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
 import { openPresentation, closePresentation, isPresenting } from './view/presentation'
-import { renderPiano } from './diagrams/piano'
+import { renderPiano, isNarrow } from './diagrams/piano'
 import { renderVelocity } from './diagrams/velocity'
 import type { NoteVelocity } from './diagrams/velocity'
 import { noteNameToMidi } from './theory/notes'
@@ -723,20 +723,22 @@ function renderIfChanged(name: string, sig: string, render: () => void) {
 
 // On-screen piano: a press goes through the input path like a controller key. The key
 // that was pressed is rebuilt when the detector lights it, so the release is watched on
-// the window.
+// the window. Each finger holds its own key, so a chord can be pressed on a touch screen.
 const PIANO_VELOCITY = 90
-let pianoNote: number | null = null
+const pianoNotes = new Map<number, number>()   // pointer id → MIDI note it holds
 
-function onPianoPress(midi: number) {
-  if (pianoNote !== null) pointerUp(pianoNote)
-  pianoNote = midi
+function onPianoPress(midi: number, pointerId: number) {
+  const held = pianoNotes.get(pointerId)
+  if (held !== undefined) pointerUp(held)
+  pianoNotes.set(pointerId, midi)
   pointerDown(midi, PIANO_VELOCITY)
 }
 
-function onPianoRelease() {
-  if (pianoNote === null) return
-  pointerUp(pianoNote)
-  pianoNote = null
+function onPianoRelease(e: PointerEvent) {
+  const held = pianoNotes.get(e.pointerId)
+  if (held === undefined) return
+  pianoNotes.delete(e.pointerId)
+  pointerUp(held)
 }
 
 /** A chord typed in the detector field: shown and played like one picked from history. */
@@ -774,7 +776,7 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const prev = showPrevChord && chordSymbol ? prevVoicing : null
   renderIfChanged('staff', `${notes}|${key}|${staffClef}|${prev?.join(' ')}`, () =>
     renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef, prev))
-  renderIfChanged('piano', `${notes}|${chordSymbol}|${prev?.join(' ')}`, () =>
+  renderIfChanged('piano', `${notes}|${chordSymbol}|${prev?.join(' ')}|${isNarrow()}`, () =>
     renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress, prev))
   // The drawings by name, for a screen reader: the notes they show
   const spoken = noteNames.map(noteLabel).join(' ') || t('a11y.nothing')
