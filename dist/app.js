@@ -996,6 +996,49 @@
     "shortcut.tab": "Reach any control, chip or circle segment; Enter or Space presses it",
     "kbd.panelArrows": "Arrows on a panel title",
     "shortcut.panelArrows": "Move the panel; with Shift, resize it",
+    "tour.next": "Next",
+    "tour.back": "Back",
+    "tour.skip": "Skip the tour",
+    "tour.close": "Close",
+    "tour.done": "Start playing",
+    "tour.start": "Guided tour",
+    "tour.start.title": "The tour of the page, again",
+    "tour.welcome.title": "Welcome to Modus",
+    "tour.welcome": "Play a chord and Modus names it and explains its harmony as you play: its degree in the key, its function, the cadence it makes, how its voices move. This tour shows where everything is; it takes a minute. Arrows or the buttons move through it, Esc closes it.",
+    "tour.input.title": "Play",
+    "tour.input": "Connect a MIDI keyboard and pick it here. Without one: press M to play on the computer keyboard, click or touch the piano, turn on the microphone (\u{1F3A4}) and sing or play, or type a chord in the field (/).",
+    "tour.key.title": "The key",
+    "tour.key": "Pick the key you play in, or leave it on Auto: Modus finds it from what you play. Every degree, function and cadence is read in it.",
+    "tour.analysis.title": "What it is",
+    "tour.analysis": "The Chord panel names what you play; Analysis reads it: numeral, function, figured bass, voicing, scales that fit, cadence, voice leading from the chord before. Its buttons choose which rows show.",
+    "tour.explain.title": "What it means",
+    "tour.explain": "Explanation puts each term in words for the chord on screen: why D7 is V7/V, which mode a borrowed chord comes from, what a cadence does.",
+    "tour.cof.title": "The circle of fifths",
+    "tour.cof": "Click a chord to hear and analyse it; click twice to make it the key. The Key panel shows the key's chords, its negative harmony and the chords of its parallel modes.",
+    "tour.history.title": "History",
+    "tour.history": "Every chord you hold is logged here with its numeral, and the cadences and modulations between them. Click a chip to see it again, drag it to the song, right-click or long-press to remove it.",
+    "tour.layout.title": "Your layout",
+    "tour.layout": "Every element is a panel: drag it by its title, resize it from its corner, hide it with \xD7. Here: ready-made layouts for study, class, transcription or recording, and your own. P presents the layout full screen.",
+    "tour.practice.title": "Practice",
+    "tour.practice": "Progressions plays the classic progressions in your key; Ear training plays without showing and you name what you heard; the Player loops and slows down a recording to transcribe it.",
+    "tour.help.title": "Help",
+    "tour.help": "Shortcuts, gestures, what each panel is for, language, note names (C D E or Do Re Mi) and theme are here. This tour starts again from there.",
+    "help.panels": "Panels",
+    "help.panel.chord": "The chord played, its notes and the other readings of the same notes",
+    "help.panel.staff": "The notes on the staff, in the key's signature; \u21E0 shows the chord before",
+    "help.panel.analysis": "Numeral, function, figured bass, voicing, scales, cadence, voice leading\u2026",
+    "help.panel.explain": "Each term of the analysis, in words",
+    "help.panel.cof": "A click plays a chord, two clicks set its key",
+    "help.panel.guitar": "Chord shapes or the whole neck, for guitar, bass, ukulele and more",
+    "help.panel.key": "The key's chords, negative harmony, parallel modes, Coltrane axis",
+    "help.panel.piano": "What sounds; click or touch a key to play",
+    "help.panel.velocity": "How hard each note was struck",
+    "help.panel.progressions": "Classic progressions in the key, to hear and analyse",
+    "help.panel.ear": "Name by ear an interval, a chord or a cadence",
+    "help.panel.player": "A recording to transcribe: loop and slow it down",
+    "help.panel.tuner": "The note sung or played, and how far off it is",
+    "help.panel.history": "The chords played, with numerals and cadences",
+    "help.panel.song": "A song in sections and measures",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "The cornerstone of jazz harmony: subdominant (ii7), dominant (V7), tonic (Imaj7). The root falls a fifth each time, and the seventh of each chord falls a step to the third of the next.",
     "prog.ii-V-i": "ii-V-i (minor)",
@@ -1554,6 +1597,49 @@
     "shortcut.tab": "Llegar a cualquier control, ficha o segmento del c\xEDrculo; Intro o Espacio lo pulsa",
     "kbd.panelArrows": "Flechas en el t\xEDtulo de un panel",
     "shortcut.panelArrows": "Mover el panel; con May\xFAs, cambiar su tama\xF1o",
+    "tour.next": "Siguiente",
+    "tour.back": "Atr\xE1s",
+    "tour.skip": "Saltar la visita",
+    "tour.close": "Cerrar",
+    "tour.done": "A tocar",
+    "tour.start": "Visita guiada",
+    "tour.start.title": "La visita por la p\xE1gina, otra vez",
+    "tour.welcome.title": "Te damos la bienvenida a Modus",
+    "tour.welcome": "Toca un acorde y Modus lo nombra y explica su armon\xEDa mientras tocas: su grado en la tonalidad, su funci\xF3n, la cadencia que forma, c\xF3mo se mueven sus voces. Esta visita ense\xF1a d\xF3nde est\xE1 cada cosa; dura un minuto. Las flechas o los botones la recorren, Esc la cierra.",
+    "tour.input.title": "Toca",
+    "tour.input": "Conecta un teclado MIDI y el\xEDgelo aqu\xED. Sin \xE9l: pulsa M para tocar con el teclado del ordenador, haz clic o toca el piano, activa el micr\xF3fono (\u{1F3A4}) y canta o toca, o escribe un acorde en el campo (/).",
+    "tour.key.title": "La tonalidad",
+    "tour.key": "Elige la tonalidad en la que tocas, o d\xE9jala en Auto: Modus la deduce de lo que tocas. Cada grado, funci\xF3n y cadencia se lee en ella.",
+    "tour.analysis.title": "Qu\xE9 es",
+    "tour.analysis": "El panel Acorde nombra lo que tocas; An\xE1lisis lo lee: grado, funci\xF3n, bajo cifrado, disposici\xF3n, escalas que encajan, cadencia, conducci\xF3n de voces desde el acorde anterior. Sus botones eligen qu\xE9 filas se ven.",
+    "tour.explain.title": "Qu\xE9 significa",
+    "tour.explain": "Explicaci\xF3n pone en palabras cada t\xE9rmino para el acorde en pantalla: por qu\xE9 Re7 es V7/V, de qu\xE9 modo viene un pr\xE9stamo, qu\xE9 hace una cadencia.",
+    "tour.cof.title": "El c\xEDrculo de quintas",
+    "tour.cof": "Haz clic en un acorde para o\xEDrlo y analizarlo; dos clics lo hacen tonalidad. El panel Tonalidad muestra sus acordes, su armon\xEDa negativa y los acordes de sus modos paralelos.",
+    "tour.history.title": "Historial",
+    "tour.history": "Cada acorde que mantienes queda aqu\xED con su grado, y las cadencias y modulaciones entre ellos. Haz clic en una ficha para volver a verla, arr\xE1strala a la canci\xF3n, clic derecho o pulsaci\xF3n larga para quitarla.",
+    "tour.layout.title": "Tu disposici\xF3n",
+    "tour.layout": "Cada elemento es un panel: arr\xE1stralo por el t\xEDtulo, cambia su tama\xF1o desde la esquina, oc\xFAltalo con \xD7. Aqu\xED: disposiciones para estudiar, dar clase, transcribir o grabar, y las tuyas. P presenta la disposici\xF3n a pantalla completa.",
+    "tour.practice.title": "Practica",
+    "tour.practice": "Progresiones toca las progresiones cl\xE1sicas en tu tonalidad; Entrenamiento auditivo toca sin ense\xF1ar y t\xFA dices lo que has o\xEDdo; el Reproductor repite y ralentiza una grabaci\xF3n para transcribirla.",
+    "tour.help.title": "Ayuda",
+    "tour.help": "Aqu\xED est\xE1n los atajos, los gestos, para qu\xE9 sirve cada panel, el idioma, los nombres de las notas (C D E o Do Re Mi) y el tema. Esta visita vuelve a empezar desde ah\xED.",
+    "help.panels": "Paneles",
+    "help.panel.chord": "El acorde tocado, sus notas y las otras lecturas de las mismas notas",
+    "help.panel.staff": "Las notas en el pentagrama, con la armadura de la tonalidad; \u21E0 muestra el acorde anterior",
+    "help.panel.analysis": "Grado, funci\xF3n, bajo cifrado, disposici\xF3n, escalas, cadencia, conducci\xF3n de voces\u2026",
+    "help.panel.explain": "Cada t\xE9rmino del an\xE1lisis, en palabras",
+    "help.panel.cof": "Un clic toca un acorde, dos clics fijan su tonalidad",
+    "help.panel.guitar": "Posiciones del acorde o el m\xE1stil entero, para guitarra, bajo, ukelele y m\xE1s",
+    "help.panel.key": "Los acordes de la tonalidad, armon\xEDa negativa, modos paralelos, eje de Coltrane",
+    "help.panel.piano": "Lo que suena; haz clic o toca una tecla para tocar",
+    "help.panel.velocity": "Con qu\xE9 fuerza se toc\xF3 cada nota",
+    "help.panel.progressions": "Progresiones cl\xE1sicas en la tonalidad, para o\xEDrlas y analizarlas",
+    "help.panel.ear": "Reconocer de o\xEDdo un intervalo, un acorde o una cadencia",
+    "help.panel.player": "Una grabaci\xF3n para transcribir: repetirla y ralentizarla",
+    "help.panel.tuner": "La nota cantada o tocada, y cu\xE1nto se desv\xEDa",
+    "help.panel.history": "Los acordes tocados, con grados y cadencias",
+    "help.panel.song": "Una canci\xF3n en secciones y compases",
     "prog.ii-V-I": "ii-V-I",
     "prog.ii-V-I.about": "La base de la armon\xEDa del jazz: subdominante (ii7), dominante (V7), t\xF3nica (Imaj7). La ra\xEDz baja una quinta cada vez, y la s\xE9ptima de cada acorde baja un grado a la tercera del siguiente.",
     "prog.ii-V-i": "ii-V-i (menor)",
@@ -5471,6 +5557,119 @@ ${explainCadence(cadence)}` : "");
     return html;
   }
 
+  // src/ui/tour.ts
+  var STEPS = [
+    { id: "welcome", target: null },
+    { id: "input", target: "#midi-device" },
+    { id: "key", target: "#key-select" },
+    { id: "analysis", target: "#mod-analysis" },
+    { id: "explain", target: "#mod-explain" },
+    { id: "cof", target: "#mod-cof" },
+    { id: "history", target: "#mod-history" },
+    { id: "layout", target: "#btn-layout" },
+    { id: "practice", target: "#mod-progressions" },
+    { id: "help", target: "#btn-help" }
+  ];
+  var step = -1;
+  var returnFocus = null;
+  function maybeStartTour() {
+    if (loadBool("tour-done", false) || navigator.webdriver) return;
+    startTour();
+  }
+  function startTour() {
+    returnFocus = document.activeElement;
+    step = 0;
+    draw();
+    document.addEventListener("keydown", onKey, true);
+    window.addEventListener("resize", draw);
+  }
+  function endTour() {
+    if (step < 0) return;
+    step = -1;
+    save("tour-done", true);
+    document.getElementById("tour")?.remove();
+    document.removeEventListener("keydown", onKey, true);
+    window.removeEventListener("resize", draw);
+    returnFocus?.focus();
+  }
+  function go(to) {
+    if (to < 0) return;
+    if (to >= STEPS.length) {
+      endTour();
+      return;
+    }
+    step = to;
+    draw();
+  }
+  function onKey(e) {
+    if (step < 0) return;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      endTour();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      e.stopPropagation();
+      go(step + 1);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      e.stopPropagation();
+      go(step - 1);
+    }
+  }
+  function visibleTarget(selector) {
+    if (!selector) return null;
+    const el = document.querySelector(selector);
+    if (!el || el.closest(".module-hidden")) return null;
+    const r = el.getBoundingClientRect();
+    return r.width && r.height ? el : null;
+  }
+  function draw() {
+    if (step < 0) return;
+    const s = STEPS[step];
+    let root = document.getElementById("tour");
+    if (!root) {
+      root = document.createElement("div");
+      root.id = "tour";
+      document.body.appendChild(root);
+    }
+    const target = visibleTarget(s.target);
+    target?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const r = target?.getBoundingClientRect();
+    const pad = 6;
+    const spot = r ? `<div class="tour-spot" style="left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px"></div>` : '<div class="tour-dim"></div>';
+    const last = step === STEPS.length - 1;
+    root.innerHTML = `${spot}
+    <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" tabindex="-1">
+      <div class="tour-count">${step + 1} / ${STEPS.length}</div>
+      <h2 id="tour-title" class="tour-title">${escapeHtml(t(`tour.${s.id}.title`))}</h2>
+      <p class="tour-text">${escapeHtml(t(`tour.${s.id}`))}</p>
+      <div class="tour-buttons">
+        <button class="ctrl-btn" data-tour="skip">${escapeHtml(t(last ? "tour.close" : "tour.skip"))}</button>
+        <span class="tour-gap"></span>
+        <button class="ctrl-btn" data-tour="back"${step === 0 ? " disabled" : ""}>${escapeHtml(t("tour.back"))}</button>
+        <button class="ctrl-btn tour-next" data-tour="next">${escapeHtml(t(last ? "tour.done" : "tour.next"))}</button>
+      </div>
+    </div>`;
+    const card = root.querySelector(".tour-card");
+    const cw = Math.min(360, window.innerWidth - 24);
+    card.style.width = `${cw}px`;
+    if (r) {
+      const below = r.bottom + 12, above = r.top - 12;
+      const left = Math.max(12, Math.min(window.innerWidth - cw - 12, r.left));
+      card.style.left = `${left}px`;
+      const h = card.offsetHeight;
+      card.style.top = below + h < window.innerHeight ? `${below}px` : above - h > 0 ? `${above - h}px` : `${Math.max(12, (window.innerHeight - h) / 2)}px`;
+    } else {
+      card.style.left = `${(window.innerWidth - cw) / 2}px`;
+      card.style.top = `${Math.max(12, (window.innerHeight - card.offsetHeight) / 2)}px`;
+    }
+    root.querySelector('[data-tour="next"]').addEventListener("click", () => go(step + 1));
+    root.querySelector('[data-tour="back"]').addEventListener("click", () => go(step - 1));
+    root.querySelector('[data-tour="skip"]').addEventListener("click", endTour);
+    root.querySelector(".tour-next").focus();
+  }
+
   // src/input/shortcuts.ts
   var SHORTCUTS = [
     { key: "kbd.space", action: "shortcut.play" },
@@ -5506,13 +5705,13 @@ ${explainCadence(cadence)}` : "");
     location.reload();
   }
   var helpVisible = false;
-  var returnFocus = null;
+  var returnFocus2 = null;
   function closeHelp() {
     if (!helpVisible) return false;
     helpVisible = false;
     document.getElementById("shortcut-help")?.remove();
-    returnFocus?.focus();
-    returnFocus = null;
+    returnFocus2?.focus();
+    returnFocus2 = null;
     document.removeEventListener("mousedown", closeHelpOnOutsideClick);
     return true;
   }
@@ -5527,7 +5726,7 @@ ${explainCadence(cadence)}` : "");
     popup.className = "shortcut-help-popup";
     popup.setAttribute("role", "dialog");
     popup.setAttribute("aria-label", t("help.heading"));
-    returnFocus = document.activeElement;
+    returnFocus2 = document.activeElement;
     popup.innerHTML = `
     <div class="shortcut-help-header">
       <span>${t("help.heading")}</span>
@@ -5540,6 +5739,8 @@ ${explainCadence(cadence)}` : "");
       </div>`).join("")}
     <div class="shortcut-section">${t("help.mouse")}</div>
     ${GESTURES.map((g) => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join("")}
+    <div class="shortcut-section">${t("help.panels")}</div>
+    ${MODULE_IDS.map((id) => `<div class="gesture-row"><b>${escapeHtml(t(`module.${id}`))}</b> \u2014 ${escapeHtml(t(`help.panel.${id}`))}</div>`).join("")}
     <div class="shortcut-section">${t("help.settings")}</div>
     <div class="help-setting"><label for="help-theme">${t("help.theme")}</label>
       <select id="help-theme" class="ctrl-select">
@@ -5553,9 +5754,14 @@ ${explainCadence(cadence)}` : "");
       <select id="help-note-names" class="ctrl-select">
         ${NOTE_NAMINGS.map((n) => `<option value="${n}"${n === getNoteNaming() ? " selected" : ""}>${t(`help.noteNames.${n}`)}</option>`).join("")}
       </select></div>
-    <div class="gesture-row">${escapeHtml(t("help.reloads"))}</div>`;
+    <div class="gesture-row">${escapeHtml(t("help.reloads"))}</div>
+    <div class="help-setting"><button id="help-tour" class="ctrl-btn" title="${escapeHtml(t("tour.start.title"))}">${escapeHtml(t("tour.start"))}</button></div>`;
     document.body.appendChild(popup);
     popup.querySelector(".shortcut-help-close").addEventListener("click", closeHelp);
+    popup.querySelector("#help-tour").addEventListener("click", () => {
+      closeHelp();
+      startTour();
+    });
     const themeSel = popup.querySelector("#help-theme");
     themeSel.addEventListener("change", () => saveThemeChoice(themeSel.value));
     const langSel = popup.querySelector("#help-lang");
@@ -5748,7 +5954,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       }
       playBtn.textContent = "\u25A0";
       playBtn.title = t("prog.stop.title");
-      const step = (i) => {
+      const step2 = (i) => {
         if (i >= chords.length) {
           stopProgression();
           return;
@@ -5756,9 +5962,9 @@ ${explainCadence(c.cadence)}` : ""}`;
         playing = i;
         show(i);
         const inBar = chords.filter((c) => c.bar === chords[i].bar).length;
-        timer = setTimeout(() => step(i + 1), BAR_MS / inBar);
+        timer = setTimeout(() => step2(i + 1), BAR_MS / inBar);
       };
-      step(0);
+      step2(0);
     });
   }
 
@@ -6351,6 +6557,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const player = document.getElementById("player-container");
     if (player) renderPlayer(player);
     drawTuner();
+    maybeStartTour();
     initMidi().then((result) => {
       if (result.denied) {
         showMidiBanner(t("midi.denied"));
@@ -6843,26 +7050,37 @@ ${explainCadence(c.cadence)}` : ""}`;
   var CAPTURE_SETTLE_MS = 250;
   var captureTimer = null;
   var captureArmed = true;
+  var pendingCapture = null;
   function scheduleCapture(symbol, notes) {
     if (captureTimer) clearTimeout(captureTimer);
-    captureTimer = setTimeout(() => {
-      captureTimer = null;
-      const targetId = state.captureTargetId;
-      if (!targetId) return;
-      state.song = updateChord(state.song, targetId, symbol, notes);
-      saveSong(state.song);
-      captureArmed = false;
-      const next = findChordAfter(state.song, targetId)?.id ?? null;
-      state.activeCursorId = next;
-      state.captureTargetId = next;
-      renderZone3();
-    }, CAPTURE_SETTLE_MS);
+    pendingCapture = { symbol, notes, since: performance.now() };
+    captureTimer = setTimeout(commitCapture, CAPTURE_SETTLE_MS);
+  }
+  function commitCapture() {
+    if (captureTimer) clearTimeout(captureTimer);
+    captureTimer = null;
+    const pending2 = pendingCapture;
+    pendingCapture = null;
+    const targetId = state.captureTargetId;
+    if (!pending2 || !targetId) return;
+    state.song = updateChord(state.song, targetId, pending2.symbol, pending2.notes);
+    saveSong(state.song);
+    captureArmed = false;
+    const next = findChordAfter(state.song, targetId)?.id ?? null;
+    state.activeCursorId = next;
+    state.captureTargetId = next;
+    renderZone3();
   }
   function cancelCapture() {
     if (captureTimer) {
       clearTimeout(captureTimer);
       captureTimer = null;
     }
+    pendingCapture = null;
+  }
+  function chordChangedBeforeFill() {
+    if (pendingCapture && performance.now() - pendingCapture.since >= CAPTURE_SETTLE_MS) commitCapture();
+    else cancelCapture();
   }
   function onNoteChange2(notes) {
     detectionFromMidi = true;
@@ -6872,8 +7090,10 @@ ${explainCadence(c.cadence)}` : ""}`;
     const known = top && top !== "?" ? top : null;
     if (state.captureTargetId) {
       if (notes.length < 3) captureArmed = true;
-      if (captureArmed && known && result?.kind === "chord") scheduleCapture(known, result.notes);
-      else cancelCapture();
+      if (captureArmed && known && result?.kind === "chord") {
+        if (pendingCapture && pendingCapture.symbol !== known) chordChangedBeforeFill();
+        if (state.captureTargetId && captureArmed) scheduleCapture(known, result.notes);
+      } else chordChangedBeforeFill();
     }
     showDetection(result, known ? previousHistoryChord(known) : null);
     if (known && result?.kind === "chord") notifyChordDetected(known, result.notes);

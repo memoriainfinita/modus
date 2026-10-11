@@ -290,6 +290,24 @@ await check('keyboard and screen reader: circle, buttons, panels and chips work 
   await setKey('')
 })
 
+await check('help: the panels are described; the guided tour starts from it, moves with the arrows, Esc ends it', async () => {
+  assert(await page.locator('#tour').count() === 0, 'the tour started by itself under test')
+  await page.click('#btn-help')
+  assert((await text('#shortcut-help')).includes('Each term of the analysis, in words'), 'panels not described')
+  await page.click('#help-tour')
+  assert(await page.locator('#shortcut-help').count() === 0, 'help left open')
+  assert(await text('.tour-count') === '1 / 10', `step: ${await text('.tour-count')}`)
+  await page.keyboard.press('ArrowRight')
+  assert(await text('.tour-title') === 'Play', `step 2: ${await text('.tour-title')}`)
+  assert(await page.locator('.tour-spot').count() === 1, 'no spotlight on the device select')
+  await page.click('[data-tour="next"]')
+  await page.click('[data-tour="back"]')
+  assert(await text('.tour-count') === '2 / 10', 'back')
+  await page.keyboard.press('Escape')
+  assert(await page.locator('#tour').count() === 0, 'Esc did not end it')
+  assert(await page.evaluate(() => localStorage.getItem('tour-done')) === 'true', 'not remembered')
+})
+
 await check('view window: the chord view follows the detector, alone on the chroma background', async () => {
   await page.click('#btn-views')
   const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="chord"]')])

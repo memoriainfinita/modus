@@ -342,6 +342,14 @@ Persisted to localStorage:
 - MIDI device, input channel, input mode, instrument, volume (the key is stored with each song)
 - Interface language and note names
 - Theme
+- The progression picked, the ear-training kind and score, the microphone mode, the player speed
+- Whether the guided tour was seen (`tour-done`)
+
+## Help and guided tour
+
+The ? panel (a dialog, scrolling when it is taller than the window) lists the shortcuts, the mouse gestures, what each panel is for, and the settings: theme, language, note names. Its Guided tour button starts the tour.
+
+The tour (`ui/tour.ts`) runs by itself on the first visit: ten steps, each dimming the page around what it is about (the input device, the key, analysis, explanation, the circle, history, the layout menu, the practice panels, help) with a card that says what it is for; a step whose panel is hidden shows its card in the middle. Next / Back or the arrows move through it, Skip or Esc ends it, and it is not shown again (`tour-done`). It never starts by itself in a browser driven by tests (`navigator.webdriver`), where it would cover the page.
 
 ## Keyboard shortcuts
 
