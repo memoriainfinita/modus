@@ -734,7 +734,7 @@
     "layout.preset.study": "Study",
     "layout.preset.study.title": "Key and analysis large, what is played beside them",
     "layout.preset.class": "Class",
-    "layout.preset.class.title": "Few panels, large: for a projector, with P",
+    "layout.preset.class.title": "The chord and where it came from, few panels, large: for a projector, with P",
     "layout.preset.transcription": "Transcription",
     "layout.preset.transcription.title": "History and song next to the piano and fretboard",
     "layout.preset.recording": "Recording",
@@ -1496,7 +1496,7 @@
     "layout.preset.study": "Estudio",
     "layout.preset.study.title": "Tonalidad y an\xE1lisis grandes, lo que se toca al lado",
     "layout.preset.class": "Clase",
-    "layout.preset.class.title": "Pocos paneles, grandes: para un proyector, con P",
+    "layout.preset.class.title": "El acorde y de d\xF3nde viene, pocos paneles, grandes: para un proyector, con P",
     "layout.preset.transcription": "Transcripci\xF3n",
     "layout.preset.transcription.title": "Historial y canci\xF3n junto al piano y el m\xE1stil",
     "layout.preset.recording": "Grabaci\xF3n",
@@ -5011,13 +5011,15 @@ ${explainCadence(cadence)}` : "");
       ["progressions", 0, 29, 12, 4],
       ["ear", 0, 33, 6, 5]
     ]),
-    // Teaching on a projector (made to be presented with P): few panels, large
+    // Teaching on a projector (made to be presented with P): few panels, large; the history
+    // under the chord shows where it came from
     class: grid([
       ["chord", 0, 0, 12, 4],
-      ["staff", 0, 4, 4, 10],
-      ["cof", 4, 4, 4, 10],
-      ["guitar", 8, 4, 4, 10],
-      ["piano", 0, 14, 12, 6]
+      ["history", 0, 4, 12, 4],
+      ["staff", 0, 8, 4, 10],
+      ["cof", 4, 8, 4, 10],
+      ["guitar", 8, 8, 4, 10],
+      ["piano", 0, 18, 12, 6]
     ]),
     // Writing down a recording: the player on top, the song and the history in reach of what is heard
     transcription: grid([
@@ -8093,6 +8095,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     });
   }
   var detectionFromMidi = false;
+  var heldNotes = [];
   function respellMidiDetection() {
     if (detectionFromMidi) state.detection = spellDetection(state.detection, analysisKey());
   }
@@ -8199,7 +8202,9 @@ ${explainCadence(c.cadence)}` : ""}`;
       } else chordChangedBeforeFill();
     }
     showDetection(result, known ? previousHistoryChord(known) : null);
-    if (known && result?.kind === "chord") notifyChordDetected(known, result.notes);
+    const releasing = notes.length < heldNotes.length && notes.every((n) => heldNotes.includes(n));
+    heldNotes = notes;
+    if (known && result?.kind === "chord" && !releasing) notifyChordDetected(known, result.notes);
   }
   function onHistoryChange(entries2) {
     state.history = entries2;

@@ -585,6 +585,8 @@ function wireViewMenu() {
 // MIDI input has no spelling of its own: it is written in the key, and rewritten when the
 // key changes. A chord picked from history, song or CoF keeps the spelling it was given.
 let detectionFromMidi = false
+// The notes sounding at the last change, to tell a release from a chord played
+let heldNotes: number[] = []
 
 /** Rewrites a MIDI detection in the current key (after a key change). */
 function respellMidiDetection() {
@@ -726,7 +728,11 @@ function onNoteChange(notes: number[]) {
   }
 
   showDetection(result, known ? previousHistoryChord(known) : null)
-  if (known && result?.kind === 'chord') notifyChordDetected(known, result.notes)
+  // Releasing a chord lifts its notes one by one: the three left for a moment (F A C of a
+  // Dm7) are not a chord played, and the chord before them still goes to the history
+  const releasing = notes.length < heldNotes.length && notes.every(n => heldNotes.includes(n))
+  heldNotes = notes
+  if (known && result?.kind === 'chord' && !releasing) notifyChordDetected(known, result.notes)
 }
 
 function onHistoryChange(entries: HistoryEntry[]) {

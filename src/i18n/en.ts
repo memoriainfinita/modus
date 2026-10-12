@@ -76,7 +76,7 @@ export const en = {
   'layout.preset.study': 'Study',
   'layout.preset.study.title': 'Key and analysis large, what is played beside them',
   'layout.preset.class': 'Class',
-  'layout.preset.class.title': 'Few panels, large: for a projector, with P',
+  'layout.preset.class.title': 'The chord and where it came from, few panels, large: for a projector, with P',
   'layout.preset.transcription': 'Transcription',
   'layout.preset.transcription.title': 'History and song next to the piano and fretboard',
   'layout.preset.recording': 'Recording',

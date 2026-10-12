@@ -525,6 +525,15 @@ await check('clicking a history chip loads it in the detector', async () => {
   assert(shown === first, `detector shows ${shown}, chip ${first}`)
 })
 
+await check('a short chord released key by key logs that chord, not what is left of it', async () => {
+  await page.locator('.history-clear-btn').click()
+  await play([62, 65, 69, 72], 400)             // Dm7, shorter than the history hold
+  for (const n of [62, 65, 69, 72]) { await off([n]); await page.waitForTimeout(40) }   // F A C sounds for a moment
+  await page.waitForTimeout(1000)
+  const chips = await page.locator('.history-chip-symbol').allInnerTexts()
+  assert(chips.join(' ') === 'Dm7', `history: ${chips.join(' ')}`)
+})
+
 await check('CoF click plays without changing the key; double click sets it', async () => {
   await setKey('C Major')
   const g = page.locator('#cof-container [data-key="G Major"]')

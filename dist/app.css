@@ -935,6 +935,9 @@ body {
   .module-chord .chord-notes {
     font-size: 15px;
   }
+  .grid .module-history .history-strip {
+    font-size: 13px;
+  }
   #key-container :is(.key-main, .key-parallel) {
     min-width: 0;
     max-width: 100%;
@@ -1400,6 +1403,19 @@ body.presenting .grid {
 .prog-chip-roman {
   font-size: 10px;
   color: var(--text-muted);
+}
+.module-history .history-strip {
+  font-size: clamp(12px, 19cqh, 6vh);
+}
+.module-history .history-chip-symbol {
+  font-size: 1em;
+}
+.module-history :is(.history-chip-roman, .history-cadence, .history-modulation) {
+  font-size: 0.8em;
+}
+.module-history .history-chip {
+  min-width: 4.2em;
+  padding: 0.33em 0.66em;
 }
 .history-clear-btn {
   padding: 4px 10px;
