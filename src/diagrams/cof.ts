@@ -3,6 +3,7 @@ import { romanInKey } from '../detector/analyzer'
 import { keyPrefersSharps } from '../theory/keys'
 import { t, chordLabel, noteLabel } from '../i18n/i18n'
 import { color } from '../ui/theme'
+import { functionColor } from '../theory/chord'
 import { makeActivatable } from '../ui/a11y'
 
 const CIRCLE_KEYS_FLAT  = ['C','G','D','A','E','B','Gb','Db','Ab','Eb','Bb','F']
@@ -87,8 +88,10 @@ export function renderCircleOfFifths(
     ? new Set([(activePos + 11) % 12, activePos, (activePos + 1) % 12])
     : new Set<number>()
 
+  // The chord on the circle in the colour of its function in the key (one colour code), the key in the accent
+  const chordFn = activeChord ? romanInKey(activeChord, activeKey)?.function ?? null : null
   const c = {
-    tonic: color('cof-tonic'), chord: color('cof-chord'), diatonic: color('cof-diatonic'), diatonicStroke: color('cof-diatonic-stroke'),
+    tonic: color('cof-tonic'), chord: functionColor(chordFn, 'cof-chord'), diatonic: color('cof-diatonic'), diatonicStroke: color('cof-diatonic-stroke'),
     segment: color('cof-segment'), stroke: color('cof-stroke'), dimDiatonic: color('cof-dim-diatonic'),
     dimDiatonicStroke: color('cof-dim-diatonic-stroke'), dim: color('cof-dim'), dimStroke: color('cof-dim-stroke'),
     label: color('cof-label'), onMark: color('cof-label-on-mark'), minorLabel: color('cof-minor-label'),

@@ -1,7 +1,7 @@
 import './styles.css'
 import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes, getVelocity, getInputChannel, setInputChannel, setHeardNotes } from './input/midi'
 import { wireComputerKeyboard, toggleComputerKeyboard, isComputerKeyboardOn, computerKeyboardStatus, setComputerKeyboardChange } from './input/computer-keyboard'
-import { analyzeNotes, buildHarmonicAnalysis, analyzeNoteSet, getAutoKey } from './detector/analyzer'
+import { analyzeNotes, buildHarmonicAnalysis, analyzeNoteSet, getAutoKey, romanInKey } from './detector/analyzer'
 import { initAudioOnGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
 import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
 import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
@@ -63,9 +63,9 @@ let showPrevChord  = loadBool('show-prev-chord', false)
 const analysisFieldsVisible = Object.fromEntries(
   ANALYSIS_FIELD_KEYS.map(f => [f, loadBool(`analysis-field-${f}`, true)])
 ) as Record<AnalysisFieldKey, boolean>
-let analysisScale = loadNumber('analysis-scale', 11, 8, 20)
+let analysisScale = loadNumber('analysis-scale', 14, 10, 24)
 
-let keyScale = loadNumber('key-scale', 11, 8, 20)
+let keyScale = loadNumber('key-scale', 13, 10, 24)
 let keySevenths = loadBool('key-sevenths', false)
 let keyShowNegative = loadBool('key-show-negative', true)
 let keyShowParallel = loadBool('key-show-parallel', true)
@@ -279,6 +279,7 @@ function syncCofAccidentalButtons() {
   for (const [id, acc] of [['btn-cof-flat', 'flat'], ['btn-cof-sharp', 'sharp']] as const) {
     const btn = $(id) as HTMLButtonElement
     btn.classList.toggle('active', used === acc)
+    btn.setAttribute('aria-pressed', String(used === acc))
     btn.disabled = !!key
     btn.title = key ? t('cof.spelledInKey', { key: keyLabel(key) })
       : acc === 'flat' ? t('cof.flat.title') : t('cof.sharp.title')
@@ -286,11 +287,9 @@ function syncCofAccidentalButtons() {
 }
 
 
-/** An on/off button of a panel: dimmed when off, and says so (the Settings dialog reads it too). */
+/** An on/off option of a panel's menu: ticked when on, and says so (the Settings dialog reads it too). */
 function pressed(id: string, on: boolean) {
-  const b = $(id)
-  b.style.opacity = on ? '1' : '0.4'
-  b.setAttribute('aria-pressed', String(on))
+  $(id).setAttribute('aria-pressed', String(on))
 }
 
 function wireLayoutEvents() {
@@ -312,18 +311,18 @@ function wireLayoutEvents() {
   onCofControl('btn-cof-7',     () => { cofShow7ths = !cofShow7ths;       save('cof-show-7ths', cofShow7ths) })
 
   $('btn-analysis-minus').addEventListener('click', () => {
-    analysisScale = Math.max(8, analysisScale - 1)
+    analysisScale = Math.max(10, analysisScale - 1)
     save('analysis-scale', analysisScale)
     renderAnalysisPanel()
   })
   $('btn-analysis-plus').addEventListener('click', () => {
-    analysisScale = Math.min(20, analysisScale + 1)
+    analysisScale = Math.min(24, analysisScale + 1)
     save('analysis-scale', analysisScale)
     renderAnalysisPanel()
   })
 
   const clefBtn = $('btn-staff-clef')
-  const showClef = () => { clefBtn.textContent = t(`staff.clef.${staffClef}`) }
+  const showClef = () => { clefBtn.innerHTML = `<span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t('menu.clef')}: ${t(`staff.clef.${staffClef}`)}</span>` }
   showClef()
   clefBtn.addEventListener('click', () => {
     staffClef = STAFF_CLEFS[(STAFF_CLEFS.indexOf(staffClef) + 1) % STAFF_CLEFS.length]
@@ -347,6 +346,7 @@ function wireLayoutEvents() {
       analysisFieldsVisible[f] = !analysisFieldsVisible[f]
       save(`analysis-field-${f}`, analysisFieldsVisible[f])
       $(`btn-field-${f}`).classList.toggle('active', analysisFieldsVisible[f])
+      $(`btn-field-${f}`).setAttribute('aria-pressed', String(analysisFieldsVisible[f]))
       renderAnalysisPanel()
     })
   })
@@ -361,8 +361,8 @@ function wireLayoutEvents() {
   const onKeyControl = (id: string, apply: () => void) => {
     $(id).addEventListener('click', () => { apply(); updateKeyButtons(); renderDiagrams() })
   }
-  onKeyControl('btn-key-minus', () => { keyScale = Math.max(8, keyScale - 1);  save('key-scale', keyScale) })
-  onKeyControl('btn-key-plus',  () => { keyScale = Math.min(20, keyScale + 1); save('key-scale', keyScale) })
+  onKeyControl('btn-key-minus', () => { keyScale = Math.max(10, keyScale - 1);  save('key-scale', keyScale) })
+  onKeyControl('btn-key-plus',  () => { keyScale = Math.min(24, keyScale + 1); save('key-scale', keyScale) })
   onKeyControl('btn-key-7',     () => { keySevenths = !keySevenths;         save('key-sevenths', keySevenths) })
   onKeyControl('btn-key-neg',   () => { keyShowNegative = !keyShowNegative; save('key-show-negative', keyShowNegative) })
   onKeyControl('btn-key-par',   () => { keyShowParallel = !keyShowParallel; save('key-show-parallel', keyShowParallel) })
@@ -481,7 +481,10 @@ function refreshAnalysis() {
 }
 
 function renderAnalysisPanel() {
-  renderZone1Analysis(state.detection, state.analysis, noteSet, analysisFieldsVisible, analysisScale, onAltSelect)
+  const from = selectedSymbol() ? cadencePrev : null
+  const info = from ? romanInKey(from, analysisKey()) : null
+  renderZone1Analysis(state.detection, state.analysis, noteSet, analysisFieldsVisible, analysisScale, onAltSelect,
+    { from, fromRoman: info?.roman ?? null, fromFunction: info?.function ?? null })
 }
 
 function renderDiagrams() {
@@ -811,8 +814,9 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const prev = showPrevChord && chordSymbol ? prevVoicing : null
   renderIfChanged('staff', `${notes}|${key}|${staffClef}|${prev?.join(' ')}`, () =>
     renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef, prev))
-  renderIfChanged('piano', `${notes}|${chordSymbol}|${prev?.join(' ')}|${isNarrow()}`, () =>
-    renderPiano($('piano-container'), noteNames, chordSymbol, onPianoPress, prev))
+  const fn = chordSymbol ? state.analysis?.function ?? null : null
+  renderIfChanged('piano', `${notes}|${fn}|${prev?.join(' ')}|${isNarrow()}`, () =>
+    renderPiano($('piano-container'), noteNames, fn, onPianoPress, prev))
   // The drawings by name, for a screen reader: the notes they show
   const spoken = noteNames.map(noteLabel).join(' ') || t('a11y.nothing')
   for (const [id, key] of [['staff-container', 'a11y.staff'], ['piano-container', 'a11y.piano']] as const) {

@@ -118,8 +118,6 @@ export interface AppState {
   captureTargetId: string | null       // SongChord.id waiting for MIDI capture
   // Control rows shown under a panel; which panels show is the layout's (ui/layout.ts)
   panels: {
-    cofControls: boolean
     guitarControls: boolean
-    analysisControls: boolean
   }
 }

@@ -1,5 +1,4 @@
 import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis } from '../types'
-import { chordColor } from '../theory/chord'
 import { escapeHtml } from '../ui/html'
 import { t, noteLabel, chordLabel, cadenceLabel } from '../i18n/i18n'
 
@@ -13,29 +12,66 @@ export const fieldLabel = (f: AnalysisFieldKey) => t(`field.${f}`)
 export const fieldTooltip = (f: AnalysisFieldKey) => t(`field.${f}.title`)
 const rowLabel = (f: AnalysisFieldKey) => t(`field.${f}.row`)
 
-// ─── Chord summary (private — called only by renderZone1Analysis) ─────────────
+// ─── Chord header (private — called only by renderZone1Analysis) ──────────────
 
+/** The chord the cadence is read from, for the header: "from G7 · V7". */
+export interface ChordHeadContext {
+  from: string | null
+  fromRoman: string | null
+  fromFunction: HarmonicAnalysis['function'] | null
+}
+
+const fnClass = (fn: string | null | undefined) => fn === 'T' || fn === 'S' || fn === 'D' ? ` fn-${fn}` : ''
+
+// The chord as a header: its name large, its notes, its degree and function, the cadence
+// from the chord before, and the other readings of the same notes
 function renderChordSummary(
   detection: DetectionResult,
+  analysis: HarmonicAnalysis | null,
+  head: ChordHeadContext,
   onAltSelect: (index: number) => void
 ) {
   const el = document.getElementById('chord-summary')
   if (!el) return
-  if (!detection || detection.kind !== 'chord') { el.innerHTML = ''; return }
+  const notesOf = (names: string[]) => escapeHtml(names.map(n => noteLabel(n.replace(/(-?\d+)$/, ''))).join(' · '))
+  if (!detection) { el.innerHTML = `<div class="chord-head chord-head-empty">${escapeHtml(t('head.empty'))}</div>`; return }
+  if (detection.kind === 'note') {
+    el.innerHTML = `<div class="chord-head"><span class="chord-head-name">${escapeHtml(noteLabel(detection.pitchClass))}</span><span class="chord-notes">${escapeHtml(noteLabel(detection.noteName))} · MIDI ${detection.midiNumber}</span></div>`
+    return
+  }
+  if (detection.kind === 'interval') {
+    el.innerHTML = `<div class="chord-head"><span class="chord-head-name">${escapeHtml(detection.intervalName)}</span><span class="chord-notes">${notesOf(detection.notes)}</span></div>`
+    return
+  }
 
   const symbol = detection.candidates[detection.selectedIndex]
-  const chordName = escapeHtml(chordLabel(symbol))
-  const color = chordColor(symbol)
-  const notes = escapeHtml(detection.notes.map(n => noteLabel(n.replace(/(-?\d+)$/, ''))).join(' · '))
   const alts = detection.candidates.slice(1, 7)
+  const a = analysis && analysis.roman !== '?' ? analysis : null
+  const degree = a ? `
+    <span class="chord-head-group">
+      <span class="chord-roman${fnClass(a.function)}">${escapeHtml(a.roman)}</span>
+      ${a.function !== 'unknown' ? `<span class="fn-pill${fnClass(a.function)}">${escapeHtml(t(`fn.${a.function}`))}</span>` : ''}
+    </span>` : ''
+  const from = head.from && analysis ? `
+    <span class="chord-head-group chord-head-from">
+      <span class="chord-head-label">${escapeHtml(t('head.from'))}</span>
+      <span class="chord-head-prev">${escapeHtml(chordLabel(head.from))}</span>
+      ${head.fromRoman && head.fromRoman !== '?' ? `<span class="chord-head-prev-roman${fnClass(head.fromFunction)}">${escapeHtml(head.fromRoman)}</span>` : ''}
+      ${analysis.cadence ? `<span class="cadence-pill">${escapeHtml(cadenceLabel(analysis.cadence, true))}</span>` : ''}
+    </span>` : ''
 
   el.innerHTML = `
-    <div class="chord-summary-row">
-      <span class="chord-name-badge" style="background:${color}22;border-left:3px solid ${color}">${chordName}</span>
-      <span class="chord-notes">${notes}</span>
-      ${alts.map((c, i) =>
-        `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(chordLabel(c))}</button>`
-      ).join('')}
+    <div class="chord-head chord-summary-row">
+      <span class="chord-head-group chord-head-main">
+        <span class="chord-name-badge">${escapeHtml(chordLabel(symbol))}</span>
+        <span class="chord-notes">${notesOf(detection.notes)}</span>
+      </span>
+      ${degree}
+      ${from}
+      ${alts.length ? `<span class="chord-head-group chord-head-alts">
+        <span class="chord-head-label">${escapeHtml(t('head.also'))}</span>
+        ${alts.map((c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(chordLabel(c))}</button>`).join('')}
+      </span>` : ''}
     </div>`
 
   el.querySelectorAll<HTMLElement>('.alt-chord-sum').forEach(btn => {
@@ -51,9 +87,10 @@ export function renderZone1Analysis(
   noteSet: NoteSetAnalysis | null,
   fieldsVisible: Record<AnalysisFieldKey, boolean>,
   scale: number,
-  onAltSelect: (index: number) => void
+  onAltSelect: (index: number) => void,
+  head: ChordHeadContext = { from: null, fromRoman: null, fromFunction: null }
 ) {
-  renderChordSummary(detection, onAltSelect)
+  renderChordSummary(detection, analysis, head, onAltSelect)
 
   const el = document.getElementById('analysis-content')
   if (!el) return

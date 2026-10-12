@@ -9,7 +9,7 @@ import { renderPiano } from '../diagrams/piano'
 import { renderGuitar } from '../diagrams/guitar'
 import { renderCircleOfFifths, cofAccidentalFor } from '../diagrams/cof'
 import type { CofOptions } from '../diagrams/cof'
-import { chordColor, neutralColor } from '../theory/chord'
+import { functionColor } from '../theory/chord'
 import { escapeHtml } from '../ui/html'
 import { fitSvg } from '../ui/fit'
 import { loadBool, loadChoice } from '../ui/storage'
@@ -27,7 +27,7 @@ function cofOptions(key: string | null): CofOptions {
 
 function renderChordView(el: HTMLElement, s: ViewState) {
   if (!s.label) { el.innerHTML = ''; return }
-  const fill = s.symbol ? chordColor(s.symbol) : neutralColor()
+  const fill = s.symbol ? functionColor(s.function, 'text-strong') : color('text-strong')
   const detail = s.kind === 'chord' && s.roman && s.roman !== '?'
     ? [s.roman, s.function && s.function !== 'unknown' ? t(`fn.${s.function}`) : null].filter(Boolean).join(' · ')
     : ''
@@ -49,7 +49,7 @@ export function renderView(view: ViewName, el: HTMLElement, s: ViewState) {
     inner.style.width = '100%'
   }
   else if (view === 'cof') renderCircleOfFifths(el, s.key, s.symbol, () => {}, 400, { ...cofOptions(s.key), backdrop: color('bg') })
-  else if (view === 'piano') renderPiano(el, s.notes, s.symbol)
+  else if (view === 'piano') renderPiano(el, s.notes, s.symbol ? s.function : null)
   else if (view === 'guitar') renderGuitar(el, s.symbol, s.notes, s.guitarVoicing)
   fitSvg(el.querySelector('svg'))
 }

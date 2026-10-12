@@ -5,7 +5,7 @@
 export type ViewName = 'chord' | 'staff' | 'cof' | 'piano' | 'guitar'
 export const VIEW_NAMES: ViewName[] = ['chord', 'staff', 'cof', 'piano', 'guitar']
 
-export const VIEW_BACKGROUNDS = { green: '#00ff00', magenta: '#ff00ff', black: '#000000', dark: '#1a1a2e' } as const
+export const VIEW_BACKGROUNDS = { green: '#00ff00', magenta: '#ff00ff', black: '#000000', dark: '#141414' } as const
 export type ViewBackground = keyof typeof VIEW_BACKGROUNDS
 
 export interface ViewState {

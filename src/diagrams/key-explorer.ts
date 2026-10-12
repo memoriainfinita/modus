@@ -5,9 +5,8 @@
 
 import type { KeyMap, KeyChord } from '../theory/key-map'
 import { sameChord } from '../theory/key-map'
-import { chordColor } from '../theory/chord'
 import { escapeHtml } from '../ui/html'
-import { t, chordLabel, noteLabel } from '../i18n/i18n'
+import { t, chordLabel, noteLabel, scaleLabel } from '../i18n/i18n'
 
 export type KeyExplorerOptions = {
   sevenths: boolean
@@ -38,12 +37,12 @@ export function renderKeyExplorer(
 
   const button = (symbol: string, cls: string, title: string) =>
     `<button class="key-chord ${cls}${sameChord(symbol, activeChord) ? ' active' : ''}" data-chord="${escapeHtml(symbol)}"
-      title="${escapeHtml(title)}" style="border-left-color:${chordColor(symbol)}">${escapeHtml(chordLabel(symbol))}</button>`
+      title="${escapeHtml(title)}">${escapeHtml(chordLabel(symbol))}</button>`
 
   const cell = (c: KeyChord) => `
     <div class="key-cell">
       <span class="key-roman">${escapeHtml(c.roman)}</span>
-      ${button(c.symbol, '', describe(c))}
+      ${button(c.symbol, `key-fnb-${c.function}`, describe(c))}
       ${c.alternative ? button(c.alternative.symbol, 'key-alt', `${describe(c.alternative)} · ${t('keyPanel.harmonicMinor')}`) : ''}
       <span class="key-function key-fn-${c.function}" title="${functionName(c.function)}">${c.function === 'unknown' ? '·' : c.function}</span>
     </div>`
@@ -69,11 +68,11 @@ export function renderKeyExplorer(
     html += `<div class="key-parallel"><div class="key-section-label" title="${t('keyPanel.parallel.title')}">${t('keyPanel.parallel')}</div><div class="key-mode-grid">`
     html += map.parallel.map(row => `
       <div class="key-mode-row">
-        <span class="key-mode-name">${escapeHtml(row.mode)}</span>
+        <span class="key-mode-name">${escapeHtml(scaleLabel(row.mode))}</span>
         <div class="key-mode-chords">${row.chords.map(c => `
           <span class="key-mode-chord">
             <span class="key-roman">${escapeHtml(c.roman)}</span>
-            ${button(c.symbol, c.characteristic ? 'key-characteristic' : '', [describe(c), t('keyPanel.from', { mode: row.mode }), c.characteristic ? t('keyPanel.characteristic') : ''].filter(Boolean).join(' · '))}
+            ${button(c.symbol, c.characteristic ? 'key-characteristic' : '', [describe(c), t('keyPanel.from', { mode: scaleLabel(row.mode) }), c.characteristic ? t('keyPanel.characteristic') : ''].filter(Boolean).join(' · '))}
           </span>`).join('')}
         </div>
       </div>`).join('') + '</div></div>'

@@ -67,7 +67,8 @@ describe('presets', () => {
     }
   })
 
-  it('standard shows every panel', () => {
-    expect(PRESETS.standard.map(c => c.id).sort()).toEqual([...MODULE_IDS].sort())
+  it('standard shows every panel but Velocity, the chord across the top', () => {
+    expect(PRESETS.standard.map(c => c.id).sort()).toEqual(MODULE_IDS.filter(id => id !== 'velocity').sort())
+    expect(PRESETS.standard.find(c => c.id === 'chord')).toMatchObject({ x: 0, y: 0, w: 12 })
   })
 })

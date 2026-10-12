@@ -1,6 +1,7 @@
 // The Tuner panel: the microphone on or off, notes or chords, and the note heard now with
 // how many cents it is off and its frequency. Drawn once; each frame only writes the values.
 
+import { ICONS } from './icons'
 import { escapeHtml } from './html'
 import { t, noteLabel } from '../i18n/i18n'
 import { MIC_MODES, getMicMode, setMicMode, isMicOn, type Heard } from '../input/mic'
@@ -13,7 +14,7 @@ export function renderTuner(container: HTMLElement, handlers: TunerHandlers, err
   const mode = getMicMode()
   container.innerHTML = `
     <div class="tuner-head">
-      <button id="tuner-mic" class="ctrl-btn${on ? ' active-mode' : ''}" title="${escapeHtml(t('mic.title'))}">🎤 ${escapeHtml(t(on ? 'mic.on' : 'mic.off'))}</button>
+      <button id="tuner-mic" class="ctrl-btn${on ? ' active-mode' : ''}" title="${escapeHtml(t('mic.title'))}">${ICONS.mic}${escapeHtml(t(on ? 'mic.on' : 'mic.off'))}</button>
       ${MIC_MODES.map(m => `<button class="size-ctrl-btn tuner-mode${m === mode ? ' active' : ''}" data-mode="${m}" title="${escapeHtml(t(`mic.mode.${m}.title`))}">${escapeHtml(t(`mic.mode.${m}`))}</button>`).join('')}
     </div>
     <div class="tuner-note">—</div>

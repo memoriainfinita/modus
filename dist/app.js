@@ -577,16 +577,10 @@
   }
 
   // src/theory/chord.ts
-  var CHORD_FAMILY_TOKENS = {
-    major: "chord-major",
-    minor: "chord-minor",
-    dominant: "chord-dominant",
-    diminished: "chord-diminished",
-    "half-diminished": "chord-diminished",
-    augmented: "chord-augmented",
-    sus: "chord-other"
-  };
   var neutralColor = () => color("chord-other");
+  function functionColor(fn, none = "chord-none") {
+    return color(fn === "T" ? "fn-t" : fn === "S" ? "fn-s" : fn === "D" ? "fn-d" : none);
+  }
   function tryUMT(what, fn, fallback) {
     try {
       return fn();
@@ -608,25 +602,6 @@
   }
   function normalizeChordName(name) {
     return name.replace(/^([A-G][b#]*)M(?=\/|$)/, "$1");
-  }
-  function chordFamily(symbol) {
-    const chord = tryParseChord(symbol);
-    if (!chord) return null;
-    const pcs = new Set((chord.intervalsInSteps ?? []).map((s) => (s % 12 + 12) % 12));
-    if (pcs.has(4)) {
-      if (pcs.has(8) && !pcs.has(7)) return "augmented";
-      return pcs.has(10) ? "dominant" : "major";
-    }
-    if (pcs.has(3)) {
-      if (pcs.has(6) && !pcs.has(7)) return pcs.has(10) ? "half-diminished" : "diminished";
-      return "minor";
-    }
-    if (pcs.has(5) || pcs.has(2)) return "sus";
-    return null;
-  }
-  function chordColor(symbol) {
-    const family = chordFamily(symbol);
-    return family ? color(CHORD_FAMILY_TOKENS[family]) : neutralColor();
   }
   function chordNoteNames(symbol) {
     const chord = tryParseChord(symbol);
@@ -788,7 +763,29 @@
     "module.drag": "Drag to move",
     "module.hide": "Hide this panel (the \u25A6 menu shows it again)",
     "module.resize": "Drag to resize",
-    "module.controls": "Show / hide the controls",
+    "menu.options": "Panel options",
+    "menu.optionsOf": "Options of {name}",
+    "menu.size": "Text size",
+    "menu.clef": "Staves",
+    "menu.prev": "Chord before",
+    "menu.fields": "Fields",
+    "menu.flat": "Flats",
+    "menu.sharp": "Sharps",
+    "menu.minor": "Minor and diminished rings",
+    "menu.degrees": "Degrees",
+    "menu.sevenths": "Seventh chords",
+    "menu.negative": "Negative harmony",
+    "menu.parallel": "Parallel modes",
+    "menu.coltrane": "Coltrane axis",
+    "menu.controls": "Controls",
+    "a11y.group.input": "Input",
+    "a11y.group.mode": "Playing mode",
+    "a11y.group.key": "Key",
+    "a11y.group.sound": "Sound",
+    "a11y.group.page": "Page",
+    "head.from": "from",
+    "head.also": "Also",
+    "head.empty": "Play, or type a chord",
     "views.title": "View windows for OBS, and diagram export (SVG, PNG)",
     "views.open": "Open a view window",
     "views.background": "Background",
@@ -816,7 +813,7 @@
     "piano.prev.title": "Mark the keys of the chord before, to see each voice move",
     "cof.flat.title": "Show flat enharmonics (Gb, Db\u2026)",
     "cof.sharp.title": "Show sharp enharmonics (F#, C#\u2026)",
-    "cof.spelledInKey": "Spelled as in {key}; b / # apply without a key",
+    "cof.spelledInKey": "Spelled as in {key}; flats or sharps apply without a key",
     "cof.minor.title": "Show/hide minor and diminished rings",
     "cof.degrees.title": "Show scale degrees (I, IV, V\u2026)",
     "cof.sevenths.title": "Show 7th chords (maj7, m7, \xF87)",
@@ -1085,7 +1082,7 @@
     "set.io.out": "MIDI out",
     "set.io.outChannel": "Output channel",
     "set.io.thru": "Thru",
-    "set.panels.intro": "Each box presses the panel's own button: both stay the same.",
+    "set.panels.intro": "Each box is the same option as in the panel's \u22EF menu: both stay the same.",
     "set.panels.prev": "Staff and piano: show the chord before",
     "set.panels.cofMinor": "Circle: minor and diminished rings",
     "set.panels.cofDegrees": "Circle: degrees",
@@ -1222,11 +1219,11 @@
     "tour.welcome.title": "Welcome to Modus",
     "tour.welcome": "Play a chord and Modus names it and explains its harmony as you play: its degree in the key, its function, the cadence it makes, how its voices move. This tour shows where everything is; it takes a minute. Arrows or the buttons move through it, Esc closes it.",
     "tour.input.title": "Play",
-    "tour.input": "Connect a MIDI keyboard and pick it here. Without one: press M to play on the computer keyboard, click or touch the piano, turn on the microphone (\u{1F3A4}) and sing or play, or type a chord in the field (/).",
+    "tour.input": "Connect a MIDI keyboard and pick it here. Without one: press M to play on the computer keyboard, click or touch the piano, turn on the microphone and sing or play, or type a chord in the field (/).",
     "tour.key.title": "The key",
     "tour.key": "Pick the key you play in, or leave it on Auto: Modus finds it from what you play. Every degree, function and cadence is read in it.",
     "tour.analysis.title": "What it is",
-    "tour.analysis": "The Chord panel names what you play; Analysis reads it: numeral, function, figured bass, voicing, scales that fit, cadence, voice leading from the chord before. Its buttons choose which rows show.",
+    "tour.analysis": "The Chord panel names what you play; Analysis reads it: numeral, function, figured bass, voicing, scales that fit, cadence, voice leading from the chord before. Its \u22EF menu chooses which rows show.",
     "tour.explain.title": "What it means",
     "tour.explain": "Explanation puts each term in words for the chord on screen: why D7 is V7/V, which mode a borrowed chord comes from, what a cadence does.",
     "tour.cof.title": "The circle of fifths",
@@ -1234,14 +1231,14 @@
     "tour.history.title": "History",
     "tour.history": "Every chord you hold is logged here with its numeral, and the cadences and modulations between them. Click a chip to see it again, drag it to the song, right-click or long-press to remove it.",
     "tour.layout.title": "Your layout",
-    "tour.layout": "Every element is a panel: drag it by its title, resize it from its corner, hide it with \xD7. Here: ready-made layouts for study, class, transcription or recording, and your own. P presents the layout full screen.",
+    "tour.layout": "Every element is a panel: drag it by its title, resize it from its corner, hide it with \xD7; its options are in its \u22EF menu. Here: ready-made layouts for study, class, transcription or recording, and your own. P presents the layout full screen.",
     "tour.practice.title": "Practice",
     "tour.practice": "Progressions plays the classic progressions in your key; Ear training plays without showing and you name what you heard; the Player loops and slows down a recording to transcribe it.",
     "tour.help.title": "Help",
-    "tour.help": "Shortcuts, gestures, what each panel is for, language, note names (C D E or Do Re Mi) and theme are here. This tour starts again from there.",
+    "tour.help": "Shortcuts, gestures and what each panel is for are here; language, note names and theme are in Settings (\u2699). This tour starts again from here.",
     "help.panels": "Panels",
-    "help.panel.chord": "The chord played, its notes and the other readings of the same notes",
-    "help.panel.staff": "The notes on the staff, in the key's signature; \u21E0 shows the chord before",
+    "help.panel.chord": "The chord played, its notes, degree and function, the cadence from the chord before, and the other readings of the same notes",
+    "help.panel.staff": "The notes on the staff, in the key's signature; its \u22EF menu shows the chord before",
     "help.panel.analysis": "Numeral, function, figured bass, voicing, scales, cadence, voice leading\u2026",
     "help.panel.explain": "Each term of the analysis, in words",
     "help.panel.cof": "A click plays a chord, two clicks set its key",
@@ -1528,7 +1525,29 @@
     "module.drag": "Arrastra para mover",
     "module.hide": "Ocultar este panel (el men\xFA \u25A6 lo vuelve a mostrar)",
     "module.resize": "Arrastra para cambiar el tama\xF1o",
-    "module.controls": "Mostrar / ocultar los controles",
+    "menu.options": "Opciones del panel",
+    "menu.optionsOf": "Opciones de {name}",
+    "menu.size": "Tama\xF1o del texto",
+    "menu.clef": "Pentagramas",
+    "menu.prev": "Acorde anterior",
+    "menu.fields": "Campos",
+    "menu.flat": "Bemoles",
+    "menu.sharp": "Sostenidos",
+    "menu.minor": "Anillos menor y disminuido",
+    "menu.degrees": "Grados",
+    "menu.sevenths": "Cuatr\xEDadas",
+    "menu.negative": "Armon\xEDa negativa",
+    "menu.parallel": "Modos paralelos",
+    "menu.coltrane": "Eje de Coltrane",
+    "menu.controls": "Controles",
+    "a11y.group.input": "Entrada",
+    "a11y.group.mode": "Modo de tocar",
+    "a11y.group.key": "Tonalidad",
+    "a11y.group.sound": "Sonido",
+    "a11y.group.page": "P\xE1gina",
+    "head.from": "desde",
+    "head.also": "Tambi\xE9n",
+    "head.empty": "Toca, o escribe un acorde",
     "views.title": "Ventanas de vista para OBS y exportar diagramas (SVG, PNG)",
     "views.open": "Abrir una ventana de vista",
     "views.background": "Fondo",
@@ -1554,7 +1573,7 @@
     "piano.prev.title": "Marcar las teclas del acorde anterior, para ver moverse cada voz",
     "cof.flat.title": "Enarm\xF3nicos con bemoles (Solb, Reb\u2026)",
     "cof.sharp.title": "Enarm\xF3nicos con sostenidos (Fa#, Do#\u2026)",
-    "cof.spelledInKey": "Escrito como en {key}; b / # sirven sin tonalidad",
+    "cof.spelledInKey": "Escrito como en {key}; bemoles o sostenidos sirven sin tonalidad",
     "cof.minor.title": "Mostrar u ocultar los anillos menor y disminuido",
     "cof.degrees.title": "Mostrar los grados (I, IV, V\u2026)",
     "cof.sevenths.title": "Mostrar cuatr\xEDadas (maj7, m7, \xF87)",
@@ -1819,7 +1838,7 @@
     "set.io.out": "Salida MIDI",
     "set.io.outChannel": "Canal de salida",
     "set.io.thru": "Thru",
-    "set.panels.intro": "Cada casilla pulsa el bot\xF3n del propio panel: los dos van a la par.",
+    "set.panels.intro": "Cada casilla es la misma opci\xF3n que en el men\xFA \u22EF del panel: las dos van a la par.",
     "set.panels.prev": "Pentagrama y piano: mostrar el acorde anterior",
     "set.panels.cofMinor": "C\xEDrculo: anillos menor y disminuido",
     "set.panels.cofDegrees": "C\xEDrculo: grados",
@@ -1956,11 +1975,11 @@
     "tour.welcome.title": "Te damos la bienvenida a Modus",
     "tour.welcome": "Toca un acorde y Modus lo nombra y explica su armon\xEDa mientras tocas: su grado en la tonalidad, su funci\xF3n, la cadencia que forma, c\xF3mo se mueven sus voces. Esta visita ense\xF1a d\xF3nde est\xE1 cada cosa; dura un minuto. Las flechas o los botones la recorren, Esc la cierra.",
     "tour.input.title": "Toca",
-    "tour.input": "Conecta un teclado MIDI y el\xEDgelo aqu\xED. Sin \xE9l: pulsa M para tocar con el teclado del ordenador, haz clic o toca el piano, activa el micr\xF3fono (\u{1F3A4}) y canta o toca, o escribe un acorde en el campo (/).",
+    "tour.input": "Conecta un teclado MIDI y el\xEDgelo aqu\xED. Sin \xE9l: pulsa M para tocar con el teclado del ordenador, haz clic o toca el piano, activa el micr\xF3fono y canta o toca, o escribe un acorde en el campo (/).",
     "tour.key.title": "La tonalidad",
     "tour.key": "Elige la tonalidad en la que tocas, o d\xE9jala en Auto: Modus la deduce de lo que tocas. Cada grado, funci\xF3n y cadencia se lee en ella.",
     "tour.analysis.title": "Qu\xE9 es",
-    "tour.analysis": "El panel Acorde nombra lo que tocas; An\xE1lisis lo lee: grado, funci\xF3n, bajo cifrado, disposici\xF3n, escalas que encajan, cadencia, conducci\xF3n de voces desde el acorde anterior. Sus botones eligen qu\xE9 filas se ven.",
+    "tour.analysis": "El panel Acorde nombra lo que tocas; An\xE1lisis lo lee: grado, funci\xF3n, bajo cifrado, disposici\xF3n, escalas que encajan, cadencia, conducci\xF3n de voces desde el acorde anterior. Su men\xFA \u22EF elige qu\xE9 filas se ven.",
     "tour.explain.title": "Qu\xE9 significa",
     "tour.explain": "Explicaci\xF3n pone en palabras cada t\xE9rmino para el acorde en pantalla: por qu\xE9 Re7 es V7/V, de qu\xE9 modo viene un pr\xE9stamo, qu\xE9 hace una cadencia.",
     "tour.cof.title": "El c\xEDrculo de quintas",
@@ -1968,14 +1987,14 @@
     "tour.history.title": "Historial",
     "tour.history": "Cada acorde que mantienes queda aqu\xED con su grado, y las cadencias y modulaciones entre ellos. Haz clic en una ficha para volver a verla, arr\xE1strala a la canci\xF3n, clic derecho o pulsaci\xF3n larga para quitarla.",
     "tour.layout.title": "Tu disposici\xF3n",
-    "tour.layout": "Cada elemento es un panel: arr\xE1stralo por el t\xEDtulo, cambia su tama\xF1o desde la esquina, oc\xFAltalo con \xD7. Aqu\xED: disposiciones para estudiar, dar clase, transcribir o grabar, y las tuyas. P presenta la disposici\xF3n a pantalla completa.",
+    "tour.layout": "Cada elemento es un panel: arr\xE1stralo por el t\xEDtulo, cambia su tama\xF1o desde la esquina, oc\xFAltalo con \xD7; sus opciones est\xE1n en su men\xFA \u22EF. Aqu\xED: disposiciones para estudiar, dar clase, transcribir o grabar, y las tuyas. P presenta la disposici\xF3n a pantalla completa.",
     "tour.practice.title": "Practica",
     "tour.practice": "Progresiones toca las progresiones cl\xE1sicas en tu tonalidad; Entrenamiento auditivo toca sin ense\xF1ar y t\xFA dices lo que has o\xEDdo; el Reproductor repite y ralentiza una grabaci\xF3n para transcribirla.",
     "tour.help.title": "Ayuda",
-    "tour.help": "Aqu\xED est\xE1n los atajos, los gestos, para qu\xE9 sirve cada panel, el idioma, los nombres de las notas (C D E o Do Re Mi) y el tema. Esta visita vuelve a empezar desde ah\xED.",
+    "tour.help": "Aqu\xED est\xE1n los atajos, los gestos y para qu\xE9 sirve cada panel; el idioma, los nombres de las notas y el tema est\xE1n en Ajustes (\u2699). Esta visita vuelve a empezar desde aqu\xED.",
     "help.panels": "Paneles",
-    "help.panel.chord": "El acorde tocado, sus notas y las otras lecturas de las mismas notas",
-    "help.panel.staff": "Las notas en el pentagrama, con la armadura de la tonalidad; \u21E0 muestra el acorde anterior",
+    "help.panel.chord": "El acorde tocado, sus notas, grado y funci\xF3n, la cadencia desde el acorde anterior y las otras lecturas de las mismas notas",
+    "help.panel.staff": "Las notas en el pentagrama, con la armadura de la tonalidad; su men\xFA \u22EF muestra el acorde anterior",
     "help.panel.analysis": "Grado, funci\xF3n, bajo cifrado, disposici\xF3n, escalas, cadencia, conducci\xF3n de voces\u2026",
     "help.panel.explain": "Cada t\xE9rmino del an\xE1lisis, en palabras",
     "help.panel.cof": "Un clic toca un acorde, dos clics fijan su tonalidad",
@@ -2412,19 +2431,19 @@
       () => UMT.Harmony.analyzeProgression(readable.map((i) => parsed[i]), key, { ...WRITTEN, style }).analysis,
       []
     );
-    const steps = none(key);
+    const steps2 = none(key);
     let local = key;
     readable.forEach((orig, j) => {
       const a = analysis[j];
       if (!a) return;
       local = normalizeKey(a.key) ?? local;
       const nextIsNeighbour = readable[j + 1] === orig + 1;
-      steps[orig] = { key: local, info: toRomanInfo(a), cadence: nextIsNeighbour ? a.cadenceWithNext ?? null : null };
+      steps2[orig] = { key: local, info: toRomanInfo(a), cadence: nextIsNeighbour ? a.cadenceWithNext ?? null : null };
     });
-    steps.forEach((s, i) => {
-      if (!s.info && i > 0) s.key = steps[i - 1].key;
+    steps2.forEach((s, i) => {
+      if (!s.info && i > 0) s.key = steps2[i - 1].key;
     });
-    return steps;
+    return steps2;
   }
   var pcName = (n) => n.replace(/-?\d+$/, "");
   function describeVoicing(noteNames, chord) {
@@ -3243,35 +3262,59 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
 
   // src/detector/analysis-panel.ts
   var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "voices", "rules", "secondary", "subs", "upper", "forte"];
-  var fieldLabel = (f) => t(`field.${f}`);
   var fieldTooltip = (f) => t(`field.${f}.title`);
   var rowLabel = (f) => t(`field.${f}.row`);
-  function renderChordSummary(detection, onAltSelect2) {
+  var fnClass = (fn) => fn === "T" || fn === "S" || fn === "D" ? ` fn-${fn}` : "";
+  function renderChordSummary(detection, analysis, head, onAltSelect2) {
     const el = document.getElementById("chord-summary");
     if (!el) return;
-    if (!detection || detection.kind !== "chord") {
-      el.innerHTML = "";
+    const notesOf = (names) => escapeHtml(names.map((n) => noteLabel(n.replace(/(-?\d+)$/, ""))).join(" \xB7 "));
+    if (!detection) {
+      el.innerHTML = `<div class="chord-head chord-head-empty">${escapeHtml(t("head.empty"))}</div>`;
+      return;
+    }
+    if (detection.kind === "note") {
+      el.innerHTML = `<div class="chord-head"><span class="chord-head-name">${escapeHtml(noteLabel(detection.pitchClass))}</span><span class="chord-notes">${escapeHtml(noteLabel(detection.noteName))} \xB7 MIDI ${detection.midiNumber}</span></div>`;
+      return;
+    }
+    if (detection.kind === "interval") {
+      el.innerHTML = `<div class="chord-head"><span class="chord-head-name">${escapeHtml(detection.intervalName)}</span><span class="chord-notes">${notesOf(detection.notes)}</span></div>`;
       return;
     }
     const symbol = detection.candidates[detection.selectedIndex];
-    const chordName = escapeHtml(chordLabel(symbol));
-    const color2 = chordColor(symbol);
-    const notes = escapeHtml(detection.notes.map((n) => noteLabel(n.replace(/(-?\d+)$/, ""))).join(" \xB7 "));
     const alts = detection.candidates.slice(1, 7);
+    const a = analysis && analysis.roman !== "?" ? analysis : null;
+    const degree = a ? `
+    <span class="chord-head-group">
+      <span class="chord-roman${fnClass(a.function)}">${escapeHtml(a.roman)}</span>
+      ${a.function !== "unknown" ? `<span class="fn-pill${fnClass(a.function)}">${escapeHtml(t(`fn.${a.function}`))}</span>` : ""}
+    </span>` : "";
+    const from = head.from && analysis ? `
+    <span class="chord-head-group chord-head-from">
+      <span class="chord-head-label">${escapeHtml(t("head.from"))}</span>
+      <span class="chord-head-prev">${escapeHtml(chordLabel(head.from))}</span>
+      ${head.fromRoman && head.fromRoman !== "?" ? `<span class="chord-head-prev-roman${fnClass(head.fromFunction)}">${escapeHtml(head.fromRoman)}</span>` : ""}
+      ${analysis.cadence ? `<span class="cadence-pill">${escapeHtml(cadenceLabel(analysis.cadence, true))}</span>` : ""}
+    </span>` : "";
     el.innerHTML = `
-    <div class="chord-summary-row">
-      <span class="chord-name-badge" style="background:${color2}22;border-left:3px solid ${color2}">${chordName}</span>
-      <span class="chord-notes">${notes}</span>
-      ${alts.map(
-      (c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(chordLabel(c))}</button>`
-    ).join("")}
+    <div class="chord-head chord-summary-row">
+      <span class="chord-head-group chord-head-main">
+        <span class="chord-name-badge">${escapeHtml(chordLabel(symbol))}</span>
+        <span class="chord-notes">${notesOf(detection.notes)}</span>
+      </span>
+      ${degree}
+      ${from}
+      ${alts.length ? `<span class="chord-head-group chord-head-alts">
+        <span class="chord-head-label">${escapeHtml(t("head.also"))}</span>
+        ${alts.map((c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(chordLabel(c))}</button>`).join("")}
+      </span>` : ""}
     </div>`;
     el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
       btn.addEventListener("click", () => onAltSelect2(parseInt(btn.dataset.idx)));
     });
   }
-  function renderZone1Analysis(detection, analysis, noteSet2, fieldsVisible, scale, onAltSelect2) {
-    renderChordSummary(detection, onAltSelect2);
+  function renderZone1Analysis(detection, analysis, noteSet2, fieldsVisible, scale, onAltSelect2, head = { from: null, fromRoman: null, fromFunction: null }) {
+    renderChordSummary(detection, analysis, head, onAltSelect2);
     const el = document.getElementById("analysis-content");
     if (!el) return;
     el.style.fontSize = scale + "px";
@@ -4123,12 +4166,12 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     const strip = document.createElement("div");
     strip.className = "history-strip";
     const shown = entries.map((e) => ({ ...e, symbol: spellChordSymbol(e.symbol, activeKey) }));
-    const steps = analyzeChordProgression(shown.map((e) => e.symbol).reverse(), activeKey).reverse();
+    const steps2 = analyzeChordProgression(shown.map((e) => e.symbol).reverse(), activeKey).reverse();
     shown.forEach((entry, i) => {
-      const older = i + 1 < shown.length ? steps[i + 1] : null;
+      const older = i + 1 < shown.length ? steps2[i + 1] : null;
       const cadence = older?.cadence ?? null;
-      const modulation = older && steps[i].key && steps[i].key !== older.key ? steps[i].key : null;
-      const analysis = steps[i].info;
+      const modulation = older && steps2[i].key && steps2[i].key !== older.key ? steps2[i].key : null;
+      const analysis = steps2[i].info;
       const roman = analysis?.roman ?? "\u2014";
       const fn = analysis?.function ?? "unknown";
       const color2 = FUNCTION_COLORS[fn] ?? FUNCTION_COLORS.unknown;
@@ -4146,7 +4189,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         if (entry.notes.length > 0) playNoteNames(entry.notes);
         else playChord(entry.symbol);
       });
-      const inKey = steps[i].key ? ` (${t("history.chip.inKey", { roman, key: keyLabel(steps[i].key) })})` : "";
+      const inKey = steps2[i].key ? ` (${t("history.chip.inKey", { roman, key: keyLabel(steps2[i].key) })})` : "";
       chip.title = `${chordLabel(entry.symbol)}${inKey} \u2014 ${t("history.chip.actions")}`;
       chip.draggable = true;
       chip.addEventListener("dragstart", (e) => {
@@ -4766,9 +4809,23 @@ ${explainCadence(cadence)}` : "");
     }
   }
 
+  // src/ui/icons.ts
+  var line = (body) => `<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  var ICONS = {
+    keyboard: line('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h1M10 10h1M14 10h1M18 10h0M7 14h10"/>'),
+    mic: line('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'),
+    play: '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>',
+    layout: line('<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>'),
+    present: line('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
+    views: line('<rect x="3" y="7" width="14" height="13" rx="1.5"/><path d="M7 4h14v13"/>'),
+    settings: line('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+    more: '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>'
+  };
+  var LOGO = `<svg class="logo-mark" width="26" height="26" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="124" fill="var(--logo-bg)"/><g fill="var(--logo-ink)"><path d="M146 206 Q272 152 398 142 L398 93.1 Q272 101.6 146 154 Z"/><path d="M155 186.6 L155 376.2 M273 147.1 L273 338.2 M389 127.2 L389 302.2" fill="none" stroke="var(--logo-ink)" stroke-width="18" stroke-linecap="round"/><path d="M94 384 C94 367.1 110.1 358 130 358 C153.5 358 166 369.6 166 384 C166 395.8 149.9 411.9 130 410 C106.5 410 94 398.4 94 384 Z" transform="rotate(-24 130 384)"/><path d="M212 346 C212 329.1 228.1 320 248 320 C271.5 320 284 331.6 284 346 C284 357.8 267.9 373.9 248 372 C224.5 372 212 360.4 212 346 Z" transform="rotate(-24 248 346)"/><path d="M328 310 C328 293.1 344.1 284 364 284 C387.5 284 400 295.6 400 310 C400 321.8 383.9 337.9 364 336 C340.5 336 328 324.4 328 310 Z" transform="rotate(-24 364 310)"/></g></svg>`;
+
   // src/view/channel.ts
   var VIEW_NAMES = ["chord", "staff", "cof", "piano", "guitar"];
-  var VIEW_BACKGROUNDS = { green: "#00ff00", magenta: "#ff00ff", black: "#000000", dark: "#1a1a2e" };
+  var VIEW_BACKGROUNDS = { green: "#00ff00", magenta: "#ff00ff", black: "#000000", dark: "#141414" };
   var NAME = "modus-view";
   function open() {
     try {
@@ -4909,23 +4966,23 @@ ${explainCadence(cadence)}` : "");
   var PRESET_IDS = ["standard", "study", "class", "transcription", "recording"];
   var grid = (specs) => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }));
   var PRESETS = {
-    // Everything, as the page was before panels could move
+    // Everything but Velocity (in the layout menu): the chord as a header across the page, the four
+    // diagrams under it, the key and its explanation, then the piano and the practice panels
     standard: grid([
-      ["chord", 0, 0, 3, 3],
-      ["staff", 0, 3, 3, 8],
-      ["analysis", 3, 0, 3, 11],
-      ["cof", 6, 0, 3, 7],
-      ["guitar", 9, 0, 3, 11],
-      ["velocity", 6, 7, 3, 4],
-      ["key", 0, 11, 8, 11],
-      ["explain", 8, 11, 4, 11],
-      ["piano", 0, 22, 12, 5],
-      ["progressions", 0, 27, 12, 4],
-      ["ear", 0, 31, 4, 5],
-      ["tuner", 4, 31, 3, 5],
-      ["player", 7, 31, 5, 5],
-      ["history", 0, 36, 12, 3],
-      ["song", 0, 39, 12, 12]
+      ["chord", 0, 0, 12, 3],
+      ["staff", 0, 3, 3, 10],
+      ["analysis", 3, 3, 3, 10],
+      ["cof", 6, 3, 3, 10],
+      ["guitar", 9, 3, 3, 10],
+      ["key", 0, 13, 7, 11],
+      ["explain", 7, 13, 5, 11],
+      ["piano", 0, 24, 12, 5],
+      ["progressions", 0, 29, 12, 4],
+      ["ear", 0, 33, 4, 5],
+      ["tuner", 4, 33, 3, 5],
+      ["player", 7, 33, 5, 5],
+      ["history", 0, 38, 12, 3],
+      ["song", 0, 41, 12, 12]
     ]),
     // Harmony at the desk: the key and the analysis large, what is played next to them
     study: grid([
@@ -4973,11 +5030,7 @@ ${explainCadence(cadence)}` : "");
   var viewLabel = (v) => t(`view.${v}`);
   var $ = (id) => document.getElementById(id);
   function loadPanels() {
-    return {
-      cofControls: loadBool("panel-cofControls", true),
-      guitarControls: loadBool("panel-guitarControls", true),
-      analysisControls: loadBool("panel-analysisControls", true)
-    };
+    return { guitarControls: loadBool("panel-guitarControls", true) };
   }
   var grid2 = parseGrid(loadJSON("layout", null), MODULE_IDS) ?? PRESETS.standard;
   var savedLayouts = loadSavedLayouts();
@@ -5015,15 +5068,16 @@ ${explainCadence(cadence)}` : "");
     if (shown === isModuleShown(id)) return;
     setGrid(shown ? addCell(grid2, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid2, id));
   }
-  function renderLayout(panels, fieldsVisible) {
-    $("app").innerHTML = buildToolbar() + `<div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, panels, fieldsVisible)).join("")}</main>` + buildSettings();
+  function renderLayout(_panels, fieldsVisible) {
+    $("app").innerHTML = buildToolbar() + `<div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, fieldsVisible)).join("")}</main>` + buildSettings();
     applyGrid();
     wireGrid();
     wireLayoutMenu();
+    wirePanelMenus();
     watchFittedDiagrams();
   }
   function wirePanelToggles(panels) {
-    document.querySelectorAll(".toggle-btn[data-panel]").forEach((btn) => {
+    document.querySelectorAll(".menu-item[data-panel]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const panel = btn.dataset.panel;
         panels[panel] = !panels[panel];
@@ -5033,56 +5087,94 @@ ${explainCadence(cadence)}` : "");
     });
   }
   function applyPanelVisibility(panels) {
-    const cc = document.getElementById("cof-controls");
-    if (cc) cc.style.display = panels.cofControls ? "" : "none";
     setGuitarControlsVisible(panels.guitarControls);
     const gcw = document.getElementById("guitar-ctrl-wrap");
     if (gcw) gcw.style.display = panels.guitarControls ? "" : "none";
-    const ac = document.getElementById("analysis-controls");
-    if (ac) ac.style.display = panels.analysisControls ? "" : "none";
-    ["cofControls", "guitarControls", "analysisControls"].forEach((key) => {
-      const btn = document.querySelector(`.toggle-btn[data-panel="${key}"]`);
-      if (btn) btn.textContent = panels[key] ? "\u25B2" : "\u25BC";
+    document.querySelector('.menu-item[data-panel="guitarControls"]')?.setAttribute("aria-pressed", String(panels.guitarControls));
+  }
+  function wirePanelMenus() {
+    let open2 = null;
+    const close = (focus = false) => {
+      if (!open2) return;
+      open2.menu.hidden = true;
+      open2.btn.setAttribute("aria-expanded", "false");
+      open2.btn.closest(".module")?.classList.remove("module-menu-open");
+      if (focus) open2.btn.focus();
+      open2 = null;
+    };
+    document.addEventListener("click", (e) => {
+      const target = e.target;
+      const btn = target.closest(".module-more");
+      if (btn) {
+        const was = open2?.btn === btn;
+        close();
+        if (was) return;
+        const menu = $(`menu-${btn.dataset.menu}`);
+        menu.hidden = false;
+        btn.setAttribute("aria-expanded", "true");
+        btn.closest(".module")?.classList.add("module-menu-open");
+        open2 = { btn, menu };
+        return;
+      }
+      if (open2 && !open2.menu.contains(target)) close();
     });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && open2) {
+        e.stopPropagation();
+        close(true);
+      }
+    }, true);
   }
   function buildToolbar() {
     return `
     <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t("a11y.toolbar")}">
-      <span id="midi-status" class="midi-status">MIDI: \u2014</span>
-      <select id="midi-device" class="ctrl-select" aria-label="${t("a11y.midiDevice")}"></select>
-      <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t("mode.normal.title")}">${t("mode.normal")}</button>
-      <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t("mode.hold.title")}">${t("mode.hold")}</button>
-      <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t("mode.arpeggio.title")}">${t("mode.arpeggio")}</button>
-      <button id="btn-keyboard" class="mode-btn" title="${t("keyboard.title")}">\u2328</button>
-      <button id="btn-mic" class="mode-btn" title="${t("mic.title")}">\u{1F3A4}</button>
-      <span id="keyboard-status" class="auto-key-label"></span>
-      <select id="key-select" class="ctrl-select" aria-label="${t("a11y.key")}">
-        <option value="">${t("key.auto")}</option>
-        ${ALL_KEYS.map((k) => `<option value="${k}">${keyLabel(k)}</option>`).join("")}
-      </select>
-      <span id="auto-key-label" class="auto-key-label"></span>
-      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t("typed.placeholder")}" title="${t("typed.title")}" autocomplete="off" spellcheck="false">
-      <span class="toolbar-sep"></span>
-      <div id="audio-progress" class="audio-progress" title="${t("audio.title")}">
-        <div id="audio-progress-fill" class="audio-progress-fill"></div>
-        <span id="audio-status" class="audio-status">${t("audio.idle")}</span>
+      <span class="brand" title="Modus">${LOGO}<span class="brand-name">modus</span></span>
+      <div class="tb-group" role="group" aria-label="${t("a11y.group.input")}">
+        <span id="midi-status" class="midi-status">MIDI</span>
+        <select id="midi-device" class="ctrl-select" aria-label="${t("a11y.midiDevice")}"></select>
+        <div class="seg" role="group" aria-label="${t("a11y.group.mode")}">
+          <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t("mode.normal.title")}">${t("mode.normal")}</button>
+          <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t("mode.hold.title")}">${t("mode.hold")}</button>
+          <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t("mode.arpeggio.title")}">${t("mode.arpeggio")}</button>
+        </div>
+        <button id="btn-keyboard" class="mode-btn icon-btn" title="${t("keyboard.title")}">${ICONS.keyboard}</button>
+        <button id="btn-mic" class="mode-btn icon-btn" title="${t("mic.title")}">${ICONS.mic}</button>
+        <span id="keyboard-status" class="auto-key-label"></span>
       </div>
-      <button id="btn-play-chord" class="ctrl-btn" title="${t("audio.play.title")}">\u25B6</button>
-      <select id="audio-instrument" class="ctrl-select" title="${t("audio.instrument.title")}">
-        ${GM_INSTRUMENT_GROUPS.map(
+      <span class="toolbar-sep" aria-hidden="true"></span>
+      <div class="tb-group" role="group" aria-label="${t("a11y.group.key")}">
+        <select id="key-select" class="ctrl-select" aria-label="${t("a11y.key")}">
+          <option value="">${t("key.auto")}</option>
+          ${ALL_KEYS.map((k) => `<option value="${k}">${keyLabel(k)}</option>`).join("")}
+        </select>
+        <span id="auto-key-label" class="auto-key-label"></span>
+        <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t("typed.placeholder")}" title="${t("typed.title")}" autocomplete="off" spellcheck="false">
+      </div>
+      <span class="toolbar-sep" aria-hidden="true"></span>
+      <div class="tb-group" role="group" aria-label="${t("a11y.group.sound")}">
+        <button id="btn-play-chord" class="ctrl-btn icon-btn" title="${t("audio.play.title")}">${ICONS.play}</button>
+        <select id="audio-instrument" class="ctrl-select" title="${t("audio.instrument.title")}">
+          ${GM_INSTRUMENT_GROUPS.map(
       (g) => `<optgroup label="${t(g.label)}">${g.instruments.map(
         (i) => `<option value="${i}"${i === getCurrentInstrument() ? " selected" : ""}>${i.replace(/_/g, " ")}</option>`
       ).join("")}</optgroup>`
     ).join("")}
-      </select>
-      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t("audio.volume.title")}" class="volume-slider">
+        </select>
+        <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t("audio.volume.title")}" class="volume-slider">
+        <div id="audio-progress" class="audio-progress" title="${t("audio.title")}">
+          <div id="audio-progress-fill" class="audio-progress-fill"></div>
+          <span id="audio-status" class="audio-status">${t("audio.idle")}</span>
+        </div>
+      </div>
+      <span class="toolbar-gap"></span>
+      <div class="tb-group tb-page" role="group" aria-label="${t("a11y.group.page")}">
       <div class="view-menu-wrap">
-        <button id="btn-layout" class="ctrl-btn" title="${t("layout.title")}" aria-haspopup="true" aria-expanded="false">\u25A6</button>
+        <button id="btn-layout" class="ctrl-btn icon-btn ghost" title="${t("layout.title")}" aria-haspopup="true" aria-expanded="false">${ICONS.layout}</button>
         <div id="layout-menu" class="view-menu"></div>
       </div>
       <div class="view-menu-wrap">
-        <button id="btn-present" class="ctrl-btn" title="${t("present.title")}">\u26F6</button>
-        <button id="btn-views" class="ctrl-btn" title="${t("views.title")}" aria-haspopup="true" aria-expanded="false">\u29C9</button>
+        <button id="btn-present" class="ctrl-btn icon-btn ghost" title="${t("present.title")}">${ICONS.present}</button>
+        <button id="btn-views" class="ctrl-btn icon-btn ghost" title="${t("views.title")}" aria-haspopup="true" aria-expanded="false">${ICONS.views}</button>
         <div id="view-menu" class="view-menu">
           <div class="view-menu-title">${t("views.open")}</div>
           ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join("")}
@@ -5100,63 +5192,62 @@ ${explainCadence(cadence)}` : "");
             </div>`).join("")}
         </div>
       </div>
-      <button id="btn-settings" class="help-btn" title="${t("set.title.button")}" aria-haspopup="dialog">\u2699</button>
-      <button id="btn-help" class="help-btn" title="${t("help.title")}">?</button>
+      <button id="btn-settings" class="ctrl-btn icon-btn ghost" title="${t("set.title.button")}" aria-haspopup="dialog">${ICONS.settings}</button>
+      <button id="btn-help" class="ctrl-btn icon-btn ghost help-q" title="${t("help.title")}">?</button>
+      </div>
     </div>`;
   }
-  var toggle = (panel) => `<button class="toggle-btn small" data-panel="${panel}" title="${t("module.controls")}">\u25BC</button>`;
-  function headerTools(id) {
-    if (id === "analysis") return toggle("analysisControls");
-    if (id === "cof") return toggle("cofControls");
-    if (id === "guitar") return toggle("guitarControls");
-    if (id === "piano") return `<button id="btn-piano-prev" class="size-ctrl-btn" title="${t("piano.prev.title")}">\u21E0</button>`;
-    if (id === "key") return `
-    <button id="btn-key-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
-    <button id="btn-key-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
-    <button id="btn-key-7"     class="size-ctrl-btn" title="${t("keyPanel.sevenths.title")}">7</button>
-    <button id="btn-key-neg"   class="size-ctrl-btn" title="${t("keyPanel.neg.title")}">${t("keyPanel.neg")}</button>
-    <button id="btn-key-par"   class="size-ctrl-btn" title="${t("keyPanel.par.title")}">${t("keyPanel.par")}</button>
-    <button id="btn-key-colt"  class="size-ctrl-btn" title="${t("keyPanel.colt.title")}">${t("keyPanel.colt")}</button>`;
-    return "";
+  var item = (id, label, title = "", on) => `<button type="button" id="${id}" class="menu-item"${on !== void 0 ? ` aria-pressed="${on}"` : ""}${title ? ` title="${escapeHtml(title)}"` : ""}><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(label)}</span></button>`;
+  var steps = (minus, plus) => `<div class="menu-row"><span class="menu-label">${t("menu.size")}</span>
+    <button type="button" id="${minus}" class="menu-step" title="${t("ctrl.smaller")}">\u2212</button>
+    <button type="button" id="${plus}" class="menu-step" title="${t("ctrl.larger")}">+</button></div>`;
+  var heading = (text) => `<div class="menu-heading">${escapeHtml(text)}</div>`;
+  function panelMenu(id, fieldsVisible) {
+    switch (id) {
+      case "staff":
+        return `
+      <button type="button" id="btn-staff-clef" class="menu-item menu-cycle" title="${t("staff.clef.title")}"></button>
+      ${item("btn-staff-prev", t("menu.prev"), t("staff.prev.title"))}`;
+      case "piano":
+        return item("btn-piano-prev", t("menu.prev"), t("piano.prev.title"));
+      case "analysis":
+        return `
+      ${steps("btn-analysis-minus", "btn-analysis-plus")}
+      ${heading(t("menu.fields"))}
+      <div class="menu-grid">${ANALYSIS_FIELD_KEYS.map(
+          (f) => `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? " active" : ""}" aria-pressed="${fieldsVisible[f]}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
+        ).join("")}</div>`;
+      case "cof":
+        return `
+      ${item("btn-cof-flat", t("menu.flat"), t("cof.flat.title"))}
+      ${item("btn-cof-sharp", t("menu.sharp"), t("cof.sharp.title"))}
+      <div class="menu-sep"></div>
+      ${item("btn-cof-minor", t("menu.minor"), t("cof.minor.title"))}
+      ${item("btn-cof-deg", t("menu.degrees"), t("cof.degrees.title"))}
+      ${item("btn-cof-7", t("menu.sevenths"), t("cof.sevenths.title"))}`;
+      case "key":
+        return `
+      ${steps("btn-key-minus", "btn-key-plus")}
+      ${item("btn-key-7", t("menu.sevenths"), t("keyPanel.sevenths.title"))}
+      ${item("btn-key-neg", t("menu.negative"), t("keyPanel.neg.title"))}
+      ${item("btn-key-par", t("menu.parallel"), t("keyPanel.par.title"))}
+      ${item("btn-key-colt", t("menu.coltrane"), t("keyPanel.colt.title"))}`;
+      case "guitar":
+        return `<button type="button" class="menu-item" data-panel="guitarControls"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t("menu.controls")}</span></button>`;
+      default:
+        return "";
+    }
   }
-  function moduleBody(id, fieldsVisible) {
+  function moduleBody(id) {
     switch (id) {
       case "chord":
         return '<div id="chord-summary"></div>';
       case "staff":
-        return `
-      <div id="staff-container" class="fit"></div>
-      <div class="ctrl-row module-controls" style="justify-content:center">
-        <button id="btn-staff-clef" class="size-ctrl-btn" title="${t("staff.clef.title")}"></button>
-        <button id="btn-staff-prev" class="size-ctrl-btn" title="${t("staff.prev.title")}">\u21E0</button>
-      </div>`;
+        return '<div id="staff-container" class="fit"></div>';
       case "analysis":
-        return `
-      <div id="analysis-content"></div>
-      <div id="analysis-controls" class="module-controls">
-        <div class="ctrl-row">
-          <button id="btn-analysis-minus" class="size-ctrl-btn" title="${t("ctrl.smaller")}">\u2212</button>
-          <button id="btn-analysis-plus"  class="size-ctrl-btn" title="${t("ctrl.larger")}">+</button>
-        </div>
-        <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
-          ${ANALYSIS_FIELD_KEYS.map(
-          (f) => `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? " active" : ""}"
-              title="${fieldTooltip(f)}">${fieldLabel(f)}</button>`
-        ).join("")}
-        </div>
-      </div>`;
+        return '<div id="analysis-content"></div>';
       case "cof":
-        return `
-      <div id="cof-container" class="fit"></div>
-      <div id="cof-controls" class="module-controls">
-        <div class="ctrl-row">
-          <button id="btn-cof-flat"   class="size-ctrl-btn" title="${t("cof.flat.title")}">b</button>
-          <button id="btn-cof-sharp"  class="size-ctrl-btn" title="${t("cof.sharp.title")}">#</button>
-          <button id="btn-cof-minor"  class="size-ctrl-btn" title="${t("cof.minor.title")}">m</button>
-          <button id="btn-cof-deg"    class="size-ctrl-btn" title="${t("cof.degrees.title")}">\xB0</button>
-          <button id="btn-cof-7"      class="size-ctrl-btn" title="${t("cof.sevenths.title")}">7</button>
-        </div>
-      </div>`;
+        return '<div id="cof-container" class="fit"></div>';
       case "guitar":
         return '<div id="guitar-container"></div>';
       case "key":
@@ -5181,15 +5272,17 @@ ${explainCadence(cadence)}` : "");
         return '<div id="zone3-content"></div>';
     }
   }
-  function moduleFrame(id, _panels, fieldsVisible) {
+  function moduleFrame(id, fieldsVisible) {
+    const menu = panelMenu(id, fieldsVisible);
     return `
     <section id="mod-${id}" class="module module-${id}" data-module="${id}" aria-labelledby="mod-${id}-title">
       <header class="module-header" title="${t("module.drag")}" tabindex="0" aria-label="${t("a11y.panelKeys", { name: t(`module.${id}`) })}">
         <span class="module-title" id="mod-${id}-title">${t(`module.${id}`)}</span>
-        <span class="module-tools">${headerTools(id)}</span>
+        ${menu ? `<button class="module-more" data-menu="${id}" title="${t("menu.options")}" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${id}">${ICONS.more}</button>` : ""}
         <button class="module-close" data-close="${id}" title="${t("module.hide")}">\xD7</button>
       </header>
-      <div class="module-body">${moduleBody(id, fieldsVisible)}</div>
+      ${menu ? `<div id="menu-${id}" class="module-menu" role="group" aria-label="${t("menu.optionsOf", { name: t(`module.${id}`) })}" hidden>${menu}</div>` : ""}
+      <div class="module-body">${moduleBody(id)}</div>
       <div class="module-resize" title="${t("module.resize")}"></div>
     </section>`;
   }
@@ -5317,7 +5410,7 @@ ${explainCadence(cadence)}` : "");
       menu.classList.toggle("open");
     });
     document.addEventListener("click", (e) => {
-      if (!menu.contains(e.target) && e.target !== $("btn-layout")) menu.classList.remove("open");
+      if (!menu.contains(e.target) && !$("btn-layout").contains(e.target)) menu.classList.remove("open");
     });
     menu.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -5408,8 +5501,8 @@ ${explainCadence(cadence)}` : "");
     const low = Math.min(3, ...octaves), high = Math.max(4, ...octaves);
     return { from: `C${Math.max(0, low)}`, to: `B${Math.min(8, high)}` };
   }
-  function renderPiano(container, noteNames, chordSymbol, onPress, prevNotes = null) {
-    const color2 = chordSymbol ? chordColor(chordSymbol) : neutralColor();
+  function renderPiano(container, noteNames, fn, onPress, prevNotes = null) {
+    const color2 = functionColor(fn);
     const now = new Set(noteNames.map(noteNameToMidi));
     const before = (prevNotes ?? []).filter((n) => !now.has(noteNameToMidi(n)));
     const keys = [...noteNames, ...before];
@@ -5498,9 +5591,10 @@ ${explainCadence(cadence)}` : "");
     const label = (x, y, font, fill, main, sub, subFill) => sub ? `<text x="${x}" y="${y - font * 0.5}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text><text x="${x}" y="${y + font * 0.72}" text-anchor="middle" dominant-baseline="middle" font-size="${font * 0.85}" fill="${subFill}" pointer-events="none">${sub}</text>` : `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="${font}" fill="${fill}" pointer-events="none">${main}</text>`;
     const TIP = t("cof.segment.tip");
     const diatonicPos = activePos !== -1 ? /* @__PURE__ */ new Set([(activePos + 11) % 12, activePos, (activePos + 1) % 12]) : /* @__PURE__ */ new Set();
+    const chordFn = activeChord ? romanInKey(activeChord, activeKey)?.function ?? null : null;
     const c = {
       tonic: color("cof-tonic"),
-      chord: color("cof-chord"),
+      chord: functionColor(chordFn, "cof-chord"),
       diatonic: color("cof-diatonic"),
       diatonicStroke: color("cof-diatonic-stroke"),
       segment: color("cof-segment"),
@@ -5604,7 +5698,7 @@ ${explainCadence(cadence)}` : "");
       el.innerHTML = "";
       return;
     }
-    const fill = s.symbol ? chordColor(s.symbol) : neutralColor();
+    const fill = s.symbol ? functionColor(s.function, "text-strong") : color("text-strong");
     const detail = s.kind === "chord" && s.roman && s.roman !== "?" ? [s.roman, s.function && s.function !== "unknown" ? t(`fn.${s.function}`) : null].filter(Boolean).join(" \xB7 ") : "";
     el.innerHTML = `
     <div class="view-chord-name" style="color:${fill}">${escapeHtml(s.label)}</div>
@@ -5620,7 +5714,7 @@ ${explainCadence(cadence)}` : "");
       inner.style.width = "100%";
     } else if (view === "cof") renderCircleOfFifths(el, s.key, s.symbol, () => {
     }, 400, { ...cofOptions(s.key), backdrop: color("bg") });
-    else if (view === "piano") renderPiano(el, s.notes, s.symbol);
+    else if (view === "piano") renderPiano(el, s.notes, s.symbol ? s.function : null);
     else if (view === "guitar") renderGuitar(el, s.symbol, s.notes, s.guitarVoicing);
     fitSvg(el.querySelector("svg"));
   }
@@ -5731,11 +5825,11 @@ ${explainCadence(cadence)}` : "");
       return;
     }
     const button = (symbol, cls, title) => `<button class="key-chord ${cls}${sameChord(symbol, activeChord) ? " active" : ""}" data-chord="${escapeHtml(symbol)}"
-      title="${escapeHtml(title)}" style="border-left-color:${chordColor(symbol)}">${escapeHtml(chordLabel(symbol))}</button>`;
+      title="${escapeHtml(title)}">${escapeHtml(chordLabel(symbol))}</button>`;
     const cell = (c) => `
     <div class="key-cell">
       <span class="key-roman">${escapeHtml(c.roman)}</span>
-      ${button(c.symbol, "", describe(c))}
+      ${button(c.symbol, `key-fnb-${c.function}`, describe(c))}
       ${c.alternative ? button(c.alternative.symbol, "key-alt", `${describe(c.alternative)} \xB7 ${t("keyPanel.harmonicMinor")}`) : ""}
       <span class="key-function key-fn-${c.function}" title="${functionName(c.function)}">${c.function === "unknown" ? "\xB7" : c.function}</span>
     </div>`;
@@ -5756,11 +5850,11 @@ ${explainCadence(cadence)}` : "");
       html += `<div class="key-parallel"><div class="key-section-label" title="${t("keyPanel.parallel.title")}">${t("keyPanel.parallel")}</div><div class="key-mode-grid">`;
       html += map.parallel.map((row2) => `
       <div class="key-mode-row">
-        <span class="key-mode-name">${escapeHtml(row2.mode)}</span>
+        <span class="key-mode-name">${escapeHtml(scaleLabel(row2.mode))}</span>
         <div class="key-mode-chords">${row2.chords.map((c) => `
           <span class="key-mode-chord">
             <span class="key-roman">${escapeHtml(c.roman)}</span>
-            ${button(c.symbol, c.characteristic ? "key-characteristic" : "", [describe(c), t("keyPanel.from", { mode: row2.mode }), c.characteristic ? t("keyPanel.characteristic") : ""].filter(Boolean).join(" \xB7 "))}
+            ${button(c.symbol, c.characteristic ? "key-characteristic" : "", [describe(c), t("keyPanel.from", { mode: scaleLabel(row2.mode) }), c.characteristic ? t("keyPanel.characteristic") : ""].filter(Boolean).join(" \xB7 "))}
           </span>`).join("")}
         </div>
       </div>`).join("") + "</div></div>";
@@ -6348,10 +6442,10 @@ ${explainCadence(cadence)}` : "");
     wrap.style.borderLeft = `3px solid ${color2}`;
     const secHeader = document.createElement("div");
     secHeader.className = "section-header";
-    const toggle2 = document.createElement("span");
-    toggle2.textContent = section2.collapsed ? "\u25B6" : "\u25BC";
-    toggle2.className = "section-toggle";
-    toggle2.addEventListener("click", () => {
+    const toggle = document.createElement("span");
+    toggle.textContent = section2.collapsed ? "\u25B6" : "\u25BC";
+    toggle.className = "section-toggle";
+    toggle.addEventListener("click", () => {
       _song = updateSection(_song, section2.id, { collapsed: !section2.collapsed });
       saveSong(_song);
       h.onSongChange(_song);
@@ -6453,7 +6547,7 @@ ${explainCadence(cadence)}` : "");
     });
     delBtn.style.color = "var(--danger-soft)";
     delBtn.title = t("section.delete.title");
-    secHeader.append(dragHandle, toggle2, nameInput, swatchEl, repeatBadge, dupBtn, delBtn);
+    secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn);
     const addMeasureBtn = makeSmallBtn(t("section.addBar"), () => {
       _song = addMeasure(_song, section2.id);
       saveSong(_song);
@@ -7003,14 +7097,14 @@ ${explainCadence(cadence)}` : "");
     const bars = entry.romanNumerals.flatMap((tokens, bar) => tokens.trim().split(/\s+/).map(() => bar));
     const chords = tryUMT("progressions", () => UMT.getProgression(id, key).map((c) => c.name), []);
     if (chords.length !== bars.length) return [];
-    const steps = analyzeChordProgression(chords, key, BLUES.includes(id) ? "blues" : void 0);
+    const steps2 = analyzeChordProgression(chords, key, BLUES.includes(id) ? "blues" : void 0);
     return chords.map((symbol, i) => ({
       symbol,
       bar: bars[i],
-      roman: steps[i].info?.roman ?? "\u2014",
-      fn: steps[i].info?.function ?? "unknown",
-      cadence: i > 0 ? steps[i - 1].cadence : null,
-      modulation: i > 0 && steps[i].key && steps[i].key !== steps[i - 1].key ? steps[i].key : null
+      roman: steps2[i].info?.roman ?? "\u2014",
+      fn: steps2[i].info?.function ?? "unknown",
+      cadence: i > 0 ? steps2[i - 1].cadence : null,
+      modulation: i > 0 && steps2[i].key && steps2[i].key !== steps2[i - 1].key ? steps2[i].key : null
     }));
   }
   var FUNCTION_COLORS2 = {
@@ -7133,8 +7227,8 @@ ${explainCadence(c.cadence)}` : ""}`;
       const low = 55 + Math.floor(rng() * 12);
       const [a, b] = [midiToNoteName(low), midiToNoteName(low + n)];
       const play = getPref("ear-interval-play");
-      const steps2 = play === "harmonic" ? [[a, b]] : play === "down" ? [[b], [a], [a, b]] : [[a], [b], [a, b]];
-      return { mode: mode4, answer: String(n), steps: steps2, symbol: null, prev: null, key: null };
+      const steps3 = play === "harmonic" ? [[a, b]] : play === "down" ? [[b], [a], [a, b]] : [[a], [b], [a, b]];
+      return { mode: mode4, answer: String(n), steps: steps3, symbol: null, prev: null, key: null };
     }
     if (mode4 === "chord") {
       const suffix = pick(earAnswers("chord"), rng);
@@ -7145,9 +7239,9 @@ ${explainCadence(c.cadence)}` : ""}`;
     const answer = pick(earAnswers("cadence"), rng);
     const key = pick(ALL_KEYS.filter((k) => k.endsWith("Major")), rng);
     const chords = tryUMT("roman numerals", () => UMT.parseRomanProgression(`I ${CADENCES2[answer].numerals}`, key), []);
-    const steps = chords.map((c) => voiceNear(chordNoteNames(c.name), c.rootStep + 9));
+    const steps2 = chords.map((c) => voiceNear(chordNoteNames(c.name), c.rootStep + 9));
     const symbols = chords.map((c) => c.name);
-    return { mode: mode4, answer, steps, symbol: symbols[2] ?? null, prev: symbols[1] ?? null, key };
+    return { mode: mode4, answer, steps: steps2, symbol: symbols[2] ?? null, prev: symbols[1] ?? null, key };
   }
   function answerLabel(mode4, answer) {
     if (mode4 === "interval") return answer === "12" ? t("interval.octave") : t(`interval.${answer}`);
@@ -7415,7 +7509,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const mode4 = getMicMode();
     container.innerHTML = `
     <div class="tuner-head">
-      <button id="tuner-mic" class="ctrl-btn${on ? " active-mode" : ""}" title="${escapeHtml(t("mic.title"))}">\u{1F3A4} ${escapeHtml(t(on ? "mic.on" : "mic.off"))}</button>
+      <button id="tuner-mic" class="ctrl-btn${on ? " active-mode" : ""}" title="${escapeHtml(t("mic.title"))}">${ICONS.mic}${escapeHtml(t(on ? "mic.on" : "mic.off"))}</button>
       ${MIC_MODES.map((m) => `<button class="size-ctrl-btn tuner-mode${m === mode4 ? " active" : ""}" data-mode="${m}" title="${escapeHtml(t(`mic.mode.${m}.title`))}">${escapeHtml(t(`mic.mode.${m}`))}</button>`).join("")}
     </div>
     <div class="tuner-note">\u2014</div>
@@ -7459,8 +7553,8 @@ ${explainCadence(c.cadence)}` : ""}`;
   var analysisFieldsVisible = Object.fromEntries(
     ANALYSIS_FIELD_KEYS.map((f) => [f, loadBool(`analysis-field-${f}`, true)])
   );
-  var analysisScale = loadNumber("analysis-scale", 11, 8, 20);
-  var keyScale = loadNumber("key-scale", 11, 8, 20);
+  var analysisScale = loadNumber("analysis-scale", 14, 10, 24);
+  var keyScale = loadNumber("key-scale", 13, 10, 24);
   var keySevenths = loadBool("key-sevenths", false);
   var keyShowNegative = loadBool("key-show-negative", true);
   var keyShowParallel = loadBool("key-show-parallel", true);
@@ -7665,14 +7759,13 @@ ${explainCadence(c.cadence)}` : ""}`;
     for (const [id, acc] of [["btn-cof-flat", "flat"], ["btn-cof-sharp", "sharp"]]) {
       const btn = $2(id);
       btn.classList.toggle("active", used === acc);
+      btn.setAttribute("aria-pressed", String(used === acc));
       btn.disabled = !!key;
       btn.title = key ? t("cof.spelledInKey", { key: keyLabel(key) }) : acc === "flat" ? t("cof.flat.title") : t("cof.sharp.title");
     }
   }
   function pressed(id, on) {
-    const b = $2(id);
-    b.style.opacity = on ? "1" : "0.4";
-    b.setAttribute("aria-pressed", String(on));
+    $2(id).setAttribute("aria-pressed", String(on));
   }
   function wireLayoutEvents() {
     const updateCofButtons = () => {
@@ -7710,18 +7803,18 @@ ${explainCadence(c.cadence)}` : ""}`;
       save("cof-show-7ths", cofShow7ths);
     });
     $2("btn-analysis-minus").addEventListener("click", () => {
-      analysisScale = Math.max(8, analysisScale - 1);
+      analysisScale = Math.max(10, analysisScale - 1);
       save("analysis-scale", analysisScale);
       renderAnalysisPanel();
     });
     $2("btn-analysis-plus").addEventListener("click", () => {
-      analysisScale = Math.min(20, analysisScale + 1);
+      analysisScale = Math.min(24, analysisScale + 1);
       save("analysis-scale", analysisScale);
       renderAnalysisPanel();
     });
     const clefBtn = $2("btn-staff-clef");
     const showClef = () => {
-      clefBtn.textContent = t(`staff.clef.${staffClef}`);
+      clefBtn.innerHTML = `<span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t("menu.clef")}: ${t(`staff.clef.${staffClef}`)}</span>`;
     };
     showClef();
     clefBtn.addEventListener("click", () => {
@@ -7747,6 +7840,7 @@ ${explainCadence(c.cadence)}` : ""}`;
         analysisFieldsVisible[f] = !analysisFieldsVisible[f];
         save(`analysis-field-${f}`, analysisFieldsVisible[f]);
         $2(`btn-field-${f}`).classList.toggle("active", analysisFieldsVisible[f]);
+        $2(`btn-field-${f}`).setAttribute("aria-pressed", String(analysisFieldsVisible[f]));
         renderAnalysisPanel();
       });
     });
@@ -7765,11 +7859,11 @@ ${explainCadence(c.cadence)}` : ""}`;
       });
     };
     onKeyControl("btn-key-minus", () => {
-      keyScale = Math.max(8, keyScale - 1);
+      keyScale = Math.max(10, keyScale - 1);
       save("key-scale", keyScale);
     });
     onKeyControl("btn-key-plus", () => {
-      keyScale = Math.min(20, keyScale + 1);
+      keyScale = Math.min(24, keyScale + 1);
       save("key-scale", keyScale);
     });
     onKeyControl("btn-key-7", () => {
@@ -7874,7 +7968,17 @@ ${explainCadence(c.cadence)}` : ""}`;
     noteSet = useMelody ? analyzeNoteSet(melody, analysisKey(), true) : notes.length >= 2 ? analyzeNoteSet(notes, analysisKey()) : null;
   }
   function renderAnalysisPanel() {
-    renderZone1Analysis(state.detection, state.analysis, noteSet, analysisFieldsVisible, analysisScale, onAltSelect);
+    const from = selectedSymbol() ? cadencePrev : null;
+    const info = from ? romanInKey(from, analysisKey()) : null;
+    renderZone1Analysis(
+      state.detection,
+      state.analysis,
+      noteSet,
+      analysisFieldsVisible,
+      analysisScale,
+      onAltSelect,
+      { from, fromRoman: info?.roman ?? null, fromFunction: info?.function ?? null }
+    );
   }
   function renderDiagrams() {
     renderZone1Diagrams(displayedNotes(), selectedSymbol());
@@ -8148,7 +8252,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
     const prev = showPrevChord && chordSymbol ? prevVoicing : null;
     renderIfChanged("staff", `${notes}|${key}|${staffClef}|${prev?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev));
-    renderIfChanged("piano", `${notes}|${chordSymbol}|${prev?.join(" ")}|${isNarrow()}`, () => renderPiano($2("piano-container"), noteNames, chordSymbol, onPianoPress, prev));
+    const fn = chordSymbol ? state.analysis?.function ?? null : null;
+    renderIfChanged("piano", `${notes}|${fn}|${prev?.join(" ")}|${isNarrow()}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev));
     const spoken = noteNames.map(noteLabel).join(" ") || t("a11y.nothing");
     for (const [id, key2] of [["staff-container", "a11y.staff"], ["piano-container", "a11y.piano"]]) {
       const el = $2(id);
