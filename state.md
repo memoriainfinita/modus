@@ -84,6 +84,8 @@ Ordered by what each one makes cheaper or depends on: strings, colours and the m
 
 16. [x] Settings, 2026-10-12: ⚙ dialog (design A of the canvas `Modus · Ajustes`, claude.ai artifact 3FNjKBDN) with ten sections, search, reset per section; every fixed timing and option exposed through `settings/prefs.ts`; shortcuts customizable (two keys, conflicts asked); export / import / reset with Undo. MIDI channels, out and Thru moved from the toolbar; language, note names and theme from the help panel, which keeps only help
 
+17. [ ] Interface redesign, chosen 2026-10-12: design A ("Refinado") with the system of C, canvas `Modus · Diseño` (claude.ai artifact CG3J79w1). The chord as a full-width header (name, numeral, function, cadence from the chord before, other readings); one colour code, function T/S/D (the chord-quality colours go; quality is read in the name); controls quiet (ghost buttons, each panel's toggles in a ⋯ menu); type scale 64 / 22 / 15 / 14 / 12, labels #9ca3af (contrast ≥ 4.5:1); panels without border, 10 px apart; toolbar in four groups with line icons; Velocity out of the Standard layout. Same treatment for the light, contrast and paper themes. Also: the key panel's parallel-mode names are in English in the Spanish interface (bug). Open: the logo (canvas, Logo board: current, accent, functions), whether B ("Escenario") becomes the Class layout
+
 ### Unblocked by UMT v0.4.0, to place in the order
 
 The UMT audit ended 2026-10-11 (`umt/docs/auditoria-2026-10.md`).
