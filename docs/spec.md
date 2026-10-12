@@ -50,11 +50,11 @@ Without Web MIDI a dismissible warning says a controller cannot connect. Song bu
 
 ## Layout
 
-Single page, dark or light (see Theme): the toolbar on top, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
+Single page, dark or light (see Theme): the bar on top, the rail down the left, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
 
 Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, Progressions, Ear training, Player, Tuner, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
 
-The ▦ menu in the toolbar:
+The ▦ menu in the rail:
 - **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (the chord and its history across the top, then staff, circle, strings and piano, large, made to be presented with P), Transcription (the player and tuner on top, history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
 - **Saved:** the current layout saved under a name; opened or deleted from the menu
 - **Panels:** a box per panel to show or hide it; a panel shown again goes at the bottom, at its usual size
@@ -67,20 +67,23 @@ The current layout is kept as it is left (`layout`), saved ones under `layouts`;
 
 ## Detector
 
-### Toolbar
+### Bar and rail
 
-- **MIDI status and device selector:** updates on connect/disconnect (Firefox reports neither: the list is rescanned every 2 s while the page is visible, and on focus). The device the user picks, or the first one used, is preferred by name and taken back when it reappears; a fallback used meanwhile does not replace it. Connected shows as a green "MIDI" (the full status in its tooltip).
-- **Mode buttons:** Normal, Hold, Arpeggio (mutually exclusive). They apply to every input: controller, computer keyboard and on-screen piano.
-- **⌨ (M):** the computer keyboard as a piano; octave and velocity shown next to it.
-- **Chord field (/):** type a chord name, in letters or in solfège (Am7, Lam7), Enter shows and plays it like a chord picked from history; an unknown name is marked red.
-- **Key selector:** 24 major/minor keys + Auto. On Auto, the detected key is shown next to it and drives the whole app. The choice belongs to the open song (see Song).
-- **Audio status bar, play button (▶, same as Space), instrument selector, volume.**
-- **⛶ button (P):** presentation mode (see View windows and export).
-- **⧉ button:** view windows for OBS and diagram export (see View windows and export).
-- **⚙ button (,):** Settings (see Settings).
-- **? button:** help: the keys, mouse gestures, what each panel is for, the guided tour.
+**The bar**, left to right (`ui/layout.ts`, wired in `app.ts`):
+- **Rail button:** shows or hides the rail. It is kept as left (`rail-open`); a phone starts without it.
+- **Key:** the key in use, marked "auto" when it is read from what is played. It opens the key menu: Auto, Major or Minor, and the twelve tonics in the order of the circle of fifths. On Auto the key detected drives the whole app; the choice belongs to the open song (see Song).
+- **Field (/):** a chord or an order (`ui/commands.ts`). A chord name, in letters or in solfège (Am7, Lam7), is offered first as "Play …": Enter shows and plays it like a chord picked from history, and an unknown name is marked red. Any other text finds the orders whose name has a word starting with each word typed, without regard to case or accents: a mode, the computer keyboard, the microphone, a key, a layout, showing or hiding a panel, presentation, a view window, Settings, Help, the rail, an instrument. The arrows move through the list and Enter does the one marked; Esc closes the list, and then leaves the field.
+- **Input status:** the device in use, with a dot (green connected, grey none, red disconnected), and the mode. It opens the input menu.
+- **Sound status:** the instrument, with a dot for the soundfont (amber waiting for a gesture, green ready, red failed). It opens the sound menu.
+- **⚙ (,):** Settings (see Settings). **? :** help: the keys, mouse gestures, what each panel is for, the guided tour.
 
-The toolbar keeps what is touched while playing; setup (MIDI channels and out, language, theme…) is in Settings.
+**The rail**, held in view while the page scrolls: the input menu, the sound menu, ⌨ (M, the computer keyboard as a piano), 🎤 (the microphone), then the page: ▦ (layouts and panels), ⛶ (P, presentation) and ⧉ (view windows and export). With the rail hidden nothing is lost: the bar's statuses open the same menus, and the rest is in the field and the shortcuts. On a phone the rail covers the page from the left and a touch outside closes it.
+
+**Menus** (`ui/popover.ts`): one open at a time, next to the button that opened it (beside the rail, or below the bar); a press outside or Esc closes it. Lists of buttons stand for the selects, which stay hidden as the holders of the values.
+- **Input:** the MIDI devices (updated on connect and disconnect; Firefox reports neither, so the list is rescanned every 2 s while the page is visible, and on focus; the device the user picks, or the first one used, is preferred by name and taken back when it reappears, and a fallback used meanwhile does not replace it), the computer keyboard with its octave and velocity, the microphone, and the mode: Normal, Hold, Arpeggio, which apply to every input (controller, computer keyboard, on-screen piano), with what the one chosen does.
+- **Sound:** play (▶, same as Space), volume, the soundfont's status, and the instruments by family with a search; the names are the General MIDI ones, in Spanish in the Spanish interface (`i18n/instruments.ts`).
+
+The bar and the rail keep what is touched while playing; setup (MIDI channels and out, language, theme…) is in Settings.
 
 ### MIDI input
 
@@ -166,7 +169,7 @@ A click on a chord shows and plays it, compared with the one before it in the pr
 
 ### Microphone and tuner
 
-🎤 in the toolbar, or the Tuner panel's button, turns the microphone on (`input/mic.ts`, `input/pitch.ts`); the browser asks for it the first time. It is read raw (no echo cancelling, noise suppression or gain control, which bend a sung note), every 40 ms, below a level gate as silence. Two modes, remembered (`mic-mode`):
+🎤 in the rail or the input menu, or the Tuner panel's button, turns the microphone on (`input/mic.ts`, `input/pitch.ts`); the browser asks for it the first time. It is read raw (no echo cancelling, noise suppression or gain control, which bend a sung note), every 40 ms, below a level gate as silence. Two modes, remembered (`mic-mode`):
 - **Notes:** the one note sung or played, by YIN (de Cheveigné & Kawahara, 2002) over the newest 2048 samples, 50–1600 Hz. A note that holds for three frames (~120 ms) is held in the detector like a key, and let go after five frames (~200 ms) without it; so a melody sung feeds Fits (the scales of the melody) as one played on keys does, and chords played note by note on a guitar are read as an arpeggio is
 - **Chords (experimental):** the pitch classes of a chromagram of the spectrum (60 Hz–2 kHz) with at least 30 % of the strongest, five at most; the strongest pitch class below 260 Hz is the bass (written in octave 3, the rest in octave 4). Clean, sustained chords read best
 
@@ -353,7 +356,7 @@ The tour (`ui/tour.ts`) runs by itself on the first visit: ten steps, each dimmi
 
 ## Settings
 
-⚙ in the toolbar, or its shortcut (`,`), opens a dialog (`ui/settings.ts`): an index of sections on the left, a search across every section at the top, and per section a "Reset this section". Changes apply at once and are kept; Esc or × closes it, and the focus goes back where it was. On a phone the index goes on top.
+⚙ in the bar, or its shortcut (`,`), opens a dialog (`ui/settings.ts`): an index of sections on the left, a search across every section at the top, and per section a "Reset this section". Changes apply at once and are kept; Esc or × closes it, and the focus goes back where it was. On a phone the index goes on top.
 
 - **General:** interface language and note names (both reload the page; history and songs stay), theme (in place), interface size (80–150 %, applied when the slider is let go: rescaling while dragging moves the slider under the pointer), the guided tour
 - **Input and output:** input channel (only notes and pedal on that channel are read; a note let in is always let out on its own channel, and a pedal held is released when the filter changes), MIDI out port, output channel, Thru (see MIDI out). The input device and mode stay in the toolbar

@@ -397,9 +397,9 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 .size-ctrl-btn.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .size-ctrl-btn:disabled { cursor: default; opacity: .45; }
 .icon-btn { width: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
-.ghost { border-color: transparent; background: transparent; color: var(--text-muted); }
-.ghost:hover { background: var(--surface); border-color: transparent; color: var(--text); }
-.ghost.active-mode { background: var(--surface); color: var(--accent-text); border-color: transparent; }
+.ctrl-btn.ghost, .ghost { border-color: transparent; background: transparent; color: var(--text-muted); }
+.ctrl-btn.ghost:hover, .ghost:hover { background: var(--surface); border-color: transparent; color: var(--text); }
+.ctrl-btn.ghost.active-mode, .ghost.active-mode { background: var(--surface); color: var(--accent-text); border-color: transparent; }
 .help-q { font-size: 15px; font-weight: 600; }
 .icon { display: block; flex-shrink: 0; }
 
@@ -410,29 +410,122 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 }
 .ctrl-select:hover { border-color: var(--border); }
 
-/* ─── Toolbar ─────────────────────────────────────────────────── */
-/* Four groups: input, key, sound and, on the right, the page */
+/* ─── Bar ─────────────────────────────────────────────────────── */
+/* The rail's button, the brand and the key on the left; the field for a chord or an order in
+   the middle; what comes in and what sounds on the right, each a status that opens its menu */
 .toolbar {
-  display: flex; gap: 10px 12px; align-items: center; min-height: 52px; padding: 8px 14px;
-  background: var(--bg-bar); border-bottom: 1px solid var(--line); flex-wrap: wrap;
+  display: flex; gap: 12px; align-items: center; min-height: 52px; padding: 8px 14px 8px 8px;
+  background: var(--bg-bar); border-bottom: 1px solid var(--line);
 }
-.tb-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.tb-page { gap: 2px; margin-left: auto; }   /* on a second row too: its menus open leftwards */
-.toolbar-gap { flex: 1; }
-.brand { display: flex; align-items: center; gap: 8px; margin-right: 4px; user-select: none; }
+.brand { display: flex; align-items: center; gap: 8px; user-select: none; }
 .logo-mark { display: block; border-radius: 6px; }
 .brand-name { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 600; font-size: 19px; color: var(--text-strong); letter-spacing: .02em; }
+.pop-anchor { position: relative; }
+.key-btn {
+  display: flex; align-items: baseline; gap: 8px; height: 36px; padding: 0 10px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--text-strong); font: inherit; cursor: pointer; white-space: nowrap;
+}
+.key-btn:hover, .key-btn[aria-expanded="true"] { background: var(--surface); }
+#key-btn-name { font-size: 16px; font-weight: 700; }
+.key-btn-auto { font-size: 12px; color: var(--text-dim); }
+.tb-search {
+  flex: 0 1 460px; margin: 0 auto; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px;
+  border-radius: 8px; background: var(--surface-2); border: 1px solid transparent; color: var(--text-dim);
+}
+.tb-search:focus-within { border-color: var(--accent); background: var(--surface); }
+.tb-search:has(.invalid) { border-color: var(--danger); }
+.typed-chord { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 14px; outline: none; }
+.typed-chord::placeholder { color: var(--text-dim); }
+.typed-chord.invalid { color: var(--danger-text); }
+.typed-chord:focus-visible { outline: none; }   /* the field's frame shows the focus */
+.sound-menu .audio-progress-fill { opacity: .3; }
+.tb-kbd { font: inherit; font-size: 11px; padding: 0 5px; border: 1px solid var(--border-soft); border-radius: 4px; color: var(--text-dim); }
+.tb-search:focus-within .tb-kbd { display: none; }
+.cmd-results {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 40; max-height: calc(60vh / var(--zoom, 1)); overflow: auto;
+  padding: 6px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 10px; box-shadow: 0 12px 32px var(--shadow);
+}
+.cmd-item { display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 10px; border-radius: 6px; color: var(--text); font-size: 14px; cursor: pointer; }
+.cmd-item[aria-selected="true"] { background: var(--surface-2); color: var(--text-strong); }
+.cmd-hint { margin-left: auto; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+.cmd-none { padding: 8px 10px; color: var(--text-dim); font-size: 13px; }
+.tb-status { display: flex; align-items: center; gap: 2px; }
+.status-btn {
+  display: flex; align-items: center; height: 32px; padding: 0 8px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--text-muted); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+.status-btn:hover, .status-btn[aria-expanded="true"] { background: var(--surface); color: var(--text); }
+/* A dot for the state (--dot: green connected or ready, amber waiting, red failed), then the name */
+.midi-status, .sound-status { display: inline-flex; align-items: center; gap: 6px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
+.midi-status::before, .sound-status::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--dot, var(--text-dim)); }
+.status-sub::before { content: '·'; margin: 0 5px; }
 .seg { display: flex; border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; }
 .seg .mode-btn { border: 0; border-radius: 0; height: 28px; }
 .seg .mode-btn + .mode-btn { border-left: 1px solid var(--border-soft); }
-.midi-status { font-size: 12px; color: var(--text-dim); display: inline-flex; align-items: center; gap: 6px; }
-.midi-status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-#audio-instrument { max-width: 140px; }
+.seg-full { display: grid; grid-template-columns: repeat(3, 1fr); }
 .auto-key-label { font-size: 12px; color: var(--text-muted); }
 .auto-key-label:empty { display: none; }
-.toolbar-sep { width: 1px; height: 24px; background: var(--line); }
+
+/* ─── Rail ────────────────────────────────────────────────────── */
+/* Icons down the left of the panels, held in view while the page scrolls; hidden at will */
+.workspace { flex: 1; display: flex; align-items: stretch; min-height: 0; }
+.work-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rail-col { flex: none; width: 60px; background: var(--bg-bar); border-right: 1px solid var(--line); }
+.rail {
+  position: sticky; top: 0; z-index: 30; height: calc(100vh / var(--zoom, 1)); box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0;
+}
+body.rail-hidden .rail-col { display: none; }
+.rail-btn {
+  position: relative; width: 44px; height: 44px; flex: none; border: 0; border-radius: 8px; background: transparent;
+  color: var(--text-muted); display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.rail-btn .icon { width: 20px; height: 20px; }
+.rail-btn:hover, .rail-btn[aria-expanded="true"] { background: var(--surface); color: var(--text); }
+.rail-btn.active-mode { background: var(--surface); color: var(--accent-text); }
+.rail-dot { position: absolute; right: 9px; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); }
+.rail-sep { width: 28px; height: 1px; background: var(--line); margin: 6px 0; }
+
+/* ─── Menus of the bar and the rail (ui/popover.ts) ───────────── */
+.view-menu.pop-menu {
+  width: 300px; box-sizing: border-box; padding: 12px; gap: 8px; z-index: 50;
+  background: var(--surface); border-radius: 10px; box-shadow: 0 12px 32px var(--shadow);
+  max-height: calc(100vh / var(--zoom, 1) - 80px); overflow: auto;
+}
+.pop-anchor > .pop-menu { left: 0; right: auto; top: calc(100% + 6px); }
+.pop-anchor.pop-end > .pop-menu { left: auto; right: 0; }
+.pop-menu.pop-side { left: calc(100% + 8px); right: auto; }
+.choice-list { display: flex; flex-direction: column; gap: 2px; }
+.choice-scroll { max-height: 280px; overflow: auto; }
+.choice-row {
+  display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 10px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; flex: none;
+}
+.choice-row .icon { color: var(--text-muted); }
+.choice-row:hover { background: var(--surface-2); }
+.choice-row:disabled { color: var(--text-dim); cursor: default; background: transparent; }
+.choice-row[aria-pressed="true"] { background: var(--surface-2); color: var(--text-strong); font-weight: 600; }
+.choice-row[aria-pressed="true"]::after { content: '✓'; margin-left: auto; color: var(--accent-text); }
+.choice-row.active-mode { background: var(--surface-2); color: var(--accent-text); }
+.choice-row.active-mode .icon { color: var(--accent-text); }
+.choice-hint { margin-left: auto; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+.choice-group { font-size: 11px; color: var(--text-dim); padding: 8px 10px 2px; }
+.sound-row { display: flex; align-items: center; gap: 10px; }
+.play-btn {
+  flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--accent); color: var(--on-accent);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.view-menu.key-menu { width: 340px; }
+.key-menu-top { display: flex; align-items: center; gap: 10px; }
+.key-pick-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.choice-chip {
+  height: 34px; padding: 0 10px; border: 1px solid transparent; border-radius: 6px; background: var(--surface-2);
+  color: var(--text); font: inherit; font-size: 13px; cursor: pointer;
+}
+.choice-chip:hover { border-color: var(--border); }
+.choice-chip.active-mode { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .audio-progress {
-  position: relative; width: 64px; height: 18px;
+  position: relative; width: 100%; height: 18px;
   background: var(--surface); border-radius: 4px; overflow: hidden;
 }
 .audio-progress-fill {
@@ -451,7 +544,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 }
 .ctrl-select.invalid { border-color: var(--danger); }
 .volume-slider {
-  width: 70px; height: 4px; accent-color: var(--accent); cursor: pointer; vertical-align: middle;
+  flex: 1; min-width: 0; height: 4px; accent-color: var(--accent); cursor: pointer; vertical-align: middle;
 }
 
 /* ─── Layout grid ─────────────────────────────────────────────── */
@@ -572,8 +665,14 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
   #key-container .key-main { width: 100%; }
   #key-container .key-mode-row { flex-wrap: wrap; }
   .module-chord .module-header { opacity: 1; position: static; }
-  .toolbar { padding: 8px 10px; }
-  .toolbar-sep, .brand-name { display: none; }
+  .toolbar { padding: 8px 10px; flex-wrap: wrap; gap: 6px 8px; }
+  .brand-name, .status-sub, .tb-kbd { display: none; }
+  .tb-search { order: 10; flex: 1 1 100%; margin: 0; }
+  .midi-status, .sound-status { max-width: 92px; }
+  /* The rail covers the page from the left, over a dimmed page; its menus open beside it */
+  body:not(.rail-hidden) .rail-col { position: fixed; left: 0; top: 0; bottom: 0; z-index: 60; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .45); }
+  .rail { height: 100%; }
+  .pop-menu.pop-side { position: fixed; left: 68px; right: 8px; width: auto; }
   :is(.module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) .module-body { overflow: visible; flex: none; container-type: inline-size; }
   .module-header { cursor: default; }
   .module-resize { display: none; }
@@ -581,7 +680,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 
 /* Presentation: the layout alone, its rows filling the window (view/presentation.ts) */
 body.presenting { overflow: hidden; }
-body.presenting .toolbar, body.presenting #midi-banner, body.presenting .module-header,
+body.presenting .toolbar, body.presenting .rail-col, body.presenting #midi-banner, body.presenting .module-header,
 body.presenting .module-resize, body.presenting .module-menu, body.presenting #guitar-ctrl-wrap,
 body.presenting .chord-head-alts { display: none !important; }
 body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
@@ -1070,8 +1169,6 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 /* ─── Input without a controller ───────────────────────────────── */
 /* Dots and labels drawn over lit piano keys must not catch the press meant for the key */
 #piano-container circle, #piano-container text { pointer-events: none; }
-.typed-chord { width: 7.5em; }
-.typed-chord.invalid { border-color: var(--danger); color: var(--danger-text); }
 
 /* ─── View windows (OBS) ──────────────────────────────────────── */
 .view-menu-wrap { position: relative; }

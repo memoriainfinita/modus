@@ -83,7 +83,22 @@ async function openSettings(section) {
   await page.click('#btn-settings')
   await page.click(`.set-nav-item[data-section="${section}"]`)
 }
-async function setKey(key) { await page.selectOption('#key-select', key); await page.waitForTimeout(50) }
+// The key from the bar's key menu: Auto, or Major/Minor and the tonic
+async function setKey(key) {
+  await page.click('#btn-key')
+  if (!key) await page.click('#key-auto')
+  else {
+    await page.click(`#key-menu [data-keymode="${key.endsWith('Minor') ? 'minor' : 'major'}"]`)
+    await page.click(`#key-grid [data-key="${key}"]`)
+  }
+  await page.waitForTimeout(50)
+}
+// The MIDI mode from the input menu (the bar's status opens it), left closed
+async function mode(m) {
+  if (await page.getAttribute('#btn-input-status', 'aria-expanded') !== 'true') await page.click('#btn-input-status')
+  await page.click(`#btn-${m}`)
+  await page.click('#btn-input-status')
+}
 
 async function freshPage() {
   // Dark system theme, the page's look before themes; the light one is checked on its own
@@ -283,10 +298,11 @@ await check('keyboard and screen reader: circle, buttons, panels and chips work 
   assert(await text('.chord-name-badge') === 'G', `Enter on the circle: ${await text('.chord-name-badge')}`)
   await page.waitForFunction(() => document.getElementById('sr-live')?.textContent?.startsWith('G major, V, Dominant'), null, { timeout: 2000 })
   // Space on a focused button presses it, and does not play the chord
+  await page.click('#btn-input-status')
   await page.focus('#btn-hold')
   await page.keyboard.press(' ')
   assert((await page.getAttribute('#btn-hold', 'class')).includes('active'), 'Space did not press Hold')
-  await page.click('#btn-normal')
+  await mode('normal')
   // Panels: arrows move, Shift + arrows resize
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem('layout') ?? 'null')?.find(c => c.id === 'staff') ?? null)
   await page.focus('#mod-staff .module-header')
@@ -364,13 +380,13 @@ await check('shortcuts: a key changed in Settings runs its action; a taken key a
   assert((await page.getAttribute('#btn-hold', 'class')).includes('active'), 'J did not toggle Hold')
   await page.keyboard.press('h')
   assert((await page.getAttribute('#btn-hold', 'class')).includes('active'), 'H still toggles Hold')
-  await page.click('#btn-normal')
+  await mode('normal')
   await openSettings('shortcuts')
   await page.click('[data-key-reset="hold"]')
   await page.keyboard.press('Escape')
   await page.keyboard.press('h')
   assert((await page.getAttribute('#btn-hold', 'class')).includes('active'), 'H not back')
-  await page.click('#btn-normal')
+  await mode('normal')
   await page.keyboard.press(',')
   assert(await page.locator('#settings').isVisible(), ', did not open Settings')
   await page.keyboard.press('Escape')
@@ -447,11 +463,11 @@ await check('MIDI out: previews and the computer keyboard go out; controller not
 })
 
 await check('changing MIDI mode clears a held chord', async () => {
-  await page.click('#btn-hold')
+  await mode('hold')
   await play([60, 64, 67])
   await off([60, 64, 67])
   assert((await text('.chord-name-badge')) === 'C', 'hold keeps chord')
-  await page.click('#btn-normal')
+  await mode('normal')
   assert(await page.locator('.chord-name-badge').count() === 0, 'detector still shows a chord')
 })
 
@@ -893,7 +909,7 @@ const pianoKey = note => page.locator(`#piano-container rect[data-note="${note}"
 const badgeOrNone = async () => (await page.locator('.chord-name-badge').count()) ? text('.chord-name-badge') : null
 
 await check('on-screen piano, Normal: a key sounds in the detector while pressed', async () => {
-  await page.click('#btn-normal')
+  await mode('normal')
   await setKey('')
   // The grand staff makes the page taller: the piano may start below the fold
   await pianoKey('C4').scrollIntoViewIfNeeded()
@@ -908,7 +924,7 @@ await check('on-screen piano, Normal: a key sounds in the detector while pressed
 })
 
 await check('on-screen piano, Hold: each click adds a note, a second click removes it; Esc drops the chord', async () => {
-  await page.click('#btn-hold')
+  await mode('hold')
   for (const n of ['C4', 'E4', 'G4']) await pianoKey(n).click({ force: true })
   assert(await badgeOrNone() === 'C', `after C E G: ${await badgeOrNone()}`)
   await pianoKey('E4').click({ force: true })
@@ -917,7 +933,7 @@ await check('on-screen piano, Hold: each click adds a note, a second click remov
   assert(await badgeOrNone() === 'Cm', `after adding Eb: ${await badgeOrNone()}`)
   await page.keyboard.press('Escape')
   assert(await badgeOrNone() === null, 'Esc did not drop the held chord')
-  await page.click('#btn-normal')
+  await mode('normal')
 })
 
 await check('computer keyboard: M on, A D G is a C chord, H plays A instead of toggling Hold; M off', async () => {
@@ -999,6 +1015,59 @@ const toolbarRows = () => page.evaluate(() => {
   const tops = [...document.getElementById('z1-toolbar').children].filter(el => el.offsetParent && el.offsetWidth)
     .map(el => el.getBoundingClientRect().top)
   return Math.max(...tops) - Math.min(...tops) < 24 ? 1 : 2
+})
+
+await check('the bar\'s field: a chord plays, an order runs by its name', async () => {
+  await page.click('#typed-chord')
+  await page.keyboard.type('arp')
+  const items = await page.locator('#cmd-results .cmd-item').allInnerTexts()
+  assert(items[0]?.startsWith('Mode: Arpeggio'), `results: ${items.join(' | ')}`)
+  await page.keyboard.press('Enter')
+  assert(await page.locator('#btn-arpeggio.active-mode').count() === 1, 'Arpeggio not on')
+  assert(await page.inputValue('#typed-chord') === '', 'field not cleared after an order')
+  await page.click('#typed-chord')
+  await page.keyboard.type('hold')
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('ArrowUp')
+  await page.keyboard.press('Enter')
+  assert(await page.locator('#btn-hold.active-mode').count() === 1, 'Hold not on')
+  await mode('normal')
+  await page.click('#typed-chord')
+  await page.keyboard.type('G7')
+  assert((await text('#cmd-results .cmd-item')).startsWith('Play G7'), 'no Play item first')
+  await page.keyboard.press('Enter')
+  assert((await text('.chord-name-badge')) === 'G7', `typed: ${await text('.chord-name-badge')}`)
+  await page.fill('#typed-chord', '')
+  await page.keyboard.press('Escape')
+})
+
+await check('key menu: Auto, or a key from the circle\'s order; the bar names it', async () => {
+  await setKey('D Major')
+  assert(await page.inputValue('#key-select') === 'D Major', 'key not set')
+  assert((await text('#key-btn-name')) === 'D Major', `bar: ${await text('#key-btn-name')}`)
+  assert(await page.getAttribute('#btn-key', 'aria-expanded') === 'false', 'menu left open')
+  await page.click('#btn-key')
+  const tonics = await page.locator('#key-grid [data-key]').evaluateAll(b => b.map(x => x.dataset.key.split(' ')[0]))
+  assert(tonics.join(' ') === 'F# Db Ab Eb Bb F C G D A E B', `order: ${tonics.join(' ')}`)
+  await page.click('#key-auto')
+  assert(await page.inputValue('#key-select') === '', 'not back on Auto')
+  assert((await text('#key-btn-auto')) === 'auto', 'auto not marked')
+})
+
+await check('the rail hides and stays hidden after a reload; its menus also open from the bar', async () => {
+  await page.click('#btn-rail')
+  assert(!(await page.locator('#rail').isVisible()), 'rail still shown')
+  await page.reload()
+  await page.waitForFunction(() => window.UMT && window.Notae)
+  assert(!(await page.locator('#rail').isVisible()), 'rail back after reload')
+  await page.click('#btn-sound-status')
+  assert(await page.locator('#sound-menu').isVisible(), 'sound menu not open from the bar')
+  await page.fill('#instrument-filter', 'violin')
+  const found = await page.locator('#instrument-list .choice-row').allInnerTexts()
+  assert(found.length === 1 && found[0].startsWith('Violin'), `filtered: ${found.join(' | ')}`)
+  await page.click('#btn-sound-status')
+  await page.click('#btn-rail')
+  assert(await page.locator('#rail').isVisible(), 'rail not back')
 })
 
 await check('toolbar fits on one row in English', async () => {

@@ -2,7 +2,7 @@ import './styles.css'
 import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes, getVelocity, getInputChannel, setInputChannel, setHeardNotes } from './input/midi'
 import { wireComputerKeyboard, toggleComputerKeyboard, isComputerKeyboardOn, computerKeyboardStatus, setComputerKeyboardChange } from './input/computer-keyboard'
 import { analyzeNotes, buildHarmonicAnalysis, analyzeNoteSet, getAutoKey, romanInKey } from './detector/analyzer'
-import { initAudioOnGesture, unlockAudioOnAnyGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
+import { initAudioOnGesture, GM_INSTRUMENT_GROUPS, unlockAudioOnAnyGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
 import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
 import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
 import { openPresentation, closePresentation, isPresenting } from './view/presentation'
@@ -11,7 +11,7 @@ import { renderVelocity } from './diagrams/velocity'
 import type { NoteVelocity } from './diagrams/velocity'
 import { noteNameToMidi } from './theory/notes'
 import { renderGuitar, getStringsView, getGuitarVoicingIndex, setGuitarVoicingChange } from './diagrams/guitar'
-import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS } from './view/channel'
+import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS, VIEW_NAMES } from './view/channel'
 import type { ViewName, ViewBackground, ViewState } from './view/channel'
 import { runViewerFromUrl } from './view/viewer'
 import { exportDiagram } from './ui/export'
@@ -35,17 +35,20 @@ import { renderPlayer } from './ui/player'
 import { getPref, onPrefChange, type PrefName } from './settings/prefs'
 import { renderTuner, updateTuner } from './ui/tuner'
 import { maybeStartTour } from './ui/tour'
+import { wirePopover, closePopover } from './ui/popover'
+import { wireCommandSearch, type Command } from './ui/commands'
+import { instrumentLabel } from './i18n/instruments'
 import { startMic, stopMic, isMicOn } from './input/mic'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames, isKnownChord, readTypedChord, tryParseChord, tryUMT } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
 import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
-import { normalizeKey, keyPrefersSharps } from './theory/keys'
-import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid } from './ui/layout'
+import { normalizeKey, keyPrefersSharps, MAJOR_ROOTS, MINOR_ROOTS } from './theory/keys'
+import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands } from './ui/layout'
 import { applyTheme, onThemeChange, followSystemTheme } from './ui/theme'
 import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang, getLang } from './i18n/i18n'
-import { announce, watchIconButtons, syncExpanded } from './ui/a11y'
+import { announce, watchIconButtons } from './ui/a11y'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -119,21 +122,14 @@ function init() {
 
   buildLayout()
   watchIconButtons($('app'))
-  syncExpanded($('btn-layout'), $('layout-menu'))
-  syncExpanded($('btn-views'), $('view-menu'))
   wireShortcuts()
   wireComputerKeyboard()
   setComputerKeyboardChange(updateComputerKeyboardButton)
-  $('btn-keyboard').addEventListener('click', () => { initAudioOnGesture(); toggleComputerKeyboard() })
-  $('btn-mic').addEventListener('click', toggleMic)
+  document.querySelectorAll('[data-act="keyboard"]').forEach(b => b.addEventListener('click', () => { initAudioOnGesture(); toggleComputerKeyboard() }))
+  document.querySelectorAll('[data-act="mic"]').forEach(b => b.addEventListener('click', toggleMic))
   window.addEventListener('pointerup', onPianoRelease)
   window.addEventListener('pointercancel', onPianoRelease)
-  const chordInput = $('typed-chord') as HTMLInputElement
-  chordInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); submitTypedChord(chordInput) }
-    else if (e.key === 'Escape') chordInput.blur()
-  })
-  chordInput.addEventListener('input', () => chordInput.classList.remove('invalid'))
+  wireBar()
   setModeBtn(getMode())
   renderDetector()
   drawEar()
@@ -381,6 +377,7 @@ function wireLayoutEvents() {
 
   $('key-select').addEventListener('change', (e) => {
     setActiveKey((e.target as HTMLSelectElement).value || null)
+    closePopover()
   })
 
   $('btn-help').addEventListener('click', toggleHelp)
@@ -388,10 +385,12 @@ function wireLayoutEvents() {
 
   $('audio-instrument').addEventListener('change', (e) => {
     setInstrument((e.target as HTMLSelectElement).value)
+    updateSoundStatus()
   })
 
   $('audio-volume').addEventListener('input', (e) => {
     setVolume(parseFloat((e.target as HTMLInputElement).value))
+    updateSoundStatus()
   })
 }
 
@@ -548,7 +547,7 @@ function viewState(): ViewState {
 
 function togglePresentation() {
   if (isPresenting()) { closePresentation(); return }
-  $('view-menu').classList.remove('open')
+  closePopover()
   openPresentation(() => $('btn-present').classList.remove('active-mode'))
   $('btn-present').classList.add('active-mode')
 }
@@ -557,8 +556,7 @@ let viewBackground = loadChoice('view-bg', Object.keys(VIEW_BACKGROUNDS) as View
 
 function wireViewMenu() {
   const menu = $('view-menu')
-  $('btn-views').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open') })
-  document.addEventListener('click', e => { if (!menu.contains(e.target as Node)) menu.classList.remove('open') })
+  wirePopover(menu, [$('btn-views')])
   const bgSel = $('view-bg') as HTMLSelectElement
   bgSel.value = viewBackground
   bgSel.addEventListener('change', () => { viewBackground = bgSel.value as ViewBackground; save('view-bg', viewBackground) })
@@ -568,14 +566,14 @@ function wireViewMenu() {
       const [w, h] = VIEW_WINDOW[view]
       // One window per view: opening it again brings the same window back.
       window.open(viewUrl(view, viewBackground), `modus-view-${view}`, `popup,width=${w},height=${h}`)?.focus()
-      menu.classList.remove('open')
+      closePopover()
     })
   })
   menu.querySelectorAll<HTMLButtonElement>('[data-export]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const ok = await exportDiagram(btn.dataset.export as ExportTarget, btn.dataset.format as 'svg' | 'png', selectedSymbol() ?? analysisKey())
       if (!ok) btn.classList.add('invalid')
-      else menu.classList.remove('open')
+      else closePopover()
     })
   })
   setGuitarVoicingChange(() => publishView())
@@ -753,6 +751,7 @@ function onHistoryChange(entries: HistoryEntry[]) {
 
 function updateAutoKeyLabel() {
   $('auto-key-label').textContent = !state.activeKey && autoKey ? t('key.autoDetected', { key: keyLabel(autoKey) }) : ''
+  updateKeyButton()
 }
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
@@ -798,7 +797,7 @@ function submitTypedChord(input: HTMLInputElement) {
 
 function updateComputerKeyboardButton() {
   const on = isComputerKeyboardOn()
-  $('btn-keyboard').classList.toggle('active-mode', on)
+  document.querySelectorAll('[data-act="keyboard"]').forEach(b => b.classList.toggle('active-mode', on))
   $('keyboard-status').textContent = on ? computerKeyboardStatus() : ''
 }
 
@@ -871,7 +870,7 @@ function onCofClick(chord: string, key: string | null) {
 // ─── Microphone ──────────────────────────────────────────────────────────────
 
 function drawTuner(error?: string) {
-  $('btn-mic').classList.toggle('active-mode', isMicOn())
+  document.querySelectorAll('[data-act="mic"]').forEach(b => b.classList.toggle('active-mode', isMicOn()))
   const el = document.getElementById('tuner-container')
   if (el) renderTuner(el, { toggle: toggleMic }, error)
 }
@@ -1006,24 +1005,21 @@ function refreshDeviceDropdown() {
   sel.innerHTML = devices.length
     ? devices.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join('')
     : `<option>${escapeHtml(t('midi.noDeviceOption'))}</option>`
-  sel.onchange = () => chooseDevice(sel.value)
+  sel.onchange = () => { chooseDevice(sel.value); refreshDeviceDropdown() }
   // Back to the device the user picked when it reappears; a reconnected port gets its
   // message handler back.
   const target = resolveDevice()
   if (target) sel.value = target
 
-  // Connected is shown by the green alone: the toolbar has no room to spare
-  $('midi-status').textContent = devices.length ? 'MIDI' : t('midi.noDevices')
-  $('midi-status').title = devices.length ? t('midi.connected') : t('midi.noDevices')
-  $('midi-status').style.color = devices.length ? 'var(--ok)' : 'var(--text-dim)'
+  // The bar names the device in use; its dot is green when one is connected
+  const current = devices.find(d => d.id === sel.value)
+  setMidiStatus(current ? current.name : t('midi.noDevices'), current ? 'var(--ok)' : 'var(--text-dim)', devices.length ? t('midi.connected') : t('midi.noDevices'))
 
   if (!deviceListenersAttached) {
     deviceListenersAttached = true
     window.addEventListener('midi-devices-changed', () => { refreshDeviceDropdown(); refreshOutputDropdown() })
     window.addEventListener('midi-device-disconnected', () => {
-      $('midi-status').textContent = t('midi.disconnected')
-      $('midi-status').title = t('midi.disconnected')
-      $('midi-status').style.color = 'var(--danger-soft)'
+      setMidiStatus(t('midi.disconnected'), 'var(--danger-soft)', t('midi.disconnected'))
     })
   }
 }
@@ -1161,6 +1157,169 @@ function setModeBtn(mode: MidiMode) {
   document.querySelectorAll<HTMLElement>('.mode-btn[data-mode]').forEach(b => {
     b.classList.toggle('active-mode', b.dataset.mode === mode)
   })
+  $('mode-status').textContent = t(`mode.${mode}`)
+  $('mode-hint').textContent = t(`mode.${mode}.title`)
+}
+
+// ─── Bar and rail ────────────────────────────────────────────────────────────
+
+// Keys in the order of the circle of fifths, by pitch class: Gb Db Ab … B, and their relative minors
+const FIFTHS_MAJOR = [6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11]
+let keyMenuMinor = false
+
+function wireBar() {
+  wirePopover($('input-menu'), [$('rail-input'), $('btn-input-status')])
+  wirePopover($('sound-menu'), [$('rail-sound'), $('btn-sound-status')], () => {
+    const filter = $('instrument-filter') as HTMLInputElement
+    filter.value = ''
+    renderChoices($('audio-instrument') as HTMLSelectElement, $('instrument-list'), '')
+    $('instrument-list').querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'center' })
+  })
+  wirePopover($('key-menu'), [$('btn-key')], () => { keyMenuMinor = !!state.activeKey?.endsWith('Minor'); renderKeyGrid() })
+
+  // The selects hold the values; a list of buttons stands for each
+  mirrorChoices($('midi-device') as HTMLSelectElement, $('midi-device-list'))
+  mirrorChoices($('audio-instrument') as HTMLSelectElement, $('instrument-list'))
+  const filter = $('instrument-filter') as HTMLInputElement
+  filter.addEventListener('input', () => renderChoices($('audio-instrument') as HTMLSelectElement, $('instrument-list'), filter.value))
+
+  $('key-auto').addEventListener('click', () => pickKey(''))
+  document.querySelectorAll<HTMLElement>('[data-keymode]').forEach(b => b.addEventListener('click', () => {
+    keyMenuMinor = b.dataset.keymode === 'minor'
+    renderKeyGrid()
+  }))
+
+  // The rail: shown unless hidden last time; a phone starts without it (it covers the page there)
+  railOpen = loadBool('rail-open', true) && !isNarrow()
+  applyRail()
+  $('btn-rail').addEventListener('click', () => { railOpen = !railOpen; if (!isNarrow()) save('rail-open', railOpen); applyRail() })
+  // On a phone the rail covers its own button: a touch outside it closes it
+  document.addEventListener('pointerdown', e => {
+    if (!railOpen || !isNarrow() || document.querySelector('.rail-col')!.contains(e.target as Node)) return
+    railOpen = false
+    applyRail()
+  }, true)
+
+  const input = $('typed-chord') as HTMLInputElement
+  wireCommandSearch({
+    input,
+    list: $('cmd-results'),
+    chordOf: text => { const symbol = readTypedChord(text); return symbol && isKnownChord(symbol) ? chordLabel(symbol) : null },
+    submitChord: () => submitTypedChord(input),
+    commands: barCommands,
+    playLabel: chord => t('cmd.play', { chord }),
+    noneLabel: q => t('cmd.none', { q }),
+  })
+  updateKeyButton()
+  updateSoundStatus()
+  setAudioStatusDot()
+}
+
+let railOpen = true
+function applyRail() {
+  document.body.classList.toggle('rail-hidden', !railOpen)
+  $('btn-rail').setAttribute('aria-expanded', String(railOpen))
+  if (!railOpen) closePopover()
+}
+
+function pickKey(key: string) {
+  const sel = $('key-select') as HTMLSelectElement
+  sel.value = key
+  sel.dispatchEvent(new Event('change'))
+}
+
+function renderKeyGrid() {
+  document.querySelectorAll<HTMLElement>('[data-keymode]').forEach(b => b.classList.toggle('active-mode', (b.dataset.keymode === 'minor') === keyMenuMinor))
+  $('key-auto').classList.toggle('active-mode', !state.activeKey)
+  const keys = FIFTHS_MAJOR.map(pc => keyMenuMinor ? `${MINOR_ROOTS[(pc + 9) % 12]} Minor` : `${MAJOR_ROOTS[pc]} Major`)
+  $('key-grid').innerHTML = keys.map(k =>
+    `<button class="choice-chip${k === state.activeKey ? ' active-mode' : ''}" data-key="${k}" title="${escapeHtml(keyLabel(k))}">${escapeHtml(noteLabel(k.split(' ')[0]))}</button>`).join('')
+  $('key-grid').querySelectorAll<HTMLElement>('[data-key]').forEach(b => b.addEventListener('click', () => pickKey(b.dataset.key!)))
+}
+
+/** The bar's key: the one fixed, or the one read from what is played, marked auto. */
+function updateKeyButton() {
+  const shown = state.activeKey ?? autoKey
+  $('key-btn-name').textContent = shown ? keyLabel(shown) : t('key.none')
+  $('key-btn-auto').textContent = state.activeKey ? '' : t('key.autoShort').toLowerCase()
+}
+
+function setMidiStatus(text: string, color: string, title: string) {
+  const el = $('midi-status')
+  el.textContent = text
+  el.title = title
+  el.style.setProperty('--dot', color)
+  $('rail-midi-dot').style.background = color
+}
+
+function updateSoundStatus() {
+  const name = instrumentLabel(($('audio-instrument') as HTMLSelectElement).value)
+  $('sound-status').textContent = name
+  const v = Math.round(parseFloat(($('audio-volume') as HTMLInputElement).value) * 100)
+  $('volume-value').textContent = `${v} %`
+}
+
+/** The sound's dot in the bar follows the soundfont: waiting, loading, ready or failed. */
+function setAudioStatusDot() {
+  const status = $('audio-status')
+  const dot = () => {
+    const fill = $('audio-progress-fill').style.background || 'var(--text-dim)'
+    $('sound-status').style.setProperty('--dot', fill)
+  }
+  new MutationObserver(dot).observe(status, { childList: true, characterData: true, subtree: true })
+  dot()
+}
+
+/** Buttons for the options of a select, kept in step with it; a press sets the select. */
+function mirrorChoices(sel: HTMLSelectElement, list: HTMLElement) {
+  const draw = () => renderChoices(sel, list, '')
+  new MutationObserver(draw).observe(sel, { childList: true, subtree: true })
+  sel.addEventListener('change', draw)
+  list.addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-value]')
+    if (!b || b.hasAttribute('disabled')) return
+    sel.value = b.dataset.value!
+    sel.dispatchEvent(new Event('change'))
+  })
+  draw()
+}
+
+function renderChoices(sel: HTMLSelectElement, list: HTMLElement, filter: string) {
+  const q = filter.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  const match = (text: string) => !q || text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().includes(q)
+  const option = (o: HTMLOptionElement) =>
+    `<button class="choice-row" data-value="${escapeHtml(o.value)}" aria-pressed="${o.value === sel.value}"${o.disabled || !o.value && !sel.options.length ? ' disabled' : ''}>${escapeHtml(o.text)}</button>`
+  list.innerHTML = [...sel.children].map(child => {
+    if (child instanceof HTMLOptGroupElement) {
+      const opts = [...child.children].filter((o): o is HTMLOptionElement => o instanceof HTMLOptionElement && match(o.text))
+      return opts.length ? `<div class="choice-group">${escapeHtml(child.label)}</div>${opts.map(option).join('')}` : ''
+    }
+    return child instanceof HTMLOptionElement && match(child.text) ? option(child) : ''
+  }).join('')
+}
+
+/** Everything the bar's field can do by name. */
+function barCommands(): Command[] {
+  const input = t('a11y.group.input')
+  const keyboardOn = isComputerKeyboardOn()
+  return [
+    ...(['normal', 'hold', 'arpeggio'] as const).map(m => ({ label: t('cmd.mode', { mode: t(`mode.${m}`) }), hint: input, run: () => setModeBtn(m) })),
+    { label: t('input.keyboard'), hint: keyboardOn ? t('cmd.on') : input, run: () => { initAudioOnGesture(); toggleComputerKeyboard() } },
+    { label: t('input.mic'), hint: isMicOn() ? t('cmd.on') : input, run: toggleMic },
+    { label: t('cmd.keyAuto'), hint: t('a11y.key'), run: () => pickKey('') },
+    ...FIFTHS_MAJOR.flatMap(pc => [`${MAJOR_ROOTS[pc]} Major`, `${MINOR_ROOTS[(pc + 9) % 12]} Minor`])
+      .map(k => ({ label: t('cmd.key', { key: keyLabel(k) }), run: () => pickKey(k) })),
+    ...layoutCommands(),
+    { label: t('cmd.present'), hint: 'P', run: togglePresentation },
+    ...VIEW_NAMES.map(v => ({ label: t('cmd.view', { name: t(`view.${v}`) }), hint: 'OBS', run: () => (document.querySelector<HTMLElement>(`#view-menu [data-view="${v}"]`))?.click() })),
+    { label: t('cmd.settings'), run: () => openSettings() },
+    { label: t('cmd.help'), hint: '?', run: toggleHelp },
+    { label: t('cmd.rail'), run: () => $('btn-rail').click() },
+    ...GM_INSTRUMENT_GROUPS.flatMap(g => g.instruments.map(i => ({
+      label: t('cmd.instrument', { name: instrumentLabel(i) }), hint: t(g.label),
+      run: () => { const sel = $('audio-instrument') as HTMLSelectElement; sel.value = i; sel.dispatchEvent(new Event('change')) },
+    }))),
+  ]
 }
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────

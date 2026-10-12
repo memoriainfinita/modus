@@ -74,10 +74,18 @@ async function run(browserName, makeContext) {
   await page.waitForFunction(() => window.UMT && window.Notae)
   await sleep(1000)
 
+  const inputMenu = async (f) => {
+    await page.click('#btn-input-status')
+    await f()
+    await page.click('#btn-input-status')
+  }
+  const pickDevice = id => inputMenu(() => page.click(`#midi-device-list [data-value="${id}"]`))
+  const mode = m => inputMenu(() => page.click(`#btn-${m}`))
+
   await check('the loopMIDI port is listed and selectable', async () => {
     const option = page.locator('#midi-device option', { hasText: PORT_NAME })
     assert(await option.count() === 1, `devices: ${(await page.locator('#midi-device option').allInnerTexts()).join(' | ')}`)
-    await page.selectOption('#midi-device', await option.getAttribute('value'))
+    await pickDevice(await option.getAttribute('value'))
   })
 
   await check('a chord is detected while held and cleared on release', async () => {
@@ -88,11 +96,11 @@ async function run(browserName, makeContext) {
   })
 
   await check('hold mode keeps the chord after real note-offs', async () => {
-    await page.click('#btn-hold')
+    await mode('hold')
     await play([62, 65, 69])
     await release([62, 65, 69])
     assert(await badge() === 'Dm', `held in hold mode: ${await badge()}`)
-    await page.click('#btn-normal')
+    await mode('normal')
   })
 
   await check('still receiving after the device rescan runs', async () => {
@@ -108,7 +116,7 @@ async function run(browserName, makeContext) {
     opts.find(o => o.textContent !== name)?.value ?? null, PORT_NAME)
   if (otherInput) {
     await check('MIDI out: a circle click arrives at the loopMIDI port on the chosen channel', async () => {
-      await page.selectOption('#midi-device', otherInput)
+      await pickDevice(otherInput)
       await page.click('#btn-settings')
       await page.click('.set-nav-item[data-section="io"]')
       await page.selectOption('#midi-out', { label: `Out: ${PORT_NAME}` })

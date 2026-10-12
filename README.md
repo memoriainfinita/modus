@@ -248,11 +248,14 @@ src/
   i18n/
     i18n.ts               interface language, note names (letters or Do Re Mi, from UMT)
     en.ts, es.ts          interface strings, one table per language
+    instruments.ts        the soundfont's instruments by name, in English and Spanish
   layout/
     grid.ts               panels on a 12-column grid: snap, push down, close up
     presets.ts            the panels and the ready-made layouts
   ui/
-    layout.ts             toolbar, panels on the grid, dragging and resizing, the ▦ menu
+    layout.ts             bar and rail, panels on the grid, dragging and resizing, the ▦ menu
+    popover.ts            the menus of the bar and the rail: one open at a time, next to its button
+    commands.ts           the bar's field: a chord to play, or an order found by its name
     fit.ts                an SVG scaled to its panel
     progressions.ts       the Progressions panel: UMT's named progressions in the key
     ear.ts                the Ear training panel: intervals, chords, cadences
@@ -272,7 +275,7 @@ tests/
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
   library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
-  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, piano.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts, pitch.test.ts, settings.test.ts
+  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, piano.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts, pitch.test.ts, settings.test.ts, commands.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both
