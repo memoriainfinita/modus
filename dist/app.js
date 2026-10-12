@@ -8207,6 +8207,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   function applyZoom() {
     const z = getPref("ui-zoom");
     document.body.style.zoom = z === 100 ? "" : String(z / 100);
+    document.documentElement.style.setProperty("--zoom", String(z / 100));
   }
   function applyPref(name) {
     if (name === "ui-zoom") {

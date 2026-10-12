@@ -880,10 +880,15 @@ function drawEar() {
   if (ear) renderEar(ear, { show: showEarAnswer })
 }
 
-/** The interface scaled as chosen in Settings (100 % is the browser's own size). */
+/**
+ * The interface scaled as chosen in Settings (100 % is the browser's own size). The CSS
+ * reads --zoom where a size comes from the window (vh, vw), which zoom does not shrink:
+ * the dialogs and presentation divide by it to stay inside the window.
+ */
 function applyZoom() {
   const z = getPref('ui-zoom')
   document.body.style.zoom = z === 100 ? '' : String(z / 100)
+  document.documentElement.style.setProperty('--zoom', String(z / 100))
 }
 
 /** A preference changed in Settings: what it touches is read again and drawn again. */

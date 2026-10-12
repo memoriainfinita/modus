@@ -696,7 +696,7 @@ body.presenting .alt-chord-btn {
   display: none !important;
 }
 body.presenting .grid {
-  height: 100vh;
+  height: calc(100vh / var(--zoom, 1));
 }
 body.presenting .module {
   border-color: transparent;
@@ -1376,8 +1376,8 @@ body.presenting .module {
   padding: 14px 16px;
   box-shadow: 0 6px 24px var(--shadow);
   min-width: 240px;
-  max-width: min(560px, calc(100vw - 24px));
-  max-height: calc(100vh - 32px);
+  max-width: min(560px, calc((100vw - 24px) / var(--zoom, 1)));
+  max-height: calc((100vh - 32px) / var(--zoom, 1));
   overflow-y: auto;
 }
 .shortcut-help-header {
@@ -2004,7 +2004,7 @@ body {
 }
 .set-dialog {
   width: min(920px, 100%);
-  height: min(680px, calc(100vh - 32px));
+  height: min(680px, calc((100vh - 32px) / var(--zoom, 1)));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2304,7 +2304,7 @@ body {
 }
 @media (max-width: 720px) {
   .set-dialog {
-    height: calc(100vh - 32px);
+    height: calc((100vh - 32px) / var(--zoom, 1));
   }
   .set-main {
     flex-direction: column;
