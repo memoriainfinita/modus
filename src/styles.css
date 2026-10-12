@@ -563,6 +563,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
   .module-chord .module-body { container-type: inline-size; }
   .module-chord .chord-name-badge, .module-chord .chord-head-name { font-size: 44px; }
   .module-chord .chord-notes { font-size: 15px; }
+  .grid .module-history .history-strip { font-size: 13px; }
   #key-container :is(.key-main, .key-parallel) { min-width: 0; max-width: 100%; }
   #key-container .key-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.2em; }
   #key-container .key-cell { min-width: 0; }
@@ -766,6 +767,12 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
   border: 1px solid var(--modulation-border); border-radius: 3px; margin: 0 -2px; flex-shrink: 0;
 }
 .history-chip-roman, .prog-chip-roman { font-size: 10px; color: var(--text-muted); }
+/* The history grows with its panel, as the chord does: on a projector (Class) the
+   progression is read from the back of the room */
+.module-history .history-strip { font-size: clamp(12px, 19cqh, 6vh); }
+.module-history .history-chip-symbol { font-size: 1em; }
+.module-history :is(.history-chip-roman, .history-cadence, .history-modulation) { font-size: 0.8em; }
+.module-history .history-chip { min-width: 4.2em; padding: 0.33em 0.66em; }
 .history-clear-btn {
   padding: 4px 10px;
   border-radius: 4px;

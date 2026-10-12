@@ -40,11 +40,12 @@ export const PRESETS: Record<PresetId, Grid> = {
     ['progressions', 0, 29, 12, 4],
     ['ear', 0, 33, 6, 5],
   ]),
-  // Teaching on a projector (made to be presented with P): few panels, large
+  // Teaching on a projector (made to be presented with P): few panels, large; the history
+  // under the chord shows where it came from
   class: grid([
-    ['chord', 0, 0, 12, 4],
-    ['staff', 0, 4, 4, 10], ['cof', 4, 4, 4, 10], ['guitar', 8, 4, 4, 10],
-    ['piano', 0, 14, 12, 6],
+    ['chord', 0, 0, 12, 4], ['history', 0, 4, 12, 4],
+    ['staff', 0, 8, 4, 10], ['cof', 4, 8, 4, 10], ['guitar', 8, 8, 4, 10],
+    ['piano', 0, 18, 12, 6],
   ]),
   // Writing down a recording: the player on top, the song and the history in reach of what is heard
   transcription: grid([

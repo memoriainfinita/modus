@@ -55,7 +55,7 @@ Single page, dark or light (see Theme): the toolbar on top, then the panels on a
 Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, Progressions, Ear training, Player, Tuner, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
 
 The ▦ menu in the toolbar:
-- **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (few panels, large, made to be presented with P), Transcription (the player and tuner on top, history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
+- **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (the chord and its history across the top, then staff, circle, strings and piano, large, made to be presented with P), Transcription (the player and tuner on top, history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
 - **Saved:** the current layout saved under a name; opened or deleted from the menu
 - **Panels:** a box per panel to show or hide it; a panel shown again goes at the bottom, at its usual size
 

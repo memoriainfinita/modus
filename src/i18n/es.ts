@@ -72,7 +72,7 @@ export const es: Record<StringKey, string> = {
   'layout.preset.study': 'Estudio',
   'layout.preset.study.title': 'Tonalidad y análisis grandes, lo que se toca al lado',
   'layout.preset.class': 'Clase',
-  'layout.preset.class.title': 'Pocos paneles, grandes: para un proyector, con P',
+  'layout.preset.class.title': 'El acorde y de dónde viene, pocos paneles, grandes: para un proyector, con P',
   'layout.preset.transcription': 'Transcripción',
   'layout.preset.transcription.title': 'Historial y canción junto al piano y el mástil',
   'layout.preset.recording': 'Grabación',
