@@ -26,19 +26,19 @@ export const PRESETS: Record<PresetId, Grid> = {
   // diagrams under it, the key and its explanation, then the piano and the practice panels
   standard: grid([
     ['chord', 0, 0, 12, 3],
-    ['staff', 0, 3, 3, 10], ['analysis', 3, 3, 3, 10], ['cof', 6, 3, 3, 10], ['guitar', 9, 3, 3, 10],
-    ['key', 0, 13, 7, 11], ['explain', 7, 13, 5, 11],
-    ['piano', 0, 24, 12, 5],
-    ['progressions', 0, 29, 12, 4], ['ear', 0, 33, 4, 5], ['tuner', 4, 33, 3, 5], ['player', 7, 33, 5, 5], ['history', 0, 38, 12, 3], ['song', 0, 41, 12, 12],
+    ['staff', 0, 3, 3, 11], ['analysis', 3, 3, 3, 11], ['cof', 6, 3, 3, 11], ['guitar', 9, 3, 3, 11],
+    ['key', 0, 14, 8, 12], ['explain', 8, 14, 4, 12],
+    ['piano', 0, 26, 12, 5],
+    ['progressions', 0, 31, 12, 4], ['ear', 0, 35, 4, 5], ['tuner', 4, 35, 3, 5], ['player', 7, 35, 5, 5], ['history', 0, 40, 12, 3], ['song', 0, 43, 12, 12],
   ]),
   // Harmony at the desk: the key and the analysis large, what is played next to them
   study: grid([
     ['chord', 0, 0, 4, 3], ['analysis', 4, 0, 4, 12], ['cof', 8, 0, 4, 8],
     ['staff', 0, 3, 4, 9], ['history', 8, 8, 4, 4],
-    ['key', 0, 12, 8, 11], ['explain', 8, 12, 4, 11],
-    ['piano', 0, 23, 12, 5],
-    ['progressions', 0, 28, 12, 4],
-    ['ear', 0, 32, 6, 5],
+    ['key', 0, 12, 8, 12], ['explain', 8, 12, 4, 12],
+    ['piano', 0, 24, 12, 5],
+    ['progressions', 0, 29, 12, 4],
+    ['ear', 0, 33, 6, 5],
   ]),
   // Teaching on a projector (made to be presented with P): few panels, large
   class: grid([

@@ -63,9 +63,9 @@ let showPrevChord  = loadBool('show-prev-chord', false)
 const analysisFieldsVisible = Object.fromEntries(
   ANALYSIS_FIELD_KEYS.map(f => [f, loadBool(`analysis-field-${f}`, true)])
 ) as Record<AnalysisFieldKey, boolean>
-let analysisScale = loadNumber('analysis-scale', 14, 10, 24)
+let analysisScale = loadNumber('analysis-scale', 13, 10, 24)
 
-let keyScale = loadNumber('key-scale', 13, 10, 24)
+let keyScale = loadNumber('key-scale', 12, 10, 24)
 let keySevenths = loadBool('key-sevenths', false)
 let keyShowNegative = loadBool('key-show-negative', true)
 let keyShowParallel = loadBool('key-show-parallel', true)
