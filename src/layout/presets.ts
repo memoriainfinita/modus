@@ -22,13 +22,14 @@ type Spec = [ModuleId, number, number, number, number]   // id, x, y, w, h
 const grid = (specs: Spec[]): Grid => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }))
 
 export const PRESETS: Record<PresetId, Grid> = {
-  // Everything, as the page was before panels could move
+  // Everything but Velocity (in the layout menu): the chord as a header across the page, the four
+  // diagrams under it, the key and its explanation, then the piano and the practice panels
   standard: grid([
-    ['chord', 0, 0, 3, 3], ['staff', 0, 3, 3, 8], ['analysis', 3, 0, 3, 11], ['cof', 6, 0, 3, 7],
-    ['guitar', 9, 0, 3, 11], ['velocity', 6, 7, 3, 4],
-    ['key', 0, 11, 8, 11], ['explain', 8, 11, 4, 11],
-    ['piano', 0, 22, 12, 5],
-    ['progressions', 0, 27, 12, 4], ['ear', 0, 31, 4, 5], ['tuner', 4, 31, 3, 5], ['player', 7, 31, 5, 5], ['history', 0, 36, 12, 3], ['song', 0, 39, 12, 12],
+    ['chord', 0, 0, 12, 3],
+    ['staff', 0, 3, 3, 10], ['analysis', 3, 3, 3, 10], ['cof', 6, 3, 3, 10], ['guitar', 9, 3, 3, 10],
+    ['key', 0, 13, 7, 11], ['explain', 7, 13, 5, 11],
+    ['piano', 0, 24, 12, 5],
+    ['progressions', 0, 29, 12, 4], ['ear', 0, 33, 4, 5], ['tuner', 4, 33, 3, 5], ['player', 7, 33, 5, 5], ['history', 0, 38, 12, 3], ['song', 0, 41, 12, 12],
   ]),
   // Harmony at the desk: the key and the analysis large, what is played next to them
   study: grid([

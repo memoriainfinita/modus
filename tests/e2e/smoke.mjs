@@ -63,6 +63,18 @@ async function check(name, fn) {
 function assert(cond, msg) { if (!cond) throw new Error(msg) }
 
 const text = sel => page.locator(sel).first().innerText()
+// A panel option lives in the panel's ⋯ menu: opened, the option clicked, closed with Esc
+const option = async (panel, sel) => {
+  await page.click(`#mod-${panel} .module-more`)
+  await page.click(sel)
+  await page.keyboard.press('Escape')
+}
+// A panel the Standard layout leaves out (Velocity), shown or hidden from the ▦ menu
+const showPanel = async (id, shown = true) => {
+  await page.click('#btn-layout')
+  await page.setChecked(`#layout-menu input[data-module="${id}"]`, shown)
+  await page.mouse.click(5, 990)
+}
 const on = notes => page.evaluate(ns => ns.forEach(n => window.__midi([0x90, n, 100])), notes)
 const off = notes => page.evaluate(ns => ns.forEach(n => window.__midi([0x80, n, 0])), notes)
 async function play(notes, holdMs = 100) { await on(notes); await page.waitForTimeout(holdMs); }
@@ -164,12 +176,12 @@ await check('voice leading: each voice from the chord before; staff and piano ca
   const voices = rows.find(([l]) => l === 'Voices')?.[1] ?? ''
   assert(voices.startsWith('G→C ↓7  B→C ↑1  D→E ↑2  F→G ↑2'), `voices: ${voices}`)
   assert(await page.locator('.staff-prev').count() === 0, 'faded before the toggle')
-  await page.click('#btn-staff-prev')
+  await option('staff', '#btn-staff-prev')
   assert(await page.locator('#btn-piano-prev').getAttribute('class').then(c => c.includes('active')), 'piano button not lit')
   assert(await page.locator('#staff-container .staff-prev').count() >= 2, 'chord before not on the staff')
   const lit = await page.locator('#piano-container rect[data-note]').evaluateAll(rs => rs.filter(r => r.getAttribute('fill') && !/^(#fff|#ffffff|white)$/i.test(r.getAttribute('fill'))).length)
   assert(lit >= 6, `piano keys lit: ${lit}`)
-  await page.click('#btn-piano-prev')
+  await option('piano', '#btn-piano-prev')
   assert(await page.locator('#staff-container .staff-prev').count() === 0, 'still faded')
   await off([48, 60, 64, 67])
 })
@@ -276,13 +288,13 @@ await check('keyboard and screen reader: circle, buttons, panels and chips work 
   assert((await page.getAttribute('#btn-hold', 'class')).includes('active'), 'Space did not press Hold')
   await page.click('#btn-normal')
   // Panels: arrows move, Shift + arrows resize
-  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('layout') ?? 'null')?.find(c => c.id === 'chord') ?? null)
-  await page.focus('#mod-chord .module-header')
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('layout') ?? 'null')?.find(c => c.id === 'staff') ?? null)
+  await page.focus('#mod-staff .module-header')
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('Shift+ArrowDown')
-  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('layout')).find(c => c.id === 'chord'))
-  assert(after.x === (before?.x ?? 0) + 1 && after.h === (before?.h ?? 3) + 1, `moved: ${JSON.stringify(before)} → ${JSON.stringify(after)}`)
-  await page.waitForFunction(() => document.getElementById('sr-live')?.textContent?.startsWith('Chord: column'), null, { timeout: 2000 })
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('layout')).find(c => c.id === 'staff'))
+  assert(after.x === (before?.x ?? 0) + 1 && after.h === (before?.h ?? 10) + 1, `moved: ${JSON.stringify(before)} → ${JSON.stringify(after)}`)
+  await page.waitForFunction(() => document.getElementById('sr-live')?.textContent?.startsWith('Staff: column'), null, { timeout: 2000 })
     .catch(async () => { throw new Error(`announced: ${await page.textContent('#sr-live')}`) })
   await page.click('#btn-layout'); await page.click('#layout-menu [data-preset="standard"]'); await page.mouse.click(5, 990)
   // History chips: Enter shows the chord
@@ -596,19 +608,19 @@ const cell = id => page.evaluate(id => {
 const box = sel => page.locator(sel).evaluate(e => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height } })
 
 await check('layout: a panel dragged by its title snaps to the grid; the others make room', async () => {
-  const before = await cell('chord')
-  const header = await box('#mod-chord .module-header')
+  const before = await cell('staff')
+  const header = await box('#mod-staff .module-header')
   const target = await box('#mod-analysis')
   await page.mouse.move(header.x + 30, header.y + header.h / 2)
   await page.mouse.down()
   await page.mouse.move(target.x + 30, header.y + header.h / 2, { steps: 8 })
   await page.mouse.up()
-  const after = await cell('chord')
+  const after = await cell('staff')
   assert(after.col !== before.col, `did not move: ${JSON.stringify(after)}`)
   const g = await page.evaluate(() => JSON.parse(localStorage.getItem('layout')))
   const hit = (a, b) => a.id !== b.id && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
   assert(!g.some(a => g.some(b => hit(a, b))), 'two panels in the same cells')
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('layout')).find(c => c.id === 'chord'))
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('layout')).find(c => c.id === 'staff'))
   assert(`${stored.x + 1} / span ${stored.w}` === after.col, `not stored: ${JSON.stringify(stored)}`)
 })
 
@@ -624,6 +636,7 @@ await check('layout: the corner resizes a panel, and the diagram fills it', asyn
 })
 
 await check('layout: × hides a panel, the ▦ menu shows it again; a preset puts every panel back', async () => {
+  await showPanel('velocity')
   await page.click('#mod-velocity .module-close')
   assert(await cell('velocity') === null, 'still shown')
   await page.click('#btn-layout')
@@ -646,15 +659,16 @@ await check('layout: × hides a panel, the ▦ menu shows it again; a preset put
 await check('the clef button cycles grand, treble and bass staves', async () => {
   // The staff fills its panel: a grand staff is the taller drawing
   const h = () => page.locator('#staff-container svg').evaluate(s => s.viewBox.baseVal.height / s.viewBox.baseVal.width)
-  assert(await text('#btn-staff-clef') === 'Grand', 'default grand')
+  const clef = async () => (await text('#btn-staff-clef')).split(': ')[1]
+  assert(await clef() === 'Grand', 'default grand')
   const grand = await h()
-  await page.click('#btn-staff-clef')
-  assert(await text('#btn-staff-clef') === 'Treble', 'treble')
+  await option('staff', '#btn-staff-clef')
+  assert(await clef() === 'Treble', 'treble')
   const treble = await h()
-  await page.click('#btn-staff-clef')
-  assert(await text('#btn-staff-clef') === 'Bass', 'bass')
-  await page.click('#btn-staff-clef')
-  assert(await text('#btn-staff-clef') === 'Grand' && grand > treble * 1.4, `heights ${grand} ${treble}`)
+  await option('staff', '#btn-staff-clef')
+  assert(await clef() === 'Bass', 'bass')
+  await option('staff', '#btn-staff-clef')
+  assert(await clef() === 'Grand' && grand > treble * 1.4, `heights ${grand} ${treble}`)
 })
 
 await check('P presents the layout without controls, filling the window; Esc leaves', async () => {
@@ -692,6 +706,7 @@ await check('a phone stacks the panels in one column, in layout order', async ()
 })
 
 await check('velocity: a bar per note, highest on top; none for a picked chord', async () => {
+  await showPanel('velocity')
   await page.evaluate(() => [[48, 40], [55, 90], [64, 120]].forEach(([n, v]) => window.__midi([0x90, n, v])))
   await page.waitForTimeout(100)
   const nums = await page.locator('#velocity-container .vel-num').allInnerTexts()
@@ -700,6 +715,7 @@ await check('velocity: a bar per note, highest on top; none for a picked chord',
   await page.locator('.history-chip').first().click()
   assert(await page.locator('#velocity-container .vel-row').count() === 0, 'picked chord shows velocities')
   await page.keyboard.press('Escape')
+  await showPanel('velocity', false)
 })
 
 await check('input channel filter: other channels are not read', async () => {
@@ -1029,7 +1045,7 @@ await check('Spanish: letters again from Settings', async () => {
 await check('theme: follows the system, light from Settings without a reload, diagrams redrawn', async () => {
   const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor)
   const theme = () => page.evaluate(() => document.documentElement.dataset.theme)
-  assert(await theme() === 'dark' && await bg() === 'rgb(26, 26, 46)', `dark: ${await theme()} ${await bg()}`)
+  assert(await theme() === 'dark' && await bg() === 'rgb(20, 20, 20)', `dark: ${await theme()} ${await bg()}`)
   await page.emulateMedia({ colorScheme: 'light' })
   await page.waitForTimeout(100)
   assert(await theme() === 'light', 'does not follow the system')
@@ -1042,9 +1058,9 @@ await check('theme: follows the system, light from Settings without a reload, di
   await page.keyboard.press('Escape')
   await page.waitForTimeout(150)
   assert(await page.evaluate(() => window.__noReload) === true, 'the page reloaded')
-  assert(await theme() === 'light' && await bg() === 'rgb(244, 245, 249)', `light: ${await theme()} ${await bg()}`)
+  assert(await theme() === 'light' && await bg() === 'rgb(239, 238, 235)', `light: ${await theme()} ${await bg()}`)
   const seg = await page.getAttribute('#cof-container [data-chord="E"]', 'fill')
-  assert(seg === '#e6e8ef', `circle not redrawn: ${seg}`)
+  assert(seg === '#f5f4f1', `circle not redrawn: ${seg}`)
   // The choice wins over the system and survives a reload
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.reload()

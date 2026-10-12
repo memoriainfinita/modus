@@ -46,9 +46,9 @@ describe('theme tokens', () => {
 
 describe('color', () => {
   it('reads the theme shown, again after a change', () => {
-    expect(color('bg')).toBe('#1a1a2e')
+    expect(color('bg')).toBe('#141414')
     applyTheme('light')
-    expect(color('bg')).toBe('#f4f5f9')
+    expect(color('bg')).toBe('#efeeeb')
   })
 
   it('the circle is drawn in the theme shown', () => {

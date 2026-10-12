@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  chordFamily, chordColor, neutralColor,
+  chordFamily, functionColor, neutralColor,
   normalizeChordName, isKnownChord, tryParseChord, chordNoteNames, chordRoot,
 } from '../src/theory/chord'
 
@@ -30,15 +30,18 @@ describe('chordFamily', () => {
   })
 })
 
-describe('chordColor', () => {
-  it('colours by family', () => {
-    expect(chordColor('G7')).toBe('#ef4444')
-    expect(chordColor('Am')).toBe('#3b82f6')
+describe('functionColor', () => {
+  it('colours by function, the one colour code of the page', () => {
+    expect(functionColor('T')).toBe('#4ade80')
+    expect(functionColor('S')).toBe('#f59e0b')
+    expect(functionColor('D')).toBe('#f87171')
   })
 
-  it('falls back to the neutral colour', () => {
-    expect(chordColor('?')).toBe(neutralColor())
-    expect(chordColor(null)).toBe('#6b7280')
+  it('a chord without a function is drawn in chord-none, or the token asked for', () => {
+    expect(functionColor('unknown')).toBe('#b8a47a')
+    expect(functionColor(null)).toBe('#b8a47a')
+    expect(functionColor(null, 'text-strong')).toBe('#f7f4ee')
+    expect(neutralColor()).toBe('#77746e')
   })
 })
 

@@ -1,4 +1,4 @@
-import { chordColor, neutralColor } from '../theory/chord'
+import { functionColor, neutralColor, type HarmonicFunction } from '../theory/chord'
 import { color as themeColor } from '../ui/theme'
 import { noteNameToMidi } from '../theory/notes'
 import { localizeDrawnNoteNames } from '../i18n/i18n'
@@ -18,12 +18,12 @@ export function pianoRange(noteNames: string[], narrow: boolean): { from: string
 }
 
 /**
- * Renders the piano. A press on a key calls `onPress` with its MIDI number and the pointer
+ * Renders the piano, its keys lit in the colour of the chord's function (`fn`). A press on a key calls `onPress` with its MIDI number and the pointer
  * pressing it; the caller plays it through the input path and watches for the release
  * itself, since a key the detector lights is rebuilt and never receives its own pointerup.
  */
-export function renderPiano(container: HTMLElement, noteNames: string[], chordSymbol: string | null, onPress?: (midi: number, pointerId: number) => void, prevNotes: string[] | null = null) {
-  const color = chordSymbol ? chordColor(chordSymbol) : neutralColor()
+export function renderPiano(container: HTMLElement, noteNames: string[], fn: HarmonicFunction | null, onPress?: (midi: number, pointerId: number) => void, prevNotes: string[] | null = null) {
+  const color = functionColor(fn)
   // The chord before: its keys that are not held now, in the neutral colour
   const now = new Set(noteNames.map(noteNameToMidi))
   const before = (prevNotes ?? []).filter(n => !now.has(noteNameToMidi(n)))

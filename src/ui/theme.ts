@@ -26,7 +26,7 @@ export function resolveTheme(choice: ThemeChoice = getThemeChoice()): Theme {
 
 const cache = new Map<string, string>()
 
-/** A token's value in the theme shown ('cof-tonic' → '#4f46e5'), for colours written into an SVG. */
+/** A token's value in the theme shown ('cof-tonic' → '#d9c9a3'), for colours written into an SVG. */
 export function color(token: string): string {
   let v = cache.get(token)
   if (v === undefined) {

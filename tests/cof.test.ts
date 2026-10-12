@@ -11,7 +11,7 @@ function render(key: string | null, opts: Partial<CofOptions> = {}, chord: strin
   return el
 }
 const segment = (el: HTMLElement, chord: string) => el.querySelector<SVGPathElement>(`[data-chord="${chord}"]`)!
-const TONIC = '#4f46e5'
+const TONIC = '#d9c9a3'
 
 describe('circle of fifths: active key', () => {
   it('a minor key puts the tonic colour on the minor segment', () => {
@@ -23,13 +23,20 @@ describe('circle of fifths: active key', () => {
   it('a minor key highlights its own diatonic chords, not the parallel major ones', () => {
     const el = render('A Minor')
     // A minor shares C major's chords: F, C, G are diatonic; A major's E is not
-    expect(segment(el, 'F').getAttribute('fill')).toBe('#252550')
-    expect(segment(el, 'E').getAttribute('fill')).toBe('#2d2d44')
+    expect(segment(el, 'F').getAttribute('fill')).toBe('#2e2e2e')
+    expect(segment(el, 'E').getAttribute('fill')).toBe('#1a1a1a')
   })
 
   it('matches the key by pitch class (F# Major on the Gb segment in flat mode)', () => {
     expect(segment(render('F# Major'), 'Gb').getAttribute('fill')).toBe(TONIC)
     expect(segment(render('Db Major', { accidental: 'sharp' }), 'C#').getAttribute('fill')).toBe(TONIC)
+  })
+
+  it('the chord is marked in the colour of its function in the key, not of its quality', () => {
+    expect(segment(render('C Major', {}, 'G7'), 'G').getAttribute('fill')).toBe('#f87171')
+    expect(segment(render('C Major', {}, 'Dm'), 'Dm').getAttribute('fill')).toBe('#f59e0b')
+    // Without a key there is no function: the mark is ink
+    expect(segment(render(null, {}, 'G7'), 'G').getAttribute('fill')).toBe('#b8a47a')
   })
 
   it('sharp mode writes A#m opposite C#', () => {

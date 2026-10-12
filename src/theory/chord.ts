@@ -6,19 +6,19 @@ import { color } from '../ui/theme'
 
 export type ChordFamily = 'major' | 'minor' | 'dominant' | 'diminished' | 'half-diminished' | 'augmented' | 'sus'
 
-/** Theme token of each family's colour (styles.css). */
-export const CHORD_FAMILY_TOKENS: Record<ChordFamily, string> = {
-  major: 'chord-major',
-  minor: 'chord-minor',
-  dominant: 'chord-dominant',
-  diminished: 'chord-diminished',
-  'half-diminished': 'chord-diminished',
-  augmented: 'chord-augmented',
-  sus: 'chord-other',
-}
+export type HarmonicFunction = 'T' | 'S' | 'D' | 'unknown'
 
-/** The colour of no chord or of one without a family, in the theme shown. */
+/** The colour of the chord before, drawn next to this one, in the theme shown. */
 export const neutralColor = () => color('chord-other')
+
+/**
+ * The one colour code of the page: a chord's function in the key (tonic, subdominant,
+ * dominant). Quality is read in the name, not in a colour. Without a function (no key,
+ * or a chord outside it) a mark is drawn in `chord-none`.
+ */
+export function functionColor(fn: HarmonicFunction | null | undefined, none = 'chord-none'): string {
+  return color(fn === 'T' ? 'fn-t' : fn === 'S' ? 'fn-s' : fn === 'D' ? 'fn-d' : none)
+}
 
 /**
  * Runs an optional UMT call. UMT throws for inputs it does not support; the caller gets
@@ -61,12 +61,6 @@ export function chordFamily(symbol: string | null | undefined): ChordFamily | nu
   }
   if (pcs.has(5) || pcs.has(2)) return 'sus'
   return null
-}
-
-/** The family's colour in the theme shown, as a value (it is also written into SVG). */
-export function chordColor(symbol: string | null | undefined): string {
-  const family = chordFamily(symbol)
-  return family ? color(CHORD_FAMILY_TOKENS[family]) : neutralColor()
 }
 
 /** Note names with octave (e.g. "C4") of the chord, each named by its interval above the root (Cm7b5: C Eb Gb Bb); [] when unparseable. */

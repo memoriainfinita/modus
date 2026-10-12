@@ -6,13 +6,14 @@ import type { AppState } from '../types'
 import { ALL_KEYS } from '../theory/keys'
 import { GM_INSTRUMENT_GROUPS, getCurrentInstrument, getVolume } from '../audio/audio'
 import { setGuitarControlsVisible } from '../diagrams/guitar'
-import { ANALYSIS_FIELD_KEYS, fieldLabel, fieldTooltip } from '../detector/analysis-panel'
+import { ANALYSIS_FIELD_KEYS, fieldTooltip } from '../detector/analysis-panel'
 import type { AnalysisFieldKey } from '../detector/analysis-panel'
 import { loadBool, loadJSON, save } from './storage'
 import { escapeHtml } from './html'
 import { fitSvg } from './fit'
 import { announce } from './a11y'
 import { buildSettings } from './settings'
+import { ICONS, LOGO } from './icons'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
 import type { ViewName, ViewBackground } from '../view/channel'
 import { t, keyLabel } from '../i18n/i18n'
@@ -27,13 +28,9 @@ const viewLabel = (v: ViewName) => t(`view.${v}`)
 
 const $ = (id: string) => document.getElementById(id)!
 
-/** Which panels show their control rows, as last left. */
+/** Whether the Strings panel shows its controls, as last left. */
 export function loadPanels(): Panels {
-  return {
-    cofControls:      loadBool('panel-cofControls', true),
-    guitarControls:   loadBool('panel-guitarControls', true),
-    analysisControls: loadBool('panel-analysisControls', true),
-  }
+  return { guitarControls: loadBool('panel-guitarControls', true) }
 }
 
 // ─── Layout state ────────────────────────────────────────────────────────────
@@ -76,21 +73,22 @@ export function showModule(id: ModuleId, shown: boolean) {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-export function renderLayout(panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>) {
+export function renderLayout(_panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>) {
   $('app').innerHTML =
     buildToolbar() +
     '<div id="midi-banner"></div>' +
-    `<main id="grid" class="grid" aria-label="${t('a11y.panels')}">${MODULE_IDS.map(id => moduleFrame(id, panels, fieldsVisible)).join('')}</main>` +
+    `<main id="grid" class="grid" aria-label="${t('a11y.panels')}">${MODULE_IDS.map(id => moduleFrame(id, fieldsVisible)).join('')}</main>` +
     buildSettings()
   applyGrid()
   wireGrid()
   wireLayoutMenu()
+  wirePanelMenus()
   watchFittedDiagrams()
 }
 
-/** Control-row ▲▼ buttons flip their flag, persist it and re-apply visibility. */
+/** The Strings menu's Controls item flips its flag, persists it and re-applies visibility. */
 export function wirePanelToggles(panels: Panels) {
-  document.querySelectorAll<HTMLButtonElement>('.toggle-btn[data-panel]').forEach(btn => {
+  document.querySelectorAll<HTMLButtonElement>('.menu-item[data-panel]').forEach(btn => {
     btn.addEventListener('click', () => {
       const panel = btn.dataset.panel as keyof Panels
       panels[panel] = !panels[panel]
@@ -101,54 +99,93 @@ export function wirePanelToggles(panels: Panels) {
 }
 
 export function applyPanelVisibility(panels: Panels) {
-  const cc = document.getElementById('cof-controls'); if (cc) cc.style.display = panels.cofControls ? '' : 'none'
   setGuitarControlsVisible(panels.guitarControls)
   const gcw = document.getElementById('guitar-ctrl-wrap'); if (gcw) gcw.style.display = panels.guitarControls ? '' : 'none'
-  const ac = document.getElementById('analysis-controls'); if (ac) ac.style.display = panels.analysisControls ? '' : 'none'
-  ;(['cofControls', 'guitarControls', 'analysisControls'] as const).forEach(key => {
-    const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-panel="${key}"]`)
-    if (btn) btn.textContent = panels[key] ? '▲' : '▼'
-  })
+  document.querySelector('.menu-item[data-panel="guitarControls"]')?.setAttribute('aria-pressed', String(panels.guitarControls))
 }
 
+/** Opens and closes the ⋯ menus of the panels: one at a time; a click outside or Esc closes it. */
+function wirePanelMenus() {
+  let open: { btn: HTMLElement, menu: HTMLElement } | null = null
+  const close = (focus = false) => {
+    if (!open) return
+    open.menu.hidden = true
+    open.btn.setAttribute('aria-expanded', 'false')
+    open.btn.closest('.module')?.classList.remove('module-menu-open')
+    if (focus) open.btn.focus()
+    open = null
+  }
+  document.addEventListener('click', e => {
+    const target = e.target as HTMLElement
+    const btn = target.closest<HTMLElement>('.module-more')
+    if (btn) {
+      const was = open?.btn === btn
+      close()
+      if (was) return
+      const menu = $(`menu-${btn.dataset.menu}`)
+      menu.hidden = false
+      btn.setAttribute('aria-expanded', 'true')
+      btn.closest('.module')?.classList.add('module-menu-open')
+      open = { btn, menu }
+      return
+    }
+    if (open && !open.menu.contains(target)) close()
+  })
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && open) { e.stopPropagation(); close(true) } }, true)
+}
+
+// Four groups: what comes in (MIDI, keyboard, mic), the key and a typed chord, the sound,
+// and the page (layout, presentation, view windows, settings, help)
 function buildToolbar(): string {
   return `
     <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t('a11y.toolbar')}">
-      <span id="midi-status" class="midi-status">MIDI: —</span>
-      <select id="midi-device" class="ctrl-select" aria-label="${t('a11y.midiDevice')}"></select>
-      <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t('mode.normal.title')}">${t('mode.normal')}</button>
-      <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t('mode.hold.title')}">${t('mode.hold')}</button>
-      <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t('mode.arpeggio.title')}">${t('mode.arpeggio')}</button>
-      <button id="btn-keyboard" class="mode-btn" title="${t('keyboard.title')}">⌨</button>
-      <button id="btn-mic" class="mode-btn" title="${t('mic.title')}">🎤</button>
-      <span id="keyboard-status" class="auto-key-label"></span>
-      <select id="key-select" class="ctrl-select" aria-label="${t('a11y.key')}">
-        <option value="">${t('key.auto')}</option>
-        ${ALL_KEYS.map(k => `<option value="${k}">${keyLabel(k)}</option>`).join('')}
-      </select>
-      <span id="auto-key-label" class="auto-key-label"></span>
-      <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t('typed.placeholder')}" title="${t('typed.title')}" autocomplete="off" spellcheck="false">
-      <span class="toolbar-sep"></span>
-      <div id="audio-progress" class="audio-progress" title="${t('audio.title')}">
-        <div id="audio-progress-fill" class="audio-progress-fill"></div>
-        <span id="audio-status" class="audio-status">${t('audio.idle')}</span>
+      <span class="brand" title="Modus">${LOGO}<span class="brand-name">modus</span></span>
+      <div class="tb-group" role="group" aria-label="${t('a11y.group.input')}">
+        <span id="midi-status" class="midi-status">MIDI</span>
+        <select id="midi-device" class="ctrl-select" aria-label="${t('a11y.midiDevice')}"></select>
+        <div class="seg" role="group" aria-label="${t('a11y.group.mode')}">
+          <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t('mode.normal.title')}">${t('mode.normal')}</button>
+          <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t('mode.hold.title')}">${t('mode.hold')}</button>
+          <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t('mode.arpeggio.title')}">${t('mode.arpeggio')}</button>
+        </div>
+        <button id="btn-keyboard" class="mode-btn icon-btn" title="${t('keyboard.title')}">${ICONS.keyboard}</button>
+        <button id="btn-mic" class="mode-btn icon-btn" title="${t('mic.title')}">${ICONS.mic}</button>
+        <span id="keyboard-status" class="auto-key-label"></span>
       </div>
-      <button id="btn-play-chord" class="ctrl-btn" title="${t('audio.play.title')}">▶</button>
-      <select id="audio-instrument" class="ctrl-select" title="${t('audio.instrument.title')}">
-        ${GM_INSTRUMENT_GROUPS.map(g =>
-          `<optgroup label="${t(g.label)}">${g.instruments.map(i =>
-            `<option value="${i}"${i === getCurrentInstrument() ? ' selected' : ''}>${i.replace(/_/g,' ')}</option>`
-          ).join('')}</optgroup>`
-        ).join('')}
-      </select>
-      <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t('audio.volume.title')}" class="volume-slider">
+      <span class="toolbar-sep" aria-hidden="true"></span>
+      <div class="tb-group" role="group" aria-label="${t('a11y.group.key')}">
+        <select id="key-select" class="ctrl-select" aria-label="${t('a11y.key')}">
+          <option value="">${t('key.auto')}</option>
+          ${ALL_KEYS.map(k => `<option value="${k}">${keyLabel(k)}</option>`).join('')}
+        </select>
+        <span id="auto-key-label" class="auto-key-label"></span>
+        <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t('typed.placeholder')}" title="${t('typed.title')}" autocomplete="off" spellcheck="false">
+      </div>
+      <span class="toolbar-sep" aria-hidden="true"></span>
+      <div class="tb-group" role="group" aria-label="${t('a11y.group.sound')}">
+        <button id="btn-play-chord" class="ctrl-btn icon-btn" title="${t('audio.play.title')}">${ICONS.play}</button>
+        <select id="audio-instrument" class="ctrl-select" title="${t('audio.instrument.title')}">
+          ${GM_INSTRUMENT_GROUPS.map(g =>
+            `<optgroup label="${t(g.label)}">${g.instruments.map(i =>
+              `<option value="${i}"${i === getCurrentInstrument() ? ' selected' : ''}>${i.replace(/_/g,' ')}</option>`
+            ).join('')}</optgroup>`
+          ).join('')}
+        </select>
+        <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t('audio.volume.title')}" class="volume-slider">
+        <div id="audio-progress" class="audio-progress" title="${t('audio.title')}">
+          <div id="audio-progress-fill" class="audio-progress-fill"></div>
+          <span id="audio-status" class="audio-status">${t('audio.idle')}</span>
+        </div>
+      </div>
+      <span class="toolbar-gap"></span>
+      <div class="tb-group tb-page" role="group" aria-label="${t('a11y.group.page')}">
       <div class="view-menu-wrap">
-        <button id="btn-layout" class="ctrl-btn" title="${t('layout.title')}" aria-haspopup="true" aria-expanded="false">▦</button>
+        <button id="btn-layout" class="ctrl-btn icon-btn ghost" title="${t('layout.title')}" aria-haspopup="true" aria-expanded="false">${ICONS.layout}</button>
         <div id="layout-menu" class="view-menu"></div>
       </div>
       <div class="view-menu-wrap">
-        <button id="btn-present" class="ctrl-btn" title="${t('present.title')}">⛶</button>
-        <button id="btn-views" class="ctrl-btn" title="${t('views.title')}" aria-haspopup="true" aria-expanded="false">⧉</button>
+        <button id="btn-present" class="ctrl-btn icon-btn ghost" title="${t('present.title')}">${ICONS.present}</button>
+        <button id="btn-views" class="ctrl-btn icon-btn ghost" title="${t('views.title')}" aria-haspopup="true" aria-expanded="false">${ICONS.views}</button>
         <div id="view-menu" class="view-menu">
           <div class="view-menu-title">${t('views.open')}</div>
           ${VIEW_NAMES.map(v => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join('')}
@@ -166,65 +203,60 @@ function buildToolbar(): string {
             </div>`).join('')}
         </div>
       </div>
-      <button id="btn-settings" class="help-btn" title="${t('set.title.button')}" aria-haspopup="dialog">⚙</button>
-      <button id="btn-help" class="help-btn" title="${t('help.title')}">?</button>
+      <button id="btn-settings" class="ctrl-btn icon-btn ghost" title="${t('set.title.button')}" aria-haspopup="dialog">${ICONS.settings}</button>
+      <button id="btn-help" class="ctrl-btn icon-btn ghost help-q" title="${t('help.title')}">?</button>
+      </div>
     </div>`
 }
 
 // ─── Panels ──────────────────────────────────────────────────────────────────
 
-const toggle = (panel: keyof Panels) => `<button class="toggle-btn small" data-panel="${panel}" title="${t('module.controls')}">▼</button>`
+// A panel's options live in a ⋯ menu of its header, out of sight until asked for
+const item = (id: string, label: string, title = '', on?: boolean) =>
+  `<button type="button" id="${id}" class="menu-item"${on !== undefined ? ` aria-pressed="${on}"` : ''}${title ? ` title="${escapeHtml(title)}"` : ''}><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(label)}</span></button>`
+const steps = (minus: string, plus: string) =>
+  `<div class="menu-row"><span class="menu-label">${t('menu.size')}</span>
+    <button type="button" id="${minus}" class="menu-step" title="${t('ctrl.smaller')}">−</button>
+    <button type="button" id="${plus}" class="menu-step" title="${t('ctrl.larger')}">+</button></div>`
+const heading = (text: string) => `<div class="menu-heading">${escapeHtml(text)}</div>`
 
-/** What a panel's header carries besides its title and ×. */
-function headerTools(id: ModuleId): string {
-  if (id === 'analysis') return toggle('analysisControls')
-  if (id === 'cof') return toggle('cofControls')
-  if (id === 'guitar') return toggle('guitarControls')
-  if (id === 'piano') return `<button id="btn-piano-prev" class="size-ctrl-btn" title="${t('piano.prev.title')}">⇠</button>`
-  if (id === 'key') return `
-    <button id="btn-key-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
-    <button id="btn-key-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
-    <button id="btn-key-7"     class="size-ctrl-btn" title="${t('keyPanel.sevenths.title')}">7</button>
-    <button id="btn-key-neg"   class="size-ctrl-btn" title="${t('keyPanel.neg.title')}">${t('keyPanel.neg')}</button>
-    <button id="btn-key-par"   class="size-ctrl-btn" title="${t('keyPanel.par.title')}">${t('keyPanel.par')}</button>
-    <button id="btn-key-colt"  class="size-ctrl-btn" title="${t('keyPanel.colt.title')}">${t('keyPanel.colt')}</button>`
-  return ''
+/** The options in a panel's ⋯ menu; '' for a panel without any. */
+function panelMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
+  switch (id) {
+    case 'staff': return `
+      <button type="button" id="btn-staff-clef" class="menu-item menu-cycle" title="${t('staff.clef.title')}"></button>
+      ${item('btn-staff-prev', t('menu.prev'), t('staff.prev.title'))}`
+    case 'piano': return item('btn-piano-prev', t('menu.prev'), t('piano.prev.title'))
+    case 'analysis': return `
+      ${steps('btn-analysis-minus', 'btn-analysis-plus')}
+      ${heading(t('menu.fields'))}
+      <div class="menu-grid">${ANALYSIS_FIELD_KEYS.map(f =>
+        `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? ' active' : ''}" aria-pressed="${fieldsVisible[f]}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
+      ).join('')}</div>`
+    case 'cof': return `
+      ${item('btn-cof-flat', t('menu.flat'), t('cof.flat.title'))}
+      ${item('btn-cof-sharp', t('menu.sharp'), t('cof.sharp.title'))}
+      <div class="menu-sep"></div>
+      ${item('btn-cof-minor', t('menu.minor'), t('cof.minor.title'))}
+      ${item('btn-cof-deg', t('menu.degrees'), t('cof.degrees.title'))}
+      ${item('btn-cof-7', t('menu.sevenths'), t('cof.sevenths.title'))}`
+    case 'key': return `
+      ${steps('btn-key-minus', 'btn-key-plus')}
+      ${item('btn-key-7', t('menu.sevenths'), t('keyPanel.sevenths.title'))}
+      ${item('btn-key-neg', t('menu.negative'), t('keyPanel.neg.title'))}
+      ${item('btn-key-par', t('menu.parallel'), t('keyPanel.par.title'))}
+      ${item('btn-key-colt', t('menu.coltrane'), t('keyPanel.colt.title'))}`
+    case 'guitar': return `<button type="button" class="menu-item" data-panel="guitarControls"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t('menu.controls')}</span></button>`
+    default: return ''
+  }
 }
 
-function moduleBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
+function moduleBody(id: ModuleId): string {
   switch (id) {
     case 'chord': return '<div id="chord-summary"></div>'
-    case 'staff': return `
-      <div id="staff-container" class="fit"></div>
-      <div class="ctrl-row module-controls" style="justify-content:center">
-        <button id="btn-staff-clef" class="size-ctrl-btn" title="${t('staff.clef.title')}"></button>
-        <button id="btn-staff-prev" class="size-ctrl-btn" title="${t('staff.prev.title')}">⇠</button>
-      </div>`
-    case 'analysis': return `
-      <div id="analysis-content"></div>
-      <div id="analysis-controls" class="module-controls">
-        <div class="ctrl-row">
-          <button id="btn-analysis-minus" class="size-ctrl-btn" title="${t('ctrl.smaller')}">−</button>
-          <button id="btn-analysis-plus"  class="size-ctrl-btn" title="${t('ctrl.larger')}">+</button>
-        </div>
-        <div class="ctrl-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px">
-          ${ANALYSIS_FIELD_KEYS.map(f =>
-            `<button id="btn-field-${f}" class="size-ctrl-btn${fieldsVisible[f] ? ' active' : ''}"
-              title="${fieldTooltip(f)}">${fieldLabel(f)}</button>`
-          ).join('')}
-        </div>
-      </div>`
-    case 'cof': return `
-      <div id="cof-container" class="fit"></div>
-      <div id="cof-controls" class="module-controls">
-        <div class="ctrl-row">
-          <button id="btn-cof-flat"   class="size-ctrl-btn" title="${t('cof.flat.title')}">b</button>
-          <button id="btn-cof-sharp"  class="size-ctrl-btn" title="${t('cof.sharp.title')}">#</button>
-          <button id="btn-cof-minor"  class="size-ctrl-btn" title="${t('cof.minor.title')}">m</button>
-          <button id="btn-cof-deg"    class="size-ctrl-btn" title="${t('cof.degrees.title')}">°</button>
-          <button id="btn-cof-7"      class="size-ctrl-btn" title="${t('cof.sevenths.title')}">7</button>
-        </div>
-      </div>`
+    case 'staff': return '<div id="staff-container" class="fit"></div>'
+    case 'analysis': return '<div id="analysis-content"></div>'
+    case 'cof': return '<div id="cof-container" class="fit"></div>'
     case 'guitar': return '<div id="guitar-container"></div>'
     case 'key': return '<div id="key-container"></div>'
     case 'explain': return '<div id="explain-container"></div>'
@@ -239,15 +271,17 @@ function moduleBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolea
   }
 }
 
-function moduleFrame(id: ModuleId, _panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
+function moduleFrame(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
+  const menu = panelMenu(id, fieldsVisible)
   return `
     <section id="mod-${id}" class="module module-${id}" data-module="${id}" aria-labelledby="mod-${id}-title">
       <header class="module-header" title="${t('module.drag')}" tabindex="0" aria-label="${t('a11y.panelKeys', { name: t(`module.${id}`) })}">
         <span class="module-title" id="mod-${id}-title">${t(`module.${id}`)}</span>
-        <span class="module-tools">${headerTools(id)}</span>
+        ${menu ? `<button class="module-more" data-menu="${id}" title="${t('menu.options')}" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${id}">${ICONS.more}</button>` : ''}
         <button class="module-close" data-close="${id}" title="${t('module.hide')}">×</button>
       </header>
-      <div class="module-body">${moduleBody(id, fieldsVisible)}</div>
+      ${menu ? `<div id="menu-${id}" class="module-menu" role="group" aria-label="${t('menu.optionsOf', { name: t(`module.${id}`) })}" hidden>${menu}</div>` : ''}
+      <div class="module-body">${moduleBody(id)}</div>
       <div class="module-resize" title="${t('module.resize')}"></div>
     </section>`
 }
@@ -386,7 +420,7 @@ function renderLayoutMenu() {
 function wireLayoutMenu() {
   const menu = $('layout-menu')
   $('btn-layout').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open') })
-  document.addEventListener('click', e => { if (!menu.contains(e.target as Node) && e.target !== $('btn-layout')) menu.classList.remove('open') })
+  document.addEventListener('click', e => { if (!menu.contains(e.target as Node) && !$('btn-layout').contains(e.target as Node)) menu.classList.remove('open') })
   menu.addEventListener('click', e => {
     e.stopPropagation()
     const el = e.target as HTMLElement
