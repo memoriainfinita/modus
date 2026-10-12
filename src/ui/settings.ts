@@ -118,6 +118,11 @@ let capturing: { action: Action; slot: number } | null = null
 let pendingConflict: { action: Action; slot: number; key: string; other: Action } | null = null
 
 function shortcutsHtml(): string {
+  const conflictCard = () => pendingConflict ? `<div class="set-conflict" role="alert">
+      <span>${escapeHtml(t('set.keys.conflict', { key: keyLabel(pendingConflict.key), other: t(`action.${pendingConflict.other}` as StringKey), action: t(`action.${pendingConflict.action}` as StringKey) }))}</span>
+      <button type="button" class="ctrl-btn set-primary" data-conflict-take>${escapeHtml(t('set.keys.take'))}</button>
+      <button type="button" class="ctrl-btn" data-conflict-other>${escapeHtml(t('set.keys.other'))}</button>
+    </div>` : ''
   const rows = ACTIONS.map(a => {
     const keys = keysOf(a)
     const waiting = capturing?.action === a
@@ -134,16 +139,12 @@ function shortcutsHtml(): string {
       <div class="set-text"><div class="set-label">${escapeHtml(t(`action.${a}` as StringKey))}</div></div>
       <div class="set-control set-keys">${chips}${adding || (keys.length ? '' : `<span class="set-hint">${escapeHtml(t('set.keys.none'))}</span>`)}</div>
       <div class="set-key-buttons">${buttons}</div>
+      ${pendingConflict?.action === a ? conflictCard() : ''}
     </div>`
   }).join('')
-  const conflict = pendingConflict ? `<div class="set-conflict" role="alert">
-      <span>${escapeHtml(t('set.keys.conflict', { key: keyLabel(pendingConflict.key), other: t(`action.${pendingConflict.other}` as StringKey), action: t(`action.${pendingConflict.action}` as StringKey) }))}</span>
-      <button type="button" class="ctrl-btn set-primary" data-conflict-take>${escapeHtml(t('set.keys.take'))}</button>
-      <button type="button" class="ctrl-btn" data-conflict-other>${escapeHtml(t('set.keys.other'))}</button>
-    </div>` : ''
   const fixed = `<div class="set-row" data-search="${escapeHtml(`${t('set.keys.fixed')} esc 1 9`.toLowerCase())}"><div class="set-text"><div class="set-label">${escapeHtml(t('set.keys.fixed'))}</div><div class="set-hint">${escapeHtml(t('set.keys.fixed.hint'))}</div></div>
     <div class="set-control set-keys"><kbd class="set-kbd">${escapeHtml(t('kbd.esc'))}</kbd><kbd class="set-kbd">1–9</kbd><kbd class="set-kbd">Tab</kbd></div></div>`
-  return conflict + rows + fixed
+  return rows + fixed
 }
 
 function redrawShortcuts() {
@@ -444,11 +445,17 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
     if (!name) return
     const def = PREFS[name] as PrefDef
     if (def.kind === 'number') {
-      setPref(name, Number(input.value) as never)
       const out = input.parentElement!.querySelector('output')
       if (out) out.textContent = formatPrefValue(def, Number(input.value))
+      // Rescaling the page while dragging moves the slider under the pointer: on release only
+      if (name !== 'ui-zoom') setPref(name, Number(input.value) as never)
     } else if (def.kind === 'bool') setPref(name, input.checked as never)
     else if (def.kind === 'choice') setPref(name, input.value as never)
+  })
+
+  el.addEventListener('change', e => {
+    const input = e.target as HTMLInputElement
+    if (input.dataset.pref === 'ui-zoom') setPref('ui-zoom', Number(input.value))
   })
 
   // Language, note names, theme, tour
