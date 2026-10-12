@@ -541,6 +541,16 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 .module-chord .module-body { justify-content: center; padding: 10px 24px; }
 .module-chord .chord-name-badge, .module-chord .chord-head-name { font-size: clamp(26px, 52cqh, 40vh); }
 .module-chord .chord-notes { font-size: clamp(13px, 14cqh, 5vh); }
+/* A narrow chord panel (Study, Transcription): name, notes, degree and the other readings; the
+   cadence from the chord before is left to the Analysis panel */
+@container (max-width: 700px) {
+  .chord-head { gap: 4px 14px; align-content: center; }
+  .chord-head-from { display: none; }
+  .chord-head-alts { margin-left: 0; }
+  .chord-roman { font-size: 20px; }
+  .module-chord .chord-name-badge, .module-chord .chord-head-name { font-size: clamp(22px, 30cqh, 40vh); }
+  .module-chord .chord-notes { font-size: 13px; }
+}
 
 /* A phone: the same panels in one column, in layout order. Diagrams as tall as their rows;
    text panels as tall as what they say, so nothing is cut off a narrow screen */
@@ -576,7 +586,7 @@ body.presenting .chord-head-alts { display: none !important; }
 body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 
 /* ─── Panels ──────────────────────────────────────────────────── */
-#analysis-content { display: flex; flex-direction: column; gap: 0.6em; overflow: hidden; }
+#analysis-content { display: flex; flex-direction: column; gap: 0.45em; flex-shrink: 0; }   /* taller than its panel: the panel scrolls */
 
 /* ─── Key explorer ────────────────────────────────────────────── */
 #key-container { display: flex; flex-wrap: wrap; gap: 1.2em 2em; justify-content: center; align-items: flex-start; }
@@ -591,7 +601,7 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 /* The function on the chip's lower edge, as on the history chips: read the same in a row */
 .key-chord {
   background: var(--surface); color: var(--text); border: 1px solid var(--border-soft); border-bottom: 3px solid var(--border-soft);
-  border-radius: 6px; padding: 0.3em 0.6em; font: inherit; font-size: 1em; cursor: pointer; white-space: nowrap;
+  border-radius: 6px; padding: 0.2em 0.5em; font: inherit; font-size: 1em; cursor: pointer; white-space: nowrap;
 }
 .key-chord.key-fnb-T { border-bottom-color: var(--fn-t); }
 .key-chord.key-fnb-S { border-bottom-color: var(--fn-s); }

@@ -890,6 +890,28 @@ body {
 .module-chord .chord-notes {
   font-size: clamp(13px, 14cqh, 5vh);
 }
+@container (max-width: 700px) {
+  .chord-head {
+    gap: 4px 14px;
+    align-content: center;
+  }
+  .chord-head-from {
+    display: none;
+  }
+  .chord-head-alts {
+    margin-left: 0;
+  }
+  .chord-roman {
+    font-size: 20px;
+  }
+  .module-chord .chord-name-badge,
+  .module-chord .chord-head-name {
+    font-size: clamp(22px, 30cqh, 40vh);
+  }
+  .module-chord .chord-notes {
+    font-size: 13px;
+  }
+}
 @media (max-width: 720px) {
   .grid {
     display: flex;
@@ -981,8 +1003,8 @@ body.presenting .grid {
 #analysis-content {
   display: flex;
   flex-direction: column;
-  gap: 0.6em;
-  overflow: hidden;
+  gap: 0.45em;
+  flex-shrink: 0;
 }
 #key-container {
   display: flex;
@@ -1038,7 +1060,7 @@ body.presenting .grid {
   border: 1px solid var(--border-soft);
   border-bottom: 3px solid var(--border-soft);
   border-radius: 6px;
-  padding: 0.3em 0.6em;
+  padding: 0.2em 0.5em;
   font: inherit;
   font-size: 1em;
   cursor: pointer;
