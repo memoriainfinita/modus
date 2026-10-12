@@ -29,9 +29,10 @@ import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import { explainDetection, renderExplanation } from './detector/explain'
 import { renderProgressions } from './ui/progressions'
-import { renderEar, type EarQuestion } from './ui/ear'
+import { renderEar, resetEarScore, type EarQuestion } from './ui/ear'
+import { wireSettings, openSettings, closeSettings, offerSettingsUndo } from './ui/settings'
 import { renderPlayer } from './ui/player'
-import { getPref } from './settings/prefs'
+import { getPref, onPrefChange, type PrefName } from './settings/prefs'
 import { renderTuner, updateTuner } from './ui/tuner'
 import { maybeStartTour } from './ui/tour'
 import { startMic, stopMic, isMicOn } from './input/mic'
@@ -135,8 +136,12 @@ function init() {
   chordInput.addEventListener('input', () => chordInput.classList.remove('invalid'))
   setModeBtn(getMode())
   renderDetector()
-  const ear = document.getElementById('ear-container')
-  if (ear) renderEar(ear, { show: showEarAnswer })
+  drawEar()
+  wireSettings({ resetEarScore: () => { resetEarScore(); drawEar() } })
+  $('btn-settings').addEventListener('click', () => openSettings())
+  applyZoom()
+  onPrefChange(applyPref)
+  offerSettingsUndo()
   const player = document.getElementById('player-container')
   if (player) renderPlayer(player)
   drawTuner()
@@ -281,12 +286,19 @@ function syncCofAccidentalButtons() {
 }
 
 
+/** An on/off button of a panel: dimmed when off, and says so (the Settings dialog reads it too). */
+function pressed(id: string, on: boolean) {
+  const b = $(id)
+  b.style.opacity = on ? '1' : '0.4'
+  b.setAttribute('aria-pressed', String(on))
+}
+
 function wireLayoutEvents() {
   const updateCofButtons = () => {
     syncCofAccidentalButtons()
-    $('btn-cof-minor').style.opacity = cofShowMinor   ? '1' : '0.4'
-    $('btn-cof-deg').style.opacity   = cofShowDegrees ? '1' : '0.4'
-    $('btn-cof-7').style.opacity     = cofShow7ths    ? '1' : '0.4'
+    pressed('btn-cof-minor', cofShowMinor)
+    pressed('btn-cof-deg', cofShowDegrees)
+    pressed('btn-cof-7', cofShow7ths)
   }
   updateCofButtons()
 
@@ -321,7 +333,7 @@ function wireLayoutEvents() {
   })
 
   const prevButtons = [$('btn-staff-prev'), $('btn-piano-prev')]
-  const showPrev = () => prevButtons.forEach(b => b.classList.toggle('active', showPrevChord))
+  const showPrev = () => prevButtons.forEach(b => { b.classList.toggle('active', showPrevChord); b.setAttribute('aria-pressed', String(showPrevChord)) })
   showPrev()
   prevButtons.forEach(b => b.addEventListener('click', () => {
     showPrevChord = !showPrevChord
@@ -340,10 +352,10 @@ function wireLayoutEvents() {
   })
 
   const updateKeyButtons = () => {
-    $('btn-key-7').style.opacity    = keySevenths     ? '1' : '0.4'
-    $('btn-key-neg').style.opacity  = keyShowNegative ? '1' : '0.4'
-    $('btn-key-par').style.opacity  = keyShowParallel ? '1' : '0.4'
-    $('btn-key-colt').style.opacity = keyShowColtrane ? '1' : '0.4'
+    pressed('btn-key-7', keySevenths)
+    pressed('btn-key-neg', keyShowNegative)
+    pressed('btn-key-par', keyShowParallel)
+    pressed('btn-key-colt', keyShowColtrane)
   }
   updateKeyButtons()
   const onKeyControl = (id: string, apply: () => void) => {
@@ -863,6 +875,32 @@ function toggleMic() {
   })
 }
 
+function drawEar() {
+  const ear = document.getElementById('ear-container')
+  if (ear) renderEar(ear, { show: showEarAnswer })
+}
+
+/** The interface scaled as chosen in Settings (100 % is the browser's own size). */
+function applyZoom() {
+  const z = getPref('ui-zoom')
+  document.body.style.zoom = z === 100 ? '' : String(z / 100)
+}
+
+/** A preference changed in Settings: what it touches is read again and drawn again. */
+function applyPref(name: PrefName) {
+  if (name === 'ui-zoom') { applyZoom(); return }
+  if (name.startsWith('ear-')) { drawEar(); return }
+  if (name === 'key-profile') { autoKey = undefined as unknown as string | null; onHistoryChange(state.history) }
+  // Chord names, readings and explanations: everything drawn from the analysis
+  lastAnalysisSig = ''
+  for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k]
+  progressionsKey = undefined
+  refreshAnalysis()
+  renderDetector()
+  renderZone2()
+  renderZone3()
+}
+
 /** An ear-training answer, once given, in the detector: the notes, or the chord (with the one before it for a cadence, in its key). */
 function showEarAnswer(q: EarQuestion) {
   if (!q.symbol) {
@@ -1044,6 +1082,8 @@ function wireShortcuts() {
     toggleComputerKeyboard: () => { initAudioOnGesture(); toggleComputerKeyboard(true) },
     focusChordInput: () => ($('typed-chord') as HTMLInputElement).focus(),
     togglePresentation,
+    openSettings: () => openSettings(),
+    closeSettings,
     escape: () => {
       if (isPresenting()) { closePresentation(); return }
       melody = []

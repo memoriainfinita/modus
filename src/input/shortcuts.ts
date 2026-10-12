@@ -1,46 +1,21 @@
-import { t, getLang, getNoteNaming, saveLang, saveNoteNaming, LANGS, LANG_NAMES, NOTE_NAMINGS } from '../i18n/i18n'
-import type { Lang, NoteNaming } from '../i18n/i18n'
+import { t } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
-import { carryHistoryOverReload } from '../history/history'
 import { escapeHtml } from '../ui/html'
 import { keyBelongsToControl } from '../ui/a11y'
+import { ACTIONS, actionFor, keyName, keysOf } from './bindings'
+import { openSettings, keyLabel } from '../ui/settings'
 import { startTour } from '../ui/tour'
 import { MODULE_IDS } from '../layout/presets'
-import { getThemeChoice, saveThemeChoice, THEME_CHOICES } from '../ui/theme'
-import type { ThemeChoice } from '../ui/theme'
 
-// Keys as printed (a string key for named keys) and what they do
-const SHORTCUTS: { key: string | StringKey; action: StringKey }[] = [
-  { key: 'kbd.space', action: 'shortcut.play' },
-  { key: '← →',       action: 'shortcut.step' },
-  { key: 'kbd.del',   action: 'shortcut.delete' },
-  { key: 'H',         action: 'shortcut.hold' },
-  { key: 'A',         action: 'shortcut.arpeggio' },
-  { key: 'S',         action: 'shortcut.send' },
-  { key: 'C',         action: 'shortcut.clear' },
-  { key: 'kbd.esc',   action: 'shortcut.escape' },
-  { key: 'M',         action: 'shortcut.keyboard' },
-  { key: 'P',         action: 'shortcut.present' },
-  { key: '/',         action: 'shortcut.type' },
-  { key: '1–9',       action: 'shortcut.candidate' },
-  { key: '?',         action: 'shortcut.help' },
-  { key: 'Tab',       action: 'shortcut.tab' },
-  { key: 'kbd.panelArrows', action: 'shortcut.panelArrows' },
+// Keys that are always the same: Esc, the readings, Tab, the arrows on a panel title
+const FIXED_KEYS: [string, StringKey][] = [
+  ['kbd.esc', 'shortcut.escape'], ['1–9', 'shortcut.candidate'], ['Tab', 'shortcut.tab'], ['kbd.panelArrows', 'shortcut.panelArrows'],
 ]
 
 // What the mouse does that no label says.
 const GESTURES: StringKey[] = [
   'gesture.click', 'gesture.doubleClick', 'gesture.logged', 'gesture.drag', 'gesture.fill', 'gesture.remove', 'gesture.piano', 'gesture.layout',
 ]
-
-const keyText = (k: string) => k.startsWith('kbd.') ? t(k as StringKey) : k
-
-/** Saves the choice and loads the page again in it; the history comes along. */
-function reloadWith(apply: () => void) {
-  apply()
-  carryHistoryOverReload()
-  location.reload()
-}
 
 let helpVisible = false
 let returnFocus: HTMLElement | null = null
@@ -69,41 +44,27 @@ export function toggleHelp() {
       <span>${t('help.heading')}</span>
       <button class="shortcut-help-close" aria-label="${t('help.close')}">×</button>
     </div>
-    ${SHORTCUTS.map(s => `
+    <div class="shortcut-section">${t('help.keys')}</div>
+    ${ACTIONS.map(a => `
       <div class="shortcut-row">
-        <kbd class="shortcut-key">${escapeHtml(keyText(s.key))}</kbd>
-        <span class="shortcut-action">${escapeHtml(t(s.action))}</span>
+        <kbd class="shortcut-key">${escapeHtml(keysOf(a).map(keyLabel).join(' ') || '—')}</kbd>
+        <span class="shortcut-action">${escapeHtml(t(`action.${a}` as StringKey))}</span>
       </div>`).join('')}
+    ${FIXED_KEYS.map(([k, action]) => `
+      <div class="shortcut-row">
+        <kbd class="shortcut-key">${escapeHtml(k.startsWith('kbd.') ? t(k as StringKey) : k)}</kbd>
+        <span class="shortcut-action">${escapeHtml(t(action))}</span>
+      </div>`).join('')}
+    <div class="help-setting"><button id="help-keys" class="ctrl-btn">${escapeHtml(t('help.changeKeys'))}</button></div>
     <div class="shortcut-section">${t('help.mouse')}</div>
     ${GESTURES.map(g => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join('')}
     <div class="shortcut-section">${t('help.panels')}</div>
     ${MODULE_IDS.map(id => `<div class="gesture-row"><b>${escapeHtml(t(`module.${id}`))}</b> — ${escapeHtml(t(`help.panel.${id}`))}</div>`).join('')}
-    <div class="shortcut-section">${t('help.settings')}</div>
-    <div class="help-setting"><label for="help-theme">${t('help.theme')}</label>
-      <select id="help-theme" class="ctrl-select">
-        ${THEME_CHOICES.map(c => `<option value="${c}"${c === getThemeChoice() ? ' selected' : ''}>${t(`help.theme.${c}`)}</option>`).join('')}
-      </select></div>
-    <div class="help-setting"><label for="help-lang">${t('help.language')}</label>
-      <select id="help-lang" class="ctrl-select">
-        ${LANGS.map(l => `<option value="${l}"${l === getLang() ? ' selected' : ''}>${LANG_NAMES[l]}</option>`).join('')}
-      </select></div>
-    <div class="help-setting"><label for="help-note-names">${t('help.noteNames')}</label>
-      <select id="help-note-names" class="ctrl-select">
-        ${NOTE_NAMINGS.map(n => `<option value="${n}"${n === getNoteNaming() ? ' selected' : ''}>${t(`help.noteNames.${n}`)}</option>`).join('')}
-      </select></div>
-    <div class="gesture-row">${escapeHtml(t('help.reloads'))}</div>
     <div class="help-setting"><button id="help-tour" class="ctrl-btn" title="${escapeHtml(t('tour.start.title'))}">${escapeHtml(t('tour.start'))}</button></div>`
   document.body.appendChild(popup)
   popup.querySelector('.shortcut-help-close')!.addEventListener('click', closeHelp)
   popup.querySelector('#help-tour')!.addEventListener('click', () => { closeHelp(); startTour() })
-  // The theme changes in place: no reload
-  const themeSel = popup.querySelector<HTMLSelectElement>('#help-theme')!
-  themeSel.addEventListener('change', () => saveThemeChoice(themeSel.value as ThemeChoice))
-  const langSel = popup.querySelector<HTMLSelectElement>('#help-lang')!
-  // Note names follow the language until they are chosen on their own
-  langSel.addEventListener('change', () => reloadWith(() => saveLang(langSel.value as Lang)))
-  const namesSel = popup.querySelector<HTMLSelectElement>('#help-note-names')!
-  namesSel.addEventListener('change', () => reloadWith(() => saveNoteNaming(namesSel.value as NoteNaming)))
+  popup.querySelector('#help-keys')!.addEventListener('click', () => { closeHelp(); openSettings('shortcuts') })
   document.addEventListener('mousedown', closeHelpOnOutsideClick)
 }
 
@@ -129,6 +90,9 @@ export interface KeyActions {
   toggleComputerKeyboard: () => void
   togglePresentation: () => void
   focusChordInput: () => void
+  openSettings: () => void
+  /** Closes the Settings dialog; false when it was not open. */
+  closeSettings: () => boolean
 }
 
 export function wireKeyboard(actions: KeyActions) {
@@ -140,27 +104,24 @@ export function wireKeyboard(actions: KeyActions) {
     if (t instanceof HTMLElement && t.isContentEditable) return
     if (keyBelongsToControl(e)) return
 
-    switch (e.key) {
-      case 'h': case 'H': actions.toggleHold(); break
-      case 'a': case 'A': actions.toggleArpeggio(); break
-      case ' ': e.preventDefault(); actions.play(); break
-      case 's': case 'S': actions.sendToSong(); break
-      case 'c': case 'C': actions.clearHistory(); break
-      case '?': e.preventDefault(); toggleHelp(); break
-      case 'm': case 'M': actions.toggleComputerKeyboard(); break
-      case 'p': case 'P': actions.togglePresentation(); break
-      case '/': e.preventDefault(); actions.focusChordInput(); break
-      case 'ArrowLeft': case 'ArrowRight':
-        e.preventDefault()
-        actions.step(e.key === 'ArrowRight' ? 1 : -1); break
-      case 'Delete': case 'Backspace':
-        if (actions.deleteAtCursor()) e.preventDefault()
-        break
-      case 'Escape':
-        if (!closeHelp()) actions.escape()
-        break
-      default:
-        if (e.key >= '1' && e.key <= '9') actions.selectCandidate(parseInt(e.key) - 1)
+    // Fixed keys first: Esc closes or cancels, 1–9 pick a reading
+    if (e.key === 'Escape') { if (!closeHelp() && !actions.closeSettings()) actions.escape(); return }
+    if (e.key >= '1' && e.key <= '9') { actions.selectCandidate(parseInt(e.key) - 1); return }
+    // The rest as the user has them (Settings › Shortcuts)
+    switch (actionFor(keyName(e))) {
+      case 'hold': actions.toggleHold(); break
+      case 'arpeggio': actions.toggleArpeggio(); break
+      case 'play': e.preventDefault(); actions.play(); break
+      case 'send': actions.sendToSong(); break
+      case 'clear': actions.clearHistory(); break
+      case 'help': e.preventDefault(); toggleHelp(); break
+      case 'settings': e.preventDefault(); actions.openSettings(); break
+      case 'keyboard': actions.toggleComputerKeyboard(); break
+      case 'present': actions.togglePresentation(); break
+      case 'type': e.preventDefault(); actions.focusChordInput(); break
+      case 'stepPrev': e.preventDefault(); actions.step(-1); break
+      case 'stepNext': e.preventDefault(); actions.step(1); break
+      case 'delete': if (actions.deleteAtCursor()) e.preventDefault(); break
     }
   })
 }

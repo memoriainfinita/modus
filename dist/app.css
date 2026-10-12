@@ -1989,4 +1989,328 @@ body {
   color: var(--on-accent);
   border-color: var(--accent);
 }
+.set-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(0, 0, 0, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.set-backdrop[hidden] {
+  display: none;
+}
+.set-dialog {
+  width: min(920px, 100%);
+  height: min(680px, calc(100vh - 32px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px var(--shadow);
+}
+.set-header,
+.set-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: var(--bg-bar);
+}
+.set-header {
+  border-bottom: 1px solid var(--line);
+}
+.set-footer {
+  border-top: 1px solid var(--line);
+}
+.set-title {
+  margin: 0;
+  font-size: 17px;
+  color: var(--text-strong);
+}
+.set-search-label {
+  margin-left: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.set-search {
+  flex: 1;
+  max-width: 340px;
+  height: 30px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+.set-gap {
+  flex: 1;
+}
+.set-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+}
+.set-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.set-nav {
+  width: 210px;
+  flex-shrink: 0;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface-2);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+.set-nav-item {
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.set-nav-item:hover {
+  background: var(--surface);
+}
+.set-nav-item[aria-current=true] {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.set-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 26px;
+}
+.set-section-title {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-strong);
+}
+.set-section-hint,
+.set-intro {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.set-section + .set-section {
+  margin-top: 22px;
+}
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.set-row[hidden] {
+  display: none;
+}
+.set-row-wide {
+  flex-wrap: wrap;
+}
+.set-row-wide .set-control {
+  flex-basis: 100%;
+}
+.set-text {
+  flex: 1;
+  min-width: 0;
+}
+.set-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.set-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.set-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.set-select {
+  min-width: 200px;
+  height: 32px;
+}
+.set-range {
+  width: 150px;
+  accent-color: var(--accent);
+}
+.set-value {
+  min-width: 58px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.set-check {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+.set-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.set-check-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.set-check-label input {
+  accent-color: var(--accent);
+}
+.set-seg {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.set-seg button {
+  min-width: 72px;
+  height: 32px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 10px;
+}
+.set-seg button + button {
+  border-left: 1px solid var(--border);
+}
+.set-seg button[aria-pressed=true] {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.set-nothing {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.set-footnote {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.set-file {
+  cursor: pointer;
+}
+.set-danger {
+  border-color: var(--danger);
+  color: var(--danger-text);
+}
+.set-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+.set-error {
+  color: var(--danger-text);
+  font-size: 13px;
+}
+.set-keys {
+  flex-wrap: wrap;
+  min-width: 200px;
+}
+.set-key-buttons {
+  display: flex;
+  gap: 6px;
+  width: 170px;
+  justify-content: flex-end;
+}
+.set-kbd-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+.set-kbd {
+  padding: 3px 9px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+.set-kbd-custom {
+  color: var(--accent-text);
+  border-color: var(--accent-text);
+}
+.set-kbd-wait {
+  border: 2px solid var(--cursor);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.set-kbd-x {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+.set-key-waiting {
+  background: var(--surface-2);
+}
+.set-conflict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--modulation-border);
+  color: var(--modulation-text);
+  font-size: 13px;
+}
+.set-conflict span {
+  flex: 1;
+}
+@media (max-width: 720px) {
+  .set-dialog {
+    height: calc(100vh - 32px);
+  }
+  .set-main {
+    flex-direction: column;
+  }
+  .set-nav {
+    width: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .set-row {
+    flex-wrap: wrap;
+  }
+  .set-search-label {
+    display: none;
+  }
+}
 /*# sourceMappingURL=app.css.map */

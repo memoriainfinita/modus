@@ -8,6 +8,7 @@ import { noteNameToMidi, midiToNoteName } from '../theory/notes'
 import { ALL_KEYS } from '../theory/keys'
 import { loadChoice, loadJSON, save } from './storage'
 import { escapeHtml } from './html'
+import { getPref } from '../settings/prefs'
 import { t, keyLabel, cadenceLabel } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
 
@@ -26,6 +27,13 @@ const CADENCES: Record<string, { numerals: string; umt: string }> = {
 
 export const EAR_ANSWERS: Record<EarMode, string[]> = {
   interval: INTERVALS, chord: CHORDS, cadence: Object.keys(CADENCES),
+}
+
+/** The answers asked: the chord kinds and cadences chosen in Settings (all, if none is). */
+export function earAnswers(mode: EarMode): string[] {
+  const chosen = mode === 'chord' ? getPref('ear-chords') : mode === 'cadence' ? getPref('ear-cadences') : null
+  const list = chosen ? EAR_ANSWERS[mode].filter(a => chosen.includes(a)) : EAR_ANSWERS[mode]
+  return list.length ? list : EAR_ANSWERS[mode]
 }
 
 /** One question: what is played (each step a set of notes sounding together), and what to show after. */
@@ -61,15 +69,17 @@ export function makeQuestion(mode: EarMode, rng: Rng = Math.random): EarQuestion
     const low = 55 + Math.floor(rng() * 12)
     const [a, b] = [midiToNoteName(low), midiToNoteName(low + n)]
     // Up one note at a time, then both together
-    return { mode, answer: String(n), steps: [[a], [b], [a, b]], symbol: null, prev: null, key: null }
+    const play = getPref('ear-interval-play')
+    const steps = play === 'harmonic' ? [[a, b]] : play === 'down' ? [[b], [a], [a, b]] : [[a], [b], [a, b]]
+    return { mode, answer: String(n), steps, symbol: null, prev: null, key: null }
   }
   if (mode === 'chord') {
-    const suffix = pick(CHORDS, rng)
+    const suffix = pick(earAnswers('chord'), rng)
     const root = pick(['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'], rng)
     const symbol = root + suffix
     return { mode, answer: suffix, steps: [chordNoteNames(symbol)], symbol, prev: null, key: null }
   }
-  const answer = pick(Object.keys(CADENCES), rng)
+  const answer = pick(earAnswers('cadence'), rng)
   const key = pick(ALL_KEYS.filter(k => k.endsWith('Major')), rng)
   // The tonic first, so the key is heard, then the two chords of the cadence
   const chords = tryUMT('roman numerals', () => UMT.parseRomanProgression(`I ${CADENCES[answer].numerals}`, key), [] as any[])
@@ -90,7 +100,7 @@ const STEP_MS = { interval: 700, chord: 0, cadence: 1100 }
 let timers: ReturnType<typeof setTimeout>[] = []
 function playQuestion(q: EarQuestion) {
   timers.forEach(clearTimeout)
-  timers = q.steps.map((notes, i) => setTimeout(() => playNoteNames(notes, q.mode === 'interval' && i < 2 ? 0.8 : 1.6), i * STEP_MS[q.mode]))
+  timers = q.steps.map((notes, i) => setTimeout(() => playNoteNames(notes, q.mode === 'interval' && q.steps.length > 1 && i < 2 ? 0.8 : 1.6), i * STEP_MS[q.mode]))
 }
 
 type Score = Record<EarMode, { right: number; total: number }>
@@ -104,6 +114,12 @@ export interface EarHandlers {
 let mode = loadChoice<EarMode>('ear-mode', EAR_MODES, 'chord')
 let score: Score = { ...emptyScore(), ...loadJSON<Partial<Score>>('ear-score', {}) }
 let question: EarQuestion | null = null
+
+/** Every kind of question back to 0 / 0 (Settings › Practice). */
+export function resetEarScore() {
+  score = emptyScore()
+  save('ear-score', score)
+}
 let answered = false
 
 export function renderEar(container: HTMLElement, handlers: EarHandlers) {
@@ -117,7 +133,7 @@ export function renderEar(container: HTMLElement, handlers: EarHandlers) {
     </div>
     <p class="ear-prompt">${escapeHtml(question ? t(`ear.ask.${mode}`) : t('ear.start'))}</p>
     <div class="ear-answers">
-      ${EAR_ANSWERS[mode].map(a => `<button class="ear-answer" data-answer="${escapeHtml(a)}"${question && !answered ? '' : ' disabled'}>${escapeHtml(answerLabel(mode, a))}</button>`).join('')}
+      ${earAnswers(mode).map(a => `<button class="ear-answer" data-answer="${escapeHtml(a)}"${question && !answered ? '' : ' disabled'}>${escapeHtml(answerLabel(mode, a))}</button>`).join('')}
     </div>
     <p class="ear-feedback" aria-live="polite"></p>`
 

@@ -70,8 +70,6 @@ The current layout is kept as it is left (`layout`), saved ones under `layouts`;
 ### Toolbar
 
 - **MIDI status and device selector:** updates on connect/disconnect (Firefox reports neither: the list is rescanned every 2 s while the page is visible, and on focus). The device the user picks, or the first one used, is preferred by name and taken back when it reappears; a fallback used meanwhile does not replace it. Connected shows as a green "MIDI" (the full status in its tooltip).
-- **Input channel (in: all ch / in: ch N):** only notes and pedal on that channel are read, for a keyboard split or one DAW track. A note let in is always let out on its own channel, and a pedal held down is released when the filter changes, so changing it leaves nothing hanging. Remembered.
-- **MIDI out (Out ▾, ch, Thru):** see MIDI out.
 - **Mode buttons:** Normal, Hold, Arpeggio (mutually exclusive). They apply to every input: controller, computer keyboard and on-screen piano.
 - **⌨ (M):** the computer keyboard as a piano; octave and velocity shown next to it.
 - **Chord field (/):** type a chord name, in letters or in solfège (Am7, Lam7), Enter shows and plays it like a chord picked from history; an unknown name is marked red.
@@ -79,7 +77,10 @@ The current layout is kept as it is left (`layout`), saved ones under `layouts`;
 - **Audio status bar, play button (▶, same as Space), instrument selector, volume.**
 - **⛶ button (P):** presentation mode (see View windows and export).
 - **⧉ button:** view windows for OBS and diagram export (see View windows and export).
-- **? button:** shortcuts, mouse gestures, interface language and note names (see Language).
+- **⚙ button (,):** Settings (see Settings).
+- **? button:** help: the keys, mouse gestures, what each panel is for, the guided tour.
+
+The toolbar keeps what is touched while playing; setup (MIDI channels and out, language, theme…) is in Settings.
 
 ### MIDI input
 
@@ -308,7 +309,7 @@ The main window sends what the detector shows over a `BroadcastChannel` (`modus-
 
 ## Language
 
-The interface is in English or Spanish: the browser's first language when it is Spanish, otherwise English, and changeable in the ? panel. Note names are a separate choice, letters (C D E) or fixed-do solfège (Do Re Mi): they follow the language until chosen. Changing either reloads the page; the history is carried over, songs and settings are stored anyway.
+The interface is in English or Spanish: the browser's first language when it is Spanish, otherwise English, and changeable in Settings › General. Note names are a separate choice, letters (C D E) or fixed-do solfège (Do Re Mi): they follow the language until chosen. Changing either reloads the page; the history is carried over, songs and settings are stored anyway.
 
 - Strings: one table per language (`src/i18n/en.ts`, `es.ts`); Spanish has every English key, with the same values filled in (checked by a test)
 - Notes and chords in solfège come from UMT: `localizeNoteName` for notes, `formatChordSymbol(…, { roots: 'solfege' })` for chords (root and slash bass: Sibm7/Re). They apply wherever a note or chord is shown: detector, analysis, history, song, key panel, circle and strings labels, velocity, view windows and presentation. Key names are Modus's (C Major / Do mayor / C mayor)
@@ -319,7 +320,7 @@ The interface is in English or Spanish: the browser's first language when it is 
 
 ## Theme
 
-Dark, light, high contrast (black ground, bright marks, for a projector or a far screen), paper (warm light ground, ink colours), or as the system (the default: dark or light), chosen in the ? panel; the change applies in place, without a reload. With "as the system" the page follows the operating system while it is open.
+Dark, light, high contrast (black ground, bright marks, for a projector or a far screen), paper (warm light ground, ink colours), or as the system (the default: dark or light), chosen in Settings › General; the change applies in place, without a reload. With "as the system" the page follows the operating system while it is open.
 
 - Every colour is a token in `src/styles.css`: one block per theme (`:root` is dark, `[data-theme="light"]` and so on), all with the same tokens; a new theme is one more block and its name in `ui/theme.ts` (checked by a test, as is that the rest of the stylesheet writes no colour)
 - The page takes the tokens through `var()`. The SVG diagrams (circle, piano, strings) write their colours into the drawing: they read the tokens through `ui/theme.ts` and are drawn again when the theme changes, so exported SVG and PNG carry the theme's colours
@@ -346,13 +347,30 @@ Persisted to localStorage:
 
 ## Help and guided tour
 
-The ? panel (a dialog, scrolling when it is taller than the window) lists the shortcuts, the mouse gestures, what each panel is for, and the settings: theme, language, note names. Its Guided tour button starts the tour.
+The ? panel (a dialog, scrolling when it is taller than the window) lists the keys as the user has them (with a button to change them in Settings), the keys that never change, the mouse gestures and what each panel is for. Its Guided tour button starts the tour; Settings › General has one too.
 
 The tour (`ui/tour.ts`) runs by itself on the first visit: ten steps, each dimming the page around what it is about (the input device, the key, analysis, explanation, the circle, history, the layout menu, the practice panels, help) with a card that says what it is for; a step whose panel is hidden shows its card in the middle. Next / Back or the arrows move through it, Skip or Esc ends it, and it is not shown again (`tour-done`). It never starts by itself in a browser driven by tests (`navigator.webdriver`), where it would cover the page.
 
+## Settings
+
+⚙ in the toolbar, or its shortcut (`,`), opens a dialog (`ui/settings.ts`): an index of sections on the left, a search across every section at the top, and per section a "Reset this section". Changes apply at once and are kept; Esc or × closes it, and the focus goes back where it was. On a phone the index goes on top.
+
+- **General:** interface language and note names (both reload the page; history and songs stay), theme (in place), interface size (80–150 %), the guided tour
+- **Input and output:** input channel (only notes and pedal on that channel are read; a note let in is always let out on its own channel, and a pedal held is released when the filter changes), MIDI out port, output channel, Thru (see MIDI out). The input device and mode stay in the toolbar
+- **Sound:** length of previews (0.5–4 s), velocity of the on-screen piano and previews (also what MIDI out sends)
+- **Theory:** chord symbols (Cmaj7 / CΔ7 / CM7, UMT `formatChordSymbol`), the key profile Auto detects with (Krumhansl-Kessler, Temperley-Kostka-Payne, Aarden-Essen, Bellman-Budge, simple; UMT `KEY_PROFILES`), voice-leading rules (strict, contemporary, species: UMT `checkVoiceLeading`), movable do in the explanation of the degree (UMT `Solfege.movableDo`)
+- **Detector and history:** how long a chord holds before it is logged (0.8 s), chips kept (200), arpeggio window (1.2 s), the pause that starts a new melody (6 s), the settle time of MIDI fill (250 ms)
+- **Panels:** each panel's own on/off buttons (previous chord, circle rings, degrees, sevenths, key panel sections) as boxes that press them
+- **Practice:** progression tempo (60–160 bpm), how intervals are played (rising, falling, together), which chord kinds and cadences ear training asks (none ticked asks all), its score back to zero
+- **Microphone and tuner:** notes or chords, A4 (415–466 Hz), sensitivity (the silence gate), response (frames a note holds before it counts)
+- **Shortcuts:** see Keyboard shortcuts
+- **Data:** export the settings, shortcuts and layouts to `modus-settings.json`; import one (it replaces them, after a reload, with Undo); reset them all as they came (with Undo). Songs, history, the ear-training score and whether the tour was seen are never exported nor reset here
+
+Each preference is in one table (`settings/prefs.ts`): its type, range or options and default, stored as `pref-<name>`; a value out of range falls back to the default.
+
 ## Keyboard shortcuts
 
-Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/Alt held.
+Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/Alt held. Each action takes up to two keys, changed in Settings › Shortcuts (`input/bindings.ts`, stored as `shortcuts`): Change, then the new key (Esc keeps the old one); + adds a second; × removes one; ↺ puts the factory key back. A key another action has asks first: give it (the other loses it) or pick another. Esc, 1–9, Tab and Enter cannot be taken. The factory keys:
 
 | Key | Action |
 |---|---|
@@ -368,7 +386,8 @@ Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/A
 | `M` | Computer keyboard as a piano (M or Esc to stop) |
 | `P` | Presentation mode (P or Esc to leave) |
 | `/` | Type a chord name |
-| `?` | Toggle shortcuts and gestures help |
+| `?` | Help |
+| `,` | Settings |
 
 ## MIDI out
 

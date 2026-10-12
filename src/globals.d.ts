@@ -24,7 +24,7 @@ declare const UMT: {
     fromChord: (chord: any, bassNote: any) => string
   }
   KeyDetection: {
-    detect: (notes: any[]) => { key: string; confidence: number }[]
+    detect: (notes: any[], durations?: readonly number[], options?: { profile?: string }) => { key: string; confidence: number }[]
   }
   getSubstitutions: (chord: any, key: string) => any[]
   PROGRESSIONS: Record<string, { name: string; romanNumerals: string[]; description: string; style: string; defaultKey?: string }>
@@ -48,6 +48,7 @@ declare const UMT: {
   spellChord: (chord: any, rootName?: string) => string[]
   spellChordInKey: (chord: any, key: string) => any
   localizeNoteName: (name: string, language: 'en' | 'es', long?: boolean) => string
+  Solfege: { movableDo: (note: any, key: string) => string }
   formatChordSymbol: (chord: any, opts?: { style?: 'standard' | 'symbols' | 'short'; roots?: 'letters' | 'solfege' }) => string
   chordLongName: (chord: any, language?: 'en' | 'es') => string
   scaleName: (name: string, language?: 'en' | 'es', options?: { roots?: 'letters' | 'solfege' }) => string

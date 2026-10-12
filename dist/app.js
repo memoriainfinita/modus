@@ -91,6 +91,20 @@
     cache.set(name, v);
     return v;
   }
+  var listeners = /* @__PURE__ */ new Set();
+  function onPrefChange(cb) {
+    listeners.add(cb);
+  }
+  function setPref(name, value) {
+    if (!valid(PREFS[name], value)) return;
+    cache.set(name, value);
+    save(storageKey(name), value);
+    listeners.forEach((f) => f(name));
+  }
+  function resetPref(name) {
+    const def = PREFS[name];
+    setPref(name, Array.isArray(def.default) ? [...def.default] : def.default);
+  }
 
   // src/input/midi.ts
   function isNoteOff(status2, velocity2) {
@@ -541,13 +555,13 @@
     document.documentElement.dataset.theme = theme;
     cache2.clear();
   }
-  var listeners = [];
+  var listeners2 = [];
   function onThemeChange(onChange3) {
-    listeners.push(onChange3);
+    listeners2.push(onChange3);
   }
   function changed() {
     applyTheme();
-    listeners.forEach((f) => f());
+    listeners2.forEach((f) => f());
   }
   function saveThemeChoice(choice2) {
     save(KEY, choice2);
@@ -634,10 +648,10 @@
   // src/theory/keys.ts
   var MAJOR_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
   var MINOR_ROOTS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
-  var ALL_KEYS = MAJOR_ROOTS.flatMap((root, pc3) => [`${root} Major`, `${MINOR_ROOTS[pc3]} Minor`]);
+  var ALL_KEYS = MAJOR_ROOTS.flatMap((root2, pc3) => [`${root2} Major`, `${MINOR_ROOTS[pc3]} Minor`]);
   function parseKey(key) {
-    const [root, mode4] = key.split(" ");
-    const pc3 = pitchClassOf(root ?? "");
+    const [root2, mode4] = key.split(" ");
+    const pc3 = pitchClassOf(root2 ?? "");
     if (pc3 === -1) return null;
     return { pc: pc3, minor: mode4?.toLowerCase() === "minor" };
   }
@@ -666,8 +680,8 @@
       const m = n.match(/^([A-G])([#b])/);
       if (m) accidentals[m[1]] = m[2];
     }
-    const [root, mode4] = name.split(" ");
-    return { abcKey: root + (mode4 === "Minor" ? "m" : ""), accidentals };
+    const [root2, mode4] = name.split(" ");
+    return { abcKey: root2 + (mode4 === "Minor" ? "m" : ""), accidentals };
   }
   function keyPrefersSharps(key) {
     return Object.values(keySignature(key ?? null).accidentals).includes("#");
@@ -789,7 +803,7 @@
     "view.cof": "Circle of Fifths",
     "view.piano": "Piano",
     "view.guitar": "Strings",
-    "help.title": "Shortcuts, gestures and language (?)",
+    "help.title": "Help: keys, gestures, panels (?)",
     // Shared controls
     "ctrl.smaller": "Smaller",
     "ctrl.larger": "Larger",
@@ -1034,6 +1048,152 @@
     "mic.listening": "Listening\u2026",
     "mic.error": "No microphone ({error}): allow it in the browser and try again.",
     "help.close": "Close",
+    "help.keys": "Keys",
+    "help.changeKeys": "Change the shortcuts\u2026",
+    "ex.movableDo": "In movable do: {syllable}.",
+    "set.title": "Settings",
+    "set.title.button": "Settings (,)",
+    "set.search": "Search",
+    "set.search.placeholder": "key, shortcut, microphone\u2026",
+    "set.sections": "Sections",
+    "set.nothing": "No setting matches.",
+    "set.footnote": "Esc closes \xB7 changes are kept as you make them",
+    "set.resetSection": "Reset this section",
+    "set.reloads": "Changing it reloads the page; history and songs stay",
+    "set.noteNames.hint": "Everywhere: detector, staff, piano, circle, history. Reloads the page",
+    "set.section.general": "General",
+    "set.section.general.hint": "Language, note names, look",
+    "set.section.io": "Input and output",
+    "set.section.io.hint": "MIDI channels and the port Modus sends to. The input device and mode stay in the toolbar",
+    "set.section.sound": "Sound",
+    "set.section.sound.hint": "How previews sound. Instrument and volume stay in the toolbar",
+    "set.section.theory": "Theory",
+    "set.section.theory.hint": "How chords are written and read",
+    "set.section.detector": "Detector and history",
+    "set.section.detector.hint": "How long things wait before they count",
+    "set.section.panels": "Panels",
+    "set.section.panels.hint": "The options each panel carries on its own buttons, here too",
+    "set.section.practice": "Practice",
+    "set.section.practice.hint": "Progressions and ear training",
+    "set.section.mic": "Microphone and tuner",
+    "set.section.mic.hint": "How the microphone listens and what A is",
+    "set.section.shortcuts": "Shortcuts",
+    "set.section.shortcuts.hint": "The keys of each action",
+    "set.section.data": "Data",
+    "set.section.data.hint": "Settings and layouts to a file, from a file, or back to how they came. Songs and history are not touched",
+    "set.io.inChannel": "Input channel",
+    "set.io.out": "MIDI out",
+    "set.io.outChannel": "Output channel",
+    "set.io.thru": "Thru",
+    "set.panels.intro": "Each box presses the panel's own button: both stay the same.",
+    "set.panels.prev": "Staff and piano: show the chord before",
+    "set.panels.cofMinor": "Circle: minor and diminished rings",
+    "set.panels.cofDegrees": "Circle: degrees",
+    "set.panels.cofSevenths": "Circle: seventh chords",
+    "set.panels.keySevenths": "Key: seventh chords",
+    "set.panels.keyNegative": "Key: negative harmony",
+    "set.panels.keyParallel": "Key: parallel modes",
+    "set.panels.keyColtrane": "Key: Coltrane axis",
+    "set.ear.reset": "Reset the ear-training score",
+    "set.ear.reset.hint": "Every kind back to 0 / 0",
+    "set.mic.mode": "What the microphone hears",
+    "set.mic.mode.hint": "One note at a time, or chords (experimental)",
+    "set.keys.intro": "Change: press the new key; Esc keeps the one there was. Each action takes two keys.",
+    "set.keys.press": "Press a key\u2026",
+    "set.keys.change": "Change",
+    "set.keys.add.title": "Add a second key",
+    "set.keys.cancel": "Cancel",
+    "set.keys.reset": "Back to the factory key",
+    "set.keys.remove": "Remove {key}",
+    "set.keys.none": "no key",
+    "set.keys.conflict": "{key} is already {other}. Give it to \xAB{action}\xBB and leave {other} without it?",
+    "set.keys.take": "Give it",
+    "set.keys.other": "Pick another",
+    "set.keys.fixed": "Always the same",
+    "set.keys.fixed.hint": "Esc closes and cancels, 1\u20139 pick a reading of the chord, Tab moves through the page",
+    "set.data.export": "Export",
+    "set.data.export.hint": "Settings, shortcuts and layouts to a file, to take to another computer",
+    "set.data.export.button": "Save the file\u2026",
+    "set.data.import": "Import",
+    "set.data.import.hint": "Settings from a file exported before; they replace these, with Undo",
+    "set.data.import.button": "Open a file\u2026",
+    "set.data.import.bad": "That file is not a Modus settings file.",
+    "set.data.reset": "Reset all settings",
+    "set.data.reset.hint": "As they came: settings, shortcuts, layouts and panel options. Songs, history and the ear-training score stay; Undo brings them back",
+    "set.data.reset.button": "Reset",
+    "set.data.imported": "Settings imported",
+    "set.data.wasReset": "Settings reset",
+    "action.play": "Play the chord on screen",
+    "action.stepPrev": "Previous chord (song or history)",
+    "action.stepNext": "Next chord (song or history)",
+    "action.delete": "Remove the selected song chord",
+    "action.hold": "Hold mode",
+    "action.arpeggio": "Arpeggio mode",
+    "action.send": "Send the chip to the song",
+    "action.clear": "Clear the history",
+    "action.keyboard": "Computer keyboard as a piano",
+    "action.present": "Presentation",
+    "action.type": "Type a chord",
+    "action.help": "Help",
+    "action.settings": "Settings",
+    "pref.ui-zoom": "Interface size",
+    "pref.ui-zoom.hint": "Everything larger or smaller, for a far screen or a small one",
+    "pref.preview-s": "Length of previews",
+    "pref.preview-s.hint": "A chord played from history, circle, key panel or song",
+    "pref.piano-velocity": "Strength of the on-screen piano and previews",
+    "pref.piano-velocity.hint": "MIDI velocity, 1\u2013127; MIDI out sends it too",
+    "pref.chord-style": "Chord symbols",
+    "pref.chord-style.hint": "How a major seventh chord is written",
+    "pref.chord-style.standard": "Cmaj7",
+    "pref.chord-style.symbols": "C\u03947",
+    "pref.chord-style.short": "CM7",
+    "pref.key-profile": "Key detection (Auto)",
+    "pref.key-profile.hint": "The profile what you play is compared with, for each key",
+    "pref.key-profile.krumhansl": "Krumhansl-Kessler",
+    "pref.key-profile.temperley": "Temperley-Kostka-Payne",
+    "pref.key-profile.aarden": "Aarden-Essen",
+    "pref.key-profile.bellman": "Bellman-Budge",
+    "pref.key-profile.simple": "Simple",
+    "pref.voice-rules": "Voice-leading rules",
+    "pref.voice-rules.hint": "Strict: four-part chorale. Contemporary: no parallels or leaps; crossing, leading tone and seventh. Species: counterpoint, leaps up to a fifth",
+    "pref.voice-rules.strict": "Strict",
+    "pref.voice-rules.contemporary": "Contemporary",
+    "pref.voice-rules.species": "Species",
+    "pref.movable-do": "Movable do in the explanations",
+    "pref.movable-do.hint": "The tonic is do: in G major, G is called do",
+    "pref.history-hold-ms": "Hold a chord to log it",
+    "pref.history-hold-ms.hint": "How long a chord holds before it goes to the history",
+    "pref.history-max": "Chips the history keeps",
+    "pref.history-max.hint": "The oldest go first",
+    "pref.arpeggio-ms": "Arpeggio mode window",
+    "pref.arpeggio-ms.hint": "Notes played within it make one chord",
+    "pref.melody-gap-s": "Pause that starts a new melody",
+    "pref.melody-gap-s.hint": "For the scales that fit what is played note by note",
+    "pref.capture-ms": "Settle time when filling the song",
+    "pref.capture-ms.hint": "How long a chord holds before it fills the slot",
+    "pref.progression-bpm": "Progression tempo",
+    "pref.progression-bpm.hint": "A bar of 4/4 at this tempo",
+    "pref.ear-interval-play": "Intervals are played",
+    "pref.ear-interval-play.hint": "One note after the other (then together), or both at once",
+    "pref.ear-interval-play.up": "Rising",
+    "pref.ear-interval-play.down": "Falling",
+    "pref.ear-interval-play.harmonic": "Together",
+    "pref.ear-chords": "Chords asked",
+    "pref.ear-chords.hint": "None ticked asks them all",
+    "pref.ear-cadences": "Cadences asked",
+    "pref.ear-cadences.hint": "None ticked asks them all",
+    "pref.a4-hz": "Tuner: A4",
+    "pref.a4-hz.hint": "440 Hz as usual; 442 for many orchestras, 415 for baroque",
+    "pref.mic-sensitivity": "Microphone sensitivity",
+    "pref.mic-sensitivity.hint": "Higher hears soft playing, and more of the room",
+    "pref.mic-sensitivity.low": "Low",
+    "pref.mic-sensitivity.normal": "Normal",
+    "pref.mic-sensitivity.high": "High",
+    "pref.mic-response": "Microphone response",
+    "pref.mic-response.hint": "Fast follows quick melodies; steady ignores a passing note",
+    "pref.mic-response.fast": "Fast",
+    "pref.mic-response.normal": "Normal",
+    "pref.mic-response.steady": "Steady",
     "a11y.toolbar": "Controls",
     "a11y.panels": "Panels",
     "a11y.panelKeys": "{name} panel: arrows move it, Shift + arrows resize it",
@@ -1245,9 +1405,8 @@
     // Undo
     "undo": "Undo",
     // Help
-    "help.heading": "Shortcuts and gestures",
+    "help.heading": "Help",
     "help.mouse": "Mouse",
-    "help.settings": "Language",
     "help.theme": "Theme",
     "help.theme.system": "As the system",
     "help.theme.dark": "Dark",
@@ -1258,23 +1417,11 @@
     "help.noteNames": "Note names",
     "help.noteNames.letters": "C D E",
     "help.noteNames.solfege": "Do Re Mi",
-    "help.reloads": "Changing the interface or the note names reloads the page; history and songs stay.",
     "kbd.space": "Space",
     "kbd.del": "Del",
     "kbd.esc": "Esc",
-    "shortcut.play": "Play current chord (or last if none active)",
-    "shortcut.step": "Previous / next chord in the song (or history) \u2014 plays it",
-    "shortcut.delete": "Remove the selected song chord (undo in the toast)",
-    "shortcut.hold": "Toggle Hold mode",
-    "shortcut.arpeggio": "Toggle Arpeggio mode",
-    "shortcut.send": "Send history chip \u2192 Song",
-    "shortcut.clear": "Clear history (undo in the toast)",
     "shortcut.escape": "Drop a held chord, clear cursor, stop MIDI fill",
-    "shortcut.keyboard": "Play with the computer keyboard (M or Esc to stop)",
-    "shortcut.present": "Presentation: this layout without controls, full screen (P or Esc to leave)",
-    "shortcut.type": "Type a chord name",
     "shortcut.candidate": "Select chord candidate",
-    "shortcut.help": "Show / hide this panel",
     "gesture.click": "Click a history chip, song chord or circle segment to play it and show it in the detector.",
     "gesture.doubleClick": "Double-click a major or minor circle segment to make it the key.",
     "gesture.logged": "A chord is logged to history once held steady for 0.8 s, and not twice in a row.",
@@ -1396,7 +1543,7 @@
     "view.cof": "C\xEDrculo de quintas",
     "view.piano": "Piano",
     "view.guitar": "Cuerdas",
-    "help.title": "Atajos, gestos e idioma (?)",
+    "help.title": "Ayuda: teclas, gestos, paneles (?)",
     "ctrl.smaller": "M\xE1s peque\xF1o",
     "ctrl.larger": "M\xE1s grande",
     "staff.clef.title": "Pentagramas: doble (clave de sol y de fa, separados en el Do central), solo clave de sol, solo clave de fa",
@@ -1635,6 +1782,152 @@
     "mic.listening": "Escuchando\u2026",
     "mic.error": "Sin micr\xF3fono ({error}): perm\xEDtelo en el navegador y vuelve a probar.",
     "help.close": "Cerrar",
+    "help.keys": "Teclas",
+    "help.changeKeys": "Cambiar los atajos\u2026",
+    "ex.movableDo": "En solfeo m\xF3vil: {syllable}.",
+    "set.title": "Ajustes",
+    "set.title.button": "Ajustes (,)",
+    "set.search": "Buscar",
+    "set.search.placeholder": "tonalidad, atajo, micr\xF3fono\u2026",
+    "set.sections": "Secciones",
+    "set.nothing": "Ning\xFAn ajuste coincide.",
+    "set.footnote": "Esc cierra \xB7 los cambios se guardan solos",
+    "set.resetSection": "Restablecer esta secci\xF3n",
+    "set.reloads": "Cambiarlo recarga la p\xE1gina; el historial y las canciones se quedan",
+    "set.noteNames.hint": "En todo: detector, pentagrama, piano, c\xEDrculo, historial. Recarga la p\xE1gina",
+    "set.section.general": "General",
+    "set.section.general.hint": "Idioma, nombres de las notas, aspecto",
+    "set.section.io": "Entrada y salida",
+    "set.section.io.hint": "Canales MIDI y el puerto al que env\xEDa Modus. El dispositivo de entrada y el modo siguen en la barra",
+    "set.section.sound": "Sonido",
+    "set.section.sound.hint": "C\xF3mo suenan las vistas previas. Instrumento y volumen siguen en la barra",
+    "set.section.theory": "Teor\xEDa",
+    "set.section.theory.hint": "C\xF3mo se escriben y se leen los acordes",
+    "set.section.detector": "Detector e historial",
+    "set.section.detector.hint": "Cu\xE1nto esperan las cosas antes de contar",
+    "set.section.panels": "Paneles",
+    "set.section.panels.hint": "Las opciones que cada panel lleva en sus botones, tambi\xE9n aqu\xED",
+    "set.section.practice": "Pr\xE1ctica",
+    "set.section.practice.hint": "Progresiones y entrenamiento auditivo",
+    "set.section.mic": "Micr\xF3fono y afinador",
+    "set.section.mic.hint": "C\xF3mo escucha el micr\xF3fono y cu\xE1nto vale el La",
+    "set.section.shortcuts": "Atajos",
+    "set.section.shortcuts.hint": "Las teclas de cada acci\xF3n",
+    "set.section.data": "Datos",
+    "set.section.data.hint": "Ajustes y disposiciones a un archivo, desde un archivo, o como ven\xEDan. Las canciones y el historial no se tocan",
+    "set.io.inChannel": "Canal de entrada",
+    "set.io.out": "Salida MIDI",
+    "set.io.outChannel": "Canal de salida",
+    "set.io.thru": "Thru",
+    "set.panels.intro": "Cada casilla pulsa el bot\xF3n del propio panel: los dos van a la par.",
+    "set.panels.prev": "Pentagrama y piano: mostrar el acorde anterior",
+    "set.panels.cofMinor": "C\xEDrculo: anillos menor y disminuido",
+    "set.panels.cofDegrees": "C\xEDrculo: grados",
+    "set.panels.cofSevenths": "C\xEDrculo: acordes de s\xE9ptima",
+    "set.panels.keySevenths": "Tonalidad: acordes de s\xE9ptima",
+    "set.panels.keyNegative": "Tonalidad: armon\xEDa negativa",
+    "set.panels.keyParallel": "Tonalidad: modos paralelos",
+    "set.panels.keyColtrane": "Tonalidad: eje de Coltrane",
+    "set.ear.reset": "Poner a cero el marcador del entrenamiento",
+    "set.ear.reset.hint": "Cada tipo vuelve a 0 / 0",
+    "set.mic.mode": "Qu\xE9 escucha el micr\xF3fono",
+    "set.mic.mode.hint": "Una nota cada vez, o acordes (experimental)",
+    "set.keys.intro": "Cambiar: pulsa la tecla nueva; Esc deja la que hab\xEDa. Cada acci\xF3n admite dos teclas.",
+    "set.keys.press": "Pulsa una tecla\u2026",
+    "set.keys.change": "Cambiar",
+    "set.keys.add.title": "A\xF1adir una segunda tecla",
+    "set.keys.cancel": "Cancelar",
+    "set.keys.reset": "Volver a la tecla de f\xE1brica",
+    "set.keys.remove": "Quitar {key}",
+    "set.keys.none": "sin tecla",
+    "set.keys.conflict": "{key} ya es {other}. \xBFPasarla a \xAB{action}\xBB y dejar {other} sin ella?",
+    "set.keys.take": "Pasarla",
+    "set.keys.other": "Elegir otra",
+    "set.keys.fixed": "Siempre iguales",
+    "set.keys.fixed.hint": "Esc cierra y cancela, 1\u20139 eligen una lectura del acorde, Tab recorre la p\xE1gina",
+    "set.data.export": "Exportar",
+    "set.data.export.hint": "Ajustes, atajos y disposiciones a un archivo, para llevarlos a otro ordenador",
+    "set.data.export.button": "Guardar el archivo\u2026",
+    "set.data.import": "Importar",
+    "set.data.import.hint": "Ajustes de un archivo exportado antes; sustituyen a estos, con Deshacer",
+    "set.data.import.button": "Abrir un archivo\u2026",
+    "set.data.import.bad": "Ese archivo no es de ajustes de Modus.",
+    "set.data.reset": "Restablecer todos los ajustes",
+    "set.data.reset.hint": "Como ven\xEDan: ajustes, atajos, disposiciones y opciones de los paneles. Canciones, historial y marcador se quedan; Deshacer los recupera",
+    "set.data.reset.button": "Restablecer",
+    "set.data.imported": "Ajustes importados",
+    "set.data.wasReset": "Ajustes restablecidos",
+    "action.play": "Tocar el acorde en pantalla",
+    "action.stepPrev": "Acorde anterior (canci\xF3n o historial)",
+    "action.stepNext": "Acorde siguiente (canci\xF3n o historial)",
+    "action.delete": "Quitar el acorde seleccionado de la canci\xF3n",
+    "action.hold": "Modo Mantener",
+    "action.arpeggio": "Modo Arpegio",
+    "action.send": "Enviar la ficha a la canci\xF3n",
+    "action.clear": "Vaciar el historial",
+    "action.keyboard": "Teclado del ordenador como piano",
+    "action.present": "Presentaci\xF3n",
+    "action.type": "Escribir un acorde",
+    "action.help": "Ayuda",
+    "action.settings": "Ajustes",
+    "pref.ui-zoom": "Tama\xF1o de la interfaz",
+    "pref.ui-zoom.hint": "Todo m\xE1s grande o m\xE1s peque\xF1o, para una pantalla lejana o peque\xF1a",
+    "pref.preview-s": "Duraci\xF3n de las vistas previas",
+    "pref.preview-s.hint": "Un acorde tocado desde el historial, el c\xEDrculo, la tonalidad o la canci\xF3n",
+    "pref.piano-velocity": "Fuerza del piano en pantalla y las vistas previas",
+    "pref.piano-velocity.hint": "Velocidad MIDI, 1\u2013127; la salida MIDI tambi\xE9n la env\xEDa",
+    "pref.chord-style": "Cifrado",
+    "pref.chord-style.hint": "C\xF3mo se escribe un acorde de s\xE9ptima mayor",
+    "pref.chord-style.standard": "Cmaj7",
+    "pref.chord-style.symbols": "C\u03947",
+    "pref.chord-style.short": "CM7",
+    "pref.key-profile": "Detecci\xF3n de tonalidad (Auto)",
+    "pref.key-profile.hint": "El perfil con el que se compara lo tocado, para cada tonalidad",
+    "pref.key-profile.krumhansl": "Krumhansl-Kessler",
+    "pref.key-profile.temperley": "Temperley-Kostka-Payne",
+    "pref.key-profile.aarden": "Aarden-Essen",
+    "pref.key-profile.bellman": "Bellman-Budge",
+    "pref.key-profile.simple": "Simple",
+    "pref.voice-rules": "Reglas de conducci\xF3n de voces",
+    "pref.voice-rules.hint": "Estricta: coral a cuatro voces. Contempor\xE1nea: sin paralelas ni saltos; cruces, sensible y s\xE9ptima. Especies: contrapunto, saltos hasta la quinta",
+    "pref.voice-rules.strict": "Estricta",
+    "pref.voice-rules.contemporary": "Contempor\xE1nea",
+    "pref.voice-rules.species": "Especies",
+    "pref.movable-do": "Solfeo m\xF3vil en las explicaciones",
+    "pref.movable-do.hint": "La t\xF3nica es do: en Sol mayor, Sol se llama do",
+    "pref.history-hold-ms": "Mantener un acorde para registrarlo",
+    "pref.history-hold-ms.hint": "Cu\xE1nto se mantiene un acorde antes de pasar al historial",
+    "pref.history-max": "Fichas que guarda el historial",
+    "pref.history-max.hint": "Las m\xE1s antiguas se van primero",
+    "pref.arpeggio-ms": "Ventana del modo Arpegio",
+    "pref.arpeggio-ms.hint": "Las notas tocadas dentro forman un acorde",
+    "pref.melody-gap-s": "Pausa que empieza otra melod\xEDa",
+    "pref.melody-gap-s.hint": "Para las escalas que encajan con lo tocado nota a nota",
+    "pref.capture-ms": "Asentamiento al rellenar la canci\xF3n",
+    "pref.capture-ms.hint": "Cu\xE1nto se mantiene un acorde antes de rellenar el hueco",
+    "pref.progression-bpm": "Tempo de las progresiones",
+    "pref.progression-bpm.hint": "Un comp\xE1s de 4/4 a este tempo",
+    "pref.ear-interval-play": "Los intervalos se tocan",
+    "pref.ear-interval-play.hint": "Una nota tras otra (y luego juntas), o las dos a la vez",
+    "pref.ear-interval-play.up": "Ascendentes",
+    "pref.ear-interval-play.down": "Descendentes",
+    "pref.ear-interval-play.harmonic": "Juntas",
+    "pref.ear-chords": "Acordes que se preguntan",
+    "pref.ear-chords.hint": "Sin ninguno marcado, se preguntan todos",
+    "pref.ear-cadences": "Cadencias que se preguntan",
+    "pref.ear-cadences.hint": "Sin ninguna marcada, se preguntan todas",
+    "pref.a4-hz": "Afinador: La4",
+    "pref.a4-hz.hint": "440 Hz lo normal; 442 en muchas orquestas, 415 en barroco",
+    "pref.mic-sensitivity": "Sensibilidad del micr\xF3fono",
+    "pref.mic-sensitivity.hint": "M\xE1s alta oye lo que se toca suave, y m\xE1s ruido de la sala",
+    "pref.mic-sensitivity.low": "Baja",
+    "pref.mic-sensitivity.normal": "Normal",
+    "pref.mic-sensitivity.high": "Alta",
+    "pref.mic-response": "Respuesta del micr\xF3fono",
+    "pref.mic-response.hint": "R\xE1pida sigue melod\xEDas \xE1giles; estable ignora una nota de paso",
+    "pref.mic-response.fast": "R\xE1pida",
+    "pref.mic-response.normal": "Normal",
+    "pref.mic-response.steady": "Estable",
     "a11y.toolbar": "Controles",
     "a11y.panels": "Paneles",
     "a11y.panelKeys": "Panel {name}: las flechas lo mueven, May\xFAs + flechas cambian su tama\xF1o",
@@ -1839,9 +2132,8 @@
     "form.single": "Secci\xF3n \xFAnica (A)",
     "form.strophic": "Estr\xF3fica ({p})",
     "undo": "Deshacer",
-    "help.heading": "Atajos y gestos",
+    "help.heading": "Ayuda",
     "help.mouse": "Rat\xF3n",
-    "help.settings": "Idioma",
     "help.theme": "Tema",
     "help.theme.system": "Como el sistema",
     "help.theme.dark": "Oscuro",
@@ -1852,23 +2144,11 @@
     "help.noteNames": "Nombres de nota",
     "help.noteNames.letters": "C D E",
     "help.noteNames.solfege": "Do Re Mi",
-    "help.reloads": "Al cambiar la interfaz o los nombres de nota se recarga la p\xE1gina; el historial y las canciones se mantienen.",
     "kbd.space": "Espacio",
     "kbd.del": "Supr",
     "kbd.esc": "Esc",
-    "shortcut.play": "Tocar el acorde actual (o el \xFAltimo si no hay ninguno)",
-    "shortcut.step": "Acorde anterior / siguiente de la canci\xF3n (o del historial), y lo toca",
-    "shortcut.delete": "Quitar el acorde seleccionado de la canci\xF3n (se deshace en el aviso)",
-    "shortcut.hold": "Activar o desactivar Mantener",
-    "shortcut.arpeggio": "Activar o desactivar Arpegio",
-    "shortcut.send": "Enviar el acorde del historial a la canci\xF3n",
-    "shortcut.clear": "Borrar el historial (se deshace en el aviso)",
     "shortcut.escape": "Soltar un acorde mantenido, quitar el cursor, parar el relleno MIDI",
-    "shortcut.keyboard": "Tocar con el teclado del ordenador (M o Esc para parar)",
-    "shortcut.present": "Presentaci\xF3n: esta disposici\xF3n sin controles, a pantalla completa (P o Esc para salir)",
-    "shortcut.type": "Escribir un acorde",
     "shortcut.candidate": "Elegir otra lectura del acorde",
-    "shortcut.help": "Mostrar u ocultar este panel",
     "gesture.click": "Clic en un acorde del historial, de la canci\xF3n o del c\xEDrculo para tocarlo y verlo en el detector.",
     "gesture.doubleClick": "Doble clic en un sector mayor o menor del c\xEDrculo para usarlo como tonalidad.",
     "gesture.logged": "Un acorde pasa al historial cuando se mantiene 0,8 s, y nunca dos veces seguidas.",
@@ -1912,8 +2192,9 @@
     return tryUMT("note names", () => UMT.localizeNoteName(name, "es"), name);
   }
   function chordLabel(symbol) {
-    if (naming === "letters" || !/^[A-G]/.test(symbol)) return symbol;
-    return tryUMT("chord names", () => UMT.formatChordSymbol(symbol, { roots: "solfege" }), symbol);
+    const style = getPref("chord-style");
+    if (naming === "letters" && style === "standard" || !/^[A-G]/.test(symbol)) return symbol;
+    return tryUMT("chord names", () => UMT.formatChordSymbol(symbol, { style, roots: naming }), symbol);
   }
   function localizeDrawnNoteNames(container) {
     if (naming === "letters") return;
@@ -1923,11 +2204,11 @@
     });
   }
   function keyLabel(key) {
-    const [root, mode4] = key.split(" ");
+    const [root2, mode4] = key.split(" ");
     if (!mode4) return noteLabel(key);
     const m = mode4.toLowerCase();
     const modeName = m === "major" ? t("key.major") : m === "minor" ? t("key.minor") : mode4;
-    return `${noteLabel(root)} ${modeName}`;
+    return `${noteLabel(root2)} ${modeName}`;
   }
   function scaleLabel(name) {
     return UMT.scaleName(name, lang, { roots: naming });
@@ -2010,7 +2291,7 @@
     if (a.length !== b.length || a.length < 2) return [];
     const parse = (v) => v.map((x) => UMT.parseNote(x.name));
     const context = { keySymbol: key ?? void 0, chordA: tryParseChord(fromSymbol) ?? void 0, chordB: tryParseChord(toSymbol) ?? void 0 };
-    const found = tryUMT("voice leading", () => UMT.Harmony.checkVoiceLeading(parse(a), parse(b), "strict", context) ?? [], []);
+    const found = tryUMT("voice leading", () => UMT.Harmony.checkVoiceLeading(parse(a), parse(b), getPref("voice-rules"), context) ?? [], []);
     const seen = /* @__PURE__ */ new Set();
     return found.flatMap((issue) => {
       const k = ISSUE_KEYS[issue.type];
@@ -2261,7 +2542,7 @@
   function getAutoKey(history) {
     const noteNames = history.flatMap((e) => e.notes);
     if (noteNames.length === 0) return null;
-    return normalizeKey(tryUMT("key detection", () => UMT.KeyDetection.detect(noteNames.map((n) => UMT.parseNote(n)))[0]?.key ?? null, null));
+    return normalizeKey(tryUMT("key detection", () => UMT.KeyDetection.detect(noteNames.map((n) => UMT.parseNote(n)), void 0, { profile: getPref("key-profile") })[0]?.key ?? null, null));
   }
 
   // src/audio/audio.ts
@@ -2408,7 +2689,7 @@
       previewNodes = midis.map((midi) => inst.play(midi, audioCtx.currentTime, { duration, gain: 1 }));
     });
   }
-  function playNoteNames(noteNames, duration = 2) {
+  function playNoteNames(noteNames, duration = getPref("preview-s")) {
     playPreview(noteNames.map(noteNameToMidi).filter((m) => m !== null), duration);
   }
   function playChord(chordSymbol) {
@@ -3002,20 +3283,20 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       colEl.style.width = w;
       colEl.style.flex = `0 0 ${w}`;
     }
-    const row = (label, val) => `<div class="analysis-row">
+    const row2 = (label, val) => `<div class="analysis-row">
       <span class="analysis-label">${label}</span>
       <span class="analysis-value">${escapeHtml(val)}</span>
     </div>`;
-    const fieldRow = (f, val) => fieldsVisible[f] ? row(rowLabel(f), val ?? "\u2014") : "";
+    const fieldRow = (f, val) => fieldsVisible[f] ? row2(rowLabel(f), val ?? "\u2014") : "";
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
     let secondary = null, subs = null;
     let voicing = null, plr = null, upper = null;
     let voices2 = null, rules = null;
     let extra = "";
     if (detection?.kind === "note") {
-      extra = row(t("analysis.note"), `${noteLabel(detection.noteName)} \xB7 MIDI ${detection.midiNumber}`);
+      extra = row2(t("analysis.note"), `${noteLabel(detection.noteName)} \xB7 MIDI ${detection.midiNumber}`);
     } else if (detection?.kind === "interval") {
-      extra = row(t("analysis.interval"), `${detection.intervalName} \xB7 ${t("analysis.semitones", { n: detection.semitones })}`) + row(t("analysis.inversion"), detection.inversionName);
+      extra = row2(t("analysis.interval"), `${detection.intervalName} \xB7 ${t("analysis.semitones", { n: detection.semitones })}`) + row2(t("analysis.inversion"), detection.inversionName);
     } else if (detection?.kind === "chord" && analysis) {
       roman = analysis.roman;
       func_ = t(`fn.${analysis.function}`);
@@ -3076,14 +3357,14 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     }, delay);
   }
   var HAS_WORD = /\p{L}{2,}/u;
-  function labelIconButtons(root) {
-    root.querySelectorAll('button[title]:not([aria-label]), [role="button"][title]:not([aria-label])').forEach((b) => {
+  function labelIconButtons(root2) {
+    root2.querySelectorAll('button[title]:not([aria-label]), [role="button"][title]:not([aria-label])').forEach((b) => {
       if (!HAS_WORD.test(b.textContent ?? "")) b.setAttribute("aria-label", b.title);
     });
   }
-  function watchIconButtons(root) {
-    labelIconButtons(root);
-    new MutationObserver(() => labelIconButtons(root)).observe(root, { childList: true, subtree: true });
+  function watchIconButtons(root2) {
+    labelIconButtons(root2);
+    new MutationObserver(() => labelIconButtons(root2)).observe(root2, { childList: true, subtree: true });
   }
   function makeActivatable(el, label) {
     el.setAttribute("role", "button");
@@ -3145,6 +3426,1339 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     if ((e.key === " " || e.key === "Enter") && t2.closest('button, a[href], [role="button"], summary')) return true;
     if (e.key.startsWith("Arrow") && t2.classList.contains("module-header")) return true;
     return false;
+  }
+
+  // src/ui/undo.ts
+  var UNDO_MS = 5e3;
+  var current = null;
+  function dismiss() {
+    if (!current) return;
+    clearTimeout(current.timer);
+    current.el.remove();
+    current = null;
+  }
+  function showUndo(message, undo) {
+    dismiss();
+    const el = document.createElement("div");
+    el.className = "undo-toast";
+    el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">${escapeHtml(t("undo"))}</button>`;
+    el.querySelector("button").addEventListener("click", () => {
+      dismiss();
+      undo();
+    });
+    document.body.appendChild(el);
+    current = { el, timer: window.setTimeout(dismiss, UNDO_MS) };
+  }
+
+  // src/input/bindings.ts
+  var ACTIONS = [
+    "play",
+    "stepPrev",
+    "stepNext",
+    "delete",
+    "hold",
+    "arpeggio",
+    "send",
+    "clear",
+    "keyboard",
+    "present",
+    "type",
+    "help",
+    "settings"
+  ];
+  var DEFAULT_KEYS = {
+    play: ["Space"],
+    stepPrev: ["ArrowLeft"],
+    stepNext: ["ArrowRight"],
+    delete: ["Delete", "Backspace"],
+    hold: ["H"],
+    arpeggio: ["A"],
+    send: ["S"],
+    clear: ["C"],
+    keyboard: ["M"],
+    present: ["P"],
+    type: ["/"],
+    help: ["?"],
+    settings: [","]
+  };
+  var RESERVED = /* @__PURE__ */ new Set(["Escape", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Tab", "Enter", "Shift", "Control", "Alt", "Meta", "CapsLock"]);
+  var MAX_KEYS = 2;
+  function keyName2(e) {
+    if (e.key === " ") return "Space";
+    return e.key.length === 1 ? e.key.toUpperCase() : e.key;
+  }
+  var custom = loadCustom();
+  function loadCustom() {
+    const raw = loadJSON("shortcuts", {});
+    const out = {};
+    for (const a of ACTIONS) {
+      const v = raw?.[a];
+      if (Array.isArray(v) && v.length <= MAX_KEYS && v.every((k) => typeof k === "string" && !RESERVED.has(k))) out[a] = v;
+    }
+    return out;
+  }
+  function keysOf(action) {
+    return custom[action] ?? DEFAULT_KEYS[action];
+  }
+  function isDefaultBinding(action) {
+    return !custom[action];
+  }
+  function actionFor(key) {
+    return ACTIONS.find((a) => keysOf(a).includes(key)) ?? null;
+  }
+  function conflictFor(key, except) {
+    return ACTIONS.find((a) => a !== except && keysOf(a).includes(key)) ?? null;
+  }
+  function store() {
+    save("shortcuts", custom);
+  }
+  function setKeys(action, keys) {
+    const clean = [...new Set(keys)].filter((k) => !RESERVED.has(k)).slice(0, MAX_KEYS);
+    if (JSON.stringify(clean) === JSON.stringify(DEFAULT_KEYS[action])) delete custom[action];
+    else custom[action] = clean;
+    store();
+  }
+  function assignKey(action, key, slot) {
+    const other = conflictFor(key, action);
+    if (other) setKeys(other, keysOf(other).filter((k) => k !== key));
+    const keys = [...keysOf(action)];
+    if (slot < keys.length) keys[slot] = key;
+    else keys.push(key);
+    setKeys(action, keys);
+  }
+  function removeKey(action, key) {
+    setKeys(action, keysOf(action).filter((k) => k !== key));
+  }
+  function resetKeys(action) {
+    delete custom[action];
+    store();
+  }
+  function resetAllKeys() {
+    custom = {};
+    store();
+  }
+
+  // src/input/pitch.ts
+  function frequencyToNote(freq, a4 = 440) {
+    const exact = 69 + 12 * Math.log2(freq / a4);
+    const midi = Math.round(exact);
+    return { midi, cents: Math.round((exact - midi) * 100) };
+  }
+  function rms(buf) {
+    let s = 0;
+    for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
+    return Math.sqrt(s / buf.length);
+  }
+  function detectPitch(buf, sampleRate, threshold = 0.12) {
+    const minTau = Math.floor(sampleRate / 1600);
+    const maxTau = Math.min(Math.floor(sampleRate / 50), Math.floor(buf.length / 2));
+    if (maxTau <= minTau + 2) return null;
+    const n = buf.length - maxTau;
+    const d = new Float32Array(maxTau + 1);
+    for (let tau2 = 1; tau2 <= maxTau; tau2++) {
+      let sum = 0;
+      for (let i = 0; i < n; i++) {
+        const x = buf[i] - buf[i + tau2];
+        sum += x * x;
+      }
+      d[tau2] = sum;
+    }
+    const cmnd = new Float32Array(maxTau + 1);
+    cmnd[0] = 1;
+    let running = 0;
+    for (let tau2 = 1; tau2 <= maxTau; tau2++) {
+      running += d[tau2];
+      cmnd[tau2] = running > 0 ? d[tau2] * tau2 / running : 1;
+    }
+    let tau = -1;
+    for (let t2 = minTau; t2 <= maxTau; t2++) {
+      if (cmnd[t2] < threshold) {
+        while (t2 + 1 <= maxTau && cmnd[t2 + 1] < cmnd[t2]) t2++;
+        tau = t2;
+        break;
+      }
+    }
+    if (tau < 0) return null;
+    const a = cmnd[tau - 1] ?? cmnd[tau], b = cmnd[tau], c = cmnd[tau + 1] ?? cmnd[tau];
+    const shift = a - 2 * b + c !== 0 ? (a - c) / (2 * (a - 2 * b + c)) : 0;
+    return { freq: sampleRate / (tau + shift), clarity: 1 - b };
+  }
+  function chromagram(db, sampleRate, fftSize) {
+    const chroma = new Array(12).fill(0);
+    const low = new Array(12).fill(0);
+    const binHz = sampleRate / fftSize;
+    for (let i = Math.ceil(60 / binHz); i < db.length && i * binHz <= 2e3; i++) {
+      const power = Math.pow(10, db[i] / 10);
+      if (!isFinite(power)) continue;
+      const midi = Math.round(69 + 12 * Math.log2(i * binHz / 440));
+      const pc3 = (midi % 12 + 12) % 12;
+      chroma[pc3] += power;
+      if (i * binHz < 260) low[pc3] += power;
+    }
+    const lowMax = Math.max(...low);
+    return { chroma, bass: lowMax > 0 ? low.indexOf(lowMax) : null };
+  }
+  function chromaNotes(chroma, share = 0.3) {
+    const max = Math.max(...chroma);
+    if (max <= 0) return [];
+    return chroma.map((v, pc3) => ({ v, pc: pc3 })).filter((x) => x.v >= max * share).sort((a, b) => b.v - a.v).slice(0, 5).map((x) => x.pc).sort((a, b) => a - b);
+  }
+
+  // src/input/mic.ts
+  var MIC_MODES = ["notes", "chords"];
+  var FRAME_MS = 40;
+  var RELEASE_FRAMES = 5;
+  var GATES = { low: 0.02, normal: 0.01, high: 4e-3 };
+  var HOLDS = { fast: 2, normal: 3, steady: 5 };
+  var mode2 = loadChoice("mic-mode", MIC_MODES, "notes");
+  function getMicMode() {
+    return mode2;
+  }
+  function setMicMode(m) {
+    mode2 = m;
+    save("mic-mode", m);
+  }
+  var ctx = null;
+  var stream = null;
+  var timer = null;
+  var callbacks = null;
+  function isMicOn() {
+    return !!timer;
+  }
+  var held = [];
+  var candidate = "";
+  var candidateFrames = 0;
+  var missFrames = 0;
+  function commit(notes, level) {
+    if (notes.join() === held.join()) return;
+    held = notes;
+    callbacks?.notes(notes, Math.max(1, Math.min(127, Math.round(level * 600))));
+  }
+  function hear(analyser, time, spectrum, rate) {
+    analyser.getFloatTimeDomainData(time);
+    const recent = time.subarray(time.length - 2048);
+    const level = rms(recent);
+    let notes = [];
+    let heard = null;
+    if (level >= GATES[getPref("mic-sensitivity")]) {
+      if (mode2 === "notes") {
+        const p = detectPitch(recent, rate);
+        if (p) {
+          const n = frequencyToNote(p.freq, getPref("a4-hz"));
+          heard = { ...n, freq: p.freq, level };
+          notes = [n.midi];
+        }
+      } else {
+        analyser.getFloatFrequencyData(spectrum);
+        const { chroma, bass } = chromagram(spectrum, rate, analyser.fftSize);
+        const pcs = chromaNotes(chroma);
+        if (pcs.length >= 2) notes = [...bass !== null ? [48 + bass] : [], ...pcs.filter((pc3) => pc3 !== bass).map((pc3) => 60 + pc3)];
+        const p = detectPitch(recent, rate);
+        if (p) heard = { ...frequencyToNote(p.freq, getPref("a4-hz")), freq: p.freq, level };
+      }
+    }
+    callbacks?.frame(heard);
+    const key = notes.join();
+    if (notes.length) {
+      missFrames = 0;
+      if (key === candidate) candidateFrames++;
+      else {
+        candidate = key;
+        candidateFrames = 1;
+      }
+      if (candidateFrames >= HOLDS[getPref("mic-response")]) commit(notes, level);
+    } else if (++missFrames >= RELEASE_FRAMES) {
+      candidate = "";
+      commit([], 0);
+    }
+  }
+  async function startMic(cb) {
+    if (timer) return;
+    callbacks = cb;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    } catch (e) {
+      cb.state(false, e.name);
+      return;
+    }
+    ctx = new AudioContext();
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 8192;
+    analyser.smoothingTimeConstant = 0.5;
+    source.connect(analyser);
+    const time = new Float32Array(analyser.fftSize);
+    const spectrum = new Float32Array(analyser.frequencyBinCount);
+    const rate = ctx.sampleRate;
+    timer = setInterval(() => hear(analyser, time, spectrum, rate), FRAME_MS);
+    cb.state(true);
+  }
+  function stopMic() {
+    if (timer) clearInterval(timer);
+    timer = null;
+    stream?.getTracks().forEach((t2) => t2.stop());
+    stream = null;
+    ctx?.close().catch(() => {
+    });
+    ctx = null;
+    commit([], 0);
+    callbacks?.frame(null);
+    callbacks?.state(false);
+  }
+
+  // src/ui/tour.ts
+  var STEPS = [
+    { id: "welcome", target: null },
+    { id: "input", target: "#midi-device" },
+    { id: "key", target: "#key-select" },
+    { id: "analysis", target: "#mod-analysis" },
+    { id: "explain", target: "#mod-explain" },
+    { id: "cof", target: "#mod-cof" },
+    { id: "history", target: "#mod-history" },
+    { id: "layout", target: "#btn-layout" },
+    { id: "practice", target: "#mod-progressions" },
+    { id: "help", target: "#btn-help" }
+  ];
+  var step = -1;
+  var returnFocus = null;
+  function maybeStartTour() {
+    if (loadBool("tour-done", false) || navigator.webdriver) return;
+    startTour();
+  }
+  function startTour() {
+    returnFocus = document.activeElement;
+    step = 0;
+    draw();
+    document.addEventListener("keydown", onKey, true);
+    window.addEventListener("resize", draw);
+  }
+  function endTour() {
+    if (step < 0) return;
+    step = -1;
+    save("tour-done", true);
+    document.getElementById("tour")?.remove();
+    document.removeEventListener("keydown", onKey, true);
+    window.removeEventListener("resize", draw);
+    returnFocus?.focus();
+  }
+  function go(to) {
+    if (to < 0) return;
+    if (to >= STEPS.length) {
+      endTour();
+      return;
+    }
+    step = to;
+    draw();
+  }
+  function onKey(e) {
+    if (step < 0) return;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      endTour();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      e.stopPropagation();
+      go(step + 1);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      e.stopPropagation();
+      go(step - 1);
+    }
+  }
+  function visibleTarget(selector) {
+    if (!selector) return null;
+    const el = document.querySelector(selector);
+    if (!el || el.closest(".module-hidden")) return null;
+    const r = el.getBoundingClientRect();
+    return r.width && r.height ? el : null;
+  }
+  function draw() {
+    if (step < 0) return;
+    const s = STEPS[step];
+    let root2 = document.getElementById("tour");
+    if (!root2) {
+      root2 = document.createElement("div");
+      root2.id = "tour";
+      document.body.appendChild(root2);
+    }
+    const target = visibleTarget(s.target);
+    target?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const r = target?.getBoundingClientRect();
+    const pad = 6;
+    const spot = r ? `<div class="tour-spot" style="left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px"></div>` : '<div class="tour-dim"></div>';
+    const last = step === STEPS.length - 1;
+    root2.innerHTML = `${spot}
+    <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" tabindex="-1">
+      <div class="tour-count">${step + 1} / ${STEPS.length}</div>
+      <h2 id="tour-title" class="tour-title">${escapeHtml(t(`tour.${s.id}.title`))}</h2>
+      <p class="tour-text">${escapeHtml(t(`tour.${s.id}`))}</p>
+      <div class="tour-buttons">
+        <button class="ctrl-btn" data-tour="skip">${escapeHtml(t(last ? "tour.close" : "tour.skip"))}</button>
+        <span class="tour-gap"></span>
+        <button class="ctrl-btn" data-tour="back"${step === 0 ? " disabled" : ""}>${escapeHtml(t("tour.back"))}</button>
+        <button class="ctrl-btn tour-next" data-tour="next">${escapeHtml(t(last ? "tour.done" : "tour.next"))}</button>
+      </div>
+    </div>`;
+    const card = root2.querySelector(".tour-card");
+    const cw = Math.min(360, window.innerWidth - 24);
+    card.style.width = `${cw}px`;
+    if (r) {
+      const below = r.bottom + 12, above = r.top - 12;
+      const left = Math.max(12, Math.min(window.innerWidth - cw - 12, r.left));
+      card.style.left = `${left}px`;
+      const h = card.offsetHeight;
+      card.style.top = below + h < window.innerHeight ? `${below}px` : above - h > 0 ? `${above - h}px` : `${Math.max(12, (window.innerHeight - h) / 2)}px`;
+    } else {
+      card.style.left = `${(window.innerWidth - cw) / 2}px`;
+      card.style.top = `${Math.max(12, (window.innerHeight - card.offsetHeight) / 2)}px`;
+    }
+    root2.querySelector('[data-tour="next"]').addEventListener("click", () => go(step + 1));
+    root2.querySelector('[data-tour="back"]').addEventListener("click", () => go(step - 1));
+    root2.querySelector('[data-tour="skip"]').addEventListener("click", endTour);
+    root2.querySelector(".tour-next").focus();
+  }
+
+  // src/theory/spelling.ts
+  var A4 = 69;
+  function spellMidi(midi, key) {
+    return tryUMT("spelling", () => UMT.spellPitchInKey(midi - A4, key), "") || "";
+  }
+  function spellName(name, key) {
+    const midi = noteNameToMidi(name);
+    return midi === null ? name : spellMidi(midi, key) || name;
+  }
+  function spellPitchClassInKey(name, key) {
+    const pc3 = pitchClassOf(name);
+    return pc3 === -1 ? name : spellMidi(60 + pc3, key).replace(/-?\d+$/, "") || name;
+  }
+  function spellChordSymbol(symbol, key) {
+    if (!key || symbol === "?") return symbol;
+    const chord = tryParseChord(symbol);
+    return chord ? tryUMT("chord spelling", () => UMT.spellChordInKey(chord, key).name, symbol) : symbol;
+  }
+  function spellVoicing(names, symbol, key) {
+    const chord = symbol ? tryParseChord(symbol) : null;
+    const toneByPc = /* @__PURE__ */ new Map();
+    if (chord) {
+      for (const t2 of tryUMT("chord tones", () => UMT.spellChord(chord), [])) {
+        const base = t2.replace(/-?\d+$/, "");
+        toneByPc.set(pitchClassOf(base), base);
+      }
+    }
+    return names.map((n) => {
+      const midi = noteNameToMidi(n);
+      if (midi === null) return n;
+      const tone = toneByPc.get(midi % 12);
+      return (tone && nameAtMidi(tone, midi)) ?? (key ? spellName(n, key) : n);
+    });
+  }
+  function spellDetection(d, key) {
+    if (!d || !key) return d;
+    if (d.kind === "note") {
+      const noteName = spellName(d.noteName, key);
+      return { ...d, noteName, pitchClass: noteName.replace(/-?\d+$/, "") };
+    }
+    if (d.kind === "interval") return { ...d, notes: d.notes.map((n) => spellName(n, key)) };
+    const candidates = d.candidates.map((c) => spellChordSymbol(c, key));
+    const selected = candidates[d.selectedIndex];
+    return { ...d, candidates, notes: spellVoicing(d.notes, selected === "?" ? null : selected, key) };
+  }
+
+  // src/theory/key-map.ts
+  function keyChord(symbol, key) {
+    const a = romanInKey(symbol, key);
+    const secondary = a && a.roman !== a.degree ? a.roman : void 0;
+    return { symbol, roman: a?.degree ?? "?", secondary, function: a?.function ?? "unknown" };
+  }
+  var cache3 = /* @__PURE__ */ new Map();
+  function buildKeyMap(key, sevenths) {
+    const cacheKey = `${key}|${sevenths}`;
+    if (cache3.has(cacheKey)) return cache3.get(cacheKey);
+    const chords = tryUMT("diatonic chords", () => UMT.parseScaleSymbol(key).getDiatonicChords(sevenths ? "seventh" : "triad"), []);
+    if (!chords.length) {
+      cache3.set(cacheKey, null);
+      return null;
+    }
+    const diatonic = chords.map((c) => keyChord(c.name, key));
+    if (/ minor$/i.test(key)) {
+      const harmonic = tryUMT(
+        "diatonic chords",
+        () => UMT.parseScaleSymbol(key.replace(/ minor$/i, " Harmonic Minor")).getDiatonicChords(sevenths ? "seventh" : "triad"),
+        []
+      );
+      harmonic.forEach((c, i) => {
+        if (!diatonic[i] || c.name === diatonic[i].symbol) return;
+        if (romanInKey(c.name, key)?.isDiatonic) diatonic[i].alternative = keyChord(c.name, key);
+      });
+    }
+    const negative = chords.map((c) => tryUMT("negative harmony", () => {
+      const name = UMT.Harmony.getNegativeHarmony(c, key)?.name;
+      return name ? spellChordSymbol(name, key) : null;
+    }, null));
+    const byMode = /* @__PURE__ */ new Map();
+    for (const b of tryUMT("borrowed chords", () => UMT.Harmony.getBorrowedChords(key, { type: sevenths ? "seventh" : "triad" }), [])) {
+      const name = b.chord?.name;
+      if (!name || !tryParseChord(name)) continue;
+      let row2 = byMode.get(b.sourceMode);
+      if (!row2) byMode.set(b.sourceMode, row2 = { mode: b.sourceMode, brightness: b.brightness ?? 0, chords: [] });
+      row2.chords.push({ ...keyChord(name, key), characteristic: !!b.characteristic });
+    }
+    const parallel = [...byMode.values()].sort((a, b) => b.brightness - a.brightness);
+    const axis = tryUMT("coltrane axis", () => UMT.Harmony.getColtraneAxis(key).majorThirds, null);
+    const coltraneAxis = axis ? axis.map((n) => spellPitchClassInKey(n, key)) : null;
+    const map = { key, diatonic, negative, parallel, coltraneAxis };
+    cache3.set(cacheKey, map);
+    return map;
+  }
+  function sameChord(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    const ca = tryParseChord(a), cb = tryParseChord(b);
+    if (!ca || !cb) return false;
+    const pc3 = (s) => s === void 0 ? -1 : (s % 12 + 12) % 12;
+    return pc3(ca.rootStep) === pc3(cb.rootStep) && (ca.intervalsInSteps ?? []).join() === (cb.intervalsInSteps ?? []).join() && pc3(ca.bassStep) === pc3(cb.bassStep);
+  }
+
+  // src/detector/explain.ts
+  var nth = (n) => t(`ex.nth.${n}`);
+  var pc2 = (name) => pitchClassOf(name.replace(/-?\d+$/, ""));
+  function notesOutside(symbol, key) {
+    const scale = new Set(tryUMT("scale", () => UMT.parseScaleSymbol(key).getNotes().slice(0, 7).map((n) => pc2(n.name)), []));
+    return chordNoteNames(symbol).filter((n) => !scale.has(pc2(n))).map((n) => noteLabel(n.replace(/-?\d+$/, "")));
+  }
+  function romanEntry(symbol, key, a) {
+    const roman = a.degree ?? a.roman;
+    const n = a.degreeNumber;
+    if (!roman || roman === "?" || !n || n < 1 || n > 7) return null;
+    const vars = { chord: chordLabel(symbol), roman, key: keyLabel(key), nth: nth(n) };
+    const acc = roman.match(/^([b#♭♯])/)?.[1];
+    if (acc) {
+      const flat = acc === "b" || acc === "\u266D";
+      return { term: roman, text: t("ex.romanAltered", { ...vars, dir: t(flat ? "ex.lowered" : "ex.raised"), acc: flat ? "\u266D" : "\u266F", n }) };
+    }
+    const minor = /minor$/i.test(key);
+    const subtonic = n === 7 && minor && /^VII/.test(roman);
+    const name = subtonic ? t("ex.deg.subtonic") : t(`ex.deg.${n}`);
+    const text = t("ex.roman", { ...vars, name });
+    return { term: roman, text: getPref("movable-do") ? `${text} ${movableDo(symbol, key)}` : text };
+  }
+  function movableDo(symbol, key) {
+    const root2 = symbol.match(/^[A-G][#b]*/)?.[0];
+    const syllable = root2 ? tryUMT("solfege", () => UMT.Solfege.movableDo(UMT.parseNote(root2 + "4"), key.toLowerCase()), "?") : "?";
+    return syllable && syllable !== "?" ? t("ex.movableDo", { syllable }) : "";
+  }
+  function secondaryTarget(target, key) {
+    const map = buildKeyMap(key, false);
+    const plain = (r) => r.replace(/[°ø+7]/g, "").toLowerCase();
+    return map?.diatonic.find((c) => plain(c.roman) === plain(target))?.symbol ?? null;
+  }
+  function colourEntries(symbol, key, a) {
+    const chord = chordLabel(symbol);
+    const k = keyLabel(key);
+    if (a.isSecondary && a.secondaryTarget) {
+      const [kind, target] = a.secondaryTarget.split("/");
+      const targetChord = target ? secondaryTarget(target, key) : null;
+      const vars = { chord, roman: a.secondaryTarget, target: targetChord ? chordLabel(targetChord) : target, targetRoman: target };
+      return [{ term: a.secondaryTarget, text: t(kind.startsWith("vii") ? "ex.secondaryVii" : "ex.secondaryV", vars) }];
+    }
+    if (a.isDiatonic) return [{ term: t("analysis.yes"), text: t("ex.diatonic", { chord, key: k }) }];
+    const notes = notesOutside(symbol, key).join(" ");
+    if (a.isBorrowed && a.borrowedFrom) {
+      const mode4 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
+      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode4, key: k, notes }) }];
+    }
+    if (a.substitutionCandidate?.startsWith("tritone")) return [{ term: substitutionTypeLabel("tritone"), text: t("ex.tritoneSub", { chord }) }];
+    return [{ term: t("analysis.chromatic"), text: t("ex.chromatic", { chord, key: k, notes }) }];
+  }
+  var CADENCES = [
+    ["Authentic", "authentic"],
+    ["Minor Plagal", "minorPlagal"],
+    ["Plagal", "plagal"],
+    ["Deceptive", "deceptive"],
+    ["Phrygian Half", "phrygianHalf"],
+    ["Phrygian", "phrygian"],
+    ["Backdoor", "backdoor"],
+    ["Half", "half"],
+    ["Picardy", "picardy"]
+  ];
+  function explainCadence(cadence) {
+    const k = CADENCES.find(([start]) => cadence.startsWith(start))?.[1];
+    return k ? t(`ex.cad.${k}`) : null;
+  }
+  var FIGURES = {
+    "": "ex.fig.root",
+    "5/3": "ex.fig.root",
+    "6": "ex.fig.6",
+    "6/3": "ex.fig.6",
+    "6/4": "ex.fig.64",
+    "7": "ex.fig.7",
+    "6/5": "ex.fig.65",
+    "4/3": "ex.fig.43",
+    "4/2": "ex.fig.42",
+    "2": "ex.fig.42"
+  };
+  function voicingEntries(noteNames, symbol) {
+    if (noteNames.length < 3) return [];
+    const chord = tryParseChord(symbol);
+    const v = tryUMT("voicing", () => UMT.analyzeVoicing(noteNames.map((n) => UMT.parseNote(n)), chord), null);
+    if (!v) return [];
+    const out = [{ term: t(`voicing.${v.position}`), text: t(`ex.voicing.${v.position}`) }];
+    if (v.drop) out.push({ term: v.drop, text: t("ex.voicing.drop") });
+    return out;
+  }
+  var PLR_EXAMPLES = { P: ["C", "Cm"], R: ["C", "Am"], L: ["C", "Em"] };
+  var SUBSTITUTION_TYPES = ["tritone", "diatonic", "deceptive", "chromatic-mediant", "sus4", "modal"];
+  function explainDetection(detection, a, key, prevSymbol) {
+    if (detection?.kind === "interval") {
+      return [{ term: detection.intervalName, text: t("ex.interval", { n: detection.semitones % 12 || 12, inv: detection.inversionName }) }];
+    }
+    if (detection?.kind !== "chord" || !a) return [];
+    const symbol = detection.candidates[detection.selectedIndex];
+    const out = [];
+    if (key) {
+      const roman = romanEntry(symbol, key, a);
+      if (roman) out.push(roman, { term: t("ex.case.term"), text: t("ex.case") });
+      if (a.function !== "unknown") out.push({ term: t(`fn.${a.function}`), text: t(`ex.fn.${a.function}`) });
+      out.push(...colourEntries(symbol, key, a));
+    }
+    const fig = FIGURES[a.figuredBass ?? ""];
+    if (fig) out.push({ term: a.figuredBass || "5/3", text: `${t(fig)} ${t("ex.fig.intro")}` });
+    out.push(...voicingEntries(detection.notes, symbol));
+    if (a.cadence) {
+      const text = explainCadence(a.cadence);
+      if (text) out.push({ term: cadenceLabel(a.cadence), text });
+    }
+    if (a.transformation && prevSymbol) {
+      out.push({ term: a.transformation, text: t("ex.plr", { chord: chordLabel(symbol), prev: chordLabel(prevSymbol), path: a.transformation }) });
+      for (const op of new Set(a.transformation.split(""))) {
+        const [x, y] = PLR_EXAMPLES[op];
+        out.push({ term: op, text: t(`ex.plr.${op}`, { a: chordLabel(x), b: chordLabel(y) }) });
+      }
+    }
+    for (const type of a.substitutionTypes) {
+      if (SUBSTITUTION_TYPES.includes(type)) out.push({ term: substitutionTypeLabel(type), text: t(`ex.sub.${type}`) });
+    }
+    if (a.upperStructures.length) out.push({ term: a.upperStructures.join(", "), text: t("ex.upper") });
+    for (const k of a.voiceRuleKeys) out.push({ term: t(`vl.issue.${k}`, { voices: "" }).replace(/\s*\(\)$/, ""), text: t(`ex.vl.${k}`) });
+    return out;
+  }
+  function renderExplanation(container, items) {
+    container.innerHTML = items.length ? `<dl class="explain-list">${items.map((i) => `<dt>${escapeHtml(i.term)}</dt><dd>${escapeHtml(i.text)}</dd>`).join("")}</dl>` : `<p class="explain-empty">${escapeHtml(t("ex.empty"))}</p>`;
+  }
+
+  // src/history/history.ts
+  var FUNCTION_COLORS = {
+    "T": "var(--fn-t)",
+    "S": "var(--fn-s)",
+    "D": "var(--fn-d)",
+    "unknown": "var(--text-dim)"
+  };
+  var entries = [];
+  var debounceTimer = null;
+  var lastAutoAppended = null;
+  var onChange2 = () => {
+  };
+  function setHistoryChangeCallback(cb) {
+    onChange2 = cb;
+  }
+  var CARRY_KEY = "modus-history-carry";
+  function carryHistoryOverReload() {
+    try {
+      sessionStorage.setItem(CARRY_KEY, JSON.stringify(entries));
+    } catch {
+    }
+  }
+  function restoreCarriedHistory() {
+    let carried = null;
+    try {
+      carried = JSON.parse(sessionStorage.getItem(CARRY_KEY) ?? "null");
+      sessionStorage.removeItem(CARRY_KEY);
+    } catch {
+    }
+    const list = Array.isArray(carried) ? carried : [];
+    if (list.length && list.every((e) => e && typeof e.id === "string" && typeof e.symbol === "string" && Array.isArray(e.notes))) restoreEntries(list);
+  }
+  function addEntry(symbol, notes) {
+    const entry = { id: crypto.randomUUID(), symbol, notes };
+    entries = [entry, ...entries].slice(0, getPref("history-max"));
+    onChange2(entries);
+  }
+  function removeEntry(id) {
+    entries = entries.filter((e) => e.id !== id);
+    lastAutoAppended = entries[0]?.symbol ?? null;
+    onChange2(entries);
+  }
+  function restoreEntries(list) {
+    entries = list.slice(0, getPref("history-max"));
+    lastAutoAppended = entries[0]?.symbol ?? null;
+    onChange2(entries);
+  }
+  function clearHistoryWithUndo() {
+    if (!entries.length) return;
+    const before = entries;
+    clearHistory();
+    showUndo(t("history.cleared", { n: before.length }), () => restoreEntries(before));
+  }
+  function clearHistory() {
+    entries = [];
+    lastAutoAppended = null;
+    onChange2(entries);
+  }
+  function notifyChordDetected(symbol, notes) {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (symbol !== lastAutoAppended && symbol !== "?") {
+        addEntry(symbol, notes);
+        lastAutoAppended = symbol;
+      }
+    }, getPref("history-hold-ms"));
+  }
+  function markActiveHistoryEntry(container, entryId) {
+    container.querySelectorAll(".history-chip").forEach((el) => {
+      el.classList.toggle("active-cursor", el.dataset.id === entryId);
+    });
+  }
+  function renderHistory(container, activeKey, onChipClick, activeCursorEntryId) {
+    const strip = document.createElement("div");
+    strip.className = "history-strip";
+    const shown = entries.map((e) => ({ ...e, symbol: spellChordSymbol(e.symbol, activeKey) }));
+    const steps = analyzeChordProgression(shown.map((e) => e.symbol).reverse(), activeKey).reverse();
+    shown.forEach((entry, i) => {
+      const older = i + 1 < shown.length ? steps[i + 1] : null;
+      const cadence = older?.cadence ?? null;
+      const modulation = older && steps[i].key && steps[i].key !== older.key ? steps[i].key : null;
+      const analysis = steps[i].info;
+      const roman = analysis?.roman ?? "\u2014";
+      const fn = analysis?.function ?? "unknown";
+      const color2 = FUNCTION_COLORS[fn] ?? FUNCTION_COLORS.unknown;
+      const chip = document.createElement("div");
+      chip.className = "history-chip";
+      chip.dataset.id = entry.id;
+      chip.classList.toggle("active-cursor", activeCursorEntryId === entry.id);
+      chip.style.borderLeft = `3px solid ${color2}`;
+      chip.innerHTML = `
+      <span class="history-chip-symbol">${escapeHtml(chordLabel(entry.symbol))}</span>
+      <span class="history-chip-roman">${escapeHtml(roman)}</span>
+    `;
+      chip.addEventListener("click", () => {
+        onChipClick(entry);
+        if (entry.notes.length > 0) playNoteNames(entry.notes);
+        else playChord(entry.symbol);
+      });
+      const inKey = steps[i].key ? ` (${t("history.chip.inKey", { roman, key: keyLabel(steps[i].key) })})` : "";
+      chip.title = `${chordLabel(entry.symbol)}${inKey} \u2014 ${t("history.chip.actions")}`;
+      chip.draggable = true;
+      chip.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol, notes: entry.notes }));
+        e.dataTransfer.effectAllowed = "copy";
+        chip.style.opacity = "0.5";
+      });
+      chip.addEventListener("dragend", () => {
+        chip.style.opacity = "1";
+      });
+      const remove = () => {
+        const before = entries;
+        removeEntry(entry.id);
+        showUndo(t("history.removed", { chord: chordLabel(entry.symbol) }), () => restoreEntries(before));
+      };
+      chip.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        remove();
+      });
+      onLongPress(chip, remove);
+      makeActivatable(chip, t("a11y.chip", { chord: chordLabel(entry.symbol), roman }));
+      chip.addEventListener("keydown", (e) => {
+        if (e.key !== "Delete" && e.key !== "Backspace") return;
+        e.preventDefault();
+        e.stopPropagation();
+        remove();
+      });
+      strip.appendChild(chip);
+      if (modulation) {
+        const tag = document.createElement("span");
+        tag.className = "history-modulation";
+        tag.textContent = `\u2192 ${keyLabel(modulation)}`;
+        tag.title = t("history.modulation", { key: keyLabel(modulation) });
+        strip.appendChild(tag);
+      }
+      if (cadence) {
+        const tag = document.createElement("span");
+        tag.className = "history-cadence";
+        tag.textContent = cadenceLabel(cadence, true);
+        tag.title = `${cadenceLabel(cadence)}: ${chordLabel(shown[i + 1].symbol)} \u2192 ${chordLabel(entry.symbol)}` + (explainCadence(cadence) ? `
+${explainCadence(cadence)}` : "");
+        strip.appendChild(tag);
+      }
+    });
+    const clearBtn = document.createElement("button");
+    clearBtn.textContent = t("history.clear");
+    clearBtn.title = t("history.clear.title");
+    clearBtn.className = "history-clear-btn";
+    clearBtn.addEventListener("click", clearHistoryWithUndo);
+    const wrap = document.createElement("div");
+    wrap.className = "history-wrap";
+    wrap.appendChild(strip);
+    wrap.appendChild(clearBtn);
+    container.innerHTML = "";
+    container.appendChild(wrap);
+  }
+
+  // src/ui/settings.ts
+  var SECTIONS = ["general", "io", "sound", "theory", "detector", "panels", "practice", "mic", "shortcuts", "data"];
+  var SECTION_PREFS = {
+    general: ["ui-zoom"],
+    sound: ["preview-s", "piano-velocity"],
+    theory: ["chord-style", "key-profile", "voice-rules", "movable-do"],
+    detector: ["history-hold-ms", "history-max", "arpeggio-ms", "melody-gap-s", "capture-ms"],
+    practice: ["progression-bpm", "ear-interval-play", "ear-chords", "ear-cadences"],
+    mic: ["a4-hz", "mic-sensitivity", "mic-response"]
+  };
+  var PANEL_BUTTONS = [
+    { id: "btn-staff-prev", label: "set.panels.prev" },
+    { id: "btn-cof-minor", label: "set.panels.cofMinor" },
+    { id: "btn-cof-deg", label: "set.panels.cofDegrees" },
+    { id: "btn-cof-7", label: "set.panels.cofSevenths" },
+    { id: "btn-key-7", label: "set.panels.keySevenths" },
+    { id: "btn-key-neg", label: "set.panels.keyNegative" },
+    { id: "btn-key-par", label: "set.panels.keyParallel" },
+    { id: "btn-key-colt", label: "set.panels.keyColtrane" }
+  ];
+  var CADENCE_UMT = {
+    authentic: "Authentic Cadence (V -> I)",
+    plagal: "Plagal Cadence (IV -> I)",
+    deceptive: "Deceptive Cadence (V -> vi)",
+    half: "Half Cadence (-> V)"
+  };
+  var lbl = (name) => t(`pref.${name}`);
+  var hint = (name) => t(`pref.${name}.hint`);
+  function optionLabel(name, option) {
+    if (name === "ear-chords") return t(`ear.chord.${option || "maj"}`);
+    if (name === "ear-cadences") return cadenceLabel(CADENCE_UMT[option], true);
+    return t(`pref.${name}.${option}`);
+  }
+  function formatPrefValue(def, v) {
+    const n = (x) => x.toLocaleString(getLang(), { maximumFractionDigits: 2 });
+    if (def.unit === "ms") return `${n(v / 1e3)} s`;
+    return def.unit ? `${n(v)} ${def.unit}` : n(v);
+  }
+  var row = (labelHtml, hintText, control, search, wide = false) => `
+  <div class="set-row${wide ? " set-row-wide" : ""}" data-search="${escapeHtml(search.toLowerCase())}">
+    <div class="set-text">${labelHtml}${hintText ? `<div class="set-hint">${escapeHtml(hintText)}</div>` : ""}</div>
+    <div class="set-control">${control}</div>
+  </div>`;
+  function segmented(group, options, attrs) {
+    return `<div class="set-seg" role="group" aria-label="${escapeHtml(group)}">${options.map((o) => `<button type="button" ${attrs} data-value="${escapeHtml(o.value)}" aria-pressed="${o.on}">${escapeHtml(o.label)}</button>`).join("")}</div>`;
+  }
+  function prefRow(name) {
+    const def = PREFS[name];
+    const id = `pref-${name}`;
+    const v = getPref(name);
+    const search = `${lbl(name)} ${hint(name)}`;
+    switch (def.kind) {
+      case "choice": {
+        const opts = def.options.map((o) => ({ value: o, label: optionLabel(name, o), on: v === o }));
+        const control = def.options.length <= 3 ? segmented(lbl(name), opts, `data-pref="${name}"`) : `<select id="${id}" class="ctrl-select set-select" data-pref="${name}">${opts.map((o) => `<option value="${o.value}"${o.on ? " selected" : ""}>${escapeHtml(o.label)}</option>`).join("")}</select>`;
+        const label = def.options.length <= 3 ? `<div class="set-label">${escapeHtml(lbl(name))}</div>` : `<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label>`;
+        return row(label, hint(name), control, search);
+      }
+      case "bool":
+        return row(
+          `<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label>`,
+          hint(name),
+          `<input type="checkbox" id="${id}" class="set-check" data-pref="${name}"${v ? " checked" : ""}>`,
+          search
+        );
+      case "number":
+        return row(
+          `<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label>`,
+          hint(name),
+          `<input type="range" id="${id}" class="set-range" data-pref="${name}" min="${def.min}" max="${def.max}" step="${def.step}" value="${v}">
+         <output class="set-value" for="${id}">${escapeHtml(formatPrefValue(def, v))}</output>`,
+          search
+        );
+      case "set":
+        return row(
+          `<div class="set-label">${escapeHtml(lbl(name))}</div>`,
+          hint(name),
+          `<div class="set-checks">${def.options.map((o) => `<label class="set-check-label"><input type="checkbox" data-pref-set="${name}" value="${escapeHtml(o)}"${v.includes(o) ? " checked" : ""}> ${escapeHtml(optionLabel(name, o))}</label>`).join("")}</div>`,
+          search + " " + def.options.map((o) => optionLabel(name, o)).join(" "),
+          true
+        );
+    }
+  }
+  function keyLabel2(key) {
+    const named = { Space: "kbd.space", Delete: "kbd.del", Escape: "kbd.esc" };
+    if (named[key]) return t(named[key]);
+    return { ArrowLeft: "\u2190", ArrowRight: "\u2192", ArrowUp: "\u2191", ArrowDown: "\u2193", Backspace: "\u232B" }[key] ?? key;
+  }
+  var capturing = null;
+  var pendingConflict = null;
+  function shortcutsHtml() {
+    const rows = ACTIONS.map((a) => {
+      const keys = keysOf(a);
+      const waiting = capturing?.action === a;
+      const chips = keys.map((k, slot) => waiting && capturing.slot === slot ? `<kbd class="set-kbd set-kbd-wait">${escapeHtml(t("set.keys.press"))}</kbd>` : `<span class="set-kbd-wrap"><kbd class="set-kbd${DEFAULT_KEYS[a].includes(k) ? "" : " set-kbd-custom"}">${escapeHtml(keyLabel2(k))}</kbd><button type="button" class="set-kbd-x" data-key-remove="${a}" data-key="${escapeHtml(k)}" aria-label="${escapeHtml(t("set.keys.remove", { key: keyLabel2(k) }))}">\xD7</button></span>`).join("");
+      const adding = waiting && capturing.slot >= keys.length ? `<kbd class="set-kbd set-kbd-wait">${escapeHtml(t("set.keys.press"))}</kbd>` : "";
+      const buttons = waiting ? `<button type="button" class="ctrl-btn" data-key-cancel>${escapeHtml(t("set.keys.cancel"))}</button>` : `${keys.length ? `<button type="button" class="ctrl-btn" data-key-change="${a}">${escapeHtml(t("set.keys.change"))}</button>` : ""}
+         ${keys.length < MAX_KEYS ? `<button type="button" class="ctrl-btn" data-key-add="${a}" aria-label="${escapeHtml(t("set.keys.add.title"))}">+</button>` : ""}
+         ${isDefaultBinding(a) ? "" : `<button type="button" class="ctrl-btn" data-key-reset="${a}" title="${escapeHtml(t("set.keys.reset"))}" aria-label="${escapeHtml(t("set.keys.reset"))}">\u21BA</button>`}`;
+      return `<div class="set-row set-key-row${waiting ? " set-key-waiting" : ""}" data-search="${escapeHtml(`${t(`action.${a}`)} ${keys.join(" ")}`.toLowerCase())}">
+      <div class="set-text"><div class="set-label">${escapeHtml(t(`action.${a}`))}</div></div>
+      <div class="set-control set-keys">${chips}${adding || (keys.length ? "" : `<span class="set-hint">${escapeHtml(t("set.keys.none"))}</span>`)}</div>
+      <div class="set-key-buttons">${buttons}</div>
+    </div>`;
+    }).join("");
+    const conflict = pendingConflict ? `<div class="set-conflict" role="alert">
+      <span>${escapeHtml(t("set.keys.conflict", { key: keyLabel2(pendingConflict.key), other: t(`action.${pendingConflict.other}`), action: t(`action.${pendingConflict.action}`) }))}</span>
+      <button type="button" class="ctrl-btn set-primary" data-conflict-take>${escapeHtml(t("set.keys.take"))}</button>
+      <button type="button" class="ctrl-btn" data-conflict-other>${escapeHtml(t("set.keys.other"))}</button>
+    </div>` : "";
+    const fixed = `<div class="set-row" data-search="${escapeHtml(`${t("set.keys.fixed")} esc 1 9`.toLowerCase())}"><div class="set-text"><div class="set-label">${escapeHtml(t("set.keys.fixed"))}</div><div class="set-hint">${escapeHtml(t("set.keys.fixed.hint"))}</div></div>
+    <div class="set-control set-keys"><kbd class="set-kbd">${escapeHtml(t("kbd.esc"))}</kbd><kbd class="set-kbd">1\u20139</kbd><kbd class="set-kbd">Tab</kbd></div></div>`;
+    return conflict + rows + fixed;
+  }
+  function redrawShortcuts() {
+    const el = document.getElementById("set-shortcuts");
+    if (el) el.innerHTML = shortcutsHtml();
+  }
+  function onCaptureKey(e) {
+    if (!capturing) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.key === "Escape") {
+      capturing = null;
+      redrawShortcuts();
+      focusShortcut();
+      return;
+    }
+    const key = keyName2(e);
+    if (RESERVED.has(key)) return;
+    const { action, slot } = capturing;
+    capturing = null;
+    const other = conflictFor(key, action);
+    if (other) pendingConflict = { action, slot, key, other };
+    else assignKey(action, key, slot);
+    redrawShortcuts();
+    focusShortcut(action);
+  }
+  function focusShortcut(action) {
+    const sel = pendingConflict ? "[data-conflict-take]" : action ? `[data-key-change="${action}"], [data-key-add="${action}"]` : "[data-key-change]";
+    document.querySelector(`#set-shortcuts ${sel}`)?.focus();
+  }
+  function startCapture(action, slot) {
+    capturing = { action, slot };
+    pendingConflict = null;
+    redrawShortcuts();
+    document.querySelector("#set-shortcuts [data-key-cancel]")?.focus();
+  }
+  function isDataKey(key) {
+    return key.startsWith("modus-song") || key.startsWith("harmony-companion-song") || ["active-key", "storage-persist-asked", "e2e", "tour-done", "ear-score"].includes(key);
+  }
+  function settingsSnapshot() {
+    const out = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!isDataKey(k)) out[k] = localStorage.getItem(k);
+      }
+    } catch {
+    }
+    return out;
+  }
+  function replaceSettings(next, message) {
+    try {
+      sessionStorage.setItem("settings-undo", JSON.stringify({ before: settingsSnapshot(), message }));
+      for (const k of Object.keys(settingsSnapshot())) localStorage.removeItem(k);
+      for (const [k, v] of Object.entries(next)) if (!isDataKey(k)) localStorage.setItem(k, v);
+    } catch {
+    }
+    carryHistoryOverReload();
+    location.reload();
+  }
+  function offerSettingsUndo() {
+    let pending2 = null;
+    try {
+      pending2 = JSON.parse(sessionStorage.getItem("settings-undo") ?? "null");
+      sessionStorage.removeItem("settings-undo");
+    } catch {
+    }
+    if (!pending2) return;
+    const before = pending2.before;
+    showUndo(t(pending2.message), () => {
+      try {
+        for (const k of Object.keys(settingsSnapshot())) localStorage.removeItem(k);
+        for (const [k, v] of Object.entries(before)) localStorage.setItem(k, v);
+      } catch {
+      }
+      carryHistoryOverReload();
+      location.reload();
+    });
+  }
+  function exportSettings() {
+    const body = JSON.stringify({ app: "modus", kind: "settings", version: 1, data: settingsSnapshot() }, null, 2);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([body], { type: "application/json" }));
+    a.download = "modus-settings.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
+  }
+  function readSettingsFile(text) {
+    try {
+      const f = JSON.parse(text);
+      if (f?.app !== "modus" || f?.kind !== "settings" || typeof f.data !== "object" || !f.data) return null;
+      const out = {};
+      for (const [k, v] of Object.entries(f.data)) if (typeof v === "string" && !isDataKey(k)) out[k] = v;
+      return out;
+    } catch {
+      return null;
+    }
+  }
+  function sectionBody(s) {
+    const prefs = (SECTION_PREFS[s] ?? []).map(prefRow).join("");
+    switch (s) {
+      case "general":
+        return `
+      ${row(
+          `<label class="set-label" for="help-lang">${escapeHtml(t("help.language"))}</label>`,
+          t("set.reloads"),
+          `<select id="help-lang" class="ctrl-select set-select">${LANGS.map((l) => `<option value="${l}"${l === getLang() ? " selected" : ""}>${LANG_NAMES[l]}</option>`).join("")}</select>`,
+          `${t("help.language")} idioma language`
+        )}
+      ${row(
+          `<label class="set-label" for="help-note-names">${escapeHtml(t("help.noteNames"))}</label>`,
+          t("set.noteNames.hint"),
+          `<select id="help-note-names" class="ctrl-select set-select">${NOTE_NAMINGS.map((n) => `<option value="${n}"${n === getNoteNaming() ? " selected" : ""}>${t(`help.noteNames.${n}`)}</option>`).join("")}</select>`,
+          `${t("help.noteNames")} solfeo solf\xE8ge`
+        )}
+      ${row(
+          `<label class="set-label" for="help-theme">${escapeHtml(t("help.theme"))}</label>`,
+          "",
+          `<select id="help-theme" class="ctrl-select set-select">${THEME_CHOICES.map((c) => `<option value="${c}"${c === getThemeChoice() ? " selected" : ""}>${t(`help.theme.${c}`)}</option>`).join("")}</select>`,
+          `${t("help.theme")} theme`
+        )}
+      ${prefs}
+      ${row(
+          `<div class="set-label">${escapeHtml(t("tour.start"))}</div>`,
+          t("tour.start.title"),
+          `<button type="button" id="set-tour" class="ctrl-btn">${escapeHtml(t("tour.start"))}</button>`,
+          `${t("tour.start")} tour`
+        )}`;
+      case "io":
+        return `
+      ${row(
+          `<label class="set-label" for="midi-in-ch">${escapeHtml(t("set.io.inChannel"))}</label>`,
+          t("midi.inChannel.title"),
+          `<select id="midi-in-ch" class="ctrl-select set-select"><option value="0">${t("midi.inChannel.all")}</option>${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.inChannel.one", { n: i + 1 })}</option>`).join("")}</select>`,
+          `${t("set.io.inChannel")} midi`
+        )}
+      ${row(
+          `<label class="set-label" for="midi-out">${escapeHtml(t("set.io.out"))}</label>`,
+          t("midi.out.title"),
+          `<select id="midi-out" class="ctrl-select set-select"><option value="">${t("midi.out.off")}</option></select>`,
+          `${t("set.io.out")} midi daw`
+        )}
+      ${row(
+          `<label class="set-label" for="midi-out-ch">${escapeHtml(t("set.io.outChannel"))}</label>`,
+          t("midi.outChannel.title"),
+          `<select id="midi-out-ch" class="ctrl-select set-select">${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.outChannel.one", { n: i + 1 })}</option>`).join("")}</select>`,
+          `${t("set.io.outChannel")} midi`
+        )}
+      ${row(
+          `<div class="set-label">${escapeHtml(t("set.io.thru"))}</div>`,
+          t("midi.thru.title"),
+          `<button type="button" id="btn-thru" class="mode-btn">${t("midi.thru")}</button>`,
+          `${t("set.io.thru")} thru midi`
+        )}`;
+      case "panels":
+        return `
+      <p class="set-intro">${escapeHtml(t("set.panels.intro"))}</p>
+      ${PANEL_BUTTONS.map((b) => row(
+          `<label class="set-label" for="mirror-${b.id}">${escapeHtml(t(b.label))}</label>`,
+          "",
+          `<input type="checkbox" id="mirror-${b.id}" class="set-check" data-mirror="${b.id}">`,
+          t(b.label)
+        )).join("")}`;
+      case "practice":
+        return `${prefs}
+      ${row(
+          `<div class="set-label">${escapeHtml(t("set.ear.reset"))}</div>`,
+          t("set.ear.reset.hint"),
+          `<button type="button" class="ctrl-btn" data-ear-reset>${escapeHtml(t("set.ear.reset"))}</button>`,
+          `${t("set.ear.reset")}`
+        )}`;
+      case "mic":
+        return `
+      ${row(
+          `<div class="set-label">${escapeHtml(t("set.mic.mode"))}</div>`,
+          t("set.mic.mode.hint"),
+          segmented(t("set.mic.mode"), MIC_MODES.map((m) => ({ value: m, label: t(`mic.mode.${m}`), on: getMicMode() === m })), "data-mic-mode"),
+          `${t("set.mic.mode")} micr\xF3fono microphone`
+        )}
+      ${prefs}`;
+      case "shortcuts":
+        return `
+      <div class="set-section-actions"><p class="set-intro">${escapeHtml(t("set.keys.intro"))}</p></div>
+      <div id="set-shortcuts">${shortcutsHtml()}</div>`;
+      case "data":
+        return `
+      ${row(
+          `<div class="set-label">${escapeHtml(t("set.data.export"))}</div>`,
+          t("set.data.export.hint"),
+          `<button type="button" class="ctrl-btn" data-export-settings>${escapeHtml(t("set.data.export.button"))}</button>`,
+          t("set.data.export")
+        )}
+      ${row(
+          `<div class="set-label">${escapeHtml(t("set.data.import"))}</div>`,
+          t("set.data.import.hint"),
+          `<label class="ctrl-btn set-file">${escapeHtml(t("set.data.import.button"))}<input type="file" accept="application/json,.json" data-import-settings hidden></label>`,
+          t("set.data.import")
+        )}
+      ${row(
+          `<div class="set-label">${escapeHtml(t("set.data.reset"))}</div>`,
+          t("set.data.reset.hint"),
+          `<button type="button" class="ctrl-btn set-danger" data-reset-settings>${escapeHtml(t("set.data.reset.button"))}</button>`,
+          t("set.data.reset")
+        )}
+      <p class="set-error" role="alert" hidden></p>`;
+      default:
+        return prefs;
+    }
+  }
+  function buildSettings() {
+    return `
+  <div id="settings" class="set-backdrop" hidden>
+    <section class="set-dialog" role="dialog" aria-modal="true" aria-labelledby="set-title">
+      <header class="set-header">
+        <h1 id="set-title" class="set-title">${escapeHtml(t("set.title"))}</h1>
+        <label for="set-search" class="set-search-label">${escapeHtml(t("set.search"))}</label>
+        <input id="set-search" class="set-search" type="search" placeholder="${escapeHtml(t("set.search.placeholder"))}" autocomplete="off">
+        <span class="set-gap"></span>
+        <button type="button" class="set-close" aria-label="${escapeHtml(t("help.close"))}">\xD7</button>
+      </header>
+      <div class="set-main">
+        <nav class="set-nav" aria-label="${escapeHtml(t("set.sections"))}">
+          ${SECTIONS.map((s) => `<button type="button" class="set-nav-item" data-section="${s}">${escapeHtml(t(`set.section.${s}`))}</button>`).join("")}
+        </nav>
+        <div class="set-content">
+          ${SECTIONS.map((s) => `<div class="set-section" data-section="${s}" hidden>
+            <h2 class="set-section-title">${escapeHtml(t(`set.section.${s}`))}</h2>
+            <p class="set-section-hint">${escapeHtml(t(`set.section.${s}.hint`))}</p>
+            ${sectionBody(s)}
+          </div>`).join("")}
+          <p class="set-nothing" hidden>${escapeHtml(t("set.nothing"))}</p>
+        </div>
+      </div>
+      <footer class="set-footer">
+        <span class="set-footnote">${escapeHtml(t("set.footnote"))}</span>
+        <span class="set-gap"></span>
+        <button type="button" class="ctrl-btn" data-reset-section>${escapeHtml(t("set.resetSection"))}</button>
+      </footer>
+    </section>
+  </div>`;
+  }
+  var section = loadChoice("settings-section", SECTIONS, "general");
+  var returnFocus2 = null;
+  var root = () => document.getElementById("settings");
+  function showSection(s) {
+    section = s;
+    save("settings-section", s);
+    const el = root();
+    el.querySelectorAll(".set-nav-item").forEach((b) => b.setAttribute("aria-current", String(b.dataset.section === s)));
+    el.querySelectorAll(".set-section").forEach((sec) => {
+      sec.hidden = sec.dataset.section !== s;
+    });
+    el.querySelector("[data-reset-section]").hidden = s === "panels" || s === "data" || s === "io";
+  }
+  function applySearch(q) {
+    const el = root();
+    const query = q.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+    if (!query) {
+      el.querySelectorAll(".set-row").forEach((r) => {
+        r.hidden = false;
+      });
+      el.querySelector(".set-nothing").hidden = true;
+      showSection(section);
+      return;
+    }
+    let any = false;
+    el.querySelectorAll(".set-section").forEach((sec) => {
+      let shown = 0;
+      sec.querySelectorAll(".set-row").forEach((r) => {
+        const text = (r.dataset.search ?? "").normalize("NFD").replace(/\p{M}/gu, "");
+        r.hidden = !text.includes(query);
+        if (!r.hidden) shown++;
+      });
+      sec.hidden = shown === 0;
+      any ||= shown > 0;
+    });
+    el.querySelectorAll(".set-nav-item").forEach((b) => b.setAttribute("aria-current", "false"));
+    el.querySelector(".set-nothing").hidden = any;
+  }
+  function syncMirrors() {
+    root().querySelectorAll("[data-mirror]").forEach((box) => {
+      const b = document.getElementById(box.dataset.mirror);
+      box.checked = b?.getAttribute("aria-pressed") === "true";
+      box.disabled = !b;
+    });
+  }
+  function openSettings(at) {
+    const el = root();
+    if (!el) return;
+    returnFocus2 = document.activeElement;
+    el.hidden = false;
+    syncMirrors();
+    showSection(at ?? section);
+    el.querySelector("#set-search").value = "";
+    applySearch("");
+    el.querySelector(`.set-nav-item[data-section="${section}"]`)?.focus();
+  }
+  function closeSettings() {
+    const el = root();
+    if (!el || el.hidden) return false;
+    if (capturing) {
+      capturing = null;
+      redrawShortcuts();
+      return true;
+    }
+    el.hidden = true;
+    pendingConflict = null;
+    returnFocus2?.focus();
+    returnFocus2 = null;
+    return true;
+  }
+  function wireSettings(opts) {
+    const el = root();
+    if (!el) return;
+    document.addEventListener("keydown", onCaptureKey, true);
+    el.addEventListener("mousedown", (e) => {
+      if (e.target === el) closeSettings();
+    });
+    el.querySelector(".set-close").addEventListener("click", () => closeSettings());
+    el.querySelectorAll(".set-nav-item").forEach((b) => b.addEventListener("click", () => {
+      ;
+      el.querySelector("#set-search").value = "";
+      applySearch("");
+      showSection(b.dataset.section);
+    }));
+    el.querySelector("#set-search").addEventListener("input", (e) => applySearch(e.target.value));
+    el.addEventListener("click", (e) => {
+      const target = e.target;
+      const seg = target.closest("[data-pref][data-value]");
+      if (seg) {
+        setPref(seg.dataset.pref, seg.dataset.value);
+        seg.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === seg)));
+      }
+      if (target.closest("[data-ear-reset]")) opts.resetEarScore();
+      const mic = target.closest("[data-mic-mode]");
+      if (mic) {
+        setMicMode(mic.dataset.value);
+        mic.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === mic)));
+      }
+    });
+    el.addEventListener("input", (e) => {
+      const input = e.target;
+      const name = input.dataset.pref;
+      if (input.dataset.prefSet) {
+        const set = input.dataset.prefSet;
+        const chosen = [...el.querySelectorAll(`[data-pref-set="${set}"]`)].filter((b) => b.checked).map((b) => b.value);
+        setPref(set, chosen);
+        return;
+      }
+      if (!name) return;
+      const def = PREFS[name];
+      if (def.kind === "number") {
+        setPref(name, Number(input.value));
+        const out = input.parentElement.querySelector("output");
+        if (out) out.textContent = formatPrefValue(def, Number(input.value));
+      } else if (def.kind === "bool") setPref(name, input.checked);
+      else if (def.kind === "choice") setPref(name, input.value);
+    });
+    el.querySelector("#help-theme").addEventListener("change", (e) => saveThemeChoice(e.target.value));
+    const reloadWith = (apply) => {
+      apply();
+      carryHistoryOverReload();
+      location.reload();
+    };
+    el.querySelector("#help-lang").addEventListener("change", (e) => reloadWith(() => saveLang(e.target.value)));
+    el.querySelector("#help-note-names").addEventListener("change", (e) => reloadWith(() => saveNoteNaming(e.target.value)));
+    el.querySelector("#set-tour").addEventListener("click", () => {
+      closeSettings();
+      startTour();
+    });
+    el.querySelectorAll("[data-mirror]").forEach((box) => box.addEventListener("change", () => {
+      document.getElementById(box.dataset.mirror)?.click();
+      syncMirrors();
+    }));
+    el.querySelector("#set-shortcuts").addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      if (b.dataset.keyChange) startCapture(b.dataset.keyChange, 0);
+      else if (b.dataset.keyAdd) startCapture(b.dataset.keyAdd, keysOf(b.dataset.keyAdd).length);
+      else if (b.hasAttribute("data-key-cancel")) {
+        capturing = null;
+        redrawShortcuts();
+        focusShortcut();
+      } else if (b.dataset.keyRemove) {
+        removeKey(b.dataset.keyRemove, b.dataset.key);
+        redrawShortcuts();
+      } else if (b.dataset.keyReset) {
+        resetKeys(b.dataset.keyReset);
+        redrawShortcuts();
+      } else if (b.hasAttribute("data-conflict-take") && pendingConflict) {
+        const c = pendingConflict;
+        pendingConflict = null;
+        assignKey(c.action, c.key, c.slot);
+        redrawShortcuts();
+        focusShortcut(c.action);
+      } else if (b.hasAttribute("data-conflict-other") && pendingConflict) {
+        const c = pendingConflict;
+        startCapture(c.action, c.slot);
+      }
+    });
+    el.querySelector("[data-reset-section]").addEventListener("click", () => {
+      if (section === "shortcuts") {
+        resetAllKeys();
+        capturing = null;
+        pendingConflict = null;
+        redrawShortcuts();
+        return;
+      }
+      if (section === "general") saveThemeChoice("system");
+      for (const name of SECTION_PREFS[section] ?? []) resetPref(name);
+      if (section === "mic") setMicMode("notes");
+      const sec = el.querySelector(`.set-section[data-section="${section}"]`);
+      const tmp = document.createElement("div");
+      tmp.innerHTML = buildSettings();
+      const fresh = tmp.querySelector(`.set-section[data-section="${section}"]`);
+      if (fresh) sec.innerHTML = fresh.innerHTML;
+      if (section === "general") rewireGeneral(el);
+    });
+    const error = el.querySelector(".set-error");
+    el.querySelector("[data-export-settings]").addEventListener("click", exportSettings);
+    el.querySelector("[data-import-settings]").addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const next = readSettingsFile(await file.text());
+      if (!next) {
+        error.hidden = false;
+        error.textContent = t("set.data.import.bad");
+        return;
+      }
+      replaceSettings(next, "set.data.imported");
+    });
+    el.querySelector("[data-reset-settings]").addEventListener("click", () => replaceSettings({}, "set.data.wasReset"));
+    function rewireGeneral(container) {
+      container.querySelector("#help-theme").addEventListener("change", (e) => saveThemeChoice(e.target.value));
+      container.querySelector("#help-lang").addEventListener("change", (e) => reloadWith(() => saveLang(e.target.value)));
+      container.querySelector("#help-note-names").addEventListener("change", (e) => reloadWith(() => saveNoteNaming(e.target.value)));
+      container.querySelector("#set-tour").addEventListener("click", () => {
+        closeSettings();
+        startTour();
+      });
+    }
   }
 
   // src/view/channel.ts
@@ -3397,7 +5011,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     setGrid(shown ? addCell(grid2, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid2, id));
   }
   function renderLayout(panels, fieldsVisible) {
-    $("app").innerHTML = buildToolbar() + `<div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, panels, fieldsVisible)).join("")}</main>`;
+    $("app").innerHTML = buildToolbar() + `<div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, panels, fieldsVisible)).join("")}</main>` + buildSettings();
     applyGrid();
     wireGrid();
     wireLayoutMenu();
@@ -3431,15 +5045,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t("a11y.toolbar")}">
       <span id="midi-status" class="midi-status">MIDI: \u2014</span>
       <select id="midi-device" class="ctrl-select" aria-label="${t("a11y.midiDevice")}"></select>
-      <select id="midi-in-ch" class="ctrl-select" title="${t("midi.inChannel.title")}">
-        <option value="0">${t("midi.inChannel.all")}</option>
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.inChannel.one", { n: i + 1 })}</option>`).join("")}
-      </select>
-      <select id="midi-out" class="ctrl-select" title="${t("midi.out.title")}"><option value="">${t("midi.out.off")}</option></select>
-      <select id="midi-out-ch" class="ctrl-select" title="${t("midi.outChannel.title")}">
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.outChannel.one", { n: i + 1 })}</option>`).join("")}
-      </select>
-      <button id="btn-thru" class="mode-btn" title="${t("midi.thru.title")}">${t("midi.thru")}</button>
       <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t("mode.normal.title")}">${t("mode.normal")}</button>
       <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t("mode.hold.title")}">${t("mode.hold")}</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t("mode.arpeggio.title")}">${t("mode.arpeggio")}</button>
@@ -3490,6 +5095,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
             </div>`).join("")}
         </div>
       </div>
+      <button id="btn-settings" class="help-btn" title="${t("set.title.button")}" aria-haspopup="dialog">\u2699</button>
       <button id="btn-help" class="help-btn" title="${t("help.title")}">?</button>
     </div>`;
   }
@@ -4110,111 +5716,10 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     }
   }
 
-  // src/theory/spelling.ts
-  var A4 = 69;
-  function spellMidi(midi, key) {
-    return tryUMT("spelling", () => UMT.spellPitchInKey(midi - A4, key), "") || "";
-  }
-  function spellName(name, key) {
-    const midi = noteNameToMidi(name);
-    return midi === null ? name : spellMidi(midi, key) || name;
-  }
-  function spellPitchClassInKey(name, key) {
-    const pc3 = pitchClassOf(name);
-    return pc3 === -1 ? name : spellMidi(60 + pc3, key).replace(/-?\d+$/, "") || name;
-  }
-  function spellChordSymbol(symbol, key) {
-    if (!key || symbol === "?") return symbol;
-    const chord = tryParseChord(symbol);
-    return chord ? tryUMT("chord spelling", () => UMT.spellChordInKey(chord, key).name, symbol) : symbol;
-  }
-  function spellVoicing(names, symbol, key) {
-    const chord = symbol ? tryParseChord(symbol) : null;
-    const toneByPc = /* @__PURE__ */ new Map();
-    if (chord) {
-      for (const t2 of tryUMT("chord tones", () => UMT.spellChord(chord), [])) {
-        const base = t2.replace(/-?\d+$/, "");
-        toneByPc.set(pitchClassOf(base), base);
-      }
-    }
-    return names.map((n) => {
-      const midi = noteNameToMidi(n);
-      if (midi === null) return n;
-      const tone = toneByPc.get(midi % 12);
-      return (tone && nameAtMidi(tone, midi)) ?? (key ? spellName(n, key) : n);
-    });
-  }
-  function spellDetection(d, key) {
-    if (!d || !key) return d;
-    if (d.kind === "note") {
-      const noteName = spellName(d.noteName, key);
-      return { ...d, noteName, pitchClass: noteName.replace(/-?\d+$/, "") };
-    }
-    if (d.kind === "interval") return { ...d, notes: d.notes.map((n) => spellName(n, key)) };
-    const candidates = d.candidates.map((c) => spellChordSymbol(c, key));
-    const selected = candidates[d.selectedIndex];
-    return { ...d, candidates, notes: spellVoicing(d.notes, selected === "?" ? null : selected, key) };
-  }
-
-  // src/theory/key-map.ts
-  function keyChord(symbol, key) {
-    const a = romanInKey(symbol, key);
-    const secondary = a && a.roman !== a.degree ? a.roman : void 0;
-    return { symbol, roman: a?.degree ?? "?", secondary, function: a?.function ?? "unknown" };
-  }
-  var cache3 = /* @__PURE__ */ new Map();
-  function buildKeyMap(key, sevenths) {
-    const cacheKey = `${key}|${sevenths}`;
-    if (cache3.has(cacheKey)) return cache3.get(cacheKey);
-    const chords = tryUMT("diatonic chords", () => UMT.parseScaleSymbol(key).getDiatonicChords(sevenths ? "seventh" : "triad"), []);
-    if (!chords.length) {
-      cache3.set(cacheKey, null);
-      return null;
-    }
-    const diatonic = chords.map((c) => keyChord(c.name, key));
-    if (/ minor$/i.test(key)) {
-      const harmonic = tryUMT(
-        "diatonic chords",
-        () => UMT.parseScaleSymbol(key.replace(/ minor$/i, " Harmonic Minor")).getDiatonicChords(sevenths ? "seventh" : "triad"),
-        []
-      );
-      harmonic.forEach((c, i) => {
-        if (!diatonic[i] || c.name === diatonic[i].symbol) return;
-        if (romanInKey(c.name, key)?.isDiatonic) diatonic[i].alternative = keyChord(c.name, key);
-      });
-    }
-    const negative = chords.map((c) => tryUMT("negative harmony", () => {
-      const name = UMT.Harmony.getNegativeHarmony(c, key)?.name;
-      return name ? spellChordSymbol(name, key) : null;
-    }, null));
-    const byMode = /* @__PURE__ */ new Map();
-    for (const b of tryUMT("borrowed chords", () => UMT.Harmony.getBorrowedChords(key, { type: sevenths ? "seventh" : "triad" }), [])) {
-      const name = b.chord?.name;
-      if (!name || !tryParseChord(name)) continue;
-      let row = byMode.get(b.sourceMode);
-      if (!row) byMode.set(b.sourceMode, row = { mode: b.sourceMode, brightness: b.brightness ?? 0, chords: [] });
-      row.chords.push({ ...keyChord(name, key), characteristic: !!b.characteristic });
-    }
-    const parallel = [...byMode.values()].sort((a, b) => b.brightness - a.brightness);
-    const axis = tryUMT("coltrane axis", () => UMT.Harmony.getColtraneAxis(key).majorThirds, null);
-    const coltraneAxis = axis ? axis.map((n) => spellPitchClassInKey(n, key)) : null;
-    const map = { key, diatonic, negative, parallel, coltraneAxis };
-    cache3.set(cacheKey, map);
-    return map;
-  }
-  function sameChord(a, b) {
-    if (!a || !b) return false;
-    if (a === b) return true;
-    const ca = tryParseChord(a), cb = tryParseChord(b);
-    if (!ca || !cb) return false;
-    const pc3 = (s) => s === void 0 ? -1 : (s % 12 + 12) % 12;
-    return pc3(ca.rootStep) === pc3(cb.rootStep) && (ca.intervalsInSteps ?? []).join() === (cb.intervalsInSteps ?? []).join() && pc3(ca.bassStep) === pc3(cb.bassStep);
-  }
-
   // src/diagrams/key-explorer.ts
   var functionName = (fn) => fn === "unknown" ? t("fn.unknownLong") : t(`fn.${fn}`);
   var describe = (c) => [c.roman, c.secondary && t("keyPanel.also", { roman: c.secondary }), functionName(c.function)].filter(Boolean).join(" \xB7 ");
-  function renderKeyExplorer(container, map, keyLabel2, activeChord, onChordClick, opts) {
+  function renderKeyExplorer(container, map, keyLabel3, activeChord, onChordClick, opts) {
     container.style.fontSize = opts.fontScale + "px";
     if (!map) {
       container.innerHTML = `<div class="key-empty">${escapeHtml(t("keyPanel.empty"))}</div>`;
@@ -4229,7 +5734,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ${c.alternative ? button(c.alternative.symbol, "key-alt", `${describe(c.alternative)} \xB7 ${t("keyPanel.harmonicMinor")}`) : ""}
       <span class="key-function key-fn-${c.function}" title="${functionName(c.function)}">${c.function === "unknown" ? "\xB7" : c.function}</span>
     </div>`;
-    let html = `<div class="key-main"><div class="key-title">${escapeHtml(keyLabel2)}</div>`;
+    let html = `<div class="key-main"><div class="key-title">${escapeHtml(keyLabel3)}</div>`;
     html += `<div class="key-grid">${map.diatonic.map(cell).join("")}</div>`;
     if (opts.showNegative) {
       html += `<div class="key-section-label" title="${t("keyPanel.negative.title")}">${t("keyPanel.negative")}</div>
@@ -4244,13 +5749,13 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     html += "</div>";
     if (opts.showParallel && map.parallel.length) {
       html += `<div class="key-parallel"><div class="key-section-label" title="${t("keyPanel.parallel.title")}">${t("keyPanel.parallel")}</div><div class="key-mode-grid">`;
-      html += map.parallel.map((row) => `
+      html += map.parallel.map((row2) => `
       <div class="key-mode-row">
-        <span class="key-mode-name">${escapeHtml(row.mode)}</span>
-        <div class="key-mode-chords">${row.chords.map((c) => `
+        <span class="key-mode-name">${escapeHtml(row2.mode)}</span>
+        <div class="key-mode-chords">${row2.chords.map((c) => `
           <span class="key-mode-chord">
             <span class="key-roman">${escapeHtml(c.roman)}</span>
-            ${button(c.symbol, c.characteristic ? "key-characteristic" : "", [describe(c), t("keyPanel.from", { mode: row.mode }), c.characteristic ? t("keyPanel.characteristic") : ""].filter(Boolean).join(" \xB7 "))}
+            ${button(c.symbol, c.characteristic ? "key-characteristic" : "", [describe(c), t("keyPanel.from", { mode: row2.mode }), c.characteristic ? t("keyPanel.characteristic") : ""].filter(Boolean).join(" \xB7 "))}
           </span>`).join("")}
         </div>
       </div>`).join("") + "</div></div>";
@@ -4259,306 +5764,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     container.querySelectorAll(".key-chord").forEach((btn) => {
       btn.addEventListener("click", () => onChordClick(btn.dataset.chord));
     });
-  }
-
-  // src/ui/undo.ts
-  var UNDO_MS = 5e3;
-  var current = null;
-  function dismiss() {
-    if (!current) return;
-    clearTimeout(current.timer);
-    current.el.remove();
-    current = null;
-  }
-  function showUndo(message, undo) {
-    dismiss();
-    const el = document.createElement("div");
-    el.className = "undo-toast";
-    el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">${escapeHtml(t("undo"))}</button>`;
-    el.querySelector("button").addEventListener("click", () => {
-      dismiss();
-      undo();
-    });
-    document.body.appendChild(el);
-    current = { el, timer: window.setTimeout(dismiss, UNDO_MS) };
-  }
-
-  // src/detector/explain.ts
-  var nth = (n) => t(`ex.nth.${n}`);
-  var pc2 = (name) => pitchClassOf(name.replace(/-?\d+$/, ""));
-  function notesOutside(symbol, key) {
-    const scale = new Set(tryUMT("scale", () => UMT.parseScaleSymbol(key).getNotes().slice(0, 7).map((n) => pc2(n.name)), []));
-    return chordNoteNames(symbol).filter((n) => !scale.has(pc2(n))).map((n) => noteLabel(n.replace(/-?\d+$/, "")));
-  }
-  function romanEntry(symbol, key, a) {
-    const roman = a.degree ?? a.roman;
-    const n = a.degreeNumber;
-    if (!roman || roman === "?" || !n || n < 1 || n > 7) return null;
-    const vars = { chord: chordLabel(symbol), roman, key: keyLabel(key), nth: nth(n) };
-    const acc = roman.match(/^([b#♭♯])/)?.[1];
-    if (acc) {
-      const flat = acc === "b" || acc === "\u266D";
-      return { term: roman, text: t("ex.romanAltered", { ...vars, dir: t(flat ? "ex.lowered" : "ex.raised"), acc: flat ? "\u266D" : "\u266F", n }) };
-    }
-    const minor = /minor$/i.test(key);
-    const subtonic = n === 7 && minor && /^VII/.test(roman);
-    const name = subtonic ? t("ex.deg.subtonic") : t(`ex.deg.${n}`);
-    return { term: roman, text: t("ex.roman", { ...vars, name }) };
-  }
-  function secondaryTarget(target, key) {
-    const map = buildKeyMap(key, false);
-    const plain = (r) => r.replace(/[°ø+7]/g, "").toLowerCase();
-    return map?.diatonic.find((c) => plain(c.roman) === plain(target))?.symbol ?? null;
-  }
-  function colourEntries(symbol, key, a) {
-    const chord = chordLabel(symbol);
-    const k = keyLabel(key);
-    if (a.isSecondary && a.secondaryTarget) {
-      const [kind, target] = a.secondaryTarget.split("/");
-      const targetChord = target ? secondaryTarget(target, key) : null;
-      const vars = { chord, roman: a.secondaryTarget, target: targetChord ? chordLabel(targetChord) : target, targetRoman: target };
-      return [{ term: a.secondaryTarget, text: t(kind.startsWith("vii") ? "ex.secondaryVii" : "ex.secondaryV", vars) }];
-    }
-    if (a.isDiatonic) return [{ term: t("analysis.yes"), text: t("ex.diatonic", { chord, key: k }) }];
-    const notes = notesOutside(symbol, key).join(" ");
-    if (a.isBorrowed && a.borrowedFrom) {
-      const mode4 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
-      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode4, key: k, notes }) }];
-    }
-    if (a.substitutionCandidate?.startsWith("tritone")) return [{ term: substitutionTypeLabel("tritone"), text: t("ex.tritoneSub", { chord }) }];
-    return [{ term: t("analysis.chromatic"), text: t("ex.chromatic", { chord, key: k, notes }) }];
-  }
-  var CADENCES = [
-    ["Authentic", "authentic"],
-    ["Minor Plagal", "minorPlagal"],
-    ["Plagal", "plagal"],
-    ["Deceptive", "deceptive"],
-    ["Phrygian Half", "phrygianHalf"],
-    ["Phrygian", "phrygian"],
-    ["Backdoor", "backdoor"],
-    ["Half", "half"],
-    ["Picardy", "picardy"]
-  ];
-  function explainCadence(cadence) {
-    const k = CADENCES.find(([start]) => cadence.startsWith(start))?.[1];
-    return k ? t(`ex.cad.${k}`) : null;
-  }
-  var FIGURES = {
-    "": "ex.fig.root",
-    "5/3": "ex.fig.root",
-    "6": "ex.fig.6",
-    "6/3": "ex.fig.6",
-    "6/4": "ex.fig.64",
-    "7": "ex.fig.7",
-    "6/5": "ex.fig.65",
-    "4/3": "ex.fig.43",
-    "4/2": "ex.fig.42",
-    "2": "ex.fig.42"
-  };
-  function voicingEntries(noteNames, symbol) {
-    if (noteNames.length < 3) return [];
-    const chord = tryParseChord(symbol);
-    const v = tryUMT("voicing", () => UMT.analyzeVoicing(noteNames.map((n) => UMT.parseNote(n)), chord), null);
-    if (!v) return [];
-    const out = [{ term: t(`voicing.${v.position}`), text: t(`ex.voicing.${v.position}`) }];
-    if (v.drop) out.push({ term: v.drop, text: t("ex.voicing.drop") });
-    return out;
-  }
-  var PLR_EXAMPLES = { P: ["C", "Cm"], R: ["C", "Am"], L: ["C", "Em"] };
-  var SUBSTITUTION_TYPES = ["tritone", "diatonic", "deceptive", "chromatic-mediant", "sus4", "modal"];
-  function explainDetection(detection, a, key, prevSymbol) {
-    if (detection?.kind === "interval") {
-      return [{ term: detection.intervalName, text: t("ex.interval", { n: detection.semitones % 12 || 12, inv: detection.inversionName }) }];
-    }
-    if (detection?.kind !== "chord" || !a) return [];
-    const symbol = detection.candidates[detection.selectedIndex];
-    const out = [];
-    if (key) {
-      const roman = romanEntry(symbol, key, a);
-      if (roman) out.push(roman, { term: t("ex.case.term"), text: t("ex.case") });
-      if (a.function !== "unknown") out.push({ term: t(`fn.${a.function}`), text: t(`ex.fn.${a.function}`) });
-      out.push(...colourEntries(symbol, key, a));
-    }
-    const fig = FIGURES[a.figuredBass ?? ""];
-    if (fig) out.push({ term: a.figuredBass || "5/3", text: `${t(fig)} ${t("ex.fig.intro")}` });
-    out.push(...voicingEntries(detection.notes, symbol));
-    if (a.cadence) {
-      const text = explainCadence(a.cadence);
-      if (text) out.push({ term: cadenceLabel(a.cadence), text });
-    }
-    if (a.transformation && prevSymbol) {
-      out.push({ term: a.transformation, text: t("ex.plr", { chord: chordLabel(symbol), prev: chordLabel(prevSymbol), path: a.transformation }) });
-      for (const op of new Set(a.transformation.split(""))) {
-        const [x, y] = PLR_EXAMPLES[op];
-        out.push({ term: op, text: t(`ex.plr.${op}`, { a: chordLabel(x), b: chordLabel(y) }) });
-      }
-    }
-    for (const type of a.substitutionTypes) {
-      if (SUBSTITUTION_TYPES.includes(type)) out.push({ term: substitutionTypeLabel(type), text: t(`ex.sub.${type}`) });
-    }
-    if (a.upperStructures.length) out.push({ term: a.upperStructures.join(", "), text: t("ex.upper") });
-    for (const k of a.voiceRuleKeys) out.push({ term: t(`vl.issue.${k}`, { voices: "" }).replace(/\s*\(\)$/, ""), text: t(`ex.vl.${k}`) });
-    return out;
-  }
-  function renderExplanation(container, items) {
-    container.innerHTML = items.length ? `<dl class="explain-list">${items.map((i) => `<dt>${escapeHtml(i.term)}</dt><dd>${escapeHtml(i.text)}</dd>`).join("")}</dl>` : `<p class="explain-empty">${escapeHtml(t("ex.empty"))}</p>`;
-  }
-
-  // src/history/history.ts
-  var FUNCTION_COLORS = {
-    "T": "var(--fn-t)",
-    "S": "var(--fn-s)",
-    "D": "var(--fn-d)",
-    "unknown": "var(--text-dim)"
-  };
-  var entries = [];
-  var debounceTimer = null;
-  var lastAutoAppended = null;
-  var onChange2 = () => {
-  };
-  function setHistoryChangeCallback(cb) {
-    onChange2 = cb;
-  }
-  var CARRY_KEY = "modus-history-carry";
-  function carryHistoryOverReload() {
-    try {
-      sessionStorage.setItem(CARRY_KEY, JSON.stringify(entries));
-    } catch {
-    }
-  }
-  function restoreCarriedHistory() {
-    let carried = null;
-    try {
-      carried = JSON.parse(sessionStorage.getItem(CARRY_KEY) ?? "null");
-      sessionStorage.removeItem(CARRY_KEY);
-    } catch {
-    }
-    const list = Array.isArray(carried) ? carried : [];
-    if (list.length && list.every((e) => e && typeof e.id === "string" && typeof e.symbol === "string" && Array.isArray(e.notes))) restoreEntries(list);
-  }
-  function addEntry(symbol, notes) {
-    const entry = { id: crypto.randomUUID(), symbol, notes };
-    entries = [entry, ...entries].slice(0, getPref("history-max"));
-    onChange2(entries);
-  }
-  function removeEntry(id) {
-    entries = entries.filter((e) => e.id !== id);
-    lastAutoAppended = entries[0]?.symbol ?? null;
-    onChange2(entries);
-  }
-  function restoreEntries(list) {
-    entries = list.slice(0, getPref("history-max"));
-    lastAutoAppended = entries[0]?.symbol ?? null;
-    onChange2(entries);
-  }
-  function clearHistoryWithUndo() {
-    if (!entries.length) return;
-    const before = entries;
-    clearHistory();
-    showUndo(t("history.cleared", { n: before.length }), () => restoreEntries(before));
-  }
-  function clearHistory() {
-    entries = [];
-    lastAutoAppended = null;
-    onChange2(entries);
-  }
-  function notifyChordDetected(symbol, notes) {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      if (symbol !== lastAutoAppended && symbol !== "?") {
-        addEntry(symbol, notes);
-        lastAutoAppended = symbol;
-      }
-    }, getPref("history-hold-ms"));
-  }
-  function markActiveHistoryEntry(container, entryId) {
-    container.querySelectorAll(".history-chip").forEach((el) => {
-      el.classList.toggle("active-cursor", el.dataset.id === entryId);
-    });
-  }
-  function renderHistory(container, activeKey, onChipClick, activeCursorEntryId) {
-    const strip = document.createElement("div");
-    strip.className = "history-strip";
-    const shown = entries.map((e) => ({ ...e, symbol: spellChordSymbol(e.symbol, activeKey) }));
-    const steps = analyzeChordProgression(shown.map((e) => e.symbol).reverse(), activeKey).reverse();
-    shown.forEach((entry, i) => {
-      const older = i + 1 < shown.length ? steps[i + 1] : null;
-      const cadence = older?.cadence ?? null;
-      const modulation = older && steps[i].key && steps[i].key !== older.key ? steps[i].key : null;
-      const analysis = steps[i].info;
-      const roman = analysis?.roman ?? "\u2014";
-      const fn = analysis?.function ?? "unknown";
-      const color2 = FUNCTION_COLORS[fn] ?? FUNCTION_COLORS.unknown;
-      const chip = document.createElement("div");
-      chip.className = "history-chip";
-      chip.dataset.id = entry.id;
-      chip.classList.toggle("active-cursor", activeCursorEntryId === entry.id);
-      chip.style.borderLeft = `3px solid ${color2}`;
-      chip.innerHTML = `
-      <span class="history-chip-symbol">${escapeHtml(chordLabel(entry.symbol))}</span>
-      <span class="history-chip-roman">${escapeHtml(roman)}</span>
-    `;
-      chip.addEventListener("click", () => {
-        onChipClick(entry);
-        if (entry.notes.length > 0) playNoteNames(entry.notes);
-        else playChord(entry.symbol);
-      });
-      const inKey = steps[i].key ? ` (${t("history.chip.inKey", { roman, key: keyLabel(steps[i].key) })})` : "";
-      chip.title = `${chordLabel(entry.symbol)}${inKey} \u2014 ${t("history.chip.actions")}`;
-      chip.draggable = true;
-      chip.addEventListener("dragstart", (e) => {
-        e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol, notes: entry.notes }));
-        e.dataTransfer.effectAllowed = "copy";
-        chip.style.opacity = "0.5";
-      });
-      chip.addEventListener("dragend", () => {
-        chip.style.opacity = "1";
-      });
-      const remove = () => {
-        const before = entries;
-        removeEntry(entry.id);
-        showUndo(t("history.removed", { chord: chordLabel(entry.symbol) }), () => restoreEntries(before));
-      };
-      chip.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        remove();
-      });
-      onLongPress(chip, remove);
-      makeActivatable(chip, t("a11y.chip", { chord: chordLabel(entry.symbol), roman }));
-      chip.addEventListener("keydown", (e) => {
-        if (e.key !== "Delete" && e.key !== "Backspace") return;
-        e.preventDefault();
-        e.stopPropagation();
-        remove();
-      });
-      strip.appendChild(chip);
-      if (modulation) {
-        const tag = document.createElement("span");
-        tag.className = "history-modulation";
-        tag.textContent = `\u2192 ${keyLabel(modulation)}`;
-        tag.title = t("history.modulation", { key: keyLabel(modulation) });
-        strip.appendChild(tag);
-      }
-      if (cadence) {
-        const tag = document.createElement("span");
-        tag.className = "history-cadence";
-        tag.textContent = cadenceLabel(cadence, true);
-        tag.title = `${cadenceLabel(cadence)}: ${chordLabel(shown[i + 1].symbol)} \u2192 ${chordLabel(entry.symbol)}` + (explainCadence(cadence) ? `
-${explainCadence(cadence)}` : "");
-        strip.appendChild(tag);
-      }
-    });
-    const clearBtn = document.createElement("button");
-    clearBtn.textContent = t("history.clear");
-    clearBtn.title = t("history.clear.title");
-    clearBtn.className = "history-clear-btn";
-    clearBtn.addEventListener("click", clearHistoryWithUndo);
-    const wrap = document.createElement("div");
-    wrap.className = "history-wrap";
-    wrap.appendChild(strip);
-    wrap.appendChild(clearBtn);
-    container.innerHTML = "";
-    container.appendChild(wrap);
   }
 
   // src/song/model.ts
@@ -4576,7 +5781,7 @@ ${explainCadence(cadence)}` : "");
     return { id: newId(), chords: [] };
   }
   function addSection(song, name, color2) {
-    const section = {
+    const section2 = {
       id: newId(),
       name,
       color: color2,
@@ -4584,7 +5789,7 @@ ${explainCadence(cadence)}` : "");
       collapsed: false,
       repeatCount: 1
     };
-    return { ...song, sections: [...song.sections, section] };
+    return { ...song, sections: [...song.sections, section2] };
   }
   function removeSection(song, sectionId) {
     return { ...song, sections: song.sections.filter((s) => s.id !== sectionId) };
@@ -4740,8 +5945,8 @@ ${explainCadence(cadence)}` : "");
   function computeMeasureNumbers(song) {
     const map = /* @__PURE__ */ new Map();
     let n = 1;
-    for (const section of song.sections) {
-      for (const measure of section.measures) {
+    for (const section2 of song.sections) {
+      for (const measure of section2.measures) {
         map.set(measure.id, n++);
       }
     }
@@ -4780,11 +5985,11 @@ ${explainCadence(cadence)}` : "");
   }
   var isValidChordSymbol = isKnownChord;
   var SEMITONE_NAMES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  function transposeRoot(root, semitones, preferSharps) {
+  function transposeRoot(root2, semitones, preferSharps) {
     const names = preferSharps ? SEMITONE_NAMES_SHARP : PITCH_NAMES_FLAT;
     const all = [...SEMITONE_NAMES_SHARP, ...PITCH_NAMES_FLAT];
-    const idx = all.indexOf(root);
-    if (idx === -1) return root;
+    const idx = all.indexOf(root2);
+    if (idx === -1) return root2;
     return names[((idx % 12 + semitones) % 12 + 12) % 12];
   }
   function transposeSong(song, semitones, targetKey) {
@@ -5016,8 +6221,8 @@ ${explainCadence(cadence)}` : "");
     _container.appendChild(buildSongDOM(_song, _handlers));
   }
   function buildSongDOM(song, h) {
-    const root = document.createElement("div");
-    root.className = "song-root";
+    const root2 = document.createElement("div");
+    root2.className = "song-root";
     const header = document.createElement("div");
     header.className = "song-header";
     const titleInput = document.createElement("input");
@@ -5056,8 +6261,8 @@ ${explainCadence(cadence)}` : "");
       if (!_song.sections.length) {
         _song = addSection(_song, t("section.default"), "verse");
       }
-      const section = _song.sections[_song.sections.length - 1];
-      _song = appendProgression(_song, section.id, measures);
+      const section2 = _song.sections[_song.sections.length - 1];
+      _song = appendProgression(_song, section2.id, measures);
       pasteTA.value = "";
       pasteArea.style.display = "none";
       saveSong(_song);
@@ -5117,43 +6322,43 @@ ${explainCadence(cadence)}` : "");
     });
     pasteBtn.title = t("song.paste.title");
     header.append(songSelect, titleInput, newBtn, deleteBtn, templateWrap, transposeSelect, exportBtn, pasteBtn);
-    root.appendChild(header);
-    root.appendChild(pasteArea);
+    root2.appendChild(header);
+    root2.appendChild(pasteArea);
     const formInfo = document.createElement("div");
     formInfo.className = "song-form-info";
     const form = detectForm(_song.sections.map((s) => s.name));
     const keyStr = h.activeKey ? ` \xB7 ${t("song.key", { key: keyLabel(h.activeKey) })}` : "";
     formInfo.textContent = _song.sections.length ? t("song.form", { form }) + keyStr : "";
-    root.appendChild(formInfo);
+    root2.appendChild(formInfo);
     const measureNums = computeMeasureNumbers(song);
-    song.sections.forEach((section) => {
-      root.appendChild(buildSectionDOM(section, h, measureNums));
+    song.sections.forEach((section2) => {
+      root2.appendChild(buildSectionDOM(section2, h, measureNums));
     });
-    return root;
+    return root2;
   }
-  function buildSectionDOM(section, h, measureNums) {
-    const color2 = SECTION_COLORS[section.color];
+  function buildSectionDOM(section2, h, measureNums) {
+    const color2 = SECTION_COLORS[section2.color];
     const wrap = document.createElement("div");
     wrap.className = "section-wrap";
     wrap.style.borderLeft = `3px solid ${color2}`;
     const secHeader = document.createElement("div");
     secHeader.className = "section-header";
     const toggle2 = document.createElement("span");
-    toggle2.textContent = section.collapsed ? "\u25B6" : "\u25BC";
+    toggle2.textContent = section2.collapsed ? "\u25B6" : "\u25BC";
     toggle2.className = "section-toggle";
     toggle2.addEventListener("click", () => {
-      _song = updateSection(_song, section.id, { collapsed: !section.collapsed });
+      _song = updateSection(_song, section2.id, { collapsed: !section2.collapsed });
       saveSong(_song);
       h.onSongChange(_song);
     });
     const nameInput = document.createElement("input");
-    nameInput.value = section.name;
+    nameInput.value = section2.name;
     nameInput.className = "section-name-input";
     nameInput.style.color = color2;
     nameInput.addEventListener("focus", () => nameInput.style.borderBottomColor = color2);
     nameInput.addEventListener("blur", () => {
       nameInput.style.borderBottomColor = "transparent";
-      _song = updateSection(_song, section.id, { name: nameInput.value });
+      _song = updateSection(_song, section2.id, { name: nameInput.value });
       saveSong(_song);
       h.onSongChange(_song);
     });
@@ -5172,11 +6377,11 @@ ${explainCadence(cadence)}` : "");
         dot.title = t(`section.${c}`);
         dot.className = "color-picker-dot";
         dot.style.background = SECTION_COLORS[c];
-        dot.style.borderColor = c === section.color ? "var(--cursor)" : "transparent";
+        dot.style.borderColor = c === section2.color ? "var(--cursor)" : "transparent";
         dot.addEventListener("click", (ev) => {
           ev.stopPropagation();
           picker.remove();
-          _song = updateSection(_song, section.id, { color: c });
+          _song = updateSection(_song, section2.id, { color: c });
           saveSong(_song);
           h.onSongChange(_song);
         });
@@ -5197,7 +6402,7 @@ ${explainCadence(cadence)}` : "");
       }, 0);
     });
     const repeatBadge = document.createElement("span");
-    repeatBadge.textContent = `\xD7${section.repeatCount}`;
+    repeatBadge.textContent = `\xD7${section2.repeatCount}`;
     repeatBadge.title = t("section.repeat.title");
     repeatBadge.className = "section-repeat-badge";
     repeatBadge.addEventListener("click", (e) => {
@@ -5206,7 +6411,7 @@ ${explainCadence(cadence)}` : "");
       input.type = "number";
       input.min = "1";
       input.max = "16";
-      input.value = String(section.repeatCount);
+      input.value = String(section2.repeatCount);
       input.className = "section-repeat-input";
       repeatBadge.replaceWith(input);
       input.focus();
@@ -5214,7 +6419,7 @@ ${explainCadence(cadence)}` : "");
       const commit2 = () => {
         const n = parseInt(input.value);
         if (n >= 1 && n <= 16) {
-          _song = updateSection(_song, section.id, { repeatCount: n });
+          _song = updateSection(_song, section2.id, { repeatCount: n });
           saveSong(_song);
         }
         h.onSongChange(_song);
@@ -5223,7 +6428,7 @@ ${explainCadence(cadence)}` : "");
       input.addEventListener("keydown", (ke) => {
         if (ke.key === "Enter") input.blur();
         if (ke.key === "Escape") {
-          input.value = String(section.repeatCount);
+          input.value = String(section2.repeatCount);
           input.blur();
         }
       });
@@ -5233,19 +6438,19 @@ ${explainCadence(cadence)}` : "");
     dragHandle.title = t("section.drag.title");
     dragHandle.className = "section-drag-handle";
     const dupBtn = makeSmallBtn("\u29C9", () => {
-      _song = duplicateSection(_song, section.id);
+      _song = duplicateSection(_song, section2.id);
       saveSong(_song);
       h.onSongChange(_song);
     });
     dupBtn.title = t("section.duplicate.title");
     const delBtn = makeSmallBtn("\xD7", () => {
-      applyWithUndo(removeSection(_song, section.id), t("section.deleted", { name: section.name }));
+      applyWithUndo(removeSection(_song, section2.id), t("section.deleted", { name: section2.name }));
     });
     delBtn.style.color = "var(--danger-soft)";
     delBtn.title = t("section.delete.title");
     secHeader.append(dragHandle, toggle2, nameInput, swatchEl, repeatBadge, dupBtn, delBtn);
     const addMeasureBtn = makeSmallBtn(t("section.addBar"), () => {
-      _song = addMeasure(_song, section.id);
+      _song = addMeasure(_song, section2.id);
       saveSong(_song);
       h.onSongChange(_song);
     });
@@ -5255,7 +6460,7 @@ ${explainCadence(cadence)}` : "");
     secHeader.draggable = true;
     secHeader.style.cursor = "grab";
     secHeader.addEventListener("dragstart", (e) => {
-      _draggedSectionId = section.id;
+      _draggedSectionId = section2.id;
       _draggedChordId = null;
       e.dataTransfer.effectAllowed = "move";
       requestAnimationFrame(() => {
@@ -5269,7 +6474,7 @@ ${explainCadence(cadence)}` : "");
       wrap.style.borderBottom = "";
     });
     wrap.addEventListener("dragover", (e) => {
-      if (!_draggedSectionId || _draggedSectionId === section.id) return;
+      if (!_draggedSectionId || _draggedSectionId === section2.id) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       const rect = wrap.getBoundingClientRect();
@@ -5284,28 +6489,28 @@ ${explainCadence(cadence)}` : "");
       }
     });
     wrap.addEventListener("drop", (e) => {
-      if (!_draggedSectionId || _draggedSectionId === section.id) return;
+      if (!_draggedSectionId || _draggedSectionId === section2.id) return;
       e.preventDefault();
       const rect = wrap.getBoundingClientRect();
       const before = e.clientY < rect.top + rect.height / 2;
       wrap.style.borderTop = "";
       wrap.style.borderBottom = "";
-      _song = reorderSections(_song, _draggedSectionId, section.id, before);
+      _song = reorderSections(_song, _draggedSectionId, section2.id, before);
       _draggedSectionId = null;
       saveSong(_song);
       h.onSongChange(_song);
     });
-    if (!section.collapsed) {
+    if (!section2.collapsed) {
       const measuresWrap = document.createElement("div");
       measuresWrap.className = "measures-wrap";
-      section.measures.forEach((measure) => {
-        measuresWrap.appendChild(buildMeasureDOM(measure, section, h, measureNums.get(measure.id) ?? 0));
+      section2.measures.forEach((measure) => {
+        measuresWrap.appendChild(buildMeasureDOM(measure, section2, h, measureNums.get(measure.id) ?? 0));
       });
       wrap.appendChild(measuresWrap);
     }
     return wrap;
   }
-  function buildMeasureDOM(measure, section, h, measureNum) {
+  function buildMeasureDOM(measure, section2, h, measureNum) {
     const wrap = document.createElement("div");
     wrap.className = "measure-row";
     const numLabel = document.createElement("span");
@@ -5315,13 +6520,13 @@ ${explainCadence(cadence)}` : "");
     const chordsRow = document.createElement("div");
     chordsRow.className = "chords-row";
     measure.chords.forEach((chord) => {
-      chordsRow.appendChild(buildChordChip(chord, section, measure, h));
+      chordsRow.appendChild(buildChordChip(chord, section2, measure, h));
     });
     const addBtn = document.createElement("button");
     addBtn.textContent = "+";
     addBtn.className = "chord-add-btn";
     addBtn.addEventListener("click", () => {
-      _song = addChord(_song, section.id, measure.id, "");
+      _song = addChord(_song, section2.id, measure.id, "");
       saveSong(_song);
       h.onSongChange(_song);
       setTimeout(() => {
@@ -5352,14 +6557,14 @@ ${explainCadence(cadence)}` : "");
       if (histData) {
         e.preventDefault();
         const { symbol, notes } = JSON.parse(histData);
-        _song = addChord(_song, section.id, measure.id, symbol, notes, _insertBeforeChordId ?? void 0);
+        _song = addChord(_song, section2.id, measure.id, symbol, notes, _insertBeforeChordId ?? void 0);
         _insertBeforeChordId = null;
         saveSong(_song);
         h.onSongChange(_song);
       } else if (_draggedChordId) {
         e.preventDefault();
         e.stopPropagation();
-        _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, _insertBeforeChordId ?? void 0);
+        _song = moveChordToPosition(_song, _draggedChordId, section2.id, measure.id, _insertBeforeChordId ?? void 0);
         _draggedChordId = null;
         _insertBeforeChordId = null;
         saveSong(_song);
@@ -5368,17 +6573,17 @@ ${explainCadence(cadence)}` : "");
     });
     wrap.appendChild(chordsRow);
     const delMBtn = makeSmallBtn("\xD7", () => {
-      applyWithUndo(removeMeasure(_song, section.id, measure.id), t("measure.deleted", { n: measureNum }));
+      applyWithUndo(removeMeasure(_song, section2.id, measure.id), t("measure.deleted", { n: measureNum }));
     });
     delMBtn.title = t("measure.delete.title");
     delMBtn.style.color = "var(--danger-soft)";
     delMBtn.style.alignSelf = "center";
-    const sectionObj = _song.sections.find((s) => s.id === section.id);
+    const sectionObj = _song.sections.find((s) => s.id === section2.id);
     if (!sectionObj || sectionObj.measures.length <= 1) delMBtn.style.display = "none";
     wrap.appendChild(delMBtn);
     return wrap;
   }
-  function buildChordChip(chord, section, measure, h) {
+  function buildChordChip(chord, section2, measure, h) {
     const isActive = h.activeCursorId === chord.id;
     const isCapture = h.captureTargetId === chord.id;
     const degree = chord.valid && chord.symbol ? computeDegree(chord.symbol, h.activeKey) : "\u2014";
@@ -5546,7 +6751,7 @@ ${explainCadence(cadence)}` : "");
         _insertBeforeChordId = chord.id;
         wrap.parentNode.insertBefore(_dropIndicator, wrap);
       } else {
-        const targetMeasure = _song.sections.find((s) => s.id === section.id)?.measures.find((m) => m.id === measure.id);
+        const targetMeasure = _song.sections.find((s) => s.id === section2.id)?.measures.find((m) => m.id === measure.id);
         const chordIdx = targetMeasure?.chords.findIndex((c) => c.id === chord.id) ?? -1;
         _insertBeforeChordId = targetMeasure?.chords[chordIdx + 1]?.id ?? null;
         wrap.parentNode.insertBefore(_dropIndicator, wrap.nextSibling);
@@ -5558,7 +6763,7 @@ ${explainCadence(cadence)}` : "");
       e.stopPropagation();
       if (_draggedChordId === chord.id) return;
       _dropIndicator?.remove();
-      _song = moveChordToPosition(_song, _draggedChordId, section.id, measure.id, _insertBeforeChordId ?? void 0);
+      _song = moveChordToPosition(_song, _draggedChordId, section2.id, measure.id, _insertBeforeChordId ?? void 0);
       _draggedChordId = null;
       _insertBeforeChordId = null;
       saveSong(_song);
@@ -5594,9 +6799,9 @@ ${explainCadence(cadence)}` : "");
   </style></head><body>
     <h1>${escapeHtml(song.title)}</h1>
     <div class="key">${activeKey ? escapeHtml(t("song.key", { key: keyLabel(activeKey) })) : ""}</div>`;
-    for (const section of song.sections) {
-      html += `<div class="section"><div class="section-name">${escapeHtml(section.name)}${section.repeatCount > 1 ? ` \xD7${section.repeatCount}` : ""}</div><div class="measures">`;
-      for (const measure of section.measures) {
+    for (const section2 of song.sections) {
+      html += `<div class="section"><div class="section-name">${escapeHtml(section2.name)}${section2.repeatCount > 1 ? ` \xD7${section2.repeatCount}` : ""}</div><div class="measures">`;
+      for (const measure of section2.measures) {
         const num2 = measureNums.get(measure.id) ?? "";
         html += `<div class="measure"><div class="bar-num">${num2}</div>`;
         for (const chord of measure.chords) {
@@ -5611,136 +6816,12 @@ ${explainCadence(cadence)}` : "");
     return html;
   }
 
-  // src/ui/tour.ts
-  var STEPS = [
-    { id: "welcome", target: null },
-    { id: "input", target: "#midi-device" },
-    { id: "key", target: "#key-select" },
-    { id: "analysis", target: "#mod-analysis" },
-    { id: "explain", target: "#mod-explain" },
-    { id: "cof", target: "#mod-cof" },
-    { id: "history", target: "#mod-history" },
-    { id: "layout", target: "#btn-layout" },
-    { id: "practice", target: "#mod-progressions" },
-    { id: "help", target: "#btn-help" }
-  ];
-  var step = -1;
-  var returnFocus = null;
-  function maybeStartTour() {
-    if (loadBool("tour-done", false) || navigator.webdriver) return;
-    startTour();
-  }
-  function startTour() {
-    returnFocus = document.activeElement;
-    step = 0;
-    draw();
-    document.addEventListener("keydown", onKey, true);
-    window.addEventListener("resize", draw);
-  }
-  function endTour() {
-    if (step < 0) return;
-    step = -1;
-    save("tour-done", true);
-    document.getElementById("tour")?.remove();
-    document.removeEventListener("keydown", onKey, true);
-    window.removeEventListener("resize", draw);
-    returnFocus?.focus();
-  }
-  function go(to) {
-    if (to < 0) return;
-    if (to >= STEPS.length) {
-      endTour();
-      return;
-    }
-    step = to;
-    draw();
-  }
-  function onKey(e) {
-    if (step < 0) return;
-    if (e.key === "Escape") {
-      e.preventDefault();
-      e.stopPropagation();
-      endTour();
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      e.stopPropagation();
-      go(step + 1);
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      e.stopPropagation();
-      go(step - 1);
-    }
-  }
-  function visibleTarget(selector) {
-    if (!selector) return null;
-    const el = document.querySelector(selector);
-    if (!el || el.closest(".module-hidden")) return null;
-    const r = el.getBoundingClientRect();
-    return r.width && r.height ? el : null;
-  }
-  function draw() {
-    if (step < 0) return;
-    const s = STEPS[step];
-    let root = document.getElementById("tour");
-    if (!root) {
-      root = document.createElement("div");
-      root.id = "tour";
-      document.body.appendChild(root);
-    }
-    const target = visibleTarget(s.target);
-    target?.scrollIntoView({ block: "nearest", inline: "nearest" });
-    const r = target?.getBoundingClientRect();
-    const pad = 6;
-    const spot = r ? `<div class="tour-spot" style="left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px"></div>` : '<div class="tour-dim"></div>';
-    const last = step === STEPS.length - 1;
-    root.innerHTML = `${spot}
-    <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" tabindex="-1">
-      <div class="tour-count">${step + 1} / ${STEPS.length}</div>
-      <h2 id="tour-title" class="tour-title">${escapeHtml(t(`tour.${s.id}.title`))}</h2>
-      <p class="tour-text">${escapeHtml(t(`tour.${s.id}`))}</p>
-      <div class="tour-buttons">
-        <button class="ctrl-btn" data-tour="skip">${escapeHtml(t(last ? "tour.close" : "tour.skip"))}</button>
-        <span class="tour-gap"></span>
-        <button class="ctrl-btn" data-tour="back"${step === 0 ? " disabled" : ""}>${escapeHtml(t("tour.back"))}</button>
-        <button class="ctrl-btn tour-next" data-tour="next">${escapeHtml(t(last ? "tour.done" : "tour.next"))}</button>
-      </div>
-    </div>`;
-    const card = root.querySelector(".tour-card");
-    const cw = Math.min(360, window.innerWidth - 24);
-    card.style.width = `${cw}px`;
-    if (r) {
-      const below = r.bottom + 12, above = r.top - 12;
-      const left = Math.max(12, Math.min(window.innerWidth - cw - 12, r.left));
-      card.style.left = `${left}px`;
-      const h = card.offsetHeight;
-      card.style.top = below + h < window.innerHeight ? `${below}px` : above - h > 0 ? `${above - h}px` : `${Math.max(12, (window.innerHeight - h) / 2)}px`;
-    } else {
-      card.style.left = `${(window.innerWidth - cw) / 2}px`;
-      card.style.top = `${Math.max(12, (window.innerHeight - card.offsetHeight) / 2)}px`;
-    }
-    root.querySelector('[data-tour="next"]').addEventListener("click", () => go(step + 1));
-    root.querySelector('[data-tour="back"]').addEventListener("click", () => go(step - 1));
-    root.querySelector('[data-tour="skip"]').addEventListener("click", endTour);
-    root.querySelector(".tour-next").focus();
-  }
-
   // src/input/shortcuts.ts
-  var SHORTCUTS = [
-    { key: "kbd.space", action: "shortcut.play" },
-    { key: "\u2190 \u2192", action: "shortcut.step" },
-    { key: "kbd.del", action: "shortcut.delete" },
-    { key: "H", action: "shortcut.hold" },
-    { key: "A", action: "shortcut.arpeggio" },
-    { key: "S", action: "shortcut.send" },
-    { key: "C", action: "shortcut.clear" },
-    { key: "kbd.esc", action: "shortcut.escape" },
-    { key: "M", action: "shortcut.keyboard" },
-    { key: "P", action: "shortcut.present" },
-    { key: "/", action: "shortcut.type" },
-    { key: "1\u20139", action: "shortcut.candidate" },
-    { key: "?", action: "shortcut.help" },
-    { key: "Tab", action: "shortcut.tab" },
-    { key: "kbd.panelArrows", action: "shortcut.panelArrows" }
+  var FIXED_KEYS = [
+    ["kbd.esc", "shortcut.escape"],
+    ["1\u20139", "shortcut.candidate"],
+    ["Tab", "shortcut.tab"],
+    ["kbd.panelArrows", "shortcut.panelArrows"]
   ];
   var GESTURES = [
     "gesture.click",
@@ -5752,20 +6833,14 @@ ${explainCadence(cadence)}` : "");
     "gesture.piano",
     "gesture.layout"
   ];
-  var keyText = (k) => k.startsWith("kbd.") ? t(k) : k;
-  function reloadWith(apply) {
-    apply();
-    carryHistoryOverReload();
-    location.reload();
-  }
   var helpVisible = false;
-  var returnFocus2 = null;
+  var returnFocus3 = null;
   function closeHelp() {
     if (!helpVisible) return false;
     helpVisible = false;
     document.getElementById("shortcut-help")?.remove();
-    returnFocus2?.focus();
-    returnFocus2 = null;
+    returnFocus3?.focus();
+    returnFocus3 = null;
     document.removeEventListener("mousedown", closeHelpOnOutsideClick);
     return true;
   }
@@ -5780,35 +6855,28 @@ ${explainCadence(cadence)}` : "");
     popup.className = "shortcut-help-popup";
     popup.setAttribute("role", "dialog");
     popup.setAttribute("aria-label", t("help.heading"));
-    returnFocus2 = document.activeElement;
+    returnFocus3 = document.activeElement;
     popup.innerHTML = `
     <div class="shortcut-help-header">
       <span>${t("help.heading")}</span>
       <button class="shortcut-help-close" aria-label="${t("help.close")}">\xD7</button>
     </div>
-    ${SHORTCUTS.map((s) => `
+    <div class="shortcut-section">${t("help.keys")}</div>
+    ${ACTIONS.map((a) => `
       <div class="shortcut-row">
-        <kbd class="shortcut-key">${escapeHtml(keyText(s.key))}</kbd>
-        <span class="shortcut-action">${escapeHtml(t(s.action))}</span>
+        <kbd class="shortcut-key">${escapeHtml(keysOf(a).map(keyLabel2).join(" ") || "\u2014")}</kbd>
+        <span class="shortcut-action">${escapeHtml(t(`action.${a}`))}</span>
       </div>`).join("")}
+    ${FIXED_KEYS.map(([k, action]) => `
+      <div class="shortcut-row">
+        <kbd class="shortcut-key">${escapeHtml(k.startsWith("kbd.") ? t(k) : k)}</kbd>
+        <span class="shortcut-action">${escapeHtml(t(action))}</span>
+      </div>`).join("")}
+    <div class="help-setting"><button id="help-keys" class="ctrl-btn">${escapeHtml(t("help.changeKeys"))}</button></div>
     <div class="shortcut-section">${t("help.mouse")}</div>
     ${GESTURES.map((g) => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join("")}
     <div class="shortcut-section">${t("help.panels")}</div>
     ${MODULE_IDS.map((id) => `<div class="gesture-row"><b>${escapeHtml(t(`module.${id}`))}</b> \u2014 ${escapeHtml(t(`help.panel.${id}`))}</div>`).join("")}
-    <div class="shortcut-section">${t("help.settings")}</div>
-    <div class="help-setting"><label for="help-theme">${t("help.theme")}</label>
-      <select id="help-theme" class="ctrl-select">
-        ${THEME_CHOICES.map((c) => `<option value="${c}"${c === getThemeChoice() ? " selected" : ""}>${t(`help.theme.${c}`)}</option>`).join("")}
-      </select></div>
-    <div class="help-setting"><label for="help-lang">${t("help.language")}</label>
-      <select id="help-lang" class="ctrl-select">
-        ${LANGS.map((l) => `<option value="${l}"${l === getLang() ? " selected" : ""}>${LANG_NAMES[l]}</option>`).join("")}
-      </select></div>
-    <div class="help-setting"><label for="help-note-names">${t("help.noteNames")}</label>
-      <select id="help-note-names" class="ctrl-select">
-        ${NOTE_NAMINGS.map((n) => `<option value="${n}"${n === getNoteNaming() ? " selected" : ""}>${t(`help.noteNames.${n}`)}</option>`).join("")}
-      </select></div>
-    <div class="gesture-row">${escapeHtml(t("help.reloads"))}</div>
     <div class="help-setting"><button id="help-tour" class="ctrl-btn" title="${escapeHtml(t("tour.start.title"))}">${escapeHtml(t("tour.start"))}</button></div>`;
     document.body.appendChild(popup);
     popup.querySelector(".shortcut-help-close").addEventListener("click", closeHelp);
@@ -5816,12 +6884,10 @@ ${explainCadence(cadence)}` : "");
       closeHelp();
       startTour();
     });
-    const themeSel = popup.querySelector("#help-theme");
-    themeSel.addEventListener("change", () => saveThemeChoice(themeSel.value));
-    const langSel = popup.querySelector("#help-lang");
-    langSel.addEventListener("change", () => reloadWith(() => saveLang(langSel.value)));
-    const namesSel = popup.querySelector("#help-note-names");
-    namesSel.addEventListener("change", () => reloadWith(() => saveNoteNaming(namesSel.value)));
+    popup.querySelector("#help-keys").addEventListener("click", () => {
+      closeHelp();
+      openSettings("shortcuts");
+    });
     document.addEventListener("mousedown", closeHelpOnOutsideClick);
   }
   function closeHelpOnOutsideClick(e) {
@@ -5837,57 +6903,60 @@ ${explainCadence(cadence)}` : "");
       if (t2 instanceof HTMLInputElement || t2 instanceof HTMLTextAreaElement || t2 instanceof HTMLSelectElement) return;
       if (t2 instanceof HTMLElement && t2.isContentEditable) return;
       if (keyBelongsToControl(e)) return;
-      switch (e.key) {
-        case "h":
-        case "H":
+      if (e.key === "Escape") {
+        if (!closeHelp() && !actions.closeSettings()) actions.escape();
+        return;
+      }
+      if (e.key >= "1" && e.key <= "9") {
+        actions.selectCandidate(parseInt(e.key) - 1);
+        return;
+      }
+      switch (actionFor(keyName2(e))) {
+        case "hold":
           actions.toggleHold();
           break;
-        case "a":
-        case "A":
+        case "arpeggio":
           actions.toggleArpeggio();
           break;
-        case " ":
+        case "play":
           e.preventDefault();
           actions.play();
           break;
-        case "s":
-        case "S":
+        case "send":
           actions.sendToSong();
           break;
-        case "c":
-        case "C":
+        case "clear":
           actions.clearHistory();
           break;
-        case "?":
+        case "help":
           e.preventDefault();
           toggleHelp();
           break;
-        case "m":
-        case "M":
+        case "settings":
+          e.preventDefault();
+          actions.openSettings();
+          break;
+        case "keyboard":
           actions.toggleComputerKeyboard();
           break;
-        case "p":
-        case "P":
+        case "present":
           actions.togglePresentation();
           break;
-        case "/":
+        case "type":
           e.preventDefault();
           actions.focusChordInput();
           break;
-        case "ArrowLeft":
-        case "ArrowRight":
+        case "stepPrev":
           e.preventDefault();
-          actions.step(e.key === "ArrowRight" ? 1 : -1);
+          actions.step(-1);
           break;
-        case "Delete":
-        case "Backspace":
+        case "stepNext":
+          e.preventDefault();
+          actions.step(1);
+          break;
+        case "delete":
           if (actions.deleteAtCursor()) e.preventDefault();
           break;
-        case "Escape":
-          if (!closeHelp()) actions.escape();
-          break;
-        default:
-          if (e.key >= "1" && e.key <= "9") actions.selectCandidate(parseInt(e.key) - 1);
       }
     });
   }
@@ -5912,13 +6981,13 @@ ${explainCadence(cadence)}` : "");
     "andalusian"
   ];
   var MINOR = ["ii-V-i", "blues-minor", "andalusian"];
-  var BAR_MS = 2400;
+  var barMs = () => 4 * 6e4 / getPref("progression-bpm");
   var BLUES = ["blues-12", "blues-jazz", "bird-blues"];
   function progressionKey(id, key) {
     const minor = MINOR.includes(id);
     if (key) {
-      const root = key.split(" ")[0];
-      return normalizeKey(`${root} ${minor ? "Minor" : "Major"}`) ?? key;
+      const root2 = key.split(" ")[0];
+      return normalizeKey(`${root2} ${minor ? "Minor" : "Major"}`) ?? key;
     }
     const own = UMT.PROGRESSIONS[id]?.defaultKey;
     return normalizeKey(own) ?? (minor ? "A Minor" : "C Major");
@@ -5946,11 +7015,11 @@ ${explainCadence(cadence)}` : "");
     unknown: "var(--text-dim)"
   };
   var current2 = loadChoice("progression", PROGRESSION_IDS, "ii-V-I");
-  var timer = null;
+  var timer2 = null;
   var playing = -1;
   function stopProgression() {
-    if (timer) clearTimeout(timer);
-    timer = null;
+    if (timer2) clearTimeout(timer2);
+    timer2 = null;
     playing = -1;
     document.querySelectorAll(".prog-chip.playing").forEach((c) => c.classList.remove("playing"));
     const btn = document.getElementById("prog-play");
@@ -6017,7 +7086,7 @@ ${explainCadence(c.cadence)}` : ""}`;
         playing = i;
         show(i);
         const inBar = chords.filter((c) => c.bar === chords[i].bar).length;
-        timer = setTimeout(() => step2(i + 1), BAR_MS / inBar);
+        timer2 = setTimeout(() => step2(i + 1), barMs() / inBar);
       };
       step2(0);
     });
@@ -6038,6 +7107,11 @@ ${explainCadence(c.cadence)}` : ""}`;
     chord: CHORDS,
     cadence: Object.keys(CADENCES2)
   };
+  function earAnswers(mode4) {
+    const chosen = mode4 === "chord" ? getPref("ear-chords") : mode4 === "cadence" ? getPref("ear-cadences") : null;
+    const list = chosen ? EAR_ANSWERS[mode4].filter((a) => chosen.includes(a)) : EAR_ANSWERS[mode4];
+    return list.length ? list : EAR_ANSWERS[mode4];
+  }
   var pick = (list, rng) => list[Math.floor(rng() * list.length) % list.length];
   var toMidi = (names) => names.map(noteNameToMidi).filter((m) => m !== null);
   function voiceNear(names, rootPc) {
@@ -6053,15 +7127,17 @@ ${explainCadence(c.cadence)}` : ""}`;
       const n = parseInt(pick(INTERVALS, rng));
       const low = 55 + Math.floor(rng() * 12);
       const [a, b] = [midiToNoteName(low), midiToNoteName(low + n)];
-      return { mode: mode4, answer: String(n), steps: [[a], [b], [a, b]], symbol: null, prev: null, key: null };
+      const play = getPref("ear-interval-play");
+      const steps2 = play === "harmonic" ? [[a, b]] : play === "down" ? [[b], [a], [a, b]] : [[a], [b], [a, b]];
+      return { mode: mode4, answer: String(n), steps: steps2, symbol: null, prev: null, key: null };
     }
     if (mode4 === "chord") {
-      const suffix = pick(CHORDS, rng);
-      const root = pick(["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"], rng);
-      const symbol = root + suffix;
+      const suffix = pick(earAnswers("chord"), rng);
+      const root2 = pick(["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"], rng);
+      const symbol = root2 + suffix;
       return { mode: mode4, answer: suffix, steps: [chordNoteNames(symbol)], symbol, prev: null, key: null };
     }
-    const answer = pick(Object.keys(CADENCES2), rng);
+    const answer = pick(earAnswers("cadence"), rng);
     const key = pick(ALL_KEYS.filter((k) => k.endsWith("Major")), rng);
     const chords = tryUMT("roman numerals", () => UMT.parseRomanProgression(`I ${CADENCES2[answer].numerals}`, key), []);
     const steps = chords.map((c) => voiceNear(chordNoteNames(c.name), c.rootStep + 9));
@@ -6077,35 +7153,39 @@ ${explainCadence(c.cadence)}` : ""}`;
   var timers = [];
   function playQuestion(q) {
     timers.forEach(clearTimeout);
-    timers = q.steps.map((notes, i) => setTimeout(() => playNoteNames(notes, q.mode === "interval" && i < 2 ? 0.8 : 1.6), i * STEP_MS[q.mode]));
+    timers = q.steps.map((notes, i) => setTimeout(() => playNoteNames(notes, q.mode === "interval" && q.steps.length > 1 && i < 2 ? 0.8 : 1.6), i * STEP_MS[q.mode]));
   }
   var emptyScore = () => ({ interval: { right: 0, total: 0 }, chord: { right: 0, total: 0 }, cadence: { right: 0, total: 0 } });
-  var mode2 = loadChoice("ear-mode", EAR_MODES, "chord");
+  var mode3 = loadChoice("ear-mode", EAR_MODES, "chord");
   var score = { ...emptyScore(), ...loadJSON("ear-score", {}) };
   var question = null;
+  function resetEarScore() {
+    score = emptyScore();
+    save("ear-score", score);
+  }
   var answered = false;
   function renderEar(container, handlers) {
-    const tally = score[mode2];
+    const tally = score[mode3];
     container.innerHTML = `
     <div class="ear-head">
-      ${EAR_MODES.map((m) => `<button class="size-ctrl-btn ear-mode${m === mode2 ? " active" : ""}" data-mode="${m}">${escapeHtml(t(`ear.mode.${m}`))}</button>`).join("")}
+      ${EAR_MODES.map((m) => `<button class="size-ctrl-btn ear-mode${m === mode3 ? " active" : ""}" data-mode="${m}">${escapeHtml(t(`ear.mode.${m}`))}</button>`).join("")}
       <button id="ear-new" class="ctrl-btn" title="${escapeHtml(t("ear.new.title"))}">${escapeHtml(t("ear.new"))}</button>
       <button id="ear-again" class="ctrl-btn" title="${escapeHtml(t("ear.again.title"))}"${question ? "" : " disabled"}>\u21BA</button>
       <span class="ear-score" title="${escapeHtml(t("ear.score.title"))}">${tally.right} / ${tally.total}</span>
     </div>
-    <p class="ear-prompt">${escapeHtml(question ? t(`ear.ask.${mode2}`) : t("ear.start"))}</p>
+    <p class="ear-prompt">${escapeHtml(question ? t(`ear.ask.${mode3}`) : t("ear.start"))}</p>
     <div class="ear-answers">
-      ${EAR_ANSWERS[mode2].map((a) => `<button class="ear-answer" data-answer="${escapeHtml(a)}"${question && !answered ? "" : " disabled"}>${escapeHtml(answerLabel(mode2, a))}</button>`).join("")}
+      ${earAnswers(mode3).map((a) => `<button class="ear-answer" data-answer="${escapeHtml(a)}"${question && !answered ? "" : " disabled"}>${escapeHtml(answerLabel(mode3, a))}</button>`).join("")}
     </div>
     <p class="ear-feedback" aria-live="polite"></p>`;
     container.querySelectorAll(".ear-mode").forEach((b) => b.addEventListener("click", () => {
-      mode2 = b.dataset.mode;
-      save("ear-mode", mode2);
+      mode3 = b.dataset.mode;
+      save("ear-mode", mode3);
       question = null;
       renderEar(container, handlers);
     }));
     container.querySelector("#ear-new").addEventListener("click", () => {
-      question = makeQuestion(mode2);
+      question = makeQuestion(mode3);
       answered = false;
       renderEar(container, handlers);
       playQuestion(question);
@@ -6118,8 +7198,8 @@ ${explainCadence(c.cadence)}` : ""}`;
       answered = true;
       const given = b.dataset.answer;
       const right = given === question.answer;
-      score[mode2].total++;
-      if (right) score[mode2].right++;
+      score[mode3].total++;
+      if (right) score[mode3].right++;
       save("ear-score", score);
       const q = question;
       renderEar(container, handlers);
@@ -6324,174 +7404,6 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   var observed = null;
 
-  // src/input/pitch.ts
-  function frequencyToNote(freq) {
-    const exact = 69 + 12 * Math.log2(freq / 440);
-    const midi = Math.round(exact);
-    return { midi, cents: Math.round((exact - midi) * 100) };
-  }
-  function rms(buf) {
-    let s = 0;
-    for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
-    return Math.sqrt(s / buf.length);
-  }
-  function detectPitch(buf, sampleRate, threshold = 0.12) {
-    const minTau = Math.floor(sampleRate / 1600);
-    const maxTau = Math.min(Math.floor(sampleRate / 50), Math.floor(buf.length / 2));
-    if (maxTau <= minTau + 2) return null;
-    const n = buf.length - maxTau;
-    const d = new Float32Array(maxTau + 1);
-    for (let tau2 = 1; tau2 <= maxTau; tau2++) {
-      let sum = 0;
-      for (let i = 0; i < n; i++) {
-        const x = buf[i] - buf[i + tau2];
-        sum += x * x;
-      }
-      d[tau2] = sum;
-    }
-    const cmnd = new Float32Array(maxTau + 1);
-    cmnd[0] = 1;
-    let running = 0;
-    for (let tau2 = 1; tau2 <= maxTau; tau2++) {
-      running += d[tau2];
-      cmnd[tau2] = running > 0 ? d[tau2] * tau2 / running : 1;
-    }
-    let tau = -1;
-    for (let t2 = minTau; t2 <= maxTau; t2++) {
-      if (cmnd[t2] < threshold) {
-        while (t2 + 1 <= maxTau && cmnd[t2 + 1] < cmnd[t2]) t2++;
-        tau = t2;
-        break;
-      }
-    }
-    if (tau < 0) return null;
-    const a = cmnd[tau - 1] ?? cmnd[tau], b = cmnd[tau], c = cmnd[tau + 1] ?? cmnd[tau];
-    const shift = a - 2 * b + c !== 0 ? (a - c) / (2 * (a - 2 * b + c)) : 0;
-    return { freq: sampleRate / (tau + shift), clarity: 1 - b };
-  }
-  function chromagram(db, sampleRate, fftSize) {
-    const chroma = new Array(12).fill(0);
-    const low = new Array(12).fill(0);
-    const binHz = sampleRate / fftSize;
-    for (let i = Math.ceil(60 / binHz); i < db.length && i * binHz <= 2e3; i++) {
-      const power = Math.pow(10, db[i] / 10);
-      if (!isFinite(power)) continue;
-      const midi = Math.round(69 + 12 * Math.log2(i * binHz / 440));
-      const pc3 = (midi % 12 + 12) % 12;
-      chroma[pc3] += power;
-      if (i * binHz < 260) low[pc3] += power;
-    }
-    const lowMax = Math.max(...low);
-    return { chroma, bass: lowMax > 0 ? low.indexOf(lowMax) : null };
-  }
-  function chromaNotes(chroma, share = 0.3) {
-    const max = Math.max(...chroma);
-    if (max <= 0) return [];
-    return chroma.map((v, pc3) => ({ v, pc: pc3 })).filter((x) => x.v >= max * share).sort((a, b) => b.v - a.v).slice(0, 5).map((x) => x.pc).sort((a, b) => a - b);
-  }
-
-  // src/input/mic.ts
-  var MIC_MODES = ["notes", "chords"];
-  var FRAME_MS = 40;
-  var HOLD_FRAMES = 3;
-  var RELEASE_FRAMES = 5;
-  var GATE = 0.01;
-  var mode3 = loadChoice("mic-mode", MIC_MODES, "notes");
-  function getMicMode() {
-    return mode3;
-  }
-  function setMicMode(m) {
-    mode3 = m;
-    save("mic-mode", m);
-  }
-  var ctx = null;
-  var stream = null;
-  var timer2 = null;
-  var callbacks = null;
-  function isMicOn() {
-    return !!timer2;
-  }
-  var held = [];
-  var candidate = "";
-  var candidateFrames = 0;
-  var missFrames = 0;
-  function commit(notes, level) {
-    if (notes.join() === held.join()) return;
-    held = notes;
-    callbacks?.notes(notes, Math.max(1, Math.min(127, Math.round(level * 600))));
-  }
-  function hear(analyser, time, spectrum, rate) {
-    analyser.getFloatTimeDomainData(time);
-    const recent = time.subarray(time.length - 2048);
-    const level = rms(recent);
-    let notes = [];
-    let heard = null;
-    if (level >= GATE) {
-      if (mode3 === "notes") {
-        const p = detectPitch(recent, rate);
-        if (p) {
-          const n = frequencyToNote(p.freq);
-          heard = { ...n, freq: p.freq, level };
-          notes = [n.midi];
-        }
-      } else {
-        analyser.getFloatFrequencyData(spectrum);
-        const { chroma, bass } = chromagram(spectrum, rate, analyser.fftSize);
-        const pcs = chromaNotes(chroma);
-        if (pcs.length >= 2) notes = [...bass !== null ? [48 + bass] : [], ...pcs.filter((pc3) => pc3 !== bass).map((pc3) => 60 + pc3)];
-        const p = detectPitch(recent, rate);
-        if (p) heard = { ...frequencyToNote(p.freq), freq: p.freq, level };
-      }
-    }
-    callbacks?.frame(heard);
-    const key = notes.join();
-    if (notes.length) {
-      missFrames = 0;
-      if (key === candidate) candidateFrames++;
-      else {
-        candidate = key;
-        candidateFrames = 1;
-      }
-      if (candidateFrames >= HOLD_FRAMES) commit(notes, level);
-    } else if (++missFrames >= RELEASE_FRAMES) {
-      candidate = "";
-      commit([], 0);
-    }
-  }
-  async function startMic(cb) {
-    if (timer2) return;
-    callbacks = cb;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    } catch (e) {
-      cb.state(false, e.name);
-      return;
-    }
-    ctx = new AudioContext();
-    const source = ctx.createMediaStreamSource(stream);
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 8192;
-    analyser.smoothingTimeConstant = 0.5;
-    source.connect(analyser);
-    const time = new Float32Array(analyser.fftSize);
-    const spectrum = new Float32Array(analyser.frequencyBinCount);
-    const rate = ctx.sampleRate;
-    timer2 = setInterval(() => hear(analyser, time, spectrum, rate), FRAME_MS);
-    cb.state(true);
-  }
-  function stopMic() {
-    if (timer2) clearInterval(timer2);
-    timer2 = null;
-    stream?.getTracks().forEach((t2) => t2.stop());
-    stream = null;
-    ctx?.close().catch(() => {
-    });
-    ctx = null;
-    commit([], 0);
-    callbacks?.frame(null);
-    callbacks?.state(false);
-  }
-
   // src/ui/tuner.ts
   function renderTuner(container, handlers, error) {
     const on = isMicOn();
@@ -6607,8 +7519,15 @@ ${explainCadence(c.cadence)}` : ""}`;
     chordInput.addEventListener("input", () => chordInput.classList.remove("invalid"));
     setModeBtn(getMode());
     renderDetector();
-    const ear = document.getElementById("ear-container");
-    if (ear) renderEar(ear, { show: showEarAnswer });
+    drawEar();
+    wireSettings({ resetEarScore: () => {
+      resetEarScore();
+      drawEar();
+    } });
+    $2("btn-settings").addEventListener("click", () => openSettings());
+    applyZoom();
+    onPrefChange(applyPref);
+    offerSettingsUndo();
     const player = document.getElementById("player-container");
     if (player) renderPlayer(player);
     drawTuner();
@@ -6745,12 +7664,17 @@ ${explainCadence(c.cadence)}` : ""}`;
       btn.title = key ? t("cof.spelledInKey", { key: keyLabel(key) }) : acc === "flat" ? t("cof.flat.title") : t("cof.sharp.title");
     }
   }
+  function pressed(id, on) {
+    const b = $2(id);
+    b.style.opacity = on ? "1" : "0.4";
+    b.setAttribute("aria-pressed", String(on));
+  }
   function wireLayoutEvents() {
     const updateCofButtons = () => {
       syncCofAccidentalButtons();
-      $2("btn-cof-minor").style.opacity = cofShowMinor ? "1" : "0.4";
-      $2("btn-cof-deg").style.opacity = cofShowDegrees ? "1" : "0.4";
-      $2("btn-cof-7").style.opacity = cofShow7ths ? "1" : "0.4";
+      pressed("btn-cof-minor", cofShowMinor);
+      pressed("btn-cof-deg", cofShowDegrees);
+      pressed("btn-cof-7", cofShow7ths);
     };
     updateCofButtons();
     const onCofControl = (id, apply) => {
@@ -6802,7 +7726,10 @@ ${explainCadence(c.cadence)}` : ""}`;
       renderZone1Diagrams(displayedNotes(), selectedSymbol());
     });
     const prevButtons = [$2("btn-staff-prev"), $2("btn-piano-prev")];
-    const showPrev = () => prevButtons.forEach((b) => b.classList.toggle("active", showPrevChord));
+    const showPrev = () => prevButtons.forEach((b) => {
+      b.classList.toggle("active", showPrevChord);
+      b.setAttribute("aria-pressed", String(showPrevChord));
+    });
     showPrev();
     prevButtons.forEach((b) => b.addEventListener("click", () => {
       showPrevChord = !showPrevChord;
@@ -6819,10 +7746,10 @@ ${explainCadence(c.cadence)}` : ""}`;
       });
     });
     const updateKeyButtons = () => {
-      $2("btn-key-7").style.opacity = keySevenths ? "1" : "0.4";
-      $2("btn-key-neg").style.opacity = keyShowNegative ? "1" : "0.4";
-      $2("btn-key-par").style.opacity = keyShowParallel ? "1" : "0.4";
-      $2("btn-key-colt").style.opacity = keyShowColtrane ? "1" : "0.4";
+      pressed("btn-key-7", keySevenths);
+      pressed("btn-key-neg", keyShowNegative);
+      pressed("btn-key-par", keyShowParallel);
+      pressed("btn-key-colt", keyShowColtrane);
     };
     updateKeyButtons();
     const onKeyControl = (id, apply) => {
@@ -7268,6 +8195,35 @@ ${explainCadence(c.cadence)}` : ""}`;
       state: (_on, error) => drawTuner(error)
     });
   }
+  function drawEar() {
+    const ear = document.getElementById("ear-container");
+    if (ear) renderEar(ear, { show: showEarAnswer });
+  }
+  function applyZoom() {
+    const z = getPref("ui-zoom");
+    document.body.style.zoom = z === 100 ? "" : String(z / 100);
+  }
+  function applyPref(name) {
+    if (name === "ui-zoom") {
+      applyZoom();
+      return;
+    }
+    if (name.startsWith("ear-")) {
+      drawEar();
+      return;
+    }
+    if (name === "key-profile") {
+      autoKey = void 0;
+      onHistoryChange(state.history);
+    }
+    lastAnalysisSig = "";
+    for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k];
+    progressionsKey = void 0;
+    refreshAnalysis();
+    renderDetector();
+    renderZone2();
+    renderZone3();
+  }
   function showEarAnswer(q) {
     if (!q.symbol) {
       detectionFromMidi = false;
@@ -7424,6 +8380,8 @@ ${explainCadence(c.cadence)}` : ""}`;
       },
       focusChordInput: () => $2("typed-chord").focus(),
       togglePresentation,
+      openSettings: () => openSettings(),
+      closeSettings,
       escape: () => {
         if (isPresenting()) {
           closePresentation();

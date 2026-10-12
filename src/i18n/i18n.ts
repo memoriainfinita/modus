@@ -10,6 +10,7 @@ import { en, type StringKey } from './en'
 import { es } from './es'
 import { loadChoice, save } from '../ui/storage'
 import { tryUMT } from '../theory/chord'
+import { getPref } from '../settings/prefs'
 
 export type Lang = 'en' | 'es'
 export const LANGS: readonly Lang[] = ['en', 'es']
@@ -58,8 +59,9 @@ export function noteLabel(name: string): string {
 
 /** "Bbm7/D" → "Sibm7/Re" with solfège names; '?' and unknown symbols pass unchanged. */
 export function chordLabel(symbol: string): string {
-  if (naming === 'letters' || !/^[A-G]/.test(symbol)) return symbol
-  return tryUMT('chord names', () => UMT.formatChordSymbol(symbol, { roots: 'solfege' }), symbol)
+  const style = getPref('chord-style') as 'standard' | 'symbols' | 'short'
+  if ((naming === 'letters' && style === 'standard') || !/^[A-G]/.test(symbol)) return symbol
+  return tryUMT('chord names', () => UMT.formatChordSymbol(symbol, { style, roots: naming }), symbol)
 }
 
 /** Rewrites the note names a diagram library drew in letters (notae's fretboard dots and string labels). */

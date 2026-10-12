@@ -66,6 +66,11 @@ const text = sel => page.locator(sel).first().innerText()
 const on = notes => page.evaluate(ns => ns.forEach(n => window.__midi([0x90, n, 100])), notes)
 const off = notes => page.evaluate(ns => ns.forEach(n => window.__midi([0x80, n, 0])), notes)
 async function play(notes, holdMs = 100) { await on(notes); await page.waitForTimeout(holdMs); }
+// Opens Settings at a section; Esc closes it
+async function openSettings(section) {
+  await page.click('#btn-settings')
+  await page.click(`.set-nav-item[data-section="${section}"]`)
+}
 async function setKey(key) { await page.selectOption('#key-select', key); await page.waitForTimeout(50) }
 
 async function freshPage() {
@@ -238,10 +243,11 @@ await check('player: a recording opens with its length and waveform; speed, A–
   await page.waitForTimeout(400)
   await page.click('#player-container [data-act="b"]')
   const a = await text('#player-container [data-act="a"]'), b = await text('#player-container [data-act="b"]')
-  assert(a.startsWith('A 0:00') && b.startsWith('B 0:00'), `loop: ${a} ${b}`)
+  const secs = s => { const [m, rest] = s.slice(2).split(':'); return Number(m) * 60 + Number(rest) }
+  assert(a.startsWith('A ') && b.startsWith('B ') && secs(b) > secs(a), `loop: ${a} ${b}`)
   await page.waitForTimeout(900)
   const t = await text('.player-time')
-  assert(t.startsWith('0:00.') || t.startsWith('0:01.'), `the loop did not hold it: ${t}`)
+  assert(secs('x ' + t.split(' / ')[0]) <= secs(b) + 0.3, `the loop did not hold it: ${t} (B ${b})`)
   await page.click('#player-container [data-act="play"]')
   await page.click('#player-container [data-act="clear"]')
   await page.selectOption('.player-speed', '1')
@@ -308,6 +314,67 @@ await check('help: the panels are described; the guided tour starts from it, mov
   assert(await page.evaluate(() => localStorage.getItem('tour-done')) === 'true', 'not remembered')
 })
 
+await check('settings: sections, search, a preference applied at once, reset of a section', async () => {
+  await openSettings('theory')
+  assert(await page.locator('.set-section[data-section="theory"]:not([hidden])').count() === 1, 'theory not shown')
+  await page.click('[data-pref="chord-style"][data-value="symbols"]')
+  await page.keyboard.press('Escape')
+  await page.locator('#cof-container [data-chord="C"]').click()
+  await page.waitForTimeout(450)
+  await page.fill('#typed-chord', 'Cmaj7')
+  await page.keyboard.press('Enter')
+  assert(await text('.chord-name-badge') === 'CΔ7', `style not applied: ${await text('.chord-name-badge')}`)
+  await page.click('#btn-settings')
+  await page.fill('#set-search', 'micro')
+  const shown = await page.locator('.set-section:not([hidden])').evaluateAll(es => es.map(e => e.dataset.section))
+  assert(shown.includes('mic'), `search: ${shown}`)
+  await page.fill('#set-search', '')
+  await page.click('.set-nav-item[data-section="theory"]')
+  await page.click('[data-reset-section]')
+  assert(await page.getAttribute('[data-pref="chord-style"][data-value="standard"]', 'aria-pressed') === 'true', 'not reset')
+  await page.keyboard.press('Escape')
+  assert(await page.locator('#settings').isHidden(), 'Esc did not close')
+  await page.fill('#typed-chord', '')
+})
+
+await check('shortcuts: a key changed in Settings runs its action; a taken key asks; reset brings it back', async () => {
+  await openSettings('shortcuts')
+  await page.click('[data-key-change="hold"]')
+  await page.keyboard.press('j')
+  assert((await text('#set-shortcuts')).includes('J'), 'J not shown')
+  await page.click('[data-key-add="hold"]')
+  await page.keyboard.press('p')
+  assert(await page.locator('.set-conflict').count() === 1, 'no conflict asked for P')
+  await page.click('[data-conflict-other]')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('j')
+  assert((await page.getAttribute('#btn-hold', 'class')).includes('active'), 'J did not toggle Hold')
+  await page.keyboard.press('h')
+  assert((await page.getAttribute('#btn-hold', 'class')).includes('active'), 'H still toggles Hold')
+  await page.click('#btn-normal')
+  await openSettings('shortcuts')
+  await page.click('[data-key-reset="hold"]')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('h')
+  assert((await page.getAttribute('#btn-hold', 'class')).includes('active'), 'H not back')
+  await page.click('#btn-normal')
+  await page.keyboard.press(',')
+  assert(await page.locator('#settings').isVisible(), ', did not open Settings')
+  await page.keyboard.press('Escape')
+})
+
+await check('settings data: export and import round trip; reset offers Undo', async () => {
+  await openSettings('data')
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-export-settings]')])
+  const body = await (await dl.createReadStream()).toArray().then(c => Buffer.concat(c).toString())
+  const file = JSON.parse(body)
+  assert(file.app === 'modus' && file.kind === 'settings' && !Object.keys(file.data).some(k => k.startsWith('modus-song')), 'export content')
+  await page.setInputFiles('[data-import-settings]', { name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"x":1}') })
+  assert((await text('.set-error')).length > 0, 'a bad file was not refused')
+  await page.keyboard.press('Escape')
+})
+
 await check('view window: the chord view follows the detector, alone on the chroma background', async () => {
   await page.click('#btn-views')
   const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="chord"]')])
@@ -339,8 +406,10 @@ await check('export: the staff as SVG and the circle as PNG', async () => {
 })
 
 await check('MIDI out: previews and the computer keyboard go out; controller notes only with Thru', async () => {
+  await openSettings('io')
   await page.selectOption('#midi-out', 'synth-1')
   await page.selectOption('#midi-out-ch', '2')
+  await page.keyboard.press('Escape')
   const sent = () => page.evaluate(() => window.__sent.splice(0))
   await sent()
   await page.locator('#cof-container [data-chord="F"]').click()
@@ -350,13 +419,17 @@ await check('MIDI out: previews and the computer keyboard go out; controller not
   await off([60, 64, 67])
   const controller = (await sent()).filter(b => (b[0] & 0xF0) === 0x90)
   assert(controller.length === 0, `controller sent without Thru: ${JSON.stringify(controller)}`)
+  await openSettings('io')
   await page.click('#btn-thru')
+  await page.keyboard.press('Escape')
   await play([62], 100)
   await off([62])
   const thru = await sent()
   assert(thru.some(b => b[0] === 0x91 && b[1] === 62) && thru.some(b => b[0] === 0x81 && b[1] === 62), `thru: ${JSON.stringify(thru)}`)
+  await openSettings('io')
   await page.click('#btn-thru')
   await page.selectOption('#midi-out', '')
+  await page.keyboard.press('Escape')
   const off_ = await sent()
   assert(off_.some(b => b[0] === 0xB1 && b[1] === 123), `no All Notes Off when switching off: ${JSON.stringify(off_)}`)
 })
@@ -630,7 +703,9 @@ await check('velocity: a bar per note, highest on top; none for a picked chord',
 })
 
 await check('input channel filter: other channels are not read', async () => {
+  await openSettings('io')
   await page.selectOption('#midi-in-ch', '2')
+  await page.keyboard.press('Escape')
   await page.evaluate(() => [60, 64, 67].forEach(n => window.__midi([0x90, n, 100])))   // channel 1
   await page.waitForTimeout(100)
   const ignored = await page.locator('#piano-container circle').count()
@@ -639,7 +714,9 @@ await check('input channel filter: other channels are not read', async () => {
   await page.waitForTimeout(100)
   const read = await text('.chord-name-badge')
   await page.evaluate(() => [62, 65, 69].forEach(n => window.__midi([0x81, n, 0])))
+  await openSettings('io')
   await page.selectOption('#midi-in-ch', '0')
+  await page.keyboard.press('Escape')
   assert(ignored === 0 && read === 'Dm', `ignored ${ignored}, read ${read}`)
 })
 
@@ -695,7 +772,7 @@ await check('help panel lists the mouse gestures; P is presentation, not play', 
   await page.click('#btn-help')
   const help = await text('#shortcut-help')
   assert(help.includes('Double-click a major or minor circle segment'), 'gestures missing')
-  assert(/\nP\nPresentation/.test(help), 'P not listed as presentation')
+  assert(/P\s*\n\s*Presentation/.test(help), `P not listed as presentation: ${help.slice(0, 300)}`)
   await page.keyboard.press('Escape')
 })
 
@@ -903,12 +980,12 @@ await check('toolbar fits on one row in English', async () => {
   assert(await toolbarRows() === 1, 'toolbar wraps')
 })
 
-await check('Spanish from the help panel: the page reloads in Spanish with Do Re Mi, history kept', async () => {
+await check('Spanish from Settings: the page reloads in Spanish with Do Re Mi, history kept', async () => {
   await page.keyboard.press('Escape')
   await play([60, 64, 67], 900)
   await off([60, 64, 67])
   assert((await page.locator('.history-chip-symbol').allInnerTexts())[0] === 'C', 'no C chip before switching')
-  await page.click('#btn-help')
+  await openSettings('general')
   await Promise.all([page.waitForEvent('load'), page.selectOption('#help-lang', 'es')])
   await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
   await page.waitForTimeout(300)
@@ -935,21 +1012,21 @@ await check('Spanish: detector, analysis and typed chords in Do Re Mi', async ()
   await page.locator('#typed-chord').blur()
 })
 
-await check('Spanish: letters again from the help panel', async () => {
-  await page.click('#btn-help')
+await check('Spanish: letters again from Settings', async () => {
+  await openSettings('general')
   await Promise.all([page.waitForEvent('load'), page.selectOption('#help-note-names', 'letters')])
   await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
   await page.waitForTimeout(300)
   assert((await page.locator('#key-select option:checked').innerText()) === 'A menor', 'key name with letters')
   assert((await text('#mod-history .module-title')) === 'Historial', 'still in Spanish')
-  await page.click('#btn-help')
+  await openSettings('general')
   await Promise.all([page.waitForEvent('load'), page.selectOption('#help-lang', 'en')])
   await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
   await page.waitForTimeout(300)
   assert((await text('#mod-history .module-title')) === 'History', 'back in English')
 })
 
-await check('theme: follows the system, light from the help panel without a reload, diagrams redrawn', async () => {
+await check('theme: follows the system, light from Settings without a reload, diagrams redrawn', async () => {
   const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor)
   const theme = () => page.evaluate(() => document.documentElement.dataset.theme)
   assert(await theme() === 'dark' && await bg() === 'rgb(26, 26, 46)', `dark: ${await theme()} ${await bg()}`)
@@ -959,9 +1036,10 @@ await check('theme: follows the system, light from the help panel without a relo
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.waitForTimeout(100)
   await setKey('C Major')
-  await page.click('#btn-help')
+  await openSettings('general')
   await page.evaluate(() => { window.__noReload = true })
   await page.selectOption('#help-theme', 'light')
+  await page.keyboard.press('Escape')
   await page.waitForTimeout(150)
   assert(await page.evaluate(() => window.__noReload) === true, 'the page reloaded')
   assert(await theme() === 'light' && await bg() === 'rgb(244, 245, 249)', `light: ${await theme()} ${await bg()}`)
@@ -972,7 +1050,7 @@ await check('theme: follows the system, light from the help panel without a relo
   await page.reload()
   await page.waitForFunction(() => window.UMT && window.Notae && window.ABCJS)
   assert(await theme() === 'light', 'light lost on reload')
-  await page.click('#btn-help')
+  await openSettings('general')
   await page.selectOption('#help-theme', 'system')
   await page.keyboard.press('Escape')
   assert(await theme() === 'dark', 'system again')
