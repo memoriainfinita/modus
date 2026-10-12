@@ -539,7 +539,7 @@ body.presenting { overflow: hidden; }
 body.presenting .toolbar, body.presenting #midi-banner, body.presenting .module-header,
 body.presenting .module-resize, body.presenting .module-controls, body.presenting #guitar-ctrl-wrap,
 body.presenting .alt-chord-btn { display: none !important; }
-body.presenting .grid { height: 100vh; }
+body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 body.presenting .module { border-color: transparent; }
 
 /* ─── Panels ──────────────────────────────────────────────────── */
@@ -981,8 +981,8 @@ body.presenting .module { border-color: transparent; }
   padding: 14px 16px;
   box-shadow: 0 6px 24px var(--shadow);
   min-width: 240px;
-  max-width: min(560px, calc(100vw - 24px));
-  max-height: calc(100vh - 32px);
+  max-width: min(560px, calc((100vw - 24px) / var(--zoom, 1)));
+  max-height: calc((100vh - 32px) / var(--zoom, 1));
   overflow-y: auto;
 }
 .shortcut-help-header {
@@ -1192,7 +1192,7 @@ body { touch-action: manipulation; }
 .set-backdrop { position: fixed; inset: 0; z-index: 900; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; padding: 16px; }
 .set-backdrop[hidden] { display: none; }
 .set-dialog {
-  width: min(920px, 100%); height: min(680px, calc(100vh - 32px)); display: flex; flex-direction: column; overflow: hidden;
+  width: min(920px, 100%); height: min(680px, calc((100vh - 32px) / var(--zoom, 1))); display: flex; flex-direction: column; overflow: hidden;
   background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 40px var(--shadow);
 }
 .set-header, .set-footer { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: var(--bg-bar); }
@@ -1255,7 +1255,7 @@ body { touch-action: manipulation; }
 }
 .set-conflict span { flex: 1; }
 @media (max-width: 720px) {
-  .set-dialog { height: calc(100vh - 32px); }
+  .set-dialog { height: calc((100vh - 32px) / var(--zoom, 1)); }
   .set-main { flex-direction: column; }
   .set-nav { width: auto; flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--line); }
   .set-row { flex-wrap: wrap; }
