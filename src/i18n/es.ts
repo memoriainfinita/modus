@@ -41,7 +41,7 @@ export const es: Record<StringKey, string> = {
   'audio.title': 'Estado del soundfont',
   'audio.idle': '♪ en espera',
   'audio.loading': '♪ cargando…',
-  'audio.suspended': '♪ clic para activar',
+  'audio.suspended': '♪ pulsa una tecla o haz clic',
   'audio.ready': '♪ listo',
   'audio.error': '♪ error',
   'audio.play.title': 'Tocar el acorde actual (Espacio)',

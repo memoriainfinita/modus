@@ -703,7 +703,7 @@
     "audio.title": "Soundfont status",
     "audio.idle": "\u266A idle",
     "audio.loading": "\u266A loading\u2026",
-    "audio.suspended": "\u266A click to activate",
+    "audio.suspended": "\u266A press a key or click",
     "audio.ready": "\u266A ready",
     "audio.error": "\u266A error",
     "audio.play.title": "Play current chord (Space)",
@@ -1466,7 +1466,7 @@
     "audio.title": "Estado del soundfont",
     "audio.idle": "\u266A en espera",
     "audio.loading": "\u266A cargando\u2026",
-    "audio.suspended": "\u266A clic para activar",
+    "audio.suspended": "\u266A pulsa una tecla o haz clic",
     "audio.ready": "\u266A listo",
     "audio.error": "\u266A error",
     "audio.play.title": "Tocar el acorde actual (Espacio)",
@@ -2650,6 +2650,20 @@
       if (instrument && audioStatus === "suspended") setStatus("ready");
     });
     if (!instrument && !loadingInstrument) loadCurrentInstrument();
+  }
+  var GESTURE_EVENTS = ["pointerdown", "pointerup", "keydown", "touchend"];
+  function unlockAudioOnAnyGesture() {
+    const onGesture = () => {
+      initAudioOnGesture();
+      if (audioCtx.state === "running") stop();
+      else audioCtx.resume().then(() => {
+        if (audioCtx.state === "running") stop();
+      });
+    };
+    const stop = () => {
+      for (const e of GESTURE_EVENTS) document.removeEventListener(e, onGesture, true);
+    };
+    for (const e of GESTURE_EVENTS) document.addEventListener(e, onGesture, true);
   }
   function setInstrument(name) {
     currentInstrumentName = name;
@@ -7592,7 +7606,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     if (!navigator.requestMIDIAccess) {
       $2("browser-warning").style.display = "block";
     }
-    document.addEventListener("click", initAudioOnGesture, { once: true });
+    unlockAudioOnAnyGesture();
     preloadAudio();
     buildLayout();
     watchIconButtons($2("app"));

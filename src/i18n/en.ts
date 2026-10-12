@@ -44,7 +44,7 @@ export const en = {
   'audio.title': 'Soundfont status',
   'audio.idle': '♪ idle',
   'audio.loading': '♪ loading…',
-  'audio.suspended': '♪ click to activate',
+  'audio.suspended': '♪ press a key or click',
   'audio.ready': '♪ ready',
   'audio.error': '♪ error',
   'audio.play.title': 'Play current chord (Space)',

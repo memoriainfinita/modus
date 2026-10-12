@@ -115,6 +115,26 @@ export function initAudioOnGesture() {
   if (!instrument && !loadingInstrument) loadCurrentInstrument()
 }
 
+// The events a browser counts as a gesture that lets a page sound (user activation).
+// A MIDI note is not one of them.
+const GESTURE_EVENTS = ['pointerdown', 'pointerup', 'keydown', 'touchend'] as const
+
+/**
+ * Lets any gesture on the page start the sound: a click, a key or a touch, anywhere.
+ * The listeners stay until the context runs, since a gesture the browser does not
+ * count (Escape, say) leaves it suspended.
+ */
+export function unlockAudioOnAnyGesture() {
+  const onGesture = () => {
+    initAudioOnGesture()
+    if (audioCtx!.state === 'running') stop()
+    else audioCtx!.resume().then(() => { if (audioCtx!.state === 'running') stop() })
+  }
+  const stop = () => { for (const e of GESTURE_EVENTS) document.removeEventListener(e, onGesture, true) }
+  // Capture phase: the gesture resumes the context before the key or click plays a note
+  for (const e of GESTURE_EVENTS) document.addEventListener(e, onGesture, true)
+}
+
 export function setInstrument(name: string) {
   currentInstrumentName = name
   save('audio-instrument', name)
