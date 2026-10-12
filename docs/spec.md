@@ -283,9 +283,9 @@ The active slot is the last chord that received focus. →song and `S` insert af
 
 soundfont-player + FluidR3_GM. 128 GM instruments grouped by family.
 
-**States:** idle → loading (progress bar) → suspended (click to activate) → ready; error if the instrument or the soundfont-player script fails to load. Without the script the rest of the app runs, silent.
+**States:** idle → loading (progress bar) → suspended (until a click, key or touch anywhere on the page; a MIDI note does not count) → ready; error if the instrument or the soundfont-player script fails to load. Without the script the rest of the app runs, silent.
 
-The instrument starts loading at page load; the first click resumes the AudioContext.
+The instrument starts loading at page load; the first gesture (click, key or touch, anywhere) resumes the AudioContext.
 
 **Volume:** one master gain; the slider also moves notes already sounding.
 
