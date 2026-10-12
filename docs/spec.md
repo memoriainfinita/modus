@@ -355,7 +355,7 @@ The tour (`ui/tour.ts`) runs by itself on the first visit: ten steps, each dimmi
 
 ⚙ in the toolbar, or its shortcut (`,`), opens a dialog (`ui/settings.ts`): an index of sections on the left, a search across every section at the top, and per section a "Reset this section". Changes apply at once and are kept; Esc or × closes it, and the focus goes back where it was. On a phone the index goes on top.
 
-- **General:** interface language and note names (both reload the page; history and songs stay), theme (in place), interface size (80–150 %), the guided tour
+- **General:** interface language and note names (both reload the page; history and songs stay), theme (in place), interface size (80–150 %, applied when the slider is let go: rescaling while dragging moves the slider under the pointer), the guided tour
 - **Input and output:** input channel (only notes and pedal on that channel are read; a note let in is always let out on its own channel, and a pedal held is released when the filter changes), MIDI out port, output channel, Thru (see MIDI out). The input device and mode stay in the toolbar
 - **Sound:** length of previews (0.5–4 s), velocity of the on-screen piano and previews (also what MIDI out sends)
 - **Theory:** chord symbols (Cmaj7 / CΔ7 / CM7, UMT `formatChordSymbol`), the key profile Auto detects with (Krumhansl-Kessler, Temperley-Kostka-Payne, Aarden-Essen, Bellman-Budge, simple; UMT `KEY_PROFILES`), voice-leading rules (strict, contemporary, species: UMT `checkVoiceLeading`), movable do in the explanation of the degree (UMT `Solfege.movableDo`)
@@ -370,7 +370,7 @@ Each preference is in one table (`settings/prefs.ts`): its type, range or option
 
 ## Keyboard shortcuts
 
-Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/Alt held. Each action takes up to two keys, changed in Settings › Shortcuts (`input/bindings.ts`, stored as `shortcuts`): Change, then the new key (Esc keeps the old one); + adds a second; × removes one; ↺ puts the factory key back. A key another action has asks first: give it (the other loses it) or pick another. Esc, 1–9, Tab and Enter cannot be taken. The factory keys:
+Disabled while typing in a field or with a dropdown focused, and with Ctrl/Cmd/Alt held. Each action takes up to two keys, changed in Settings › Shortcuts (`input/bindings.ts`, stored as `shortcuts`): Change, then the new key (Esc keeps the old one); + adds a second; × removes one; ↺ puts the factory key back. A key another action has asks first, in a card floating under the row (the list does not move): give it (the other loses it) or pick another. Esc, 1–9, Tab and Enter cannot be taken. The factory keys:
 
 | Key | Action |
 |---|---|
