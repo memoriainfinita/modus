@@ -14,6 +14,9 @@ import { fitSvg } from './fit'
 import { announce } from './a11y'
 import { buildSettings } from './settings'
 import { ICONS, LOGO } from './icons'
+import { wirePopover } from './popover'
+import type { Command } from './commands'
+import { instrumentLabel } from '../i18n/instruments'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
 import type { ViewName, ViewBackground } from '../view/channel'
 import { t, keyLabel } from '../i18n/i18n'
@@ -76,8 +79,10 @@ export function showModule(id: ModuleId, shown: boolean) {
 export function renderLayout(_panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>) {
   $('app').innerHTML =
     buildToolbar() +
-    '<div id="midi-banner"></div>' +
+    '<div class="workspace">' + buildRail() +
+    '<div class="work-main"><div id="midi-banner"></div>' +
     `<main id="grid" class="grid" aria-label="${t('a11y.panels')}">${MODULE_IDS.map(id => moduleFrame(id, fieldsVisible)).join('')}</main>` +
+    '</div></div>' +
     buildSettings()
   applyGrid()
   wireGrid()
@@ -134,78 +139,124 @@ function wirePanelMenus() {
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && open) { e.stopPropagation(); close(true) } }, true)
 }
 
-// Four groups: what comes in (MIDI, keyboard, mic), the key and a typed chord, the sound,
-// and the page (layout, presentation, view windows, settings, help)
+// The bar: the key, a field for a chord or an order, and two statuses (what comes in, what
+// sounds) that open their menus. The rail beside the panels opens the same menus from icons
+// and holds the keyboard, the mic and the page (layout, presentation, view windows); it hides.
 function buildToolbar(): string {
   return `
     <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t('a11y.toolbar')}">
+      <button id="btn-rail" class="ctrl-btn icon-btn ghost" title="${t('rail.title')}" aria-controls="rail">${ICONS.rail}</button>
       <span class="brand" title="Modus">${LOGO}<span class="brand-name">modus</span></span>
-      <div class="tb-group" role="group" aria-label="${t('a11y.group.input')}">
-        <span id="midi-status" class="midi-status">MIDI</span>
-        <select id="midi-device" class="ctrl-select" aria-label="${t('a11y.midiDevice')}"></select>
-        <div class="seg" role="group" aria-label="${t('a11y.group.mode')}">
-          <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t('mode.normal.title')}">${t('mode.normal')}</button>
-          <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t('mode.hold.title')}">${t('mode.hold')}</button>
-          <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t('mode.arpeggio.title')}">${t('mode.arpeggio')}</button>
-        </div>
-        <button id="btn-keyboard" class="mode-btn icon-btn" title="${t('keyboard.title')}">${ICONS.keyboard}</button>
-        <button id="btn-mic" class="mode-btn icon-btn" title="${t('mic.title')}">${ICONS.mic}</button>
-        <span id="keyboard-status" class="auto-key-label"></span>
+      <div class="pop-anchor">
+        <button id="btn-key" class="key-btn" title="${t('key.menu.title')}"><span id="key-btn-name"></span><span id="key-btn-auto" class="key-btn-auto"></span></button>
       </div>
-      <span class="toolbar-sep" aria-hidden="true"></span>
-      <div class="tb-group" role="group" aria-label="${t('a11y.group.key')}">
-        <select id="key-select" class="ctrl-select" aria-label="${t('a11y.key')}">
-          <option value="">${t('key.auto')}</option>
-          ${ALL_KEYS.map(k => `<option value="${k}">${keyLabel(k)}</option>`).join('')}
-        </select>
+      <div class="tb-search pop-anchor">
+        ${ICONS.search}
+        <input id="typed-chord" class="typed-chord" placeholder="${t('typed.placeholder')}" title="${t('typed.title')}" autocomplete="off" spellcheck="false"
+          role="combobox" aria-expanded="false" aria-controls="cmd-results" aria-autocomplete="list">
+        <kbd class="tb-kbd" aria-hidden="true">/</kbd>
+        <div id="cmd-results" class="cmd-results" role="listbox" aria-label="${t('cmd.results')}" hidden></div>
+      </div>
+      <div class="tb-status">
+        <div class="pop-anchor pop-end">
+          <button id="btn-input-status" class="status-btn" title="${t('a11y.group.input')}"><span id="midi-status" class="midi-status">MIDI</span><span id="mode-status" class="status-sub"></span></button>
+        </div>
+        <div class="pop-anchor pop-end">
+          <button id="btn-sound-status" class="status-btn" title="${t('a11y.group.sound')}"><span id="sound-status" class="sound-status"></span></button>
+        </div>
+        <button id="btn-settings" class="ctrl-btn icon-btn ghost" title="${t('set.title.button')}" aria-haspopup="dialog">${ICONS.settings}</button>
+        <button id="btn-help" class="ctrl-btn icon-btn ghost help-q" title="${t('help.title')}">?</button>
+      </div>
+    </div>`
+}
+
+function buildRail(): string {
+  return `
+    <div class="rail-col">
+      <nav id="rail" class="rail" aria-label="${t('a11y.rail')}">
+        <button id="rail-input" class="rail-btn" title="${t('a11y.group.input')}">${ICONS.midi}<span id="rail-midi-dot" class="rail-dot"></span></button>
+        <button id="rail-sound" class="rail-btn" title="${t('a11y.group.sound')}">${ICONS.sound}</button>
+        <button id="btn-keyboard" class="rail-btn" data-act="keyboard" title="${t('keyboard.title')}">${ICONS.keyboard}</button>
+        <button id="btn-mic" class="rail-btn" data-act="mic" title="${t('mic.title')}">${ICONS.mic}</button>
+        <span class="rail-sep" aria-hidden="true"></span>
+        <button id="btn-layout" class="rail-btn" title="${t('layout.title')}">${ICONS.layout}</button>
+        <button id="btn-present" class="rail-btn" title="${t('present.title')}">${ICONS.present}</button>
+        <button id="btn-views" class="rail-btn" title="${t('views.title')}">${ICONS.views}</button>
+        ${buildMenus()}
+      </nav>
+    </div>`
+}
+
+// The menus start in the rail, closed; each opens next to the button pressed (ui/popover.ts).
+// A list of choices stands for each select, which stays hidden as the value's holder.
+function buildMenus(): string {
+  return `
+    <div id="input-menu" class="view-menu pop-menu" role="group" aria-label="${t('a11y.group.input')}">
+      <div class="view-menu-title">${t('input.playWith')}</div>
+      <select id="midi-device" class="ctrl-select" hidden aria-label="${t('a11y.midiDevice')}"></select>
+      <div id="midi-device-list" class="choice-list" role="group" aria-label="${t('a11y.midiDevice')}"></div>
+      <button id="menu-keyboard" class="choice-row" data-act="keyboard" title="${t('keyboard.title')}">${ICONS.keyboard}<span>${t('input.keyboard')}</span><span id="keyboard-status" class="choice-hint"></span></button>
+      <button id="menu-mic" class="choice-row" data-act="mic" title="${t('mic.title')}">${ICONS.mic}<span>${t('input.mic')}</span></button>
+      <div class="view-menu-title">${t('a11y.group.mode')}</div>
+      <div class="seg seg-full" role="group" aria-label="${t('a11y.group.mode')}">
+        <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t('mode.normal.title')}">${t('mode.normal')}</button>
+        <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t('mode.hold.title')}">${t('mode.hold')}</button>
+        <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t('mode.arpeggio.title')}">${t('mode.arpeggio')}</button>
+      </div>
+      <div id="mode-hint" class="view-menu-hint"></div>
+    </div>
+    <div id="sound-menu" class="view-menu pop-menu sound-menu" role="group" aria-label="${t('a11y.group.sound')}">
+      <div class="sound-row">
+        <button id="btn-play-chord" class="play-btn" title="${t('audio.play.title')}">${ICONS.play}</button>
+        <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t('audio.volume.title')}" aria-label="${t('audio.volume.title')}" class="volume-slider">
+        <span id="volume-value" class="choice-hint"></span>
+      </div>
+      <div id="audio-progress" class="audio-progress" title="${t('audio.title')}">
+        <div id="audio-progress-fill" class="audio-progress-fill"></div>
+        <span id="audio-status" class="audio-status">${t('audio.idle')}</span>
+      </div>
+      <input id="instrument-filter" class="ctrl-select" placeholder="${t('sound.filter')}" aria-label="${t('sound.filter')}" autocomplete="off" spellcheck="false">
+      <select id="audio-instrument" hidden title="${t('audio.instrument.title')}">
+        ${GM_INSTRUMENT_GROUPS.map(g =>
+          `<optgroup label="${t(g.label)}">${g.instruments.map(i =>
+            `<option value="${i}"${i === getCurrentInstrument() ? ' selected' : ''}>${escapeHtml(instrumentLabel(i))}</option>`
+          ).join('')}</optgroup>`
+        ).join('')}
+      </select>
+      <div id="instrument-list" class="choice-list choice-scroll" role="group" aria-label="${t('audio.instrument.title')}"></div>
+    </div>
+    <div id="key-menu" class="view-menu pop-menu key-menu" role="group" aria-label="${t('a11y.key')}">
+      <select id="key-select" hidden aria-label="${t('a11y.key')}">
+        <option value="">${t('key.auto')}</option>
+        ${ALL_KEYS.map(k => `<option value="${k}">${keyLabel(k)}</option>`).join('')}
+      </select>
+      <div class="key-menu-top">
+        <button id="key-auto" class="choice-chip" title="${t('key.auto.title')}">${t('key.autoShort')}</button>
         <span id="auto-key-label" class="auto-key-label"></span>
-        <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t('typed.placeholder')}" title="${t('typed.title')}" autocomplete="off" spellcheck="false">
       </div>
-      <span class="toolbar-sep" aria-hidden="true"></span>
-      <div class="tb-group" role="group" aria-label="${t('a11y.group.sound')}">
-        <button id="btn-play-chord" class="ctrl-btn icon-btn" title="${t('audio.play.title')}">${ICONS.play}</button>
-        <select id="audio-instrument" class="ctrl-select" title="${t('audio.instrument.title')}">
-          ${GM_INSTRUMENT_GROUPS.map(g =>
-            `<optgroup label="${t(g.label)}">${g.instruments.map(i =>
-              `<option value="${i}"${i === getCurrentInstrument() ? ' selected' : ''}>${i.replace(/_/g,' ')}</option>`
-            ).join('')}</optgroup>`
-          ).join('')}
+      <div class="seg" role="group" aria-label="${t('a11y.key')}">
+        <button class="mode-btn" data-keymode="major">${t('key.majorCap')}</button>
+        <button class="mode-btn" data-keymode="minor">${t('key.minorCap')}</button>
+      </div>
+      <div id="key-grid" class="key-pick-grid"></div>
+      <div class="view-menu-hint">${t('key.menu.hint')}</div>
+    </div>
+    <div id="layout-menu" class="view-menu pop-menu"></div>
+    <div id="view-menu" class="view-menu pop-menu">
+      <div class="view-menu-title">${t('views.open')}</div>
+      ${VIEW_NAMES.map(v => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join('')}
+      <label class="view-menu-bg">${t('views.background')}
+        <select id="view-bg" class="ctrl-select">
+          ${(Object.keys(VIEW_BACKGROUNDS) as ViewBackground[]).map(b => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join('')}
         </select>
-        <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t('audio.volume.title')}" class="volume-slider">
-        <div id="audio-progress" class="audio-progress" title="${t('audio.title')}">
-          <div id="audio-progress-fill" class="audio-progress-fill"></div>
-          <span id="audio-status" class="audio-status">${t('audio.idle')}</span>
-        </div>
-      </div>
-      <span class="toolbar-gap"></span>
-      <div class="tb-group tb-page" role="group" aria-label="${t('a11y.group.page')}">
-      <div class="view-menu-wrap">
-        <button id="btn-layout" class="ctrl-btn icon-btn ghost" title="${t('layout.title')}" aria-haspopup="true" aria-expanded="false">${ICONS.layout}</button>
-        <div id="layout-menu" class="view-menu"></div>
-      </div>
-      <div class="view-menu-wrap">
-        <button id="btn-present" class="ctrl-btn icon-btn ghost" title="${t('present.title')}">${ICONS.present}</button>
-        <button id="btn-views" class="ctrl-btn icon-btn ghost" title="${t('views.title')}" aria-haspopup="true" aria-expanded="false">${ICONS.views}</button>
-        <div id="view-menu" class="view-menu">
-          <div class="view-menu-title">${t('views.open')}</div>
-          ${VIEW_NAMES.map(v => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join('')}
-          <label class="view-menu-bg">${t('views.background')}
-            <select id="view-bg" class="ctrl-select">
-              ${(Object.keys(VIEW_BACKGROUNDS) as ViewBackground[]).map(b => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join('')}
-            </select>
-          </label>
-          <div class="view-menu-hint">${t('views.hint')}</div>
-          <div class="view-menu-title">${t('views.save')}</div>
-          ${(['staff', 'cof', 'guitar', 'piano'] as const).map(v => `
-            <div class="view-menu-export"><span>${viewLabel(v)}</span>
-              <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
-              <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
-            </div>`).join('')}
-        </div>
-      </div>
-      <button id="btn-settings" class="ctrl-btn icon-btn ghost" title="${t('set.title.button')}" aria-haspopup="dialog">${ICONS.settings}</button>
-      <button id="btn-help" class="ctrl-btn icon-btn ghost help-q" title="${t('help.title')}">?</button>
-      </div>
+      </label>
+      <div class="view-menu-hint">${t('views.hint')}</div>
+      <div class="view-menu-title">${t('views.save')}</div>
+      ${(['staff', 'cof', 'guitar', 'piano'] as const).map(v => `
+        <div class="view-menu-export"><span>${viewLabel(v)}</span>
+          <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
+          <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
+        </div>`).join('')}
     </div>`
 }
 
@@ -419,8 +470,7 @@ function renderLayoutMenu() {
 
 function wireLayoutMenu() {
   const menu = $('layout-menu')
-  $('btn-layout').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('open') })
-  document.addEventListener('click', e => { if (!menu.contains(e.target as Node) && !$('btn-layout').contains(e.target as Node)) menu.classList.remove('open') })
+  wirePopover(menu, [$('btn-layout')])
   menu.addEventListener('click', e => {
     e.stopPropagation()
     const el = e.target as HTMLElement
@@ -441,6 +491,20 @@ function wireLayoutMenu() {
     const box = (e.target as HTMLElement).closest<HTMLInputElement>('input[data-module]')
     if (box) showModule(box.dataset.module as ModuleId, box.checked)
   })
+}
+
+/** The layouts and the panels as orders for the bar's field. */
+export function layoutCommands(): Command[] {
+  const hint = t('layout.presets')
+  return [
+    ...PRESET_IDS.map(p => ({ label: t('cmd.layout', { name: t(`layout.preset.${p}`) }), hint, run: () => applyPreset(p) })),
+    ...Object.keys(savedLayouts).map(n => ({ label: t('cmd.layout', { name: n }), hint, run: () => setGrid(savedLayouts[n].map(c => ({ ...c }))) })),
+    ...MODULE_IDS.map(id => {
+      const shown = isModuleShown(id)
+      const name = t(`module.${id}`)
+      return { label: t(shown ? 'cmd.hide' : 'cmd.show', { name }), hint: t('layout.panels'), run: () => showModule(id, !shown) }
+    }),
+  ]
 }
 
 function saveCurrentAs() {

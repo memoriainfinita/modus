@@ -697,8 +697,37 @@
     "key.autoDetected": "auto: {key}",
     "key.major": "Major",
     "key.minor": "Minor",
-    "typed.placeholder": "Chord\u2026 (/)",
-    "typed.title": "Type a chord name and press Enter (letters or Do Re Mi: Am7, Lam7)",
+    "typed.placeholder": "Type a chord or an order",
+    "typed.title": "A chord to play it (letters or Do Re Mi: Am7, Lam7), or the name of an option: mode, key, layout, panel, instrument\u2026 (/)",
+    "cmd.results": "Chords and orders",
+    "cmd.play": "Play {chord}",
+    "cmd.mode": "Mode: {mode}",
+    "cmd.key": "Key: {key}",
+    "cmd.keyAuto": "Key: auto",
+    "cmd.layout": "Layout: {name}",
+    "cmd.show": "Show panel: {name}",
+    "cmd.hide": "Hide panel: {name}",
+    "cmd.instrument": "Instrument: {name}",
+    "cmd.view": "View window: {name}",
+    "cmd.present": "Presentation",
+    "cmd.settings": "Settings",
+    "cmd.help": "Help",
+    "cmd.rail": "Show or hide the rail",
+    "cmd.on": "on",
+    "cmd.none": "No chord or order matches \u201C{q}\u201D",
+    "cmd.hint": "A chord (G7, F#m7b5\u2026) plays it; the name of an option does it.",
+    "rail.title": "Show or hide the rail (input, sound, layout, presentation, view windows)",
+    "input.playWith": "Play with",
+    "input.keyboard": "Computer keyboard",
+    "input.mic": "Microphone (sing or play)",
+    "sound.filter": "Find an instrument",
+    "key.menu.title": "Key: auto follows what you play, or fix one",
+    "key.menu.hint": "In the order of the circle of fifths. Auto follows what you play.",
+    "key.auto.title": "Auto: the key is read from what you play",
+    "key.autoShort": "Auto",
+    "key.majorCap": "Major",
+    "key.minorCap": "Minor",
+    "key.none": "Key",
     // Toolbar: audio
     "audio.title": "Soundfont status",
     "audio.idle": "\u266A idle",
@@ -1192,6 +1221,7 @@
     "pref.mic-response.normal": "Normal",
     "pref.mic-response.steady": "Steady",
     "a11y.toolbar": "Controls",
+    "a11y.rail": "Rail",
     "a11y.panels": "Panels",
     "a11y.panelKeys": "{name} panel: arrows move it, Shift + arrows resize it",
     "a11y.moved": "{name}: column {x}, row {y}, {w} columns wide, {h} rows tall",
@@ -1219,7 +1249,7 @@
     "tour.welcome.title": "Welcome to Modus",
     "tour.welcome": "Play a chord and Modus names it and explains its harmony as you play: its degree in the key, its function, the cadence it makes, how its voices move. This tour shows where everything is; it takes a minute. Arrows or the buttons move through it, Esc closes it.",
     "tour.input.title": "Play",
-    "tour.input": "Connect a MIDI keyboard and pick it here. Without one: press M to play on the computer keyboard, click or touch the piano, turn on the microphone and sing or play, or type a chord in the field (/).",
+    "tour.input": "Connect a MIDI keyboard and pick it here, with the way it plays (Normal, Hold, Arpeggio). Without one: press M to play on the computer keyboard, click or touch the piano, turn on the microphone and sing or play, or type a chord in the field at the top (/); the field also finds any option by its name.",
     "tour.key.title": "The key",
     "tour.key": "Pick the key you play in, or leave it on Auto: Modus finds it from what you play. Every degree, function and cadence is read in it.",
     "tour.analysis.title": "What it is",
@@ -1231,7 +1261,7 @@
     "tour.history.title": "History",
     "tour.history": "Every chord you hold is logged here with its numeral, and the cadences and modulations between them. Click a chip to see it again, drag it to the song, right-click or long-press to remove it.",
     "tour.layout.title": "Your layout",
-    "tour.layout": "Every element is a panel: drag it by its title, resize it from its corner, hide it with \xD7; its options are in its \u22EF menu. Here: ready-made layouts for study, class, transcription or recording, and your own. P presents the layout full screen.",
+    "tour.layout": "Every element is a panel: drag it by its title, resize it from its corner, hide it with \xD7; its options are in its \u22EF menu. Here, in the rail (hide it with the button by the logo): ready-made layouts for study, class, transcription or recording, and your own. P presents the layout full screen.",
     "tour.practice.title": "Practice",
     "tour.practice": "Progressions plays the classic progressions in your key; Ear training plays without showing and you name what you heard; the Player loops and slows down a recording to transcribe it.",
     "tour.help.title": "Help",
@@ -1461,8 +1491,37 @@
     "key.autoDetected": "auto: {key}",
     "key.major": "mayor",
     "key.minor": "menor",
-    "typed.placeholder": "Acorde\u2026 (/)",
-    "typed.title": "Escribe un acorde y pulsa Intro (en letras o en Do Re Mi: Am7, Lam7)",
+    "typed.placeholder": "Escribe un acorde o una orden",
+    "typed.title": "Un acorde para tocarlo (en letras o en Do Re Mi: Am7, Lam7), o el nombre de una opci\xF3n: modo, tonalidad, disposici\xF3n, panel, instrumento\u2026 (/)",
+    "cmd.results": "Acordes y \xF3rdenes",
+    "cmd.play": "Tocar {chord}",
+    "cmd.mode": "Modo: {mode}",
+    "cmd.key": "Tonalidad: {key}",
+    "cmd.keyAuto": "Tonalidad: autom\xE1tica",
+    "cmd.layout": "Disposici\xF3n: {name}",
+    "cmd.show": "Mostrar panel: {name}",
+    "cmd.hide": "Ocultar panel: {name}",
+    "cmd.instrument": "Instrumento: {name}",
+    "cmd.view": "Ventana de vista: {name}",
+    "cmd.present": "Presentaci\xF3n",
+    "cmd.settings": "Ajustes",
+    "cmd.help": "Ayuda",
+    "cmd.rail": "Mostrar u ocultar el riel",
+    "cmd.on": "activo",
+    "cmd.none": "Ni acorde ni orden con \xAB{q}\xBB",
+    "cmd.hint": "Un acorde (Sol7, Fa#m7b5\u2026) lo toca; el nombre de una opci\xF3n la hace.",
+    "rail.title": "Mostrar u ocultar el riel (entrada, sonido, disposici\xF3n, presentaci\xF3n, ventanas)",
+    "input.playWith": "Tocar con",
+    "input.keyboard": "Teclado del ordenador",
+    "input.mic": "Micr\xF3fono (cantar o tocar)",
+    "sound.filter": "Buscar instrumento",
+    "key.menu.title": "Tonalidad: autom\xE1tica seg\xFAn lo que tocas, o una fija",
+    "key.menu.hint": "En el orden del c\xEDrculo de quintas. Auto sigue lo que tocas.",
+    "key.auto.title": "Auto: la tonalidad se lee de lo que tocas",
+    "key.autoShort": "Auto",
+    "key.majorCap": "Mayor",
+    "key.minorCap": "Menor",
+    "key.none": "Tonalidad",
     "audio.title": "Estado del soundfont",
     "audio.idle": "\u266A en espera",
     "audio.loading": "\u266A cargando\u2026",
@@ -1948,6 +2007,7 @@
     "pref.mic-response.normal": "Normal",
     "pref.mic-response.steady": "Estable",
     "a11y.toolbar": "Controles",
+    "a11y.rail": "Riel",
     "a11y.panels": "Paneles",
     "a11y.panelKeys": "Panel {name}: las flechas lo mueven, May\xFAs + flechas cambian su tama\xF1o",
     "a11y.moved": "{name}: columna {x}, fila {y}, {w} columnas de ancho, {h} filas de alto",
@@ -1975,7 +2035,7 @@
     "tour.welcome.title": "Te damos la bienvenida a Modus",
     "tour.welcome": "Toca un acorde y Modus lo nombra y explica su armon\xEDa mientras tocas: su grado en la tonalidad, su funci\xF3n, la cadencia que forma, c\xF3mo se mueven sus voces. Esta visita ense\xF1a d\xF3nde est\xE1 cada cosa; dura un minuto. Las flechas o los botones la recorren, Esc la cierra.",
     "tour.input.title": "Toca",
-    "tour.input": "Conecta un teclado MIDI y el\xEDgelo aqu\xED. Sin \xE9l: pulsa M para tocar con el teclado del ordenador, haz clic o toca el piano, activa el micr\xF3fono y canta o toca, o escribe un acorde en el campo (/).",
+    "tour.input": "Conecta un teclado MIDI y el\xEDgelo aqu\xED, con la forma de tocar (Normal, Mantener, Arpegio). Sin \xE9l: pulsa M para tocar con el teclado del ordenador, haz clic o toca el piano, activa el micr\xF3fono y canta o toca, o escribe un acorde en el campo de arriba (/); el campo tambi\xE9n encuentra cualquier opci\xF3n por su nombre.",
     "tour.key.title": "La tonalidad",
     "tour.key": "Elige la tonalidad en la que tocas, o d\xE9jala en Auto: Modus la deduce de lo que tocas. Cada grado, funci\xF3n y cadencia se lee en ella.",
     "tour.analysis.title": "Qu\xE9 es",
@@ -1987,7 +2047,7 @@
     "tour.history.title": "Historial",
     "tour.history": "Cada acorde que mantienes queda aqu\xED con su grado, y las cadencias y modulaciones entre ellos. Haz clic en una ficha para volver a verla, arr\xE1strala a la canci\xF3n, clic derecho o pulsaci\xF3n larga para quitarla.",
     "tour.layout.title": "Tu disposici\xF3n",
-    "tour.layout": "Cada elemento es un panel: arr\xE1stralo por el t\xEDtulo, cambia su tama\xF1o desde la esquina, oc\xFAltalo con \xD7; sus opciones est\xE1n en su men\xFA \u22EF. Aqu\xED: disposiciones para estudiar, dar clase, transcribir o grabar, y las tuyas. P presenta la disposici\xF3n a pantalla completa.",
+    "tour.layout": "Cada elemento es un panel: arr\xE1stralo por el t\xEDtulo, cambia su tama\xF1o desde la esquina, oc\xFAltalo con \xD7; sus opciones est\xE1n en su men\xFA \u22EF. Aqu\xED, en el riel (se oculta con el bot\xF3n junto al logo): disposiciones para estudiar, dar clase, transcribir o grabar, y las tuyas. P presenta la disposici\xF3n a pantalla completa.",
     "tour.practice.title": "Practica",
     "tour.practice": "Progresiones toca las progresiones cl\xE1sicas en tu tonalidad; Entrenamiento auditivo toca sin ense\xF1ar y t\xFA dices lo que has o\xEDdo; el Reproductor repite y ralentiza una grabaci\xF3n para transcribirla.",
     "tour.help.title": "Ayuda",
@@ -3472,11 +3532,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       }
     }, true);
   }
-  function syncExpanded(button, menu) {
-    const sync = () => button.setAttribute("aria-expanded", String(menu.classList.contains("open")));
-    sync();
-    new MutationObserver(sync).observe(menu, { attributes: true, attributeFilter: ["class"] });
-  }
   function keyBelongsToControl(e) {
     const t2 = e.target;
     if (!(t2 instanceof Element)) return false;
@@ -3766,8 +3821,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   // src/ui/tour.ts
   var STEPS = [
     { id: "welcome", target: null },
-    { id: "input", target: "#midi-device" },
-    { id: "key", target: "#key-select" },
+    { id: "input", target: "#btn-input-status" },
+    { id: "key", target: "#btn-key" },
     { id: "analysis", target: "#mod-analysis" },
     { id: "explain", target: "#mod-explain" },
     { id: "cof", target: "#mod-cof" },
@@ -4833,9 +4888,199 @@ ${explainCadence(cadence)}` : "");
     present: line('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
     views: line('<rect x="3" y="7" width="14" height="13" rx="1.5"/><path d="M7 4h14v13"/>'),
     settings: line('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+    rail: line('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>'),
+    midi: line('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 6v7M12 6v7M17 6v7"/>'),
+    sound: line('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>'),
+    search: line('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),
     more: '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>'
   };
   var LOGO = `<svg class="logo-mark" width="26" height="26" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="124" fill="var(--logo-bg)"/><g fill="var(--logo-ink)"><path d="M146 206 Q272 152 398 142 L398 93.1 Q272 101.6 146 154 Z"/><path d="M155 186.6 L155 376.2 M273 147.1 L273 338.2 M389 127.2 L389 302.2" fill="none" stroke="var(--logo-ink)" stroke-width="18" stroke-linecap="round"/><path d="M94 384 C94 367.1 110.1 358 130 358 C153.5 358 166 369.6 166 384 C166 395.8 149.9 411.9 130 410 C106.5 410 94 398.4 94 384 Z" transform="rotate(-24 130 384)"/><path d="M212 346 C212 329.1 228.1 320 248 320 C271.5 320 284 331.6 284 346 C284 357.8 267.9 373.9 248 372 C224.5 372 212 360.4 212 346 Z" transform="rotate(-24 248 346)"/><path d="M328 310 C328 293.1 344.1 284 364 284 C387.5 284 400 295.6 400 310 C400 321.8 383.9 337.9 364 336 C340.5 336 328 324.4 328 310 Z" transform="rotate(-24 364 310)"/></g></svg>`;
+
+  // src/ui/popover.ts
+  var current2 = null;
+  function wirePopover(menu, triggers, onOpen) {
+    const pop = { menu, onOpen };
+    for (const trigger of triggers) {
+      trigger.setAttribute("aria-haspopup", "true");
+      trigger.setAttribute("aria-expanded", "false");
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (current2?.pop === pop && current2.trigger === trigger) closePopover();
+        else openPopover(pop, trigger);
+      });
+    }
+  }
+  function openPopover(pop, trigger) {
+    closePopover();
+    const rail = trigger.closest("#rail");
+    const anchor = rail ?? trigger.closest(".pop-anchor") ?? trigger.parentElement;
+    anchor.appendChild(pop.menu);
+    pop.menu.classList.toggle("pop-side", !!rail);
+    pop.menu.classList.add("open");
+    pop.menu.style.top = "";
+    if (rail) {
+      const top = Math.min(trigger.offsetTop, rail.clientHeight - pop.menu.offsetHeight - 8);
+      pop.menu.style.top = `${Math.max(8, top)}px`;
+    }
+    trigger.setAttribute("aria-expanded", "true");
+    current2 = { pop, trigger };
+    pop.onOpen?.();
+  }
+  function closePopover() {
+    if (!current2) return;
+    current2.pop.menu.classList.remove("open");
+    current2.trigger.setAttribute("aria-expanded", "false");
+    current2 = null;
+  }
+  document.addEventListener("pointerdown", (e) => {
+    if (!current2) return;
+    const target = e.target;
+    if (current2.pop.menu.contains(target) || current2.trigger.contains(target)) return;
+    closePopover();
+  }, true);
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !current2) return;
+    const trigger = current2.trigger;
+    closePopover();
+    trigger.focus();
+  });
+
+  // src/i18n/instruments.ts
+  var ES = {
+    acoustic_grand_piano: "Piano de cola",
+    bright_acoustic_piano: "Piano brillante",
+    electric_grand_piano: "Piano de cola el\xE9ctrico",
+    honkytonk_piano: "Piano honky-tonk",
+    electric_piano_1: "Piano el\xE9ctrico 1",
+    electric_piano_2: "Piano el\xE9ctrico 2",
+    harpsichord: "Clave",
+    clavinet: "Clavinet",
+    celesta: "Celesta",
+    glockenspiel: "Glockenspiel",
+    music_box: "Caja de m\xFAsica",
+    vibraphone: "Vibr\xE1fono",
+    marimba: "Marimba",
+    xylophone: "Xil\xF3fono",
+    tubular_bells: "Campanas tubulares",
+    dulcimer: "Salterio",
+    drawbar_organ: "\xD3rgano Hammond",
+    percussive_organ: "\xD3rgano percusivo",
+    rock_organ: "\xD3rgano de rock",
+    church_organ: "\xD3rgano de iglesia",
+    reed_organ: "Armonio",
+    accordion: "Acorde\xF3n",
+    harmonica: "Arm\xF3nica",
+    tango_accordion: "Bandone\xF3n",
+    acoustic_guitar_nylon: "Guitarra de nailon",
+    acoustic_guitar_steel: "Guitarra ac\xFAstica",
+    electric_guitar_jazz: "Guitarra de jazz",
+    electric_guitar_clean: "Guitarra el\xE9ctrica limpia",
+    electric_guitar_muted: "Guitarra el\xE9ctrica apagada",
+    overdriven_guitar: "Guitarra saturada",
+    distortion_guitar: "Guitarra distorsionada",
+    guitar_harmonics: "Arm\xF3nicos de guitarra",
+    acoustic_bass: "Bajo ac\xFAstico",
+    electric_bass_finger: "Bajo el\xE9ctrico (dedos)",
+    electric_bass_pick: "Bajo el\xE9ctrico (p\xFAa)",
+    fretless_bass: "Bajo sin trastes",
+    slap_bass_1: "Bajo slap 1",
+    slap_bass_2: "Bajo slap 2",
+    synth_bass_1: "Bajo sintetizado 1",
+    synth_bass_2: "Bajo sintetizado 2",
+    violin: "Viol\xEDn",
+    viola: "Viola",
+    cello: "Violonchelo",
+    contrabass: "Contrabajo",
+    tremolo_strings: "Cuerdas en tr\xE9molo",
+    pizzicato_strings: "Cuerdas en pizzicato",
+    orchestral_harp: "Arpa",
+    timpani: "Timbales",
+    string_ensemble_1: "Conjunto de cuerdas 1",
+    string_ensemble_2: "Conjunto de cuerdas 2",
+    synth_strings_1: "Cuerdas sintetizadas 1",
+    synth_strings_2: "Cuerdas sintetizadas 2",
+    choir_aahs: "Coro (aah)",
+    voice_oohs: "Voz (ooh)",
+    synth_voice: "Voz sintetizada",
+    orchestra_hit: "Golpe de orquesta",
+    trumpet: "Trompeta",
+    trombone: "Tromb\xF3n",
+    tuba: "Tuba",
+    muted_trumpet: "Trompeta con sordina",
+    french_horn: "Trompa",
+    brass_section: "Secci\xF3n de metales",
+    synth_brass_1: "Metales sintetizados 1",
+    synth_brass_2: "Metales sintetizados 2",
+    soprano_sax: "Saxo soprano",
+    alto_sax: "Saxo alto",
+    tenor_sax: "Saxo tenor",
+    baritone_sax: "Saxo bar\xEDtono",
+    oboe: "Oboe",
+    english_horn: "Corno ingl\xE9s",
+    bassoon: "Fagot",
+    clarinet: "Clarinete",
+    piccolo: "Flaut\xEDn",
+    flute: "Flauta",
+    recorder: "Flauta dulce",
+    pan_flute: "Flauta de pan",
+    blown_bottle: "Botella soplada",
+    shakuhachi: "Shakuhachi",
+    whistle: "Silbido",
+    ocarina: "Ocarina",
+    lead_1_square: "Solista: cuadrada",
+    lead_2_sawtooth: "Solista: diente de sierra",
+    lead_3_calliope: "Solista: cal\xEDope",
+    lead_4_chiff: "Solista: chiff",
+    lead_5_charang: "Solista: charang",
+    lead_6_voice: "Solista: voz",
+    lead_7_fifths: "Solista: quintas",
+    lead_8_bass_lead: "Solista: bajo",
+    pad_1_new_age: "Pad: new age",
+    pad_2_warm: "Pad: c\xE1lido",
+    pad_3_polysynth: "Pad: polisintetizador",
+    pad_4_choir: "Pad: coro",
+    pad_5_bowed: "Pad: arco",
+    pad_6_metallic: "Pad: met\xE1lico",
+    pad_7_halo: "Pad: halo",
+    pad_8_sweep: "Pad: barrido",
+    fx_1_rain: "Efecto: lluvia",
+    fx_2_soundtrack: "Efecto: banda sonora",
+    fx_3_crystal: "Efecto: cristal",
+    fx_4_atmosphere: "Efecto: atm\xF3sfera",
+    fx_5_brightness: "Efecto: brillo",
+    fx_6_goblins: "Efecto: duendes",
+    fx_7_echoes: "Efecto: ecos",
+    "fx_8_sci-fi": "Efecto: ciencia ficci\xF3n",
+    sitar: "Sitar",
+    banjo: "Banjo",
+    shamisen: "Shamisen",
+    koto: "Koto",
+    kalimba: "Kalimba",
+    bag_pipe: "Gaita",
+    fiddle: "Viol\xEDn folk",
+    shanai: "Shehnai",
+    tinkle_bell: "Campanilla",
+    agogo: "Agog\xF3",
+    steel_drums: "Steel drum",
+    woodblock: "Caja china",
+    taiko_drum: "Taiko",
+    melodic_tom: "Tom mel\xF3dico",
+    synth_drum: "Tambor sintetizado",
+    reverse_cymbal: "Platillo invertido",
+    guitar_fret_noise: "Ruido de trastes",
+    breath_noise: "Respiraci\xF3n",
+    seashore: "Orilla del mar",
+    bird_tweet: "P\xE1jaros",
+    telephone_ring: "Tel\xE9fono",
+    helicopter: "Helic\xF3ptero",
+    applause: "Aplausos",
+    gunshot: "Disparo"
+  };
+  function instrumentLabel(id) {
+    if (getLang() === "es" && ES[id]) return ES[id];
+    const words2 = id.replace(/_/g, " ");
+    return words2.charAt(0).toUpperCase() + words2.slice(1);
+  }
 
   // src/view/channel.ts
   var VIEW_NAMES = ["chord", "staff", "cof", "piano", "guitar"];
@@ -4850,13 +5095,13 @@ ${explainCadence(cadence)}` : "");
   }
   function createViewPublisher() {
     const channel2 = open();
-    let current3 = null;
+    let current4 = null;
     let last = "";
     channel2?.addEventListener("message", (e) => {
-      if (e.data?.type === "hello" && current3) channel2.postMessage({ type: "state", state: current3 });
+      if (e.data?.type === "hello" && current4) channel2.postMessage({ type: "state", state: current4 });
     });
     return (state2) => {
-      current3 = state2;
+      current4 = state2;
       const sig = JSON.stringify(state2);
       if (sig === last) return;
       last = sig;
@@ -5085,7 +5330,7 @@ ${explainCadence(cadence)}` : "");
     setGrid(shown ? addCell(grid2, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid2, id));
   }
   function renderLayout(_panels, fieldsVisible) {
-    $("app").innerHTML = buildToolbar() + `<div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, fieldsVisible)).join("")}</main>` + buildSettings();
+    $("app").innerHTML = buildToolbar() + '<div class="workspace">' + buildRail() + `<div class="work-main"><div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, fieldsVisible)).join("")}</main></div></div>` + buildSettings();
     applyGrid();
     wireGrid();
     wireLayoutMenu();
@@ -5144,73 +5389,114 @@ ${explainCadence(cadence)}` : "");
   function buildToolbar() {
     return `
     <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t("a11y.toolbar")}">
+      <button id="btn-rail" class="ctrl-btn icon-btn ghost" title="${t("rail.title")}" aria-controls="rail">${ICONS.rail}</button>
       <span class="brand" title="Modus">${LOGO}<span class="brand-name">modus</span></span>
-      <div class="tb-group" role="group" aria-label="${t("a11y.group.input")}">
-        <span id="midi-status" class="midi-status">MIDI</span>
-        <select id="midi-device" class="ctrl-select" aria-label="${t("a11y.midiDevice")}"></select>
-        <div class="seg" role="group" aria-label="${t("a11y.group.mode")}">
-          <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t("mode.normal.title")}">${t("mode.normal")}</button>
-          <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t("mode.hold.title")}">${t("mode.hold")}</button>
-          <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t("mode.arpeggio.title")}">${t("mode.arpeggio")}</button>
+      <div class="pop-anchor">
+        <button id="btn-key" class="key-btn" title="${t("key.menu.title")}"><span id="key-btn-name"></span><span id="key-btn-auto" class="key-btn-auto"></span></button>
+      </div>
+      <div class="tb-search pop-anchor">
+        ${ICONS.search}
+        <input id="typed-chord" class="typed-chord" placeholder="${t("typed.placeholder")}" title="${t("typed.title")}" autocomplete="off" spellcheck="false"
+          role="combobox" aria-expanded="false" aria-controls="cmd-results" aria-autocomplete="list">
+        <kbd class="tb-kbd" aria-hidden="true">/</kbd>
+        <div id="cmd-results" class="cmd-results" role="listbox" aria-label="${t("cmd.results")}" hidden></div>
+      </div>
+      <div class="tb-status">
+        <div class="pop-anchor pop-end">
+          <button id="btn-input-status" class="status-btn" title="${t("a11y.group.input")}"><span id="midi-status" class="midi-status">MIDI</span><span id="mode-status" class="status-sub"></span></button>
         </div>
-        <button id="btn-keyboard" class="mode-btn icon-btn" title="${t("keyboard.title")}">${ICONS.keyboard}</button>
-        <button id="btn-mic" class="mode-btn icon-btn" title="${t("mic.title")}">${ICONS.mic}</button>
-        <span id="keyboard-status" class="auto-key-label"></span>
+        <div class="pop-anchor pop-end">
+          <button id="btn-sound-status" class="status-btn" title="${t("a11y.group.sound")}"><span id="sound-status" class="sound-status"></span></button>
+        </div>
+        <button id="btn-settings" class="ctrl-btn icon-btn ghost" title="${t("set.title.button")}" aria-haspopup="dialog">${ICONS.settings}</button>
+        <button id="btn-help" class="ctrl-btn icon-btn ghost help-q" title="${t("help.title")}">?</button>
       </div>
-      <span class="toolbar-sep" aria-hidden="true"></span>
-      <div class="tb-group" role="group" aria-label="${t("a11y.group.key")}">
-        <select id="key-select" class="ctrl-select" aria-label="${t("a11y.key")}">
-          <option value="">${t("key.auto")}</option>
-          ${ALL_KEYS.map((k) => `<option value="${k}">${keyLabel(k)}</option>`).join("")}
-        </select>
-        <span id="auto-key-label" class="auto-key-label"></span>
-        <input id="typed-chord" class="ctrl-select typed-chord" placeholder="${t("typed.placeholder")}" title="${t("typed.title")}" autocomplete="off" spellcheck="false">
+    </div>`;
+  }
+  function buildRail() {
+    return `
+    <div class="rail-col">
+      <nav id="rail" class="rail" aria-label="${t("a11y.rail")}">
+        <button id="rail-input" class="rail-btn" title="${t("a11y.group.input")}">${ICONS.midi}<span id="rail-midi-dot" class="rail-dot"></span></button>
+        <button id="rail-sound" class="rail-btn" title="${t("a11y.group.sound")}">${ICONS.sound}</button>
+        <button id="btn-keyboard" class="rail-btn" data-act="keyboard" title="${t("keyboard.title")}">${ICONS.keyboard}</button>
+        <button id="btn-mic" class="rail-btn" data-act="mic" title="${t("mic.title")}">${ICONS.mic}</button>
+        <span class="rail-sep" aria-hidden="true"></span>
+        <button id="btn-layout" class="rail-btn" title="${t("layout.title")}">${ICONS.layout}</button>
+        <button id="btn-present" class="rail-btn" title="${t("present.title")}">${ICONS.present}</button>
+        <button id="btn-views" class="rail-btn" title="${t("views.title")}">${ICONS.views}</button>
+        ${buildMenus()}
+      </nav>
+    </div>`;
+  }
+  function buildMenus() {
+    return `
+    <div id="input-menu" class="view-menu pop-menu" role="group" aria-label="${t("a11y.group.input")}">
+      <div class="view-menu-title">${t("input.playWith")}</div>
+      <select id="midi-device" class="ctrl-select" hidden aria-label="${t("a11y.midiDevice")}"></select>
+      <div id="midi-device-list" class="choice-list" role="group" aria-label="${t("a11y.midiDevice")}"></div>
+      <button id="menu-keyboard" class="choice-row" data-act="keyboard" title="${t("keyboard.title")}">${ICONS.keyboard}<span>${t("input.keyboard")}</span><span id="keyboard-status" class="choice-hint"></span></button>
+      <button id="menu-mic" class="choice-row" data-act="mic" title="${t("mic.title")}">${ICONS.mic}<span>${t("input.mic")}</span></button>
+      <div class="view-menu-title">${t("a11y.group.mode")}</div>
+      <div class="seg seg-full" role="group" aria-label="${t("a11y.group.mode")}">
+        <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t("mode.normal.title")}">${t("mode.normal")}</button>
+        <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t("mode.hold.title")}">${t("mode.hold")}</button>
+        <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t("mode.arpeggio.title")}">${t("mode.arpeggio")}</button>
       </div>
-      <span class="toolbar-sep" aria-hidden="true"></span>
-      <div class="tb-group" role="group" aria-label="${t("a11y.group.sound")}">
-        <button id="btn-play-chord" class="ctrl-btn icon-btn" title="${t("audio.play.title")}">${ICONS.play}</button>
-        <select id="audio-instrument" class="ctrl-select" title="${t("audio.instrument.title")}">
-          ${GM_INSTRUMENT_GROUPS.map(
+      <div id="mode-hint" class="view-menu-hint"></div>
+    </div>
+    <div id="sound-menu" class="view-menu pop-menu sound-menu" role="group" aria-label="${t("a11y.group.sound")}">
+      <div class="sound-row">
+        <button id="btn-play-chord" class="play-btn" title="${t("audio.play.title")}">${ICONS.play}</button>
+        <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t("audio.volume.title")}" aria-label="${t("audio.volume.title")}" class="volume-slider">
+        <span id="volume-value" class="choice-hint"></span>
+      </div>
+      <div id="audio-progress" class="audio-progress" title="${t("audio.title")}">
+        <div id="audio-progress-fill" class="audio-progress-fill"></div>
+        <span id="audio-status" class="audio-status">${t("audio.idle")}</span>
+      </div>
+      <input id="instrument-filter" class="ctrl-select" placeholder="${t("sound.filter")}" aria-label="${t("sound.filter")}" autocomplete="off" spellcheck="false">
+      <select id="audio-instrument" hidden title="${t("audio.instrument.title")}">
+        ${GM_INSTRUMENT_GROUPS.map(
       (g) => `<optgroup label="${t(g.label)}">${g.instruments.map(
-        (i) => `<option value="${i}"${i === getCurrentInstrument() ? " selected" : ""}>${i.replace(/_/g, " ")}</option>`
+        (i) => `<option value="${i}"${i === getCurrentInstrument() ? " selected" : ""}>${escapeHtml(instrumentLabel(i))}</option>`
       ).join("")}</optgroup>`
     ).join("")}
+      </select>
+      <div id="instrument-list" class="choice-list choice-scroll" role="group" aria-label="${t("audio.instrument.title")}"></div>
+    </div>
+    <div id="key-menu" class="view-menu pop-menu key-menu" role="group" aria-label="${t("a11y.key")}">
+      <select id="key-select" hidden aria-label="${t("a11y.key")}">
+        <option value="">${t("key.auto")}</option>
+        ${ALL_KEYS.map((k) => `<option value="${k}">${keyLabel(k)}</option>`).join("")}
+      </select>
+      <div class="key-menu-top">
+        <button id="key-auto" class="choice-chip" title="${t("key.auto.title")}">${t("key.autoShort")}</button>
+        <span id="auto-key-label" class="auto-key-label"></span>
+      </div>
+      <div class="seg" role="group" aria-label="${t("a11y.key")}">
+        <button class="mode-btn" data-keymode="major">${t("key.majorCap")}</button>
+        <button class="mode-btn" data-keymode="minor">${t("key.minorCap")}</button>
+      </div>
+      <div id="key-grid" class="key-pick-grid"></div>
+      <div class="view-menu-hint">${t("key.menu.hint")}</div>
+    </div>
+    <div id="layout-menu" class="view-menu pop-menu"></div>
+    <div id="view-menu" class="view-menu pop-menu">
+      <div class="view-menu-title">${t("views.open")}</div>
+      ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join("")}
+      <label class="view-menu-bg">${t("views.background")}
+        <select id="view-bg" class="ctrl-select">
+          ${Object.keys(VIEW_BACKGROUNDS).map((b) => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join("")}
         </select>
-        <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="${getVolume()}" title="${t("audio.volume.title")}" class="volume-slider">
-        <div id="audio-progress" class="audio-progress" title="${t("audio.title")}">
-          <div id="audio-progress-fill" class="audio-progress-fill"></div>
-          <span id="audio-status" class="audio-status">${t("audio.idle")}</span>
-        </div>
-      </div>
-      <span class="toolbar-gap"></span>
-      <div class="tb-group tb-page" role="group" aria-label="${t("a11y.group.page")}">
-      <div class="view-menu-wrap">
-        <button id="btn-layout" class="ctrl-btn icon-btn ghost" title="${t("layout.title")}" aria-haspopup="true" aria-expanded="false">${ICONS.layout}</button>
-        <div id="layout-menu" class="view-menu"></div>
-      </div>
-      <div class="view-menu-wrap">
-        <button id="btn-present" class="ctrl-btn icon-btn ghost" title="${t("present.title")}">${ICONS.present}</button>
-        <button id="btn-views" class="ctrl-btn icon-btn ghost" title="${t("views.title")}" aria-haspopup="true" aria-expanded="false">${ICONS.views}</button>
-        <div id="view-menu" class="view-menu">
-          <div class="view-menu-title">${t("views.open")}</div>
-          ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join("")}
-          <label class="view-menu-bg">${t("views.background")}
-            <select id="view-bg" class="ctrl-select">
-              ${Object.keys(VIEW_BACKGROUNDS).map((b) => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join("")}
-            </select>
-          </label>
-          <div class="view-menu-hint">${t("views.hint")}</div>
-          <div class="view-menu-title">${t("views.save")}</div>
-          ${["staff", "cof", "guitar", "piano"].map((v) => `
-            <div class="view-menu-export"><span>${viewLabel(v)}</span>
-              <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
-              <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
-            </div>`).join("")}
-        </div>
-      </div>
-      <button id="btn-settings" class="ctrl-btn icon-btn ghost" title="${t("set.title.button")}" aria-haspopup="dialog">${ICONS.settings}</button>
-      <button id="btn-help" class="ctrl-btn icon-btn ghost help-q" title="${t("help.title")}">?</button>
-      </div>
+      </label>
+      <div class="view-menu-hint">${t("views.hint")}</div>
+      <div class="view-menu-title">${t("views.save")}</div>
+      ${["staff", "cof", "guitar", "piano"].map((v) => `
+        <div class="view-menu-export"><span>${viewLabel(v)}</span>
+          <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
+          <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
+        </div>`).join("")}
     </div>`;
   }
   var item = (id, label, title = "", on) => `<button type="button" id="${id}" class="menu-item"${on !== void 0 ? ` aria-pressed="${on}"` : ""}${title ? ` title="${escapeHtml(title)}"` : ""}><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(label)}</span></button>`;
@@ -5421,13 +5707,7 @@ ${explainCadence(cadence)}` : "");
   }
   function wireLayoutMenu() {
     const menu = $("layout-menu");
-    $("btn-layout").addEventListener("click", (e) => {
-      e.stopPropagation();
-      menu.classList.toggle("open");
-    });
-    document.addEventListener("click", (e) => {
-      if (!menu.contains(e.target) && !$("btn-layout").contains(e.target)) menu.classList.remove("open");
-    });
+    wirePopover(menu, [$("btn-layout")]);
     menu.addEventListener("click", (e) => {
       e.stopPropagation();
       const el = e.target;
@@ -5449,6 +5729,18 @@ ${explainCadence(cadence)}` : "");
       const box = e.target.closest("input[data-module]");
       if (box) showModule(box.dataset.module, box.checked);
     });
+  }
+  function layoutCommands() {
+    const hint2 = t("layout.presets");
+    return [
+      ...PRESET_IDS.map((p) => ({ label: t("cmd.layout", { name: t(`layout.preset.${p}`) }), hint: hint2, run: () => applyPreset(p) })),
+      ...Object.keys(savedLayouts).map((n) => ({ label: t("cmd.layout", { name: n }), hint: hint2, run: () => setGrid(savedLayouts[n].map((c) => ({ ...c }))) })),
+      ...MODULE_IDS.map((id) => {
+        const shown = isModuleShown(id);
+        const name = t(`module.${id}`);
+        return { label: t(shown ? "cmd.hide" : "cmd.show", { name }), hint: t("layout.panels"), run: () => showModule(id, !shown) };
+      })
+    ];
   }
   function saveCurrentAs() {
     const input = document.getElementById("layout-name");
@@ -7129,7 +7421,7 @@ ${explainCadence(cadence)}` : "");
     D: "var(--fn-d)",
     unknown: "var(--text-dim)"
   };
-  var current2 = loadChoice("progression", PROGRESSION_IDS, "ii-V-I");
+  var current3 = loadChoice("progression", PROGRESSION_IDS, "ii-V-I");
   var timer2 = null;
   var playing = -1;
   function stopProgression() {
@@ -7145,9 +7437,9 @@ ${explainCadence(cadence)}` : "");
   }
   function renderProgressions(container, analysisKey2, handlers) {
     stopProgression();
-    const key = progressionKey(current2, analysisKey2);
-    const chords = realizeProgression(current2, key);
-    const options = PROGRESSION_IDS.map((id) => `<option value="${id}"${id === current2 ? " selected" : ""}>${escapeHtml(t(`prog.${id}`))}</option>`).join("");
+    const key = progressionKey(current3, analysisKey2);
+    const chords = realizeProgression(current3, key);
+    const options = PROGRESSION_IDS.map((id) => `<option value="${id}"${id === current3 ? " selected" : ""}>${escapeHtml(t(`prog.${id}`))}</option>`).join("");
     let strip = "";
     chords.forEach((c, i) => {
       if (i > 0 && c.bar !== chords[i - 1].bar) strip += '<span class="prog-bar">|</span>';
@@ -7167,12 +7459,12 @@ ${explainCadence(c.cadence)}` : ""}`;
       <button id="prog-play" class="ctrl-btn" title="${escapeHtml(t("prog.play.title"))}">\u25B6</button>
       <span class="prog-key">${escapeHtml(keyLabel(key))}</span>
     </div>
-    <p class="prog-about">${escapeHtml(t(`prog.${current2}.about`))}</p>
+    <p class="prog-about">${escapeHtml(t(`prog.${current3}.about`))}</p>
     <div class="prog-strip">${strip}</div>`;
     const select = container.querySelector("#prog-select");
     select.addEventListener("change", () => {
-      current2 = select.value;
-      save("progression", current2);
+      current3 = select.value;
+      save("progression", current3);
       renderProgressions(container, analysisKey2, handlers);
     });
     const chips = [...container.querySelectorAll(".prog-chip")];
@@ -7557,6 +7849,100 @@ ${explainCadence(c.cadence)}` : ""}`;
     detail.textContent = `${heard.cents > 0 ? "+" : ""}${heard.cents} \xA2 \xB7 ${heard.freq.toFixed(1)} Hz`;
   }
 
+  // src/ui/commands.ts
+  var MAX_RESULTS = 8;
+  var fold = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  var words = (s) => fold(s).split(/[^a-z0-9#]+/).filter(Boolean);
+  function matchCommands(query, commands) {
+    const q = words(query);
+    if (!q.length) return [];
+    const scored = commands.flatMap((c, i) => {
+      const w = words(`${c.label} ${c.hint ?? ""}`);
+      if (!q.every((part) => w.some((word) => word.startsWith(part)))) return [];
+      const first = words(c.label.split(":").pop() ?? c.label)[0] ?? "";
+      return [{ c, i, rank: first.startsWith(q[0]) ? 0 : 1 }];
+    });
+    return scored.sort((a, b) => a.rank - b.rank || a.i - b.i).slice(0, MAX_RESULTS).map((s) => s.c);
+  }
+  function wireCommandSearch(o) {
+    let items = [];
+    let marked = 0;
+    const hide = () => {
+      o.list.hidden = true;
+      o.input.setAttribute("aria-expanded", "false");
+      o.input.removeAttribute("aria-activedescendant");
+    };
+    const render = () => {
+      const q = o.input.value.trim();
+      if (!q) {
+        items = [];
+        hide();
+        return;
+      }
+      const chord = o.chordOf(q);
+      items = [
+        ...chord ? [{ label: o.playLabel(chord), run: o.submitChord, keep: true }] : [],
+        ...matchCommands(q, o.commands())
+      ];
+      marked = 0;
+      o.list.innerHTML = items.length ? items.map((c, i) => `<div id="cmd-${i}" class="cmd-item" role="option" data-i="${i}" aria-selected="${i === marked}"><span>${escapeHtml(c.label)}</span>${c.hint ? `<span class="cmd-hint">${escapeHtml(c.hint)}</span>` : ""}</div>`).join("") : `<div class="cmd-none">${escapeHtml(o.noneLabel(q))}</div>`;
+      o.list.hidden = false;
+      o.input.setAttribute("aria-expanded", "true");
+      mark(0);
+    };
+    const mark = (i) => {
+      if (!items.length) return;
+      marked = (i + items.length) % items.length;
+      o.list.querySelectorAll(".cmd-item").forEach((el, j) => el.setAttribute("aria-selected", String(j === marked)));
+      o.input.setAttribute("aria-activedescendant", `cmd-${marked}`);
+      o.list.querySelector(`#cmd-${marked}`)?.scrollIntoView({ block: "nearest" });
+    };
+    const run = (i) => {
+      const c = items[i];
+      if (!c) {
+        o.submitChord();
+        return;
+      }
+      if (c.keep) {
+        hide();
+        c.run();
+        return;
+      }
+      o.input.value = "";
+      hide();
+      o.input.blur();
+      c.run();
+    };
+    o.input.addEventListener("input", () => {
+      o.input.classList.remove("invalid");
+      render();
+    });
+    o.input.addEventListener("focus", render);
+    o.input.addEventListener("blur", hide);
+    o.input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" && items.length) {
+        e.preventDefault();
+        mark(marked + 1);
+      } else if (e.key === "ArrowUp" && items.length) {
+        e.preventDefault();
+        mark(marked - 1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        run(items.length ? marked : -1);
+      } else if (e.key === "Escape") {
+        e.stopPropagation();
+        if (!o.list.hidden) hide();
+        else o.input.blur();
+      }
+    });
+    o.list.addEventListener("pointerdown", (e) => {
+      const el = e.target.closest(".cmd-item");
+      if (!el) return;
+      e.preventDefault();
+      run(Number(el.dataset.i));
+    });
+  }
+
   // src/app.ts
   var STAFF_WIDTH = 380;
   var COF_SIZE = 300;
@@ -7612,26 +7998,17 @@ ${explainCadence(c.cadence)}` : ""}`;
     preloadAudio();
     buildLayout();
     watchIconButtons($2("app"));
-    syncExpanded($2("btn-layout"), $2("layout-menu"));
-    syncExpanded($2("btn-views"), $2("view-menu"));
     wireShortcuts();
     wireComputerKeyboard();
     setComputerKeyboardChange(updateComputerKeyboardButton);
-    $2("btn-keyboard").addEventListener("click", () => {
+    document.querySelectorAll('[data-act="keyboard"]').forEach((b) => b.addEventListener("click", () => {
       initAudioOnGesture();
       toggleComputerKeyboard();
-    });
-    $2("btn-mic").addEventListener("click", toggleMic);
+    }));
+    document.querySelectorAll('[data-act="mic"]').forEach((b) => b.addEventListener("click", toggleMic));
     window.addEventListener("pointerup", onPianoRelease);
     window.addEventListener("pointercancel", onPianoRelease);
-    const chordInput = $2("typed-chord");
-    chordInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        submitTypedChord(chordInput);
-      } else if (e.key === "Escape") chordInput.blur();
-    });
-    chordInput.addEventListener("input", () => chordInput.classList.remove("invalid"));
+    wireBar();
     setModeBtn(getMode());
     renderDetector();
     drawEar();
@@ -7908,14 +8285,17 @@ ${explainCadence(c.cadence)}` : ""}`;
     });
     $2("key-select").addEventListener("change", (e) => {
       setActiveKey(e.target.value || null);
+      closePopover();
     });
     $2("btn-help").addEventListener("click", toggleHelp);
     $2("btn-play-chord").addEventListener("click", playCurrent);
     $2("audio-instrument").addEventListener("change", (e) => {
       setInstrument(e.target.value);
+      updateSoundStatus();
     });
     $2("audio-volume").addEventListener("input", (e) => {
       setVolume(parseFloat(e.target.value));
+      updateSoundStatus();
     });
   }
   function buildLayout() {
@@ -8053,20 +8433,14 @@ ${explainCadence(c.cadence)}` : ""}`;
       closePresentation();
       return;
     }
-    $2("view-menu").classList.remove("open");
+    closePopover();
     openPresentation(() => $2("btn-present").classList.remove("active-mode"));
     $2("btn-present").classList.add("active-mode");
   }
   var viewBackground = loadChoice("view-bg", Object.keys(VIEW_BACKGROUNDS), "green");
   function wireViewMenu() {
     const menu = $2("view-menu");
-    $2("btn-views").addEventListener("click", (e) => {
-      e.stopPropagation();
-      menu.classList.toggle("open");
-    });
-    document.addEventListener("click", (e) => {
-      if (!menu.contains(e.target)) menu.classList.remove("open");
-    });
+    wirePopover(menu, [$2("btn-views")]);
     const bgSel = $2("view-bg");
     bgSel.value = viewBackground;
     bgSel.addEventListener("change", () => {
@@ -8078,14 +8452,14 @@ ${explainCadence(c.cadence)}` : ""}`;
         const view = btn.dataset.view;
         const [w, h] = VIEW_WINDOW[view];
         window.open(viewUrl(view, viewBackground), `modus-view-${view}`, `popup,width=${w},height=${h}`)?.focus();
-        menu.classList.remove("open");
+        closePopover();
       });
     });
     menu.querySelectorAll("[data-export]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const ok = await exportDiagram(btn.dataset.export, btn.dataset.format, selectedSymbol() ?? analysisKey());
         if (!ok) btn.classList.add("invalid");
-        else menu.classList.remove("open");
+        else closePopover();
       });
     });
     setGuitarVoicingChange(() => publishView());
@@ -8222,6 +8596,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function updateAutoKeyLabel() {
     $2("auto-key-label").textContent = !state.activeKey && autoKey ? t("key.autoDetected", { key: keyLabel(autoKey) }) : "";
+    updateKeyButton();
   }
   var lastRenderSig = {};
   function renderIfChanged(name, sig, render) {
@@ -8253,7 +8628,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function updateComputerKeyboardButton() {
     const on = isComputerKeyboardOn();
-    $2("btn-keyboard").classList.toggle("active-mode", on);
+    document.querySelectorAll('[data-act="keyboard"]').forEach((b) => b.classList.toggle("active-mode", on));
     $2("keyboard-status").textContent = on ? computerKeyboardStatus() : "";
   }
   function noteVelocities(noteNames) {
@@ -8306,7 +8681,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     showChord(chord, void 0, previousHistoryChord(chord));
   }
   function drawTuner(error) {
-    $2("btn-mic").classList.toggle("active-mode", isMicOn());
+    document.querySelectorAll('[data-act="mic"]').forEach((b) => b.classList.toggle("active-mode", isMicOn()));
     const el = document.getElementById("tuner-container");
     if (el) renderTuner(el, { toggle: toggleMic }, error);
   }
@@ -8430,12 +8805,14 @@ ${explainCadence(c.cadence)}` : ""}`;
     const sel = $2("midi-device");
     const devices = getDevices();
     sel.innerHTML = devices.length ? devices.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join("") : `<option>${escapeHtml(t("midi.noDeviceOption"))}</option>`;
-    sel.onchange = () => chooseDevice(sel.value);
+    sel.onchange = () => {
+      chooseDevice(sel.value);
+      refreshDeviceDropdown();
+    };
     const target = resolveDevice();
     if (target) sel.value = target;
-    $2("midi-status").textContent = devices.length ? "MIDI" : t("midi.noDevices");
-    $2("midi-status").title = devices.length ? t("midi.connected") : t("midi.noDevices");
-    $2("midi-status").style.color = devices.length ? "var(--ok)" : "var(--text-dim)";
+    const current4 = devices.find((d) => d.id === sel.value);
+    setMidiStatus(current4 ? current4.name : t("midi.noDevices"), current4 ? "var(--ok)" : "var(--text-dim)", devices.length ? t("midi.connected") : t("midi.noDevices"));
     if (!deviceListenersAttached) {
       deviceListenersAttached = true;
       window.addEventListener("midi-devices-changed", () => {
@@ -8443,9 +8820,7 @@ ${explainCadence(c.cadence)}` : ""}`;
         refreshOutputDropdown();
       });
       window.addEventListener("midi-device-disconnected", () => {
-        $2("midi-status").textContent = t("midi.disconnected");
-        $2("midi-status").title = t("midi.disconnected");
-        $2("midi-status").style.color = "var(--danger-soft)";
+        setMidiStatus(t("midi.disconnected"), "var(--danger-soft)", t("midi.disconnected"));
       });
     }
   }
@@ -8571,6 +8946,158 @@ ${explainCadence(c.cadence)}` : ""}`;
     document.querySelectorAll(".mode-btn[data-mode]").forEach((b) => {
       b.classList.toggle("active-mode", b.dataset.mode === mode4);
     });
+    $2("mode-status").textContent = t(`mode.${mode4}`);
+    $2("mode-hint").textContent = t(`mode.${mode4}.title`);
+  }
+  var FIFTHS_MAJOR = [6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11];
+  var keyMenuMinor = false;
+  function wireBar() {
+    wirePopover($2("input-menu"), [$2("rail-input"), $2("btn-input-status")]);
+    wirePopover($2("sound-menu"), [$2("rail-sound"), $2("btn-sound-status")], () => {
+      const filter2 = $2("instrument-filter");
+      filter2.value = "";
+      renderChoices($2("audio-instrument"), $2("instrument-list"), "");
+      $2("instrument-list").querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "center" });
+    });
+    wirePopover($2("key-menu"), [$2("btn-key")], () => {
+      keyMenuMinor = !!state.activeKey?.endsWith("Minor");
+      renderKeyGrid();
+    });
+    mirrorChoices($2("midi-device"), $2("midi-device-list"));
+    mirrorChoices($2("audio-instrument"), $2("instrument-list"));
+    const filter = $2("instrument-filter");
+    filter.addEventListener("input", () => renderChoices($2("audio-instrument"), $2("instrument-list"), filter.value));
+    $2("key-auto").addEventListener("click", () => pickKey(""));
+    document.querySelectorAll("[data-keymode]").forEach((b) => b.addEventListener("click", () => {
+      keyMenuMinor = b.dataset.keymode === "minor";
+      renderKeyGrid();
+    }));
+    railOpen = loadBool("rail-open", true) && !isNarrow();
+    applyRail();
+    $2("btn-rail").addEventListener("click", () => {
+      railOpen = !railOpen;
+      if (!isNarrow()) save("rail-open", railOpen);
+      applyRail();
+    });
+    document.addEventListener("pointerdown", (e) => {
+      if (!railOpen || !isNarrow() || document.querySelector(".rail-col").contains(e.target)) return;
+      railOpen = false;
+      applyRail();
+    }, true);
+    const input = $2("typed-chord");
+    wireCommandSearch({
+      input,
+      list: $2("cmd-results"),
+      chordOf: (text) => {
+        const symbol = readTypedChord(text);
+        return symbol && isKnownChord(symbol) ? chordLabel(symbol) : null;
+      },
+      submitChord: () => submitTypedChord(input),
+      commands: barCommands,
+      playLabel: (chord) => t("cmd.play", { chord }),
+      noneLabel: (q) => t("cmd.none", { q })
+    });
+    updateKeyButton();
+    updateSoundStatus();
+    setAudioStatusDot();
+  }
+  var railOpen = true;
+  function applyRail() {
+    document.body.classList.toggle("rail-hidden", !railOpen);
+    $2("btn-rail").setAttribute("aria-expanded", String(railOpen));
+    if (!railOpen) closePopover();
+  }
+  function pickKey(key) {
+    const sel = $2("key-select");
+    sel.value = key;
+    sel.dispatchEvent(new Event("change"));
+  }
+  function renderKeyGrid() {
+    document.querySelectorAll("[data-keymode]").forEach((b) => b.classList.toggle("active-mode", b.dataset.keymode === "minor" === keyMenuMinor));
+    $2("key-auto").classList.toggle("active-mode", !state.activeKey);
+    const keys = FIFTHS_MAJOR.map((pc3) => keyMenuMinor ? `${MINOR_ROOTS[(pc3 + 9) % 12]} Minor` : `${MAJOR_ROOTS[pc3]} Major`);
+    $2("key-grid").innerHTML = keys.map((k) => `<button class="choice-chip${k === state.activeKey ? " active-mode" : ""}" data-key="${k}" title="${escapeHtml(keyLabel(k))}">${escapeHtml(noteLabel(k.split(" ")[0]))}</button>`).join("");
+    $2("key-grid").querySelectorAll("[data-key]").forEach((b) => b.addEventListener("click", () => pickKey(b.dataset.key)));
+  }
+  function updateKeyButton() {
+    const shown = state.activeKey ?? autoKey;
+    $2("key-btn-name").textContent = shown ? keyLabel(shown) : t("key.none");
+    $2("key-btn-auto").textContent = state.activeKey ? "" : t("key.autoShort").toLowerCase();
+  }
+  function setMidiStatus(text, color2, title) {
+    const el = $2("midi-status");
+    el.textContent = text;
+    el.title = title;
+    el.style.setProperty("--dot", color2);
+    $2("rail-midi-dot").style.background = color2;
+  }
+  function updateSoundStatus() {
+    const name = instrumentLabel($2("audio-instrument").value);
+    $2("sound-status").textContent = name;
+    const v = Math.round(parseFloat($2("audio-volume").value) * 100);
+    $2("volume-value").textContent = `${v} %`;
+  }
+  function setAudioStatusDot() {
+    const status2 = $2("audio-status");
+    const dot = () => {
+      const fill = $2("audio-progress-fill").style.background || "var(--text-dim)";
+      $2("sound-status").style.setProperty("--dot", fill);
+    };
+    new MutationObserver(dot).observe(status2, { childList: true, characterData: true, subtree: true });
+    dot();
+  }
+  function mirrorChoices(sel, list) {
+    const draw2 = () => renderChoices(sel, list, "");
+    new MutationObserver(draw2).observe(sel, { childList: true, subtree: true });
+    sel.addEventListener("change", draw2);
+    list.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-value]");
+      if (!b || b.hasAttribute("disabled")) return;
+      sel.value = b.dataset.value;
+      sel.dispatchEvent(new Event("change"));
+    });
+    draw2();
+  }
+  function renderChoices(sel, list, filter) {
+    const q = filter.trim().normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    const match = (text) => !q || text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes(q);
+    const option = (o) => `<button class="choice-row" data-value="${escapeHtml(o.value)}" aria-pressed="${o.value === sel.value}"${o.disabled || !o.value && !sel.options.length ? " disabled" : ""}>${escapeHtml(o.text)}</button>`;
+    list.innerHTML = [...sel.children].map((child) => {
+      if (child instanceof HTMLOptGroupElement) {
+        const opts = [...child.children].filter((o) => o instanceof HTMLOptionElement && match(o.text));
+        return opts.length ? `<div class="choice-group">${escapeHtml(child.label)}</div>${opts.map(option).join("")}` : "";
+      }
+      return child instanceof HTMLOptionElement && match(child.text) ? option(child) : "";
+    }).join("");
+  }
+  function barCommands() {
+    const input = t("a11y.group.input");
+    const keyboardOn = isComputerKeyboardOn();
+    return [
+      ...["normal", "hold", "arpeggio"].map((m) => ({ label: t("cmd.mode", { mode: t(`mode.${m}`) }), hint: input, run: () => setModeBtn(m) })),
+      { label: t("input.keyboard"), hint: keyboardOn ? t("cmd.on") : input, run: () => {
+        initAudioOnGesture();
+        toggleComputerKeyboard();
+      } },
+      { label: t("input.mic"), hint: isMicOn() ? t("cmd.on") : input, run: toggleMic },
+      { label: t("cmd.keyAuto"), hint: t("a11y.key"), run: () => pickKey("") },
+      ...FIFTHS_MAJOR.flatMap((pc3) => [`${MAJOR_ROOTS[pc3]} Major`, `${MINOR_ROOTS[(pc3 + 9) % 12]} Minor`]).map((k) => ({ label: t("cmd.key", { key: keyLabel(k) }), run: () => pickKey(k) })),
+      ...layoutCommands(),
+      { label: t("cmd.present"), hint: "P", run: togglePresentation },
+      ...VIEW_NAMES.map((v) => ({ label: t("cmd.view", { name: t(`view.${v}`) }), hint: "OBS", run: () => document.querySelector(`#view-menu [data-view="${v}"]`)?.click() })),
+      { label: t("cmd.settings"), run: () => openSettings() },
+      { label: t("cmd.help"), hint: "?", run: toggleHelp },
+      { label: t("cmd.rail"), run: () => $2("btn-rail").click() },
+      ...GM_INSTRUMENT_GROUPS.flatMap((g) => g.instruments.map((i) => ({
+        label: t("cmd.instrument", { name: instrumentLabel(i) }),
+        hint: t(g.label),
+        run: () => {
+          const sel = $2("audio-instrument");
+          sel.value = i;
+          sel.dispatchEvent(new Event("change"));
+        }
+      })))
+    ];
   }
   if (!runViewerFromUrl()) init();
 })();

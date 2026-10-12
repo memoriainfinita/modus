@@ -9,8 +9,8 @@ import type { StringKey } from '../i18n/en'
 
 const STEPS: { id: string; target: string | null }[] = [
   { id: 'welcome', target: null },
-  { id: 'input', target: '#midi-device' },
-  { id: 'key', target: '#key-select' },
+  { id: 'input', target: '#btn-input-status' },
+  { id: 'key', target: '#btn-key' },
   { id: 'analysis', target: '#mod-analysis' },
   { id: 'explain', target: '#mod-explain' },
   { id: 'cof', target: '#mod-cof' },
