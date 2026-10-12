@@ -4,6 +4,7 @@ import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from '../theo
 import { normalizeKey } from '../theory/keys'
 import { t, chordLabel, scaleLabel, substitutionTypeLabel } from '../i18n/i18n'
 import { analyzeVoiceLeading, describeVoiceLeading } from './voice-leading'
+import { getPref } from '../settings/prefs'
 
 const intervalName = (n: number) => t(`interval.${n}` as `interval.${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}`)
 
@@ -280,5 +281,5 @@ export function getAutoKey(history: HistoryEntry[]): string | null {
   const noteNames = history.flatMap(e => e.notes)
   if (noteNames.length === 0) return null
   // Spelled as the key selector does ("Gb Major" → "F# Major").
-  return normalizeKey(tryUMT('key detection', () => UMT.KeyDetection.detect(noteNames.map(n => UMT.parseNote(n)))[0]?.key ?? null, null))
+  return normalizeKey(tryUMT('key detection', () => UMT.KeyDetection.detect(noteNames.map(n => UMT.parseNote(n)), undefined, { profile: getPref('key-profile') })[0]?.key ?? null, null))
 }

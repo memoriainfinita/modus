@@ -9,6 +9,7 @@ import { loadChoice, save } from './storage'
 import { escapeHtml } from './html'
 import { t, chordLabel, keyLabel, cadenceLabel } from '../i18n/i18n'
 import { explainCadence } from '../detector/explain'
+import { getPref } from '../settings/prefs'
 import type { StringKey } from '../i18n/en'
 
 export const PROGRESSION_IDS = [
@@ -21,7 +22,8 @@ export type ProgressionId = typeof PROGRESSION_IDS[number]
 /** Progressions written in a minor key: in a major key they are played in its parallel minor. */
 const MINOR: readonly ProgressionId[] = ['ii-V-i', 'blues-minor', 'andalusian']
 
-const BAR_MS = 2400   // a bar of 4/4 at 100 bpm
+/** A bar of 4/4 at the tempo chosen in Settings (100 bpm: 2.4 s). */
+const barMs = () => 4 * 60000 / getPref('progression-bpm')
 
 /** Blues forms: their I7, IV7 and V7 are the key's own, not secondary dominants (UMT's blues style). */
 const BLUES: readonly ProgressionId[] = ['blues-12', 'blues-jazz', 'bird-blues']
@@ -132,7 +134,7 @@ export function renderProgressions(container: HTMLElement, analysisKey: string |
       show(i)
       // Two chords in a bar share it
       const inBar = chords.filter(c => c.bar === chords[i].bar).length
-      timer = setTimeout(() => step(i + 1), BAR_MS / inBar)
+      timer = setTimeout(() => step(i + 1), barMs() / inBar)
     }
     step(0)
   })

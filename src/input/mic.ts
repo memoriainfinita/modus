@@ -5,6 +5,7 @@
 
 import { detectPitch, frequencyToNote, rms, chromagram, chromaNotes } from './pitch'
 import { loadChoice, save } from '../ui/storage'
+import { getPref } from '../settings/prefs'
 
 export type MicMode = 'notes' | 'chords'
 export const MIC_MODES: readonly MicMode[] = ['notes', 'chords']
@@ -22,9 +23,10 @@ export interface MicCallbacks {
 }
 
 const FRAME_MS = 40
-const HOLD_FRAMES = 3      // a note counts after ~120 ms on the same pitch
 const RELEASE_FRAMES = 5   // and is let go after ~200 ms without it
-const GATE = 0.01          // below this level, silence
+// Below this level, silence; how many frames a note holds before it counts (2, 3, 5: ~80, 120, 200 ms)
+const GATES = { low: 0.02, normal: 0.01, high: 0.004 }
+const HOLDS = { fast: 2, normal: 3, steady: 5 }
 
 let mode = loadChoice<MicMode>('mic-mode', MIC_MODES, 'notes')
 export function getMicMode(): MicMode { return mode }
@@ -56,11 +58,11 @@ function hear(analyser: AnalyserNode, time: Float32Array<ArrayBuffer>, spectrum:
   const level = rms(recent)
   let notes: number[] = []
   let heard: Heard | null = null
-  if (level >= GATE) {
+  if (level >= GATES[getPref('mic-sensitivity') as keyof typeof GATES]) {
     if (mode === 'notes') {
       const p = detectPitch(recent, rate)
       if (p) {
-        const n = frequencyToNote(p.freq)
+        const n = frequencyToNote(p.freq, getPref('a4-hz'))
         heard = { ...n, freq: p.freq, level }
         notes = [n.midi]
       }
@@ -71,7 +73,7 @@ function hear(analyser: AnalyserNode, time: Float32Array<ArrayBuffer>, spectrum:
       // Written above the bass: the bass in octave 3, the rest over it in octave 4
       if (pcs.length >= 2) notes = [...(bass !== null ? [48 + bass] : []), ...pcs.filter(pc => pc !== bass).map(pc => 60 + pc)]
       const p = detectPitch(recent, rate)
-      if (p) heard = { ...frequencyToNote(p.freq), freq: p.freq, level }
+      if (p) heard = { ...frequencyToNote(p.freq, getPref('a4-hz')), freq: p.freq, level }
     }
   }
   callbacks?.frame(heard)
@@ -80,7 +82,7 @@ function hear(analyser: AnalyserNode, time: Float32Array<ArrayBuffer>, spectrum:
     missFrames = 0
     if (key === candidate) candidateFrames++
     else { candidate = key; candidateFrames = 1 }
-    if (candidateFrames >= HOLD_FRAMES) commit(notes, level)
+    if (candidateFrames >= HOLDS[getPref('mic-response') as keyof typeof HOLDS]) commit(notes, level)
   } else if (++missFrames >= RELEASE_FRAMES) {
     candidate = ''
     commit([], 0)

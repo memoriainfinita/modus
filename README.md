@@ -167,7 +167,9 @@ pnpm dlx http-server . -p 8080
 
 Open `http://localhost:8080` in Chrome or Firefox. Connect your MIDI controller when prompted.
 
-The first visit opens a guided tour of the page; the ? panel lists the shortcuts and gestures, says what each panel is for and starts the tour again.
+**Settings** (⚙ or `,`): language, note names, theme, interface size, MIDI channels and out, how previews sound, chord symbols (Cmaj7 / CΔ7 / CM7), the key-detection profile, voice-leading rules, movable do, detector timings, practice, microphone and tuner (A4), the shortcuts, and export / import / reset of the settings to a file.
+
+The first visit opens a guided tour of the page; the ? panel lists the keys and gestures, says what each panel is for and starts the tour again.
 
 On a phone or tablet the panels stack in one column and the piano takes several fingers at once; a long press removes a history chip.
 
@@ -236,6 +238,7 @@ src/
     midi-out.ts           MIDI out to a synth or DAW
   input/
     midi.ts               Web MIDI: device selection, note on/off, sustain, modes; the input path the other inputs share
+    bindings.ts           the shortcuts: actions, factory keys, the user's keys
     mic.ts                the microphone: notes (YIN) or chords (chromagram) held in the detector
     pitch.ts              pitch detection: YIN, chromagram
     computer-keyboard.ts  the computer keyboard as a piano (M), by physical key
@@ -257,6 +260,7 @@ src/
     tuner.ts              the Tuner panel
     tour.ts               the guided tour of the first visit
     a11y.ts               keyboard and screen reader: live region, names, Enter / Space, long press
+    settings.ts           the Settings dialog: sections, search, shortcuts, export / import / reset
     undo.ts               Undo toast for destructive actions
     html.ts               HTML escaping
     storage.ts            localStorage preferences with safe fallbacks
@@ -268,7 +272,7 @@ tests/
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
   library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
-  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, piano.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts, pitch.test.ts
+  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, piano.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts, pitch.test.ts, settings.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both
@@ -295,7 +299,10 @@ docs/
 | `M` | Computer keyboard as a piano (M or Esc to stop) |
 | `P` | Presentation: this layout without controls, full screen (P or Esc to leave) |
 | `/` | Type a chord name |
-| `?` | Show / hide shortcuts, mouse gestures, theme, language and note names |
+| `?` | Help: keys, mouse gestures, panels, guided tour |
+| `,` | Settings |
+
+Every shortcut but Esc and 1–9 can be changed in Settings › Shortcuts, two keys per action.
 
 Shortcuts are disabled while typing in input fields or with a dropdown focused, and never fire with Ctrl/Cmd/Alt held.
 

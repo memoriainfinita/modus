@@ -12,6 +12,7 @@ import { loadBool, loadJSON, save } from './storage'
 import { escapeHtml } from './html'
 import { fitSvg } from './fit'
 import { announce } from './a11y'
+import { buildSettings } from './settings'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
 import type { ViewName, ViewBackground } from '../view/channel'
 import { t, keyLabel } from '../i18n/i18n'
@@ -79,7 +80,8 @@ export function renderLayout(panels: Panels, fieldsVisible: Record<AnalysisField
   $('app').innerHTML =
     buildToolbar() +
     '<div id="midi-banner"></div>' +
-    `<main id="grid" class="grid" aria-label="${t('a11y.panels')}">${MODULE_IDS.map(id => moduleFrame(id, panels, fieldsVisible)).join('')}</main>`
+    `<main id="grid" class="grid" aria-label="${t('a11y.panels')}">${MODULE_IDS.map(id => moduleFrame(id, panels, fieldsVisible)).join('')}</main>` +
+    buildSettings()
   applyGrid()
   wireGrid()
   wireLayoutMenu()
@@ -114,15 +116,6 @@ function buildToolbar(): string {
     <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t('a11y.toolbar')}">
       <span id="midi-status" class="midi-status">MIDI: —</span>
       <select id="midi-device" class="ctrl-select" aria-label="${t('a11y.midiDevice')}"></select>
-      <select id="midi-in-ch" class="ctrl-select" title="${t('midi.inChannel.title')}">
-        <option value="0">${t('midi.inChannel.all')}</option>
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t('midi.inChannel.one', { n: i + 1 })}</option>`).join('')}
-      </select>
-      <select id="midi-out" class="ctrl-select" title="${t('midi.out.title')}"><option value="">${t('midi.out.off')}</option></select>
-      <select id="midi-out-ch" class="ctrl-select" title="${t('midi.outChannel.title')}">
-        ${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t('midi.outChannel.one', { n: i + 1 })}</option>`).join('')}
-      </select>
-      <button id="btn-thru" class="mode-btn" title="${t('midi.thru.title')}">${t('midi.thru')}</button>
       <button id="btn-normal" class="mode-btn" data-mode="normal" title="${t('mode.normal.title')}">${t('mode.normal')}</button>
       <button id="btn-hold" class="mode-btn" data-mode="hold" title="${t('mode.hold.title')}">${t('mode.hold')}</button>
       <button id="btn-arpeggio" class="mode-btn" data-mode="arpeggio" title="${t('mode.arpeggio.title')}">${t('mode.arpeggio')}</button>
@@ -173,6 +166,7 @@ function buildToolbar(): string {
             </div>`).join('')}
         </div>
       </div>
+      <button id="btn-settings" class="help-btn" title="${t('set.title.button')}" aria-haspopup="dialog">⚙</button>
       <button id="btn-help" class="help-btn" title="${t('help.title')}">?</button>
     </div>`
 }

@@ -109,13 +109,18 @@ async function run(browserName, makeContext) {
   if (otherInput) {
     await check('MIDI out: a circle click arrives at the loopMIDI port on the chosen channel', async () => {
       await page.selectOption('#midi-device', otherInput)
+      await page.click('#btn-settings')
+      await page.click('.set-nav-item[data-section="io"]')
       await page.selectOption('#midi-out', { label: `Out: ${PORT_NAME}` })
       await page.selectOption('#midi-out-ch', '5')
+      await page.keyboard.press('Escape')
       received.length = 0
       await page.locator('#cof-container [data-chord="F"]').click()
       await sleep(300)
       assert(received.some(m => m[0] === 0x94 && m[1] === 65 && m[2] > 0), `received: ${JSON.stringify(received)}`)
+      await page.click('#btn-settings')
       await page.selectOption('#midi-out', '')
+      await page.keyboard.press('Escape')
       await sleep(200)
       assert(received.some(m => m[0] === 0xB4 && m[1] === 123), 'no All Notes Off when switching off')
     })

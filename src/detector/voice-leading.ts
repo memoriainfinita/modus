@@ -1,6 +1,7 @@
 import { noteNameToMidi } from '../theory/notes'
 import { tryParseChord, tryUMT } from '../theory/chord'
 import { t, noteLabel } from '../i18n/i18n'
+import { getPref } from '../settings/prefs'
 
 // How each voice moves from the chord before to the chord now. Voices are read bass to
 // top; when the two chords have as many notes, the nth voice goes to the nth. When they
@@ -96,7 +97,7 @@ export function voiceName(index: number, count: number): string {
 }
 
 /**
- * The rules of four-part writing (UMT `checkVoiceLeading`, strict), only when both chords
+ * The rules of four-part writing (UMT `checkVoiceLeading`, with the ruleset chosen in Settings), only when both chords
  * have as many voices: UMT pairs voices by position.
  */
 function ruleIssues(fromNames: string[], toNames: string[], key: string | null, fromSymbol: string | null, toSymbol: string | null): { text: string; key: string }[] {
@@ -104,7 +105,7 @@ function ruleIssues(fromNames: string[], toNames: string[], key: string | null, 
   if (a.length !== b.length || a.length < 2) return []
   const parse = (v: Voice[]) => v.map(x => UMT.parseNote(x.name))
   const context = { keySymbol: key ?? undefined, chordA: tryParseChord(fromSymbol) ?? undefined, chordB: tryParseChord(toSymbol) ?? undefined }
-  const found = tryUMT('voice leading', () => (UMT.Harmony.checkVoiceLeading(parse(a), parse(b), 'strict', context) ?? []) as { type: string; voices: number[] }[], [])
+  const found = tryUMT('voice leading', () => (UMT.Harmony.checkVoiceLeading(parse(a), parse(b), getPref('voice-rules') as 'strict' | 'contemporary' | 'species', context) ?? []) as { type: string; voices: number[] }[], [])
   const seen = new Set<string>()
   return found.flatMap(issue => {
     const k = ISSUE_KEYS[issue.type as keyof typeof ISSUE_KEYS]

@@ -1,4 +1,5 @@
 import { noteNameToMidi } from '../theory/notes'
+import { getPref } from '../settings/prefs'
 import { chordNoteNames } from '../theory/chord'
 import { loadNumber, loadString, save } from '../ui/storage'
 import type { StringKey } from '../i18n/en'
@@ -186,7 +187,7 @@ export function playNoteByName(noteName: string, duration = 1.5) {
   whenRunning(() => inst.play(midi, audioCtx!.currentTime, { duration, gain: 1 }))
 }
 
-export function playNoteNames(noteNames: string[], duration = 2) {
+export function playNoteNames(noteNames: string[], duration = getPref('preview-s')) {
   playPreview(noteNames.map(noteNameToMidi).filter((m): m is number => m !== null), duration)
 }
 

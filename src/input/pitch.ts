@@ -1,9 +1,9 @@
 // Pitch from sound, for the microphone. Signal processing only, no theory: YIN for the one
 // note sung or played (de Cheveigné & Kawahara, 2002), a chromagram for the notes of a chord.
 
-/** The frequency of a note and how far it is from equal temperament (A4 = 440 Hz). */
-export function frequencyToNote(freq: number): { midi: number; cents: number } {
-  const exact = 69 + 12 * Math.log2(freq / 440)
+/** The frequency of a note and how far it is from equal temperament (A4 = `a4` Hz). */
+export function frequencyToNote(freq: number, a4 = 440): { midi: number; cents: number } {
+  const exact = 69 + 12 * Math.log2(freq / a4)
   const midi = Math.round(exact)
   return { midi, cents: Math.round((exact - midi) * 100) }
 }
