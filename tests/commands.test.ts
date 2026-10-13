@@ -28,6 +28,12 @@ describe('matchCommands', () => {
     expect(labels('cola', LIST)).toEqual(['Instrumento: Piano de cola'])
   })
 
+  it('finds a singular name from a plural typed', () => {
+    const list = [c('Circle of fifths: Seventh chords'), c('Tonalidad: Do menor')]
+    expect(labels('sevenths', list)).toEqual(['Circle of fifths: Seventh chords'])
+    expect(labels('menores', list)).toEqual(['Tonalidad: Do menor'])
+  })
+
   it('reads the hint too', () => {
     expect(labels('entrada', LIST)).toHaveLength(3)
   })

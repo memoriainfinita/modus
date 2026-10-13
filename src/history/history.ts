@@ -100,7 +100,9 @@ export function renderHistory(
   container: HTMLElement,
   activeKey: string | null,
   onChipClick: (entry: HistoryEntry) => void,
-  activeCursorEntryId: string | null
+  activeCursorEntryId: string | null,
+  /** With the Song panel shown: → Song puts the chord marked (or the newest) in it */
+  onSend?: () => void,
 ) {
   const strip = document.createElement('div')
   strip.className = 'history-strip'
@@ -195,6 +197,14 @@ export function renderHistory(
   const wrap = document.createElement('div')
   wrap.className = 'history-wrap'
   wrap.appendChild(strip)
+  if (onSend && entries.length) {
+    const sendBtn = document.createElement('button')
+    sendBtn.textContent = t('history.send')
+    sendBtn.title = t('history.send.title')
+    sendBtn.className = 'history-send-btn'
+    sendBtn.addEventListener('click', onSend)
+    wrap.appendChild(sendBtn)
+  }
   wrap.appendChild(clearBtn)
 
   container.innerHTML = ''

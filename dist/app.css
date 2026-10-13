@@ -1801,7 +1801,8 @@ body.presenting .grid {
   min-width: 4.2em;
   padding: 0.33em 0.66em;
 }
-.history-clear-btn {
+.history-clear-btn,
+.history-send-btn {
   padding: 4px 10px;
   border-radius: 4px;
   background: var(--btn-neutral);
