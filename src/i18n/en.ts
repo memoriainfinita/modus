@@ -398,6 +398,8 @@ export const en = {
   'ear.new': 'New question',
   'ear.new.title': 'Play a new question',
   'ear.again.title': 'Play it again',
+  'ear.kind': 'What to ask',
+  'ear.score': 'right {right} of {total}',
   'ear.score.title': 'Right answers out of all, for this kind of question',
   'ear.start': 'Press New question: the app plays without showing, and you name what you heard.',
   'ear.ask.interval': 'Which interval? Two notes one after the other, then together.',

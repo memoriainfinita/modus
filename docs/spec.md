@@ -206,7 +206,7 @@ Its ⋯ menu: text size (12 px by default), triads / sevenths (`7`), show/hide N
 
 ### Piano and velocity
 
-**Piano:** notae, C2–B5 (two octaves on a phone, see Layout); key labels in the note names chosen. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`. With Chord before the keys of the previous chord that are not held now are lit in the neutral colour.
+**Piano:** notae, as many octaves as the panel holds at its height, centred on middle C (from two, C3–B4, to seven, C1–B7; two on a phone, see Layout), widened to every note shown; key labels in the note names chosen. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`. With Chord before the keys of the previous chord that are not held now are lit in the neutral colour.
 
 **Velocity:** one bar per note on screen, highest on top, with the MIDI velocity (1–127) it was struck with on any input. Kept after release, so Hold still shows it. A chord picked from history, song or circle has none and shows nothing. No dynamic marks (p, mf…): there is no standard mapping from velocity.
 

@@ -126,10 +126,13 @@ export function renderEar(container: HTMLElement, handlers: EarHandlers) {
   const tally = score[mode]
   container.innerHTML = `
     <div class="ear-head">
-      ${EAR_MODES.map(m => `<button class="size-ctrl-btn ear-mode${m === mode ? ' active' : ''}" data-mode="${m}">${escapeHtml(t(`ear.mode.${m}`))}</button>`).join('')}
-      <button id="ear-new" class="ctrl-btn" title="${escapeHtml(t('ear.new.title'))}">${escapeHtml(t('ear.new'))}</button>
-      <button id="ear-again" class="ctrl-btn" title="${escapeHtml(t('ear.again.title'))}"${question ? '' : ' disabled'}>↺</button>
-      <span class="ear-score" title="${escapeHtml(t('ear.score.title'))}">${tally.right} / ${tally.total}</span>
+      <span class="strings-tabs" role="group" aria-label="${escapeHtml(t('ear.kind'))}">${EAR_MODES.map(m =>
+        `<button type="button" class="strings-tab ear-mode" data-mode="${m}" aria-pressed="${m === mode}">${escapeHtml(t(`ear.mode.${m}`))}</button>`).join('')}</span>
+      <span class="ear-score" title="${escapeHtml(t('ear.score.title'))}">${escapeHtml(t('ear.score', { right: tally.right, total: tally.total }))}</span>
+    </div>
+    <div class="ear-actions">
+      <button id="ear-new" class="ear-new" title="${escapeHtml(t('ear.new.title'))}">${escapeHtml(t('ear.new'))}</button>
+      <button id="ear-again" class="ctrl-btn ghost" title="${escapeHtml(t('ear.again.title'))}" aria-label="${escapeHtml(t('ear.again.title'))}"${question ? '' : ' disabled'}>↺</button>
     </div>
     <p class="ear-prompt">${escapeHtml(question ? t(`ear.ask.${mode}`) : t('ear.start'))}</p>
     <div class="ear-answers">

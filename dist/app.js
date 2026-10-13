@@ -1050,6 +1050,8 @@
     "ear.new": "New question",
     "ear.new.title": "Play a new question",
     "ear.again.title": "Play it again",
+    "ear.kind": "What to ask",
+    "ear.score": "right {right} of {total}",
     "ear.score.title": "Right answers out of all, for this kind of question",
     "ear.start": "Press New question: the app plays without showing, and you name what you heard.",
     "ear.ask.interval": "Which interval? Two notes one after the other, then together.",
@@ -1859,6 +1861,8 @@
     "ear.new": "Pregunta nueva",
     "ear.new.title": "Tocar una pregunta nueva",
     "ear.again.title": "Tocarla otra vez",
+    "ear.kind": "Qu\xE9 preguntar",
+    "ear.score": "aciertos {right} de {total}",
     "ear.score.title": "Aciertos sobre el total, en este tipo de pregunta",
     "ear.start": "Pulsa Pregunta nueva: la app toca sin ense\xF1ar, y t\xFA dices lo que has o\xEDdo.",
     "ear.ask.interval": "\xBFQu\xE9 intervalo? Dos notas una tras otra y luego juntas.",
@@ -5920,12 +5924,24 @@ ${explainCadence(cadence)}` : "");
 
   // src/diagrams/piano.ts
   var isNarrow = () => typeof matchMedia !== "undefined" && matchMedia("(max-width: 720px)").matches;
-  function pianoRange(noteNames, narrow2) {
-    if (!narrow2) return { from: "C2", to: "B5" };
-    const octaves = noteNames.map(noteNameToMidi).filter((m) => m !== null).map((m) => Math.floor(m / 12) - 1);
-    const low = Math.min(3, ...octaves), high = Math.max(4, ...octaves);
+  var OCTAVE_W = 196;
+  var EDGE_W = 20;
+  var PIANO_H = 223;
+  var MIN_OCTAVES = 2;
+  var MAX_OCTAVES = 7;
+  function pianoOctaves(width, height, narrow2) {
+    if (narrow2) return MIN_OCTAVES;
+    if (!width || !height) return 4;
+    const fit = Math.floor((width * PIANO_H / height - EDGE_W) / OCTAVE_W);
+    return Math.max(MIN_OCTAVES, Math.min(MAX_OCTAVES, fit));
+  }
+  function pianoRange(noteNames, octaves) {
+    const from = 4 - Math.floor(octaves / 2), to = from + octaves - 1;
+    const played = noteNames.map(noteNameToMidi).filter((m) => m !== null).map((m) => Math.floor(m / 12) - 1);
+    const low = Math.min(from, ...played), high = Math.max(to, ...played);
     return { from: `C${Math.max(0, low)}`, to: `B${Math.min(8, high)}` };
   }
+  var containerOctaves = (el) => pianoOctaves(el.clientWidth, el.clientHeight, isNarrow());
   function renderPiano(container, noteNames, fn, onPress, prevNotes = null) {
     const color2 = functionColor(fn);
     const now = new Set(noteNames.map(noteNameToMidi));
@@ -5936,7 +5952,7 @@ ${explainCadence(cadence)}` : "");
       name: "",
       keys,
       colors,
-      range: pianoRange([...noteNames, ...before], isNarrow())
+      range: pianoRange([...noteNames, ...before], containerOctaves(container))
     }, {
       pianoWhiteKeyColor: color("piano-white"),
       pianoWhiteKeyStrokeColor: color("piano-white-stroke"),
@@ -7705,10 +7721,12 @@ ${explainCadence(c.cadence)}` : ""}`;
     const tally = score[mode3];
     container.innerHTML = `
     <div class="ear-head">
-      ${EAR_MODES.map((m) => `<button class="size-ctrl-btn ear-mode${m === mode3 ? " active" : ""}" data-mode="${m}">${escapeHtml(t(`ear.mode.${m}`))}</button>`).join("")}
-      <button id="ear-new" class="ctrl-btn" title="${escapeHtml(t("ear.new.title"))}">${escapeHtml(t("ear.new"))}</button>
-      <button id="ear-again" class="ctrl-btn" title="${escapeHtml(t("ear.again.title"))}"${question ? "" : " disabled"}>\u21BA</button>
-      <span class="ear-score" title="${escapeHtml(t("ear.score.title"))}">${tally.right} / ${tally.total}</span>
+      <span class="strings-tabs" role="group" aria-label="${escapeHtml(t("ear.kind"))}">${EAR_MODES.map((m) => `<button type="button" class="strings-tab ear-mode" data-mode="${m}" aria-pressed="${m === mode3}">${escapeHtml(t(`ear.mode.${m}`))}</button>`).join("")}</span>
+      <span class="ear-score" title="${escapeHtml(t("ear.score.title"))}">${escapeHtml(t("ear.score", { right: tally.right, total: tally.total }))}</span>
+    </div>
+    <div class="ear-actions">
+      <button id="ear-new" class="ear-new" title="${escapeHtml(t("ear.new.title"))}">${escapeHtml(t("ear.new"))}</button>
+      <button id="ear-again" class="ctrl-btn ghost" title="${escapeHtml(t("ear.again.title"))}" aria-label="${escapeHtml(t("ear.again.title"))}"${question ? "" : " disabled"}>\u21BA</button>
     </div>
     <p class="ear-prompt">${escapeHtml(question ? t(`ear.ask.${mode3}`) : t("ear.start"))}</p>
     <div class="ear-answers">
@@ -8438,6 +8456,15 @@ ${explainCadence(c.cadence)}` : ""}`;
     renderLayout(state.panels, analysisFieldsVisible);
     wireLayoutEvents();
     applyPanelVisibility(state.panels);
+    const pianoEl = $2("piano-container");
+    let octaves = containerOctaves(pianoEl);
+    if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => {
+      const now = containerOctaves(pianoEl);
+      if (now !== octaves) {
+        octaves = now;
+        renderDetector();
+      }
+    }).observe(pianoEl);
     let shown = currentGrid().map((c) => c.id).sort().join();
     onLayoutChange(() => {
       const now = currentGrid().map((c) => c.id).sort().join();
@@ -8784,7 +8811,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const prev = showPrevChord && chordSymbol ? prevVoicing : null;
     renderIfChanged("staff", `${notes}|${key}|${staffClef}|${prev?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev));
     const fn = chordSymbol ? state.analysis?.function ?? null : null;
-    renderIfChanged("piano", `${notes}|${fn}|${prev?.join(" ")}|${isNarrow()}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev));
+    renderIfChanged("piano", `${notes}|${fn}|${prev?.join(" ")}|${containerOctaves($2("piano-container"))}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev));
     const spoken = noteNames.map(noteLabel).join(" ") || t("a11y.nothing");
     for (const [id, key2] of [["staff-container", "a11y.staff"], ["piano-container", "a11y.piano"]]) {
       const el = $2(id);
