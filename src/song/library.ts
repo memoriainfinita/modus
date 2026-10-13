@@ -56,6 +56,9 @@ function ensureIndex(): Index {
   return created
 }
 
+/** Saved songs in the order they were made: the song panel's tabs. */
+export function songTabs(): SongMeta[] { return ensureIndex().songs }
+
 /** Saved songs, most recently changed first. The index keeps save order, which breaks ties. */
 export function listSongs(): SongMeta[] {
   return ensureIndex().songs
@@ -69,7 +72,9 @@ export function saveSong(song: Song) {
   const stored: Song = { ...withoutEmptyChords(song), updatedAt: Date.now() }
   write(songKey(stored.id), stored)
   const index = ensureIndex()
-  write(INDEX_KEY, { ...index, songs: [...index.songs.filter(m => m.id !== stored.id), metaOf(stored)] })
+  const at = index.songs.findIndex(m => m.id === stored.id)
+  const songs = at < 0 ? [...index.songs, metaOf(stored)] : index.songs.map((m, i) => i === at ? metaOf(stored) : m)
+  write(INDEX_KEY, { ...index, songs })
   if (!isBlankSong(stored)) requestPersistence()
 }
 

@@ -996,7 +996,7 @@ await check('typed chord: / focuses the field, Enter shows it; an unknown name i
 
 const songChips = () => page.locator('.chord-chip-symbol').allInnerTexts()
 // The song's list and its ⋯ menu, opened from the song's head
-const songOptions = () => page.locator('#mod-song .song-list-item').evaluateAll(es => es.map(e => e.textContent))
+const songOptions = () => page.locator('#mod-song .song-tab[data-song-id]').evaluateAll(es => es.map(e => e.textContent))
 const songMore = async label => {
   await page.click('#mod-song .song-more-btn')
   await page.locator('#mod-song .pop-anchor:has(.song-more-btn) .choice-row', { hasText: label }).click()
@@ -1017,8 +1017,7 @@ await check('New keeps the previous song; opening it again restores its chords a
   assert((await songChips()).length === 0, 'new song is empty')
   assert(await page.locator('#key-select').inputValue() === '', 'new song starts on Auto')
   assert((await songOptions()).includes('First song'), `list: ${(await songOptions()).join(', ')}`)
-  await page.click('#mod-song .song-list-btn')
-  await page.locator('#mod-song .song-list-item', { hasText: 'First song' }).click()
+  await page.locator('#mod-song .song-tab', { hasText: 'First song' }).click()
   assert((await songChips()).join(' ') === chips.join(' '), `chips: ${(await songChips()).join(' ')}`)
   assert(await page.locator('#key-select').inputValue() === 'A Minor', 'key restored')
 })

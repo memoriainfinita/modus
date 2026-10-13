@@ -21,7 +21,7 @@ import { renderKeyExplorer } from './diagrams/key-explorer'
 import { buildKeyMap } from './theory/key-map'
 import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry, restoreCarriedHistory } from './history/history'
 import { addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song/model'
-import { loadActiveSong, saveSong, listSongs, openSong, newSong, deleteSong, restoreSong } from './song/library'
+import { loadActiveSong, saveSong, songTabs, openSong, newSong, deleteSong, restoreSong } from './song/library'
 import { showUndo, dismiss as dismissUndo } from './ui/undo'
 import { mountSong, markActiveChord, removeChordWithUndo } from './song/view'
 import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis, Song, SongChord } from './types'
@@ -243,7 +243,7 @@ function makeSongHandlers() {
       saveSong(song)
       renderZone3()
     },
-    songs: listSongs(),
+    songs: songTabs(),
     onOpenSong: (id: string) => {
       const song = openSong(id)
       if (song) showSong(song)

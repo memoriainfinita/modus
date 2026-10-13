@@ -150,26 +150,28 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   })
   titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') titleInput.blur() })
 
-  // Saved songs, most recently changed first; the open one may not be saved yet
-  const listAnchor = el('div', 'pop-anchor')
-  const listBtn = el('button', 'song-list-btn')
-  listBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'
-  listBtn.title = t('song.list')
-  listBtn.setAttribute('aria-label', t('song.list'))
-  const listMenu = el('div', 'view-menu pop-menu song-menu')
-  const metas = h.songs.some(m => m.id === song.id) ? h.songs : [{ id: song.id, title: song.title, updatedAt: song.updatedAt }, ...h.songs]
-  listMenu.innerHTML = `<div class="view-menu-title">${escapeHtml(t('song.list'))}</div>` + metas.map(m =>
-    `<button class="choice-row song-list-item" data-song-id="${escapeHtml(m.id)}" aria-pressed="${m.id === song.id}">${escapeHtml((m.id === song.id ? song.title : m.title) || t('song.untitled'))}</button>`).join('') +
-    `<button class="choice-row" data-song-new>${escapeHtml(t('song.newSong'))}</button>`
-  listMenu.addEventListener('click', e => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('button')
-    if (!b) return
-    closePopover()
-    if (b.dataset.songId && b.dataset.songId !== _song.id) h.onOpenSong(b.dataset.songId)
-    else if (b.hasAttribute('data-song-new') && !isBlankSong(_song)) h.onNewSong()
-  })
-  listAnchor.append(listBtn, listMenu)
-  wirePopover(listMenu, [listBtn])
+  // The songs as tabs, in the order they were made; the open one may not be saved yet.
+  // A double click renames (the name in the head), + starts a new song
+  const tabs = el('div', 'song-tabs')
+  tabs.setAttribute('role', 'tablist')
+  tabs.setAttribute('aria-label', t('song.list'))
+  const metas = h.songs.some(m => m.id === song.id) ? h.songs : [...h.songs, { id: song.id, title: song.title, updatedAt: song.updatedAt }]
+  for (const m of metas) {
+    const tab = el('button', 'song-tab', (m.id === song.id ? song.title : m.title) || t('song.untitled'))
+    tab.setAttribute('role', 'tab')
+    tab.setAttribute('aria-selected', String(m.id === song.id))
+    tab.dataset.songId = m.id
+    tab.addEventListener('click', () => { if (m.id !== _song.id) h.onOpenSong(m.id) })
+    tab.addEventListener('dblclick', () => { titleInput.focus(); titleInput.select() })
+    tabs.appendChild(tab)
+  }
+  const newTab = el('button', 'song-tab song-tab-new', '+')
+  newTab.title = t('song.new.title')
+  newTab.setAttribute('aria-label', t('song.newSong'))
+  newTab.addEventListener('click', () => { if (!isBlankSong(_song)) h.onNewSong() })
+  tabs.appendChild(newTab)
+  root.appendChild(tabs)
+  requestAnimationFrame(() => tabs.querySelector<HTMLElement>('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }))
 
   const bars = song.sections.reduce((n, s) => n + s.measures.length * Math.max(1, s.repeatCount), 0)
   const summary = el('span', 'song-form-info')
@@ -220,7 +222,7 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   wirePopover(moreMenu, [moreBtn])
 
   const titleWrap = el('div', 'song-title-wrap')
-  titleWrap.append(titleInput, listAnchor)
+  titleWrap.append(titleInput)
   header.append(titleWrap, summary, el('span', 'song-gap'), addAnchor, pasteBtn, moreAnchor)
   root.appendChild(header)
 
