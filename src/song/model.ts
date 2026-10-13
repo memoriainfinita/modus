@@ -266,6 +266,35 @@ export function appendProgression(song: Song, sectionId: string, measures: strin
   }
 }
 
+/**
+ * A section's measures as written in text: "Am F | C G". A chord the text keeps in its place
+ * keeps its id and the voicing it was captured with; the rest are new.
+ */
+export function replaceSectionProgression(song: Song, sectionId: string, measures: string[][]): Song {
+  return {
+    ...song,
+    sections: song.sections.map(s => {
+      if (s.id !== sectionId) return s
+      const next: Measure[] = measures.map((syms, i) => {
+        const old = s.measures[i]
+        return {
+          id: old?.id ?? newId(),
+          chords: syms.map((symbol, j) => {
+            const was = old?.chords[j]
+            return was && was.symbol === symbol ? was : { id: newId(), symbol, valid: isValidChordSymbol(symbol) }
+          }),
+        }
+      })
+      return { ...s, measures: next.length ? next : [newMeasure()] }
+    }),
+  }
+}
+
+/** A section as text, the way it is typed back: chords by spaces, measures by " | ". */
+export function sectionAsText(section: Section, label: (symbol: string) => string = s => s): string {
+  return section.measures.map(m => m.chords.filter(c => c.symbol).map(c => label(c.symbol)).join(' ')).filter(Boolean).join(' | ')
+}
+
 export function computeDegree(chordSymbol: string, activeKey: string | null): string {
   if (!activeKey || !chordSymbol) return '—'
   return romanInKey(chordSymbol, activeKey)?.roman ?? '?'

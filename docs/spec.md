@@ -259,15 +259,19 @@ Cmaj7      ← symbol
 I △7       ← Roman numeral + quality (recomputed on key change)
 ```
 
-In key: standard colour. Borrowed: amber. Invalid: red, `?`. No key: `—`.
+Its left edge in its function's colour (T green, S amber, D red), as on the history chips; a borrowed numeral in amber. Invalid: red, `?`. No key: `—`. The key the song is read in is the one chosen; on Auto, the one its own chords give (three or more, through `KeyDetection` on their notes), else the history's, so a song shows its numerals with an empty history.
+
+### Layout
+
+The head: the song's name (edited in place) with the list of songs beside it (most recently changed first, and New song), what it is (key, marked auto when read; bars counting repeats; the form), then + Section (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro), Paste chords and ⋯ (New song, Transpose up 1–11 semitones, Export or print, Delete the song). With two sections or more a strip above the chart shows the form: a block per section as long as its bars (×N counted), coloured by its section; a click goes to the section, dragging a block reorders the sections, + adds one, and the block of the chord in play (cursor, MIDI fill) is marked. Each section has its name, colour, ×N, duplicate and delete in a margin on the left, quiet until pointed at, and its bars as a chord chart, four to a line (two in a narrow panel), a bar line between them and a double one at its end; the + of a bar shows when it is pointed at (always on a touch screen). A section is written with chips, or as text ("Am F | C G", in letters or Do Re Mi; what is understood shows below as it is typed, Enter keeps it, Esc leaves it): a chord the text keeps in its place keeps its captured voicing. On a phone the margin goes above the chart.
 
 ### Interactions
 
 **Chords:** click → load in the detector, play, set cursor. Del removes the selected chord (Undo). Inline edit, parsed by UMT on confirm. Drag within a measure; drag in from history. MIDI fill: ⊙ arms a slot; each chord played fills it and arms the next, across measures and sections, until the song ends or Esc. Duplicate (⧉).
 
-**Measures:** add (+ Bar), delete (× when the section has more than one; Undo).
+**Measures:** add (+ Bar), delete (× on the bar, when the section has more than one; Undo).
 
-**Sections:** rename, colour, collapse, repeat count (×N), duplicate, reorder by dragging the header, delete (Undo).
+**Sections:** rename, colour, collapse, repeat count (×N), duplicate, reorder by dragging their block in the form strip, delete (Undo), write as text.
 
 **Song:** song list (most recently changed first; opening one resets the cursor, MIDI fill and any pending Undo), title, New (a new empty song on Auto; the current one stays in the list; nothing happens on an empty untitled song), Delete (Undo; opens the most recent remaining song, or a new one), quick-add templates (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro), Transpose (⇄, +1 to +11 semitones; with a key set, spelling follows the transposed key; stored voicings move too), Export (⎙, browser print), Paste (`|` separates measures; without bars, one chord per measure).
 

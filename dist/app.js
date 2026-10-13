@@ -1404,21 +1404,39 @@
     "history.modulation": "Modulation to {key}: from here the numerals are read in it",
     // Song
     "song.untitled": "Untitled",
+    "song.list": "Your songs",
+    "chord.add.title": "Add a chord to this bar",
+    "song.newSong": "New song",
+    "song.addSection": "+ Section",
+    "song.more": "More: new song, transpose, export, delete",
+    "song.transposeBy": "Transpose up",
+    "song.bars": "{n} bars",
+    "song.auto": "auto",
+    "song.strip": "The song's form: a click goes to the section, drag a block to reorder",
+    "song.strip.add": "Add a section",
+    "song.empty": "An empty song: add a section, paste chords, or play and press S to send them here.",
+    "section.write": "How the section is written",
+    "section.chips": "Chips",
+    "section.text": "Text",
+    "section.text.hint": "| separates bars \xB7 letters or Do Re Mi \xB7 Enter keeps it, Esc leaves it as it was",
+    "section.text.ok": "\u2713 {bars} bars, {chords} chords",
+    "section.text.bad": "Not understood: {names}",
+    "section.collapse.title": "Fold or unfold the section",
     "song.saved.title": "Saved songs",
     "song.new": "New",
     "song.new.title": "Start a new song; the current one stays in the list",
-    "song.delete": "Delete",
+    "song.delete": "Delete the song",
     "song.delete.title": "Delete this song \u2014 can be undone",
     "song.deleted": 'Deleted "{title}"',
-    "song.paste": "Paste",
+    "song.paste": "Paste chords",
     "song.paste.title": "Paste a chord progression as text",
     "song.paste.placeholder": "Am G | C F  (| separates measures; without bars, one chord per measure)",
     "song.paste.add": "Add chords",
     "song.addSection.title": "Add {name} section",
     "song.transpose": "\u21C4 Transpose",
     "song.transpose.title": "Transpose all chords up by semitones",
-    "song.transpose.step": "+{n} st",
-    "song.export": "\u2399 Export",
+    "song.transpose.step": "+{n}",
+    "song.export": "Export or print",
     "song.export.title": "Print / export song to PDF",
     "song.popupBlocked": "Pop-up blocked \u2014 allow pop-ups for this page to export.",
     "song.form": "Form: {form}",
@@ -2210,21 +2228,39 @@
     "history.chip.actions": "clic para tocar, arrastra a la canci\xF3n, clic derecho para quitar",
     "history.modulation": "Modulaci\xF3n a {key}: desde aqu\xED los grados se leen en ella",
     "song.untitled": "Sin t\xEDtulo",
+    "song.list": "Tus canciones",
+    "chord.add.title": "A\xF1adir un acorde a este comp\xE1s",
+    "song.newSong": "Nueva canci\xF3n",
+    "song.addSection": "+ Secci\xF3n",
+    "song.more": "M\xE1s: nueva canci\xF3n, transportar, exportar, borrar",
+    "song.transposeBy": "Transportar hacia arriba",
+    "song.bars": "{n} compases",
+    "song.auto": "auto",
+    "song.strip": "La forma de la canci\xF3n: un clic va a la secci\xF3n, arrastra un bloque para cambiar el orden",
+    "song.strip.add": "A\xF1adir una secci\xF3n",
+    "song.empty": "Una canci\xF3n vac\xEDa: a\xF1ade una secci\xF3n, pega acordes, o toca y pulsa S para mandarlos aqu\xED.",
+    "section.write": "C\xF3mo se escribe la secci\xF3n",
+    "section.chips": "Fichas",
+    "section.text": "Texto",
+    "section.text.hint": "| separa compases \xB7 en letras o en Do Re Mi \xB7 Intro guarda, Esc deja como estaba",
+    "section.text.ok": "\u2713 {bars} compases, {chords} acordes",
+    "section.text.bad": "No se entiende: {names}",
+    "section.collapse.title": "Plegar o desplegar la secci\xF3n",
     "song.saved.title": "Canciones guardadas",
     "song.new": "Nueva",
     "song.new.title": "Empezar una canci\xF3n nueva; la actual sigue en la lista",
-    "song.delete": "Borrar",
+    "song.delete": "Borrar la canci\xF3n",
     "song.delete.title": "Borrar esta canci\xF3n; se puede deshacer",
     "song.deleted": "Borrada \xAB{title}\xBB",
-    "song.paste": "Pegar",
+    "song.paste": "Pegar acordes",
     "song.paste.title": "Pegar una progresi\xF3n de acordes como texto",
     "song.paste.placeholder": "Am G | C F  (| separa compases; sin barras, un acorde por comp\xE1s)",
     "song.paste.add": "A\xF1adir acordes",
     "song.addSection.title": "A\xF1adir secci\xF3n {name}",
     "song.transpose": "\u21C4 Transportar",
     "song.transpose.title": "Transportar todos los acordes hacia arriba, en semitonos",
-    "song.transpose.step": "+{n} semit.",
-    "song.export": "\u2399 Exportar",
+    "song.transpose.step": "+{n}",
+    "song.export": "Exportar o imprimir",
     "song.export.title": "Imprimir o exportar la canci\xF3n a PDF",
     "song.popupBlocked": "Ventana emergente bloqueada: permite las ventanas emergentes de esta p\xE1gina para exportar.",
     "song.form": "Forma: {form}",
@@ -2327,9 +2363,9 @@
   }
   function localizeDrawnNoteNames(container) {
     if (naming === "letters") return;
-    container.querySelectorAll("text").forEach((el) => {
-      const s = el.textContent?.trim() ?? "";
-      if (NOTE_RE.test(s)) el.textContent = noteLabel(s);
+    container.querySelectorAll("text").forEach((el2) => {
+      const s = el2.textContent?.trim() ?? "";
+      if (NOTE_RE.test(s)) el2.textContent = noteLabel(s);
     });
   }
   function keyLabel(key) {
@@ -3032,7 +3068,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2, clef = "treble", prevNotes = null) {
     ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr, clef, prevNotes), { staffwidth: width - 20, scale, add_classes: !!prevNotes?.length });
-    if (prevNotes?.length) container.querySelectorAll(".abcjs-note.abcjs-m0").forEach((el) => el.classList.add("staff-prev"));
+    if (prevNotes?.length) container.querySelectorAll(".abcjs-note.abcjs-m0").forEach((el2) => el2.classList.add("staff-prev"));
   }
 
   // src/theory/instruments.ts
@@ -3426,19 +3462,19 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   var fnClass = (fn) => fn === "T" || fn === "S" || fn === "D" ? ` fn-${fn}` : "";
   function renderChordSummary(detection, analysis, head, onAltSelect2) {
-    const el = document.getElementById("chord-summary");
-    if (!el) return;
+    const el2 = document.getElementById("chord-summary");
+    if (!el2) return;
     const notesOf = (names) => escapeHtml(names.map((n) => noteLabel(n.replace(/(-?\d+)$/, ""))).join(" \xB7 "));
     if (!detection) {
-      el.innerHTML = `<div class="chord-head chord-head-empty">${escapeHtml(t("head.empty"))}</div>`;
+      el2.innerHTML = `<div class="chord-head chord-head-empty">${escapeHtml(t("head.empty"))}</div>`;
       return;
     }
     if (detection.kind === "note") {
-      el.innerHTML = `<div class="chord-head"><span class="chord-head-name">${escapeHtml(noteLabel(detection.pitchClass))}</span><span class="chord-notes">${escapeHtml(noteLabel(detection.noteName))} \xB7 MIDI ${detection.midiNumber}</span></div>`;
+      el2.innerHTML = `<div class="chord-head"><span class="chord-head-name">${escapeHtml(noteLabel(detection.pitchClass))}</span><span class="chord-notes">${escapeHtml(noteLabel(detection.noteName))} \xB7 MIDI ${detection.midiNumber}</span></div>`;
       return;
     }
     if (detection.kind === "interval") {
-      el.innerHTML = `<div class="chord-head"><span class="chord-head-name">${escapeHtml(detection.intervalName)}</span><span class="chord-notes">${notesOf(detection.notes)}</span></div>`;
+      el2.innerHTML = `<div class="chord-head"><span class="chord-head-name">${escapeHtml(detection.intervalName)}</span><span class="chord-notes">${notesOf(detection.notes)}</span></div>`;
       return;
     }
     const symbol = detection.candidates[detection.selectedIndex];
@@ -3456,7 +3492,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       ${head.fromRoman && head.fromRoman !== "?" ? `<span class="chord-head-prev-roman${fnClass(head.fromFunction)}">${escapeHtml(head.fromRoman)}</span>` : ""}
       ${analysis.cadence ? `<span class="cadence-pill">${escapeHtml(cadenceLabel(analysis.cadence, true))}</span>` : ""}
     </span>` : "";
-    el.innerHTML = `
+    el2.innerHTML = `
     <div class="chord-head chord-summary-row">
       <span class="chord-head-group chord-head-main">
         <span class="chord-name-badge">${escapeHtml(chordLabel(symbol))}</span>
@@ -3469,17 +3505,17 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         ${alts.map((c, i) => `<button class="alt-chord-btn alt-chord-sum" data-idx="${i + 1}">${escapeHtml(chordLabel(c))}</button>`).join("")}
       </span>` : ""}
     </div>`;
-    el.querySelectorAll(".alt-chord-sum").forEach((btn) => {
+    el2.querySelectorAll(".alt-chord-sum").forEach((btn) => {
       btn.addEventListener("click", () => onAltSelect2(parseInt(btn.dataset.idx)));
     });
   }
   function renderZone1Analysis(detection, analysis, noteSet2, fieldsVisible, scale, onAltSelect2, head = { from: null, fromRoman: null, fromFunction: null }) {
     renderChordSummary(detection, analysis, head, onAltSelect2);
-    const el = document.getElementById("analysis-content");
-    if (!el) return;
-    el.style.fontSize = scale + "px";
+    const el2 = document.getElementById("analysis-content");
+    if (!el2) return;
+    el2.style.fontSize = scale + "px";
     const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => fieldsVisible[f]).length;
-    el.style.minHeight = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
+    el2.style.minHeight = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
     const colEl = document.getElementById("col-analysis");
     if (colEl) {
       const w = Math.round(scale * 19) + "px";
@@ -3516,7 +3552,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       if (analysis.upperStructures.length) upper = analysis.upperStructures.join(", ");
     }
     const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.map(noteLabel).join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
-    el.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("voices", voices2) + fieldRow("rules", rules) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
+    el2.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("voices", voices2) + fieldRow("rules", rules) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
   }
 
   // src/ui/fit.ts
@@ -3569,27 +3605,27 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     labelIconButtons(root2);
     new MutationObserver(() => labelIconButtons(root2)).observe(root2, { childList: true, subtree: true });
   }
-  function makeActivatable(el, label) {
-    el.setAttribute("role", "button");
-    el.setAttribute("tabindex", "0");
-    if (label) el.setAttribute("aria-label", label);
-    el.addEventListener("keydown", (e) => {
+  function makeActivatable(el2, label) {
+    el2.setAttribute("role", "button");
+    el2.setAttribute("tabindex", "0");
+    if (label) el2.setAttribute("aria-label", label);
+    el2.addEventListener("keydown", (e) => {
       const k = e.key;
       if (k !== "Enter" && k !== " ") return;
       e.preventDefault();
       e.stopPropagation();
-      el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      el2.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
   }
   var LONG_PRESS_MS = 600;
-  function onLongPress(el, fn) {
+  function onLongPress(el2, fn) {
     let timer3 = null;
     let fired = false;
     const cancel = () => {
       if (timer3) clearTimeout(timer3);
       timer3 = null;
     };
-    el.addEventListener("pointerdown", (e) => {
+    el2.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "mouse") return;
       fired = false;
       cancel();
@@ -3599,18 +3635,18 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         fn();
       }, LONG_PRESS_MS);
     });
-    el.addEventListener("pointerup", cancel);
-    el.addEventListener("pointercancel", cancel);
-    el.addEventListener("pointermove", (e) => {
+    el2.addEventListener("pointerup", cancel);
+    el2.addEventListener("pointercancel", cancel);
+    el2.addEventListener("pointermove", (e) => {
       if (Math.abs(e.movementX) + Math.abs(e.movementY) > 6) cancel();
     });
-    el.addEventListener("contextmenu", (e) => {
+    el2.addEventListener("contextmenu", (e) => {
       if (fired) {
         e.preventDefault();
         e.stopImmediatePropagation();
       }
     }, true);
-    el.addEventListener("click", (e) => {
+    el2.addEventListener("click", (e) => {
       if (fired) {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -3637,15 +3673,15 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   function showUndo(message, undo) {
     dismiss();
-    const el = document.createElement("div");
-    el.className = "undo-toast";
-    el.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">${escapeHtml(t("undo"))}</button>`;
-    el.querySelector("button").addEventListener("click", () => {
+    const el2 = document.createElement("div");
+    el2.className = "undo-toast";
+    el2.innerHTML = `<span>${escapeHtml(message)}</span><button class="undo-btn">${escapeHtml(t("undo"))}</button>`;
+    el2.querySelector("button").addEventListener("click", () => {
       dismiss();
       undo();
     });
-    document.body.appendChild(el);
-    current = { el, timer: window.setTimeout(dismiss, UNDO_MS) };
+    document.body.appendChild(el2);
+    current = { el: el2, timer: window.setTimeout(dismiss, UNDO_MS) };
   }
 
   // src/input/bindings.ts
@@ -3966,10 +4002,10 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
   function visibleTarget(selector) {
     if (!selector) return null;
-    const el = document.querySelector(selector);
-    if (!el || el.closest(".module-hidden")) return null;
-    const r = el.getBoundingClientRect();
-    return r.width && r.height ? el : null;
+    const el2 = document.querySelector(selector);
+    if (!el2 || el2.closest(".module-hidden")) return null;
+    const r = el2.getBoundingClientRect();
+    return r.width && r.height ? el2 : null;
   }
   function draw() {
     if (step < 0) return;
@@ -4313,8 +4349,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     }, getPref("history-hold-ms"));
   }
   function markActiveHistoryEntry(container, entryId) {
-    container.querySelectorAll(".history-chip").forEach((el) => {
-      el.classList.toggle("active-cursor", el.dataset.id === entryId);
+    container.querySelectorAll(".history-chip").forEach((el2) => {
+      el2.classList.toggle("active-cursor", el2.dataset.id === entryId);
     });
   }
   function renderHistory(container, activeKey, onChipClick, activeCursorEntryId, onSend) {
@@ -4526,8 +4562,8 @@ ${explainCadence(cadence)}` : "");
     return rows + fixed;
   }
   function redrawShortcuts() {
-    const el = document.getElementById("set-shortcuts");
-    if (el) el.innerHTML = shortcutsHtml();
+    const el2 = document.getElementById("set-shortcuts");
+    if (el2) el2.innerHTML = shortcutsHtml();
   }
   function onCaptureKey(e) {
     if (!capturing) return;
@@ -4772,26 +4808,26 @@ ${explainCadence(cadence)}` : "");
   function showSection(s) {
     section = s;
     save("settings-section", s);
-    const el = root();
-    el.querySelectorAll(".set-nav-item").forEach((b) => b.setAttribute("aria-current", String(b.dataset.section === s)));
-    el.querySelectorAll(".set-section").forEach((sec) => {
+    const el2 = root();
+    el2.querySelectorAll(".set-nav-item").forEach((b) => b.setAttribute("aria-current", String(b.dataset.section === s)));
+    el2.querySelectorAll(".set-section").forEach((sec) => {
       sec.hidden = sec.dataset.section !== s;
     });
-    el.querySelector("[data-reset-section]").hidden = s === "panels" || s === "data" || s === "io";
+    el2.querySelector("[data-reset-section]").hidden = s === "panels" || s === "data" || s === "io";
   }
   function applySearch(q) {
-    const el = root();
+    const el2 = root();
     const query = q.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
     if (!query) {
-      el.querySelectorAll(".set-row").forEach((r) => {
+      el2.querySelectorAll(".set-row").forEach((r) => {
         r.hidden = false;
       });
-      el.querySelector(".set-nothing").hidden = true;
+      el2.querySelector(".set-nothing").hidden = true;
       showSection(section);
       return;
     }
     let any = false;
-    el.querySelectorAll(".set-section").forEach((sec) => {
+    el2.querySelectorAll(".set-section").forEach((sec) => {
       let shown = 0;
       sec.querySelectorAll(".set-row").forEach((r) => {
         const text = (r.dataset.search ?? "").normalize("NFD").replace(/\p{M}/gu, "");
@@ -4801,8 +4837,8 @@ ${explainCadence(cadence)}` : "");
       sec.hidden = shown === 0;
       any ||= shown > 0;
     });
-    el.querySelectorAll(".set-nav-item").forEach((b) => b.setAttribute("aria-current", "false"));
-    el.querySelector(".set-nothing").hidden = any;
+    el2.querySelectorAll(".set-nav-item").forEach((b) => b.setAttribute("aria-current", "false"));
+    el2.querySelector(".set-nothing").hidden = any;
   }
   function syncMirrors() {
     root().querySelectorAll("[data-mirror]").forEach((box) => {
@@ -4812,15 +4848,15 @@ ${explainCadence(cadence)}` : "");
     });
   }
   function openSettings(at) {
-    const el = root();
-    if (!el) return;
+    const el2 = root();
+    if (!el2) return;
     returnFocus2 = document.activeElement;
-    el.hidden = false;
+    el2.hidden = false;
     syncMirrors();
     showSection(at ?? section);
-    el.querySelector("#set-search").value = "";
+    el2.querySelector("#set-search").value = "";
     applySearch("");
-    el.querySelector(`.set-nav-item[data-section="${section}"]`)?.focus();
+    el2.querySelector(`.set-nav-item[data-section="${section}"]`)?.focus();
   }
   function openSettingsAt(query) {
     openSettings();
@@ -4829,9 +4865,9 @@ ${explainCadence(cadence)}` : "");
     applySearch(query);
   }
   function settingsCommands() {
-    const el = root();
-    if (!el) return [];
-    return [...el.querySelectorAll(".set-section")].flatMap((sec) => {
+    const el2 = root();
+    if (!el2) return [];
+    return [...el2.querySelectorAll(".set-section")].flatMap((sec) => {
       const hint2 = sec.querySelector(".set-section-title")?.textContent ?? "";
       return [...sec.querySelectorAll(".set-row .set-label")].map((label) => {
         const name = label.textContent?.trim() ?? "";
@@ -4840,35 +4876,35 @@ ${explainCadence(cadence)}` : "");
     });
   }
   function closeSettings() {
-    const el = root();
-    if (!el || el.hidden) return false;
+    const el2 = root();
+    if (!el2 || el2.hidden) return false;
     if (capturing) {
       capturing = null;
       redrawShortcuts();
       return true;
     }
-    el.hidden = true;
+    el2.hidden = true;
     pendingConflict = null;
     returnFocus2?.focus();
     returnFocus2 = null;
     return true;
   }
   function wireSettings(opts) {
-    const el = root();
-    if (!el) return;
+    const el2 = root();
+    if (!el2) return;
     document.addEventListener("keydown", onCaptureKey, true);
-    el.addEventListener("mousedown", (e) => {
-      if (e.target === el) closeSettings();
+    el2.addEventListener("mousedown", (e) => {
+      if (e.target === el2) closeSettings();
     });
-    el.querySelector(".set-close").addEventListener("click", () => closeSettings());
-    el.querySelectorAll(".set-nav-item").forEach((b) => b.addEventListener("click", () => {
+    el2.querySelector(".set-close").addEventListener("click", () => closeSettings());
+    el2.querySelectorAll(".set-nav-item").forEach((b) => b.addEventListener("click", () => {
       ;
-      el.querySelector("#set-search").value = "";
+      el2.querySelector("#set-search").value = "";
       applySearch("");
       showSection(b.dataset.section);
     }));
-    el.querySelector("#set-search").addEventListener("input", (e) => applySearch(e.target.value));
-    el.addEventListener("click", (e) => {
+    el2.querySelector("#set-search").addEventListener("input", (e) => applySearch(e.target.value));
+    el2.addEventListener("click", (e) => {
       const target = e.target;
       const seg = target.closest("[data-pref][data-value]");
       if (seg) {
@@ -4882,12 +4918,12 @@ ${explainCadence(cadence)}` : "");
         mic.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === mic)));
       }
     });
-    el.addEventListener("input", (e) => {
+    el2.addEventListener("input", (e) => {
       const input = e.target;
       const name = input.dataset.pref;
       if (input.dataset.prefSet) {
         const set = input.dataset.prefSet;
-        const chosen = [...el.querySelectorAll(`[data-pref-set="${set}"]`)].filter((b) => b.checked).map((b) => b.value);
+        const chosen = [...el2.querySelectorAll(`[data-pref-set="${set}"]`)].filter((b) => b.checked).map((b) => b.value);
         setPref(set, chosen);
         return;
       }
@@ -4900,27 +4936,27 @@ ${explainCadence(cadence)}` : "");
       } else if (def.kind === "bool") setPref(name, input.checked);
       else if (def.kind === "choice") setPref(name, input.value);
     });
-    el.addEventListener("change", (e) => {
+    el2.addEventListener("change", (e) => {
       const input = e.target;
       if (input.dataset.pref === "ui-zoom") setPref("ui-zoom", Number(input.value));
     });
-    el.querySelector("#help-theme").addEventListener("change", (e) => saveThemeChoice(e.target.value));
+    el2.querySelector("#help-theme").addEventListener("change", (e) => saveThemeChoice(e.target.value));
     const reloadWith = (apply) => {
       apply();
       carryHistoryOverReload();
       location.reload();
     };
-    el.querySelector("#help-lang").addEventListener("change", (e) => reloadWith(() => saveLang(e.target.value)));
-    el.querySelector("#help-note-names").addEventListener("change", (e) => reloadWith(() => saveNoteNaming(e.target.value)));
-    el.querySelector("#set-tour").addEventListener("click", () => {
+    el2.querySelector("#help-lang").addEventListener("change", (e) => reloadWith(() => saveLang(e.target.value)));
+    el2.querySelector("#help-note-names").addEventListener("change", (e) => reloadWith(() => saveNoteNaming(e.target.value)));
+    el2.querySelector("#set-tour").addEventListener("click", () => {
       closeSettings();
       startTour();
     });
-    el.querySelectorAll("[data-mirror]").forEach((box) => box.addEventListener("change", () => {
+    el2.querySelectorAll("[data-mirror]").forEach((box) => box.addEventListener("change", () => {
       document.getElementById(box.dataset.mirror)?.click();
       syncMirrors();
     }));
-    el.querySelector("#set-shortcuts").addEventListener("click", (e) => {
+    el2.querySelector("#set-shortcuts").addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
       if (b.dataset.keyChange) startCapture(b.dataset.keyChange, 0);
@@ -4946,7 +4982,7 @@ ${explainCadence(cadence)}` : "");
         startCapture(c.action, c.slot);
       }
     });
-    el.querySelector("[data-reset-section]").addEventListener("click", () => {
+    el2.querySelector("[data-reset-section]").addEventListener("click", () => {
       if (section === "shortcuts") {
         resetAllKeys();
         capturing = null;
@@ -4957,16 +4993,16 @@ ${explainCadence(cadence)}` : "");
       if (section === "general") saveThemeChoice("system");
       for (const name of SECTION_PREFS[section] ?? []) resetPref(name);
       if (section === "mic") setMicMode("notes");
-      const sec = el.querySelector(`.set-section[data-section="${section}"]`);
+      const sec = el2.querySelector(`.set-section[data-section="${section}"]`);
       const tmp = document.createElement("div");
       tmp.innerHTML = buildSettings();
       const fresh = tmp.querySelector(`.set-section[data-section="${section}"]`);
       if (fresh) sec.innerHTML = fresh.innerHTML;
-      if (section === "general") rewireGeneral(el);
+      if (section === "general") rewireGeneral(el2);
     });
-    const error = el.querySelector(".set-error");
-    el.querySelector("[data-export-settings]").addEventListener("click", exportSettings);
-    el.querySelector("[data-import-settings]").addEventListener("change", async (e) => {
+    const error = el2.querySelector(".set-error");
+    el2.querySelector("[data-export-settings]").addEventListener("click", exportSettings);
+    el2.querySelector("[data-import-settings]").addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
       const next = readSettingsFile(await file.text());
@@ -4977,7 +5013,7 @@ ${explainCadence(cadence)}` : "");
       }
       replaceSettings(next, "set.data.imported");
     });
-    el.querySelector("[data-reset-settings]").addEventListener("click", () => replaceSettings({}, "set.data.wasReset"));
+    el2.querySelector("[data-reset-settings]").addEventListener("click", () => replaceSettings({}, "set.data.wasReset"));
     function rewireGeneral(container) {
       container.querySelector("#help-theme").addEventListener("change", (e) => saveThemeChoice(e.target.value));
       container.querySelector("#help-lang").addEventListener("change", (e) => reloadWith(() => saveLang(e.target.value)));
@@ -5702,15 +5738,15 @@ ${explainCadence(cadence)}` : "");
   function applyGrid() {
     const order = [...grid2].sort(byPosition2).map((c) => c.id);
     for (const id of MODULE_IDS) {
-      const el = document.getElementById(`mod-${id}`);
-      if (!el) continue;
+      const el2 = document.getElementById(`mod-${id}`);
+      if (!el2) continue;
       const c = grid2.find((cell) => cell.id === id);
-      el.classList.toggle("module-hidden", !c);
+      el2.classList.toggle("module-hidden", !c);
       if (!c) continue;
-      el.style.gridColumn = `${c.x + 1} / span ${c.w}`;
-      el.style.gridRow = `${c.y + 1} / span ${c.h}`;
-      el.style.order = String(order.indexOf(id));
-      el.style.setProperty("--h", String(c.h));
+      el2.style.gridColumn = `${c.x + 1} / span ${c.w}`;
+      el2.style.gridRow = `${c.y + 1} / span ${c.h}`;
+      el2.style.order = String(order.indexOf(id));
+      el2.style.setProperty("--h", String(c.h));
     }
     renderLayoutMenu();
   }
@@ -5741,8 +5777,8 @@ ${explainCadence(cadence)}` : "");
       const resize = target.closest(".module-resize");
       const header = target.closest(".module-header");
       if (!resize && (!header || target.closest("button, select, input"))) return;
-      const el = target.closest(".module");
-      const start = grid2.find((c) => c.id === el.dataset.module);
+      const el2 = target.closest(".module");
+      const start = grid2.find((c) => c.id === el2.dataset.module);
       if (!start) return;
       e.preventDefault();
       const handle = resize ?? header;
@@ -5754,7 +5790,7 @@ ${explainCadence(cadence)}` : "");
       const stepY = (parseFloat(cs.gridAutoRows) || 30) + (parseFloat(cs.rowGap) || 0);
       const base = grid2;
       let last = "";
-      el.classList.add("module-moving");
+      el2.classList.add("module-moving");
       const move = (ev) => {
         const dx = Math.round((ev.clientX - e.clientX) / stepX);
         const dy = Math.round((ev.clientY - e.clientY) / stepY);
@@ -5768,7 +5804,7 @@ ${explainCadence(cadence)}` : "");
         handle.removeEventListener("pointermove", move);
         handle.removeEventListener("pointerup", up);
         handle.removeEventListener("pointercancel", up);
-        el.classList.remove("module-moving");
+        el2.classList.remove("module-moving");
         save("layout", grid2);
       };
       handle.addEventListener("pointermove", move);
@@ -5777,17 +5813,17 @@ ${explainCadence(cadence)}` : "");
     });
   }
   function watchFittedDiagrams() {
-    const fitAll = (el) => {
-      el.style.height = "";
-      const svgs = el.id === "guitar-container" ? el.querySelectorAll(".strings-drawing svg") : el.querySelectorAll(":scope > svg");
-      svgs.forEach((svg) => fitSvg(svg, el.id === "staff-container"));
+    const fitAll = (el2) => {
+      el2.style.height = "";
+      const svgs = el2.id === "guitar-container" ? el2.querySelectorAll(".strings-drawing svg") : el2.querySelectorAll(":scope > svg");
+      svgs.forEach((svg) => fitSvg(svg, el2.id === "staff-container"));
     };
     const containers = [...document.querySelectorAll(".fit, #guitar-container")];
     const observer = new MutationObserver((records) => {
       const touched = new Set(records.map((r) => r.target.closest(".fit, #guitar-container")));
-      touched.forEach((el) => el && fitAll(el));
+      touched.forEach((el2) => el2 && fitAll(el2));
     });
-    containers.forEach((el) => observer.observe(el, { childList: true, subtree: true }));
+    containers.forEach((el2) => observer.observe(el2, { childList: true, subtree: true }));
   }
   function renderLayoutMenu() {
     const menu = document.getElementById("layout-menu");
@@ -5820,17 +5856,17 @@ ${explainCadence(cadence)}` : "");
     wirePopover(menu, [$("btn-layout")]);
     menu.addEventListener("click", (e) => {
       e.stopPropagation();
-      const el = e.target;
-      const preset = el.closest("[data-preset]")?.dataset.preset;
-      const saved = el.closest("[data-saved]")?.dataset.saved;
-      const del = el.closest("[data-delete]")?.dataset.delete;
+      const el2 = e.target;
+      const preset = el2.closest("[data-preset]")?.dataset.preset;
+      const saved = el2.closest("[data-saved]")?.dataset.saved;
+      const del = el2.closest("[data-delete]")?.dataset.delete;
       if (preset) applyPreset(preset);
       else if (saved !== void 0 && savedLayouts[saved]) setGrid(savedLayouts[saved].map((c) => ({ ...c })));
       else if (del !== void 0) {
         delete savedLayouts[del];
         save("layouts", savedLayouts);
         renderLayoutMenu();
-      } else if (el.id === "layout-save") saveCurrentAs();
+      } else if (el2.id === "layout-save") saveCurrentAs();
     });
     menu.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && e.target.id === "layout-name") saveCurrentAs();
@@ -5857,9 +5893,9 @@ ${explainCadence(cadence)}` : "");
       const menu = document.getElementById(`menu-${id}`);
       if (!menu) return [];
       const panel = t(`module.${id}`);
-      return [...menu.querySelectorAll(".menu-item, .menu-step, .menu-chip")].map((el) => {
-        const text = el.classList.contains("menu-step") ? `${t("menu.size")} ${el.textContent}` : el.dataset.label ?? (el.querySelector(".menu-label") ?? el).textContent ?? "";
-        return { label: `${panel}: ${text.trim()}`, hint: el.getAttribute("aria-pressed") === "true" ? t("cmd.on") : t("cmd.menu"), run: () => el.click() };
+      return [...menu.querySelectorAll(".menu-item, .menu-step, .menu-chip")].map((el2) => {
+        const text = el2.classList.contains("menu-step") ? `${t("menu.size")} ${el2.textContent}` : el2.dataset.label ?? (el2.querySelector(".menu-label") ?? el2).textContent ?? "";
+        return { label: `${panel}: ${text.trim()}`, hint: el2.getAttribute("aria-pressed") === "true" ? t("cmd.on") : t("cmd.menu"), run: () => el2.click() };
       });
     });
   }
@@ -5941,7 +5977,7 @@ ${explainCadence(cadence)}` : "");
     const low = Math.min(from, ...played), high = Math.max(to, ...played);
     return { from: `C${Math.max(0, low)}`, to: `B${Math.min(8, high)}` };
   }
-  var containerOctaves = (el) => pianoOctaves(el.clientWidth, el.clientHeight, isNarrow());
+  var containerOctaves = (el2) => pianoOctaves(el2.clientWidth, el2.clientHeight, isNarrow());
   function renderPiano(container, noteNames, fn, onPress, prevNotes = null) {
     const color2 = functionColor(fn);
     const now = new Set(noteNames.map(noteNameToMidi));
@@ -5962,11 +5998,11 @@ ${explainCadence(cadence)}` : "");
       pianoBlackKeyLabelColor: color("piano-black-label")
     });
     localizeDrawnNoteNames(container);
-    container.querySelectorAll("rect[data-note]").forEach((el) => {
-      const midi = noteNameToMidi(el.dataset.note);
+    container.querySelectorAll("rect[data-note]").forEach((el2) => {
+      const midi = noteNameToMidi(el2.dataset.note);
       if (midi === null) return;
-      el.style.cursor = "pointer";
-      el.addEventListener("pointerdown", (e) => {
+      el2.style.cursor = "pointer";
+      el2.addEventListener("pointerdown", (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
         onPress?.(midi, e.pointerId);
@@ -6117,9 +6153,9 @@ ${explainCadence(cadence)}` : "");
     });
     svg += "</svg>";
     container.innerHTML = svg;
-    container.querySelectorAll("[data-chord]").forEach((el) => {
-      el.addEventListener("click", () => onSegmentClick(el.dataset.chord, el.dataset.key ?? null));
-      makeActivatable(el, chordLabel(el.dataset.chord));
+    container.querySelectorAll("[data-chord]").forEach((el2) => {
+      el2.addEventListener("click", () => onSegmentClick(el2.dataset.chord, el2.dataset.key ?? null));
+      makeActivatable(el2, chordLabel(el2.dataset.chord));
     });
     container.querySelector("svg")?.setAttribute("aria-label", t("a11y.cof"));
     container.querySelector("svg")?.setAttribute("role", "group");
@@ -6134,30 +6170,30 @@ ${explainCadence(cadence)}` : "");
       show7ths: loadBool("cof-show-7ths", false)
     };
   }
-  function renderChordView(el, s) {
+  function renderChordView(el2, s) {
     if (!s.label) {
-      el.innerHTML = "";
+      el2.innerHTML = "";
       return;
     }
     const fill = s.symbol ? functionColor(s.function, "text-strong") : color("text-strong");
     const detail = s.kind === "chord" && s.roman && s.roman !== "?" ? [s.roman, s.function && s.function !== "unknown" ? t(`fn.${s.function}`) : null].filter(Boolean).join(" \xB7 ") : "";
-    el.innerHTML = `
+    el2.innerHTML = `
     <div class="view-chord-name" style="color:${fill}">${escapeHtml(s.label)}</div>
     ${detail ? `<div class="view-chord-detail">${escapeHtml(detail)}</div>` : ""}`;
   }
-  function renderView(view, el, s) {
-    if (view === "chord") return renderChordView(el, s);
+  function renderView(view, el2, s) {
+    if (view === "chord") return renderChordView(el2, s);
     if (view === "staff") {
-      el.innerHTML = "<div></div>";
-      const inner = el.firstElementChild;
+      el2.innerHTML = "<div></div>";
+      const inner = el2.firstElementChild;
       renderStaff(inner, s.notes, 200, s.key, 1, loadChoice("staff-clef", STAFF_CLEFS, "grand"));
       inner.style.height = "100%";
       inner.style.width = "100%";
-    } else if (view === "cof") renderCircleOfFifths(el, s.key, s.symbol, () => {
+    } else if (view === "cof") renderCircleOfFifths(el2, s.key, s.symbol, () => {
     }, 400, { ...cofOptions(s.key), backdrop: color("bg") });
-    else if (view === "piano") renderPiano(el, s.notes, s.symbol ? s.function : null);
-    else if (view === "guitar") renderGuitar(el, s.symbol, s.notes, s.guitarVoicing);
-    fitSvg(el.querySelector("svg"));
+    else if (view === "piano") renderPiano(el2, s.notes, s.symbol ? s.function : null);
+    else if (view === "guitar") renderGuitar(el2, s.symbol, s.notes, s.guitarVoicing);
+    fitSvg(el2.querySelector("svg"));
   }
   function runViewerFromUrl() {
     const params = new URLSearchParams(location.search);
@@ -6171,11 +6207,11 @@ ${explainCadence(cadence)}` : "");
     document.body.classList.add("view-mode");
     document.body.style.background = background;
     document.getElementById("app").style.display = "none";
-    const el = document.createElement("div");
-    el.id = "view-content";
-    el.className = `view-${view}`;
-    document.body.appendChild(el);
-    subscribeView((s) => renderView(view, el, s));
+    const el2 = document.createElement("div");
+    el2.id = "view-content";
+    el2.className = `view-${view}`;
+    document.body.appendChild(el2);
+    subscribeView((s) => renderView(view, el2, s));
     window.addEventListener("storage", (e) => {
       if (e.key && /^(guitar-|cof-|staff-clef|lang$|note-names$)/.test(e.key)) location.reload();
     });
@@ -6516,6 +6552,28 @@ ${explainCadence(cadence)}` : "");
       })
     };
   }
+  function replaceSectionProgression(song, sectionId, measures) {
+    return {
+      ...song,
+      sections: song.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+        const next = measures.map((syms, i) => {
+          const old = s.measures[i];
+          return {
+            id: old?.id ?? newId(),
+            chords: syms.map((symbol, j) => {
+              const was = old?.chords[j];
+              return was && was.symbol === symbol ? was : { id: newId(), symbol, valid: isValidChordSymbol(symbol) };
+            })
+          };
+        });
+        return { ...s, measures: next.length ? next : [newMeasure()] };
+      })
+    };
+  }
+  function sectionAsText(section2, label = (s) => s) {
+    return section2.measures.map((m) => m.chords.filter((c) => c.symbol).map((c) => label(c.symbol)).join(" ")).filter(Boolean).join(" | ");
+  }
   function computeDegree(chordSymbol, activeKey) {
     if (!activeKey || !chordSymbol) return "\u2014";
     return romanInKey(chordSymbol, activeKey)?.roman ?? "?";
@@ -6706,7 +6764,6 @@ ${explainCadence(cadence)}` : "");
     outro: "var(--section-outro)",
     custom: "var(--section-custom)"
   };
-  var NEUTRAL_BTN = "var(--btn-neutral)";
   var _song = createSong();
   var _handlers = null;
   var _container = null;
@@ -6716,7 +6773,7 @@ ${explainCadence(cadence)}` : "");
   var _insertBeforeChordId = null;
   function showNotice(msg, type = "info") {
     if (!_container) return;
-    document.querySelectorAll(".song-notice").forEach((el) => el.remove());
+    document.querySelectorAll(".song-notice").forEach((el2) => el2.remove());
     const div = document.createElement("div");
     div.className = `song-notice${type === "warn" ? " warn" : ""}`;
     const span = document.createElement("span");
@@ -6751,220 +6808,251 @@ ${explainCadence(cadence)}` : "");
     rerender();
   }
   function markActiveChord(chordId) {
-    _container?.querySelectorAll(".chord-chip").forEach((el) => {
-      el.classList.toggle("active-cursor", el.dataset.chordId === chordId);
+    _container?.querySelectorAll(".chord-chip").forEach((el2) => {
+      el2.classList.toggle("active-cursor", el2.dataset.chordId === chordId);
     });
+    const section2 = sectionOf(chordId);
+    _container?.querySelectorAll(".strip-block").forEach((b) => b.classList.toggle("in-play", b.dataset.sectionId === section2));
   }
   function rerender() {
     if (!_container || !_handlers) return;
+    closePopover();
     _container.innerHTML = "";
     _container.appendChild(buildSongDOM(_song, _handlers));
   }
+  var _textSections = /* @__PURE__ */ new Set();
+  var TEMPLATES = [
+    { label: "section.intro", name: "section.intro", color: "intro" },
+    { label: "section.verse", name: "section.verse", color: "verse" },
+    { label: "section.pre", name: "section.prechorus", color: "prechorus" },
+    { label: "section.chorus", name: "section.chorus", color: "chorus" },
+    { label: "section.bridge", name: "section.bridge", color: "bridge" },
+    { label: "section.outro", name: "section.outro", color: "outro" }
+  ];
+  var FUNCTION_BORDER = { T: "var(--fn-t)", S: "var(--fn-s)", D: "var(--fn-d)" };
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    e.className = cls;
+    if (text !== void 0) e.textContent = text;
+    return e;
+  }
+  function commit2(song) {
+    _song = song;
+    saveSong(_song);
+    _handlers?.onSongChange(_song);
+  }
   function buildSongDOM(song, h) {
-    const root2 = document.createElement("div");
-    root2.className = "song-root";
-    const header = document.createElement("div");
-    header.className = "song-header";
-    const titleInput = document.createElement("input");
+    const root2 = el("div", "song-root");
+    const header = el("div", "song-header");
+    const titleInput = el("input", "song-title-input");
     titleInput.value = song.title;
-    titleInput.className = "song-title-input";
+    titleInput.setAttribute("aria-label", t("song.saved.title"));
     titleInput.addEventListener("blur", () => {
+      if (titleInput.value === _song.title) return;
       _song = { ..._song, title: titleInput.value };
       h.onSongChange(_song);
     });
-    const songSelect = document.createElement("select");
-    songSelect.className = "transpose-select song-select";
-    songSelect.title = t("song.saved.title");
-    const metas = h.songs.some((m) => m.id === song.id) ? h.songs : [{ id: song.id, title: song.title, updatedAt: song.updatedAt }, ...h.songs];
-    songSelect.innerHTML = metas.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.id === song.id ? song.title : m.title) || escapeHtml(t("song.untitled"))}</option>`).join("");
-    songSelect.value = song.id;
-    songSelect.addEventListener("change", () => h.onOpenSong(songSelect.value));
-    const newBtn = makeBtn(t("song.new"), NEUTRAL_BTN, () => {
-      if (isBlankSong(_song)) return;
-      h.onNewSong();
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") titleInput.blur();
     });
-    newBtn.title = t("song.new.title");
-    const deleteBtn = makeBtn(t("song.delete"), NEUTRAL_BTN, () => h.onDeleteSong());
-    deleteBtn.title = t("song.delete.title");
-    const pasteArea = document.createElement("div");
-    pasteArea.className = "paste-area";
-    pasteArea.style.display = "none";
-    const pasteTA = document.createElement("textarea");
+    const listAnchor = el("div", "pop-anchor");
+    const listBtn = el("button", "song-list-btn");
+    listBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    listBtn.title = t("song.list");
+    listBtn.setAttribute("aria-label", t("song.list"));
+    const listMenu = el("div", "view-menu pop-menu song-menu");
+    const metas = h.songs.some((m) => m.id === song.id) ? h.songs : [{ id: song.id, title: song.title, updatedAt: song.updatedAt }, ...h.songs];
+    listMenu.innerHTML = `<div class="view-menu-title">${escapeHtml(t("song.list"))}</div>` + metas.map((m) => `<button class="choice-row song-list-item" data-song-id="${escapeHtml(m.id)}" aria-pressed="${m.id === song.id}">${escapeHtml((m.id === song.id ? song.title : m.title) || t("song.untitled"))}</button>`).join("") + `<button class="choice-row" data-song-new>${escapeHtml(t("song.newSong"))}</button>`;
+    listMenu.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      closePopover();
+      if (b.dataset.songId && b.dataset.songId !== _song.id) h.onOpenSong(b.dataset.songId);
+      else if (b.hasAttribute("data-song-new") && !isBlankSong(_song)) h.onNewSong();
+    });
+    listAnchor.append(listBtn, listMenu);
+    wirePopover(listMenu, [listBtn]);
+    const bars = song.sections.reduce((n, s) => n + s.measures.length * Math.max(1, s.repeatCount), 0);
+    const summary = el("span", "song-form-info");
+    summary.textContent = song.sections.length ? [
+      h.activeKey ? `${keyLabel(h.activeKey)}${h.keyIsAuto ? ` \xB7 ${t("song.auto")}` : ""}` : "",
+      t("song.bars", { n: bars }),
+      detectForm(song.sections.map((s) => s.name))
+    ].filter(Boolean).join(" \xB7 ") : "";
+    const addAnchor = el("div", "pop-anchor pop-end");
+    const addBtn = el("button", "song-btn", t("song.addSection"));
+    const addMenu = buildSectionMenu(h);
+    addAnchor.append(addBtn, addMenu);
+    const pasteBtn = el("button", "song-btn", t("song.paste"));
+    pasteBtn.title = t("song.paste.title");
+    const moreAnchor = el("div", "pop-anchor pop-end");
+    const moreBtn = el("button", "song-more-btn", "\u22EF");
+    moreBtn.title = t("song.more");
+    moreBtn.setAttribute("aria-label", t("song.more"));
+    const moreMenu = el("div", "view-menu pop-menu song-menu");
+    moreMenu.innerHTML = `
+    <button class="choice-row" data-act="new" title="${escapeHtml(t("song.new.title"))}">${escapeHtml(t("song.newSong"))}</button>
+    <div class="view-menu-title">${escapeHtml(t("song.transposeBy"))}</div>
+    <div class="menu-chips">${Array.from({ length: 11 }, (_, i) => `<button class="menu-chip" data-transpose="${i + 1}" title="${escapeHtml(t("song.transpose.title"))}">${escapeHtml(t("song.transpose.step", { n: i + 1 }))}</button>`).join("")}</div>
+    <button class="choice-row" data-act="export" title="${escapeHtml(t("song.export.title"))}">${escapeHtml(t("song.export"))}</button>
+    <button class="choice-row song-danger" data-act="delete" title="${escapeHtml(t("song.delete.title"))}">${escapeHtml(t("song.delete"))}</button>`;
+    moreMenu.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      closePopover();
+      const n = Number(b.dataset.transpose);
+      if (n) commit2(transposeSong(_song, n, h.activeKey ? transposeKey(h.activeKey, n) : void 0));
+      else if (b.dataset.act === "new") {
+        if (!isBlankSong(_song)) h.onNewSong();
+      } else if (b.dataset.act === "delete") h.onDeleteSong();
+      else if (b.dataset.act === "export") {
+        const printWin = window.open("", "_blank");
+        if (!printWin) {
+          showNotice(t("song.popupBlocked"), "warn");
+          return;
+        }
+        printWin.document.write(buildPrintHTML(_song, h.activeKey));
+        printWin.document.close();
+        printWin.print();
+      }
+    });
+    moreAnchor.append(moreBtn, moreMenu);
+    wirePopover(moreMenu, [moreBtn]);
+    const titleWrap = el("div", "song-title-wrap");
+    titleWrap.append(titleInput, listAnchor);
+    header.append(titleWrap, summary, el("span", "song-gap"), addAnchor, pasteBtn, moreAnchor);
+    root2.appendChild(header);
+    const pasteArea = el("div", "paste-area");
+    pasteArea.hidden = true;
+    const pasteTA = el("textarea", "paste-textarea");
     pasteTA.placeholder = t("song.paste.placeholder");
     pasteTA.rows = 2;
-    pasteTA.className = "paste-textarea";
-    const pasteSubmit = makeBtn(t("song.paste.add"), "var(--accent)", () => {
+    const pasteSubmit = el("button", "song-btn song-btn-main", t("song.paste.add"));
+    pasteSubmit.addEventListener("click", () => {
       const text = pasteTA.value.trim();
       if (!text) return;
       const measures = parseProgressionMeasures(text).map((m) => m.map(readTypedChord));
       if (!measures.length) return;
-      if (!_song.sections.length) {
-        _song = addSection(_song, t("section.default"), "verse");
-      }
+      if (!_song.sections.length) _song = addSection(_song, t("section.default"), "verse");
       const section2 = _song.sections[_song.sections.length - 1];
-      _song = appendProgression(_song, section2.id, measures);
-      pasteTA.value = "";
-      pasteArea.style.display = "none";
-      saveSong(_song);
-      h.onSongChange(_song);
+      commit2(appendProgression(_song, section2.id, measures));
     });
     pasteArea.append(pasteTA, pasteSubmit);
-    const templates = [
-      { label: "section.intro", name: "section.intro", color: "intro" },
-      { label: "section.verse", name: "section.verse", color: "verse" },
-      { label: "section.pre", name: "section.prechorus", color: "prechorus" },
-      { label: "section.chorus", name: "section.chorus", color: "chorus" },
-      { label: "section.bridge", name: "section.bridge", color: "bridge" },
-      { label: "section.outro", name: "section.outro", color: "outro" }
-    ];
-    const templateWrap = document.createElement("div");
-    templateWrap.className = "template-wrap";
-    templates.forEach((tpl) => {
-      const name = t(tpl.name);
-      const btn = makeBtn(`+ ${t(tpl.label)}`, SECTION_COLORS[tpl.color], () => {
-        _song = addSection(_song, name, tpl.color);
-        saveSong(_song);
-        h.onSongChange(_song);
-      });
-      btn.style.fontSize = "11px";
-      btn.title = t("song.addSection.title", { name });
-      templateWrap.appendChild(btn);
+    pasteBtn.addEventListener("click", () => {
+      pasteArea.hidden = !pasteArea.hidden;
+      if (!pasteArea.hidden) pasteTA.focus();
     });
-    const transposeSelect = document.createElement("select");
-    transposeSelect.title = t("song.transpose.title");
-    transposeSelect.className = "transpose-select";
-    transposeSelect.innerHTML = `<option value="">${t("song.transpose")}</option>` + Array.from({ length: 11 }, (_, i) => `<option value="${i + 1}">${t("song.transpose.step", { n: i + 1 })}</option>`).join("");
-    transposeSelect.addEventListener("change", () => {
-      const n = parseInt(transposeSelect.value);
-      if (n) {
-        const targetKey = h.activeKey ? transposeKey(h.activeKey, n) : void 0;
-        _song = transposeSong(_song, n, targetKey);
-        saveSong(_song);
-        h.onSongChange(_song);
-      }
-      transposeSelect.value = "";
-    });
-    const exportBtn = makeBtn(t("song.export"), NEUTRAL_BTN, () => {
-      const printWin = window.open("", "_blank");
-      if (!printWin) {
-        showNotice(t("song.popupBlocked"), "warn");
-        return;
-      }
-      printWin.document.write(buildPrintHTML(_song, h.activeKey));
-      printWin.document.close();
-      printWin.print();
-    });
-    exportBtn.title = t("song.export.title");
-    const pasteBtn = makeBtn(t("song.paste"), NEUTRAL_BTN, () => {
-      const open2 = pasteArea.style.display === "none";
-      pasteArea.style.display = open2 ? "block" : "none";
-      if (open2) pasteTA.focus();
-    });
-    pasteBtn.title = t("song.paste.title");
-    header.append(songSelect, titleInput, newBtn, deleteBtn, templateWrap, transposeSelect, exportBtn, pasteBtn);
-    root2.appendChild(header);
     root2.appendChild(pasteArea);
-    const formInfo = document.createElement("div");
-    formInfo.className = "song-form-info";
-    const form = detectForm(_song.sections.map((s) => s.name));
-    const keyStr = h.activeKey ? ` \xB7 ${t("song.key", { key: keyLabel(h.activeKey) })}` : "";
-    formInfo.textContent = _song.sections.length ? t("song.form", { form }) + keyStr : "";
-    root2.appendChild(formInfo);
+    if (song.sections.length > 1) root2.appendChild(buildFormStrip(song, h));
+    if (!song.sections.length) root2.appendChild(el("p", "song-empty", t("song.empty")));
     const measureNums = computeMeasureNumbers(song);
-    song.sections.forEach((section2) => {
-      root2.appendChild(buildSectionDOM(section2, h, measureNums));
-    });
+    song.sections.forEach((section2) => root2.appendChild(buildSectionDOM(section2, h, measureNums)));
     return root2;
   }
-  function buildSectionDOM(section2, h, measureNums) {
-    const color2 = SECTION_COLORS[section2.color];
-    const wrap = document.createElement("div");
-    wrap.className = "section-wrap";
-    wrap.style.borderLeft = `3px solid ${color2}`;
-    const secHeader = document.createElement("div");
-    secHeader.className = "section-header";
-    const toggle = document.createElement("span");
-    toggle.textContent = section2.collapsed ? "\u25B6" : "\u25BC";
-    toggle.className = "section-toggle";
-    toggle.addEventListener("click", () => {
-      _song = updateSection(_song, section2.id, { collapsed: !section2.collapsed });
-      saveSong(_song);
-      h.onSongChange(_song);
-    });
-    const nameInput = document.createElement("input");
-    nameInput.value = section2.name;
-    nameInput.className = "section-name-input";
-    nameInput.style.color = color2;
-    nameInput.addEventListener("focus", () => nameInput.style.borderBottomColor = color2);
-    nameInput.addEventListener("blur", () => {
-      nameInput.style.borderBottomColor = "transparent";
-      _song = updateSection(_song, section2.id, { name: nameInput.value });
-      saveSong(_song);
-      h.onSongChange(_song);
-    });
-    const PRESET_COLORS = ["intro", "verse", "prechorus", "chorus", "bridge", "outro", "custom"];
-    const swatchEl = document.createElement("button");
-    swatchEl.className = "section-swatch";
-    swatchEl.style.background = color2;
-    swatchEl.title = t("section.color.title");
-    swatchEl.addEventListener("click", (e) => {
-      e.stopPropagation();
-      document.querySelector(".color-picker-popup")?.remove();
-      const picker = document.createElement("div");
-      picker.className = "color-picker-popup";
-      PRESET_COLORS.forEach((c) => {
-        const dot = document.createElement("button");
-        dot.title = t(`section.${c}`);
-        dot.className = "color-picker-dot";
-        dot.style.background = SECTION_COLORS[c];
-        dot.style.borderColor = c === section2.color ? "var(--cursor)" : "transparent";
-        dot.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          picker.remove();
-          _song = updateSection(_song, section2.id, { color: c });
-          saveSong(_song);
-          h.onSongChange(_song);
-        });
-        picker.appendChild(dot);
+  function buildSectionMenu(h) {
+    const menu = el("div", "view-menu pop-menu song-menu");
+    for (const tpl of TEMPLATES) {
+      const name = t(tpl.name);
+      const b = el("button", "choice-row");
+      b.innerHTML = `<span class="section-dot" style="background:${SECTION_COLORS[tpl.color]}"></span>${escapeHtml(t(tpl.label))}`;
+      b.title = t("song.addSection.title", { name });
+      b.addEventListener("click", () => {
+        closePopover();
+        commit2(addSection(_song, name, tpl.color));
       });
-      const rect = swatchEl.getBoundingClientRect();
-      picker.style.top = `${rect.bottom + 4}px`;
-      picker.style.left = `${rect.left}px`;
-      document.body.appendChild(picker);
-      setTimeout(() => {
-        const close = (ev) => {
-          if (!picker.contains(ev.target)) {
-            picker.remove();
-            document.removeEventListener("click", close);
-          }
-        };
-        document.addEventListener("click", close);
-      }, 0);
+      menu.appendChild(b);
+    }
+    queueMicrotask(() => {
+      const trigger = menu.parentElement?.querySelector(":scope > button");
+      if (trigger) wirePopover(menu, [trigger]);
     });
-    const repeatBadge = document.createElement("span");
-    repeatBadge.textContent = `\xD7${section2.repeatCount}`;
-    repeatBadge.title = t("section.repeat.title");
-    repeatBadge.className = "section-repeat-badge";
-    repeatBadge.addEventListener("click", (e) => {
+    void h;
+    return menu;
+  }
+  var sectionOf = (chordId) => chordId ? _song.sections.find((s) => s.measures.some((m) => m.chords.some((c) => c.id === chordId)))?.id ?? null : null;
+  function buildFormStrip(song, h) {
+    const strip = el("div", "song-strip");
+    strip.setAttribute("role", "list");
+    strip.setAttribute("aria-label", t("song.strip"));
+    strip.title = t("song.strip");
+    const inPlay = sectionOf(h.captureTargetId ?? h.activeCursorId);
+    for (const section2 of song.sections) {
+      const bars = Math.max(1, section2.measures.length) * Math.max(1, section2.repeatCount);
+      const block = el("div", "strip-block");
+      block.setAttribute("role", "listitem");
+      block.dataset.sectionId = section2.id;
+      block.style.flexGrow = String(bars);
+      block.style.borderTopColor = SECTION_COLORS[section2.color];
+      block.classList.toggle("in-play", section2.id === inPlay);
+      const go2 = el("button", "strip-go");
+      go2.innerHTML = `<b>${escapeHtml(section2.name || t("section.default"))}</b><span>${section2.measures.length}${section2.repeatCount > 1 ? ` \xD7${section2.repeatCount}` : ""}</span>`;
+      go2.addEventListener("click", () => {
+        const target = _container?.querySelector(`.section-wrap[data-section-id="${section2.id}"]`);
+        target?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        target?.classList.add("section-flash");
+        setTimeout(() => target?.classList.remove("section-flash"), 900);
+      });
+      block.append(go2);
+      block.draggable = true;
+      block.addEventListener("dragstart", (e) => {
+        _draggedSectionId = section2.id;
+        _draggedChordId = null;
+        e.dataTransfer.effectAllowed = "move";
+        requestAnimationFrame(() => block.classList.add("dragging"));
+      });
+      block.addEventListener("dragend", () => {
+        _draggedSectionId = null;
+        block.classList.remove("dragging");
+      });
+      block.addEventListener("dragover", (e) => {
+        if (!_draggedSectionId || _draggedSectionId === section2.id) return;
+        e.preventDefault();
+        const r = block.getBoundingClientRect();
+        block.classList.toggle("drop-before", e.clientX < r.left + r.width / 2);
+        block.classList.toggle("drop-after", e.clientX >= r.left + r.width / 2);
+      });
+      block.addEventListener("dragleave", () => block.classList.remove("drop-before", "drop-after"));
+      block.addEventListener("drop", (e) => {
+        if (!_draggedSectionId || _draggedSectionId === section2.id) return;
+        e.preventDefault();
+        const before = block.classList.contains("drop-before");
+        block.classList.remove("drop-before", "drop-after");
+        const dragged = _draggedSectionId;
+        _draggedSectionId = null;
+        commit2(reorderSections(_song, dragged, section2.id, before));
+      });
+      strip.appendChild(block);
+    }
+    const addAnchor = el("div", "pop-anchor pop-end");
+    const add = el("button", "strip-add", "+");
+    add.title = t("song.strip.add");
+    add.setAttribute("aria-label", t("song.strip.add"));
+    addAnchor.append(add, buildSectionMenu(h));
+    strip.appendChild(addAnchor);
+    return strip;
+  }
+  function repeatControl(section2) {
+    const badge = el("button", "section-repeat-badge", `\xD7${section2.repeatCount}`);
+    badge.title = t("section.repeat.title");
+    badge.addEventListener("click", (e) => {
       e.stopPropagation();
-      const input = document.createElement("input");
+      const input = el("input", "section-repeat-input");
       input.type = "number";
       input.min = "1";
       input.max = "16";
       input.value = String(section2.repeatCount);
-      input.className = "section-repeat-input";
-      repeatBadge.replaceWith(input);
+      badge.replaceWith(input);
       input.focus();
       input.select();
-      const commit2 = () => {
+      let done = false;
+      const keep = () => {
+        if (done) return;
+        done = true;
         const n = parseInt(input.value);
-        if (n >= 1 && n <= 16) {
-          _song = updateSection(_song, section2.id, { repeatCount: n });
-          saveSong(_song);
-        }
-        h.onSongChange(_song);
+        if (n >= 1 && n <= 16 && n !== section2.repeatCount) commit2(updateSection(_song, section2.id, { repeatCount: n }));
+        else _handlers?.onSongChange(_song);
       };
-      input.addEventListener("blur", commit2);
+      input.addEventListener("blur", keep);
       input.addEventListener("keydown", (ke) => {
         if (ke.key === "Enter") input.blur();
         if (ke.key === "Escape") {
@@ -6973,98 +7061,158 @@ ${explainCadence(cadence)}` : "");
         }
       });
     });
-    const dragHandle = document.createElement("span");
-    dragHandle.textContent = "\u283F";
-    dragHandle.title = t("section.drag.title");
-    dragHandle.className = "section-drag-handle";
-    const dupBtn = makeSmallBtn("\u29C9", () => {
-      _song = duplicateSection(_song, section2.id);
-      saveSong(_song);
-      h.onSongChange(_song);
+    return badge;
+  }
+  function buildSectionDOM(section2, h, measureNums) {
+    const color2 = SECTION_COLORS[section2.color];
+    const wrap = el("div", "section-wrap");
+    wrap.dataset.sectionId = section2.id;
+    const side = el("div", "section-header");
+    side.style.borderLeftColor = color2;
+    const nameRow = el("div", "section-name-row");
+    const toggle = el("button", "section-toggle", section2.collapsed ? "\u25B8" : "\u25BE");
+    toggle.title = t("section.collapse.title");
+    toggle.addEventListener("click", () => commit2(updateSection(_song, section2.id, { collapsed: !section2.collapsed })));
+    const nameInput = el("input", "section-name-input");
+    nameInput.value = section2.name;
+    nameInput.setAttribute("aria-label", t("section.default"));
+    nameInput.addEventListener("blur", () => {
+      if (nameInput.value !== section2.name) commit2(updateSection(_song, section2.id, { name: nameInput.value }));
     });
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") nameInput.blur();
+    });
+    nameRow.append(toggle, nameInput);
+    const tools = el("div", "section-tools");
+    const swatch = el("button", "section-swatch");
+    swatch.style.background = color2;
+    swatch.title = t("section.color.title");
+    swatch.setAttribute("aria-label", t("section.color.title"));
+    swatch.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openColorPicker(swatch, section2);
+    });
+    const dupBtn = makeSmallBtn("\u29C9", () => commit2(duplicateSection(_song, section2.id)));
     dupBtn.title = t("section.duplicate.title");
-    const delBtn = makeSmallBtn("\xD7", () => {
-      applyWithUndo(removeSection(_song, section2.id), t("section.deleted", { name: section2.name }));
-    });
-    delBtn.style.color = "var(--danger-soft)";
+    const delBtn = makeSmallBtn("\xD7", () => applyWithUndo(removeSection(_song, section2.id), t("section.deleted", { name: section2.name })));
     delBtn.title = t("section.delete.title");
-    secHeader.append(dragHandle, toggle, nameInput, swatchEl, repeatBadge, dupBtn, delBtn);
-    const addMeasureBtn = makeSmallBtn(t("section.addBar"), () => {
-      _song = addMeasure(_song, section2.id);
-      saveSong(_song);
-      h.onSongChange(_song);
-    });
-    addMeasureBtn.title = t("section.addBar.title");
-    secHeader.appendChild(addMeasureBtn);
-    wrap.appendChild(secHeader);
-    secHeader.draggable = true;
-    secHeader.style.cursor = "grab";
-    secHeader.addEventListener("dragstart", (e) => {
-      _draggedSectionId = section2.id;
-      _draggedChordId = null;
-      e.dataTransfer.effectAllowed = "move";
-      requestAnimationFrame(() => {
-        wrap.style.opacity = "0.5";
+    delBtn.classList.add("song-danger");
+    tools.append(swatch, repeatControl(section2), dupBtn, delBtn);
+    const textMode = _textSections.has(section2.id);
+    const mode4 = el("div", "section-write");
+    mode4.setAttribute("role", "group");
+    mode4.setAttribute("aria-label", t("section.write"));
+    for (const [m, label] of [["chips", t("section.chips")], ["text", t("section.text")]]) {
+      const b = el("button", "section-write-btn", label);
+      b.setAttribute("aria-pressed", String(m === "text" === textMode));
+      b.addEventListener("click", () => {
+        if (m === "text") _textSections.add(section2.id);
+        else _textSections.delete(section2.id);
+        rerender();
+        if (m === "text") _container?.querySelector(`.section-wrap[data-section-id="${section2.id}"] .section-text-input`)?.focus();
       });
-    });
-    secHeader.addEventListener("dragend", () => {
-      _draggedSectionId = null;
-      wrap.style.opacity = "1";
-      wrap.style.borderTop = "";
-      wrap.style.borderBottom = "";
-    });
-    wrap.addEventListener("dragover", (e) => {
-      if (!_draggedSectionId || _draggedSectionId === section2.id) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      const rect = wrap.getBoundingClientRect();
-      const before = e.clientY < rect.top + rect.height / 2;
-      wrap.style.borderTop = before ? "2px solid var(--accent)" : "";
-      wrap.style.borderBottom = !before ? "2px solid var(--accent)" : "";
-    });
-    wrap.addEventListener("dragleave", (e) => {
-      if (!wrap.contains(e.relatedTarget)) {
-        wrap.style.borderTop = "";
-        wrap.style.borderBottom = "";
-      }
-    });
-    wrap.addEventListener("drop", (e) => {
-      if (!_draggedSectionId || _draggedSectionId === section2.id) return;
-      e.preventDefault();
-      const rect = wrap.getBoundingClientRect();
-      const before = e.clientY < rect.top + rect.height / 2;
-      wrap.style.borderTop = "";
-      wrap.style.borderBottom = "";
-      _song = reorderSections(_song, _draggedSectionId, section2.id, before);
-      _draggedSectionId = null;
-      saveSong(_song);
-      h.onSongChange(_song);
-    });
-    if (!section2.collapsed) {
-      const measuresWrap = document.createElement("div");
-      measuresWrap.className = "measures-wrap";
-      section2.measures.forEach((measure) => {
-        measuresWrap.appendChild(buildMeasureDOM(measure, section2, h, measureNums.get(measure.id) ?? 0));
-      });
-      wrap.appendChild(measuresWrap);
+      mode4.appendChild(b);
     }
+    side.append(nameRow, tools, mode4);
+    wrap.appendChild(side);
+    const body = el("div", "section-body");
+    if (!section2.collapsed) {
+      if (textMode) body.appendChild(buildSectionText(section2));
+      else {
+        const measuresWrap = el("div", "measures-wrap");
+        section2.measures.forEach((measure, i) => measuresWrap.appendChild(buildMeasureDOM(measure, section2, h, measureNums.get(measure.id) ?? 0, i === section2.measures.length - 1)));
+        body.appendChild(measuresWrap);
+        const addMeasureBtn = el("button", "section-add-bar", t("section.addBar"));
+        addMeasureBtn.title = t("section.addBar.title");
+        addMeasureBtn.addEventListener("click", () => commit2(addMeasure(_song, section2.id)));
+        body.appendChild(addMeasureBtn);
+      }
+    }
+    wrap.appendChild(body);
     return wrap;
   }
-  function buildMeasureDOM(measure, section2, h, measureNum) {
-    const wrap = document.createElement("div");
-    wrap.className = "measure-row";
-    const numLabel = document.createElement("span");
-    numLabel.textContent = String(measureNum);
-    numLabel.className = "measure-num";
-    wrap.appendChild(numLabel);
-    const chordsRow = document.createElement("div");
-    chordsRow.className = "chords-row";
-    measure.chords.forEach((chord) => {
-      chordsRow.appendChild(buildChordChip(chord, section2, measure, h));
+  function openColorPicker(anchor, section2) {
+    const PRESET_COLORS = ["intro", "verse", "prechorus", "chorus", "bridge", "outro", "custom"];
+    document.querySelector(".color-picker-popup")?.remove();
+    const picker = el("div", "color-picker-popup");
+    PRESET_COLORS.forEach((c) => {
+      const dot = el("button", "color-picker-dot");
+      dot.title = t(`section.${c}`);
+      dot.style.background = SECTION_COLORS[c];
+      dot.style.borderColor = c === section2.color ? "var(--cursor)" : "transparent";
+      dot.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        picker.remove();
+        commit2(updateSection(_song, section2.id, { color: c }));
+      });
+      picker.appendChild(dot);
     });
-    const addBtn = document.createElement("button");
-    addBtn.textContent = "+";
-    addBtn.className = "chord-add-btn";
+    const rect = anchor.getBoundingClientRect();
+    picker.style.top = `${rect.bottom + 4}px`;
+    picker.style.left = `${rect.left}px`;
+    document.body.appendChild(picker);
+    setTimeout(() => {
+      const close = (ev) => {
+        if (!picker.contains(ev.target)) {
+          picker.remove();
+          document.removeEventListener("click", close);
+        }
+      };
+      document.addEventListener("click", close);
+    }, 0);
+  }
+  function buildSectionText(section2) {
+    const box = el("div", "section-text");
+    const input = el("input", "section-text-input");
+    const original = sectionAsText(section2, chordLabel);
+    input.value = original;
+    input.spellcheck = false;
+    input.autocomplete = "off";
+    input.setAttribute("aria-label", t("section.text"));
+    const hint2 = el("div", "section-text-hint", t("section.text.hint"));
+    const status2 = el("div", "section-text-status");
+    const read = () => {
+      const measures = parseProgressionMeasures(input.value).map((m) => m.map(readTypedChord));
+      const bad = measures.flat().filter((s) => !isKnownChord(s));
+      return { measures, bad };
+    };
+    const show = () => {
+      const { measures, bad } = read();
+      status2.classList.toggle("bad", bad.length > 0);
+      status2.textContent = bad.length ? t("section.text.bad", { names: bad.join(", ") }) : input.value.trim() ? t("section.text.ok", { bars: measures.length, chords: measures.flat().length }) : "";
+    };
+    let left = false;
+    const keep = () => {
+      if (left || input.value === original) return;
+      const { measures } = read();
+      left = true;
+      commit2(replaceSectionProgression(_song, section2.id, measures));
+    };
+    input.addEventListener("input", show);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        keep();
+      }
+      if (e.key === "Escape") {
+        left = true;
+        input.value = original;
+        rerender();
+      }
+    });
+    input.addEventListener("blur", keep);
+    show();
+    box.append(input, status2, hint2);
+    return box;
+  }
+  function buildMeasureDOM(measure, section2, h, measureNum, last) {
+    const wrap = el("div", "measure-row");
+    wrap.classList.toggle("measure-last", last);
+    wrap.appendChild(el("span", "measure-num", String(measureNum)));
+    const chordsRow = el("div", "chords-row");
+    measure.chords.forEach((chord) => chordsRow.appendChild(buildChordChip(chord, section2, measure, h)));
+    const addBtn = el("button", "chord-add-btn", "+");
+    addBtn.title = t("chord.add.title");
     addBtn.addEventListener("click", () => {
       _song = addChord(_song, section2.id, measure.id, "");
       saveSong(_song);
@@ -7077,21 +7225,20 @@ ${explainCadence(cadence)}` : "");
     chordsRow.appendChild(addBtn);
     chordsRow.addEventListener("dragover", (e) => {
       const hasHistory = e.dataTransfer.types.includes("application/x-history-chord");
-      const hasChord = !!_draggedChordId;
-      if (!hasHistory && !hasChord) return;
+      if (!hasHistory && !_draggedChordId) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = hasHistory ? "copy" : "move";
-      chordsRow.style.outline = "1px dashed var(--accent)";
+      chordsRow.classList.add("drop-target");
     });
     chordsRow.addEventListener("dragleave", (e) => {
       if (!chordsRow.contains(e.relatedTarget)) {
-        chordsRow.style.outline = "";
+        chordsRow.classList.remove("drop-target");
         _dropIndicator?.remove();
         _insertBeforeChordId = null;
       }
     });
     chordsRow.addEventListener("drop", (e) => {
-      chordsRow.style.outline = "";
+      chordsRow.classList.remove("drop-target");
       _dropIndicator?.remove();
       const histData = e.dataTransfer.getData("application/x-history-chord");
       if (histData) {
@@ -7112,15 +7259,13 @@ ${explainCadence(cadence)}` : "");
       }
     });
     wrap.appendChild(chordsRow);
-    const delMBtn = makeSmallBtn("\xD7", () => {
-      applyWithUndo(removeMeasure(_song, section2.id, measure.id), t("measure.deleted", { n: measureNum }));
-    });
-    delMBtn.title = t("measure.delete.title");
-    delMBtn.style.color = "var(--danger-soft)";
-    delMBtn.style.alignSelf = "center";
     const sectionObj = _song.sections.find((s) => s.id === section2.id);
-    if (!sectionObj || sectionObj.measures.length <= 1) delMBtn.style.display = "none";
-    wrap.appendChild(delMBtn);
+    if (sectionObj && sectionObj.measures.length > 1) {
+      const delMBtn = makeSmallBtn("\xD7", () => applyWithUndo(removeMeasure(_song, section2.id, measure.id), t("measure.deleted", { n: measureNum })));
+      delMBtn.title = t("measure.delete.title");
+      delMBtn.classList.add("measure-del", "song-danger");
+      wrap.appendChild(delMBtn);
+    }
     return wrap;
   }
   function buildChordChip(chord, section2, measure, h) {
@@ -7128,12 +7273,14 @@ ${explainCadence(cadence)}` : "");
     const isCapture = h.captureTargetId === chord.id;
     const degree = chord.valid && chord.symbol ? computeDegree(chord.symbol, h.activeKey) : "\u2014";
     const borrowed = chord.valid && chord.symbol ? isBorrowedChord(chord.symbol, h.activeKey) : false;
+    const fn = chord.valid && chord.symbol ? romanInKey(chord.symbol, h.activeKey)?.function : void 0;
     const wrap = document.createElement("div");
     wrap.className = "chord-chip";
     wrap.dataset.chordId = chord.id;
     wrap.classList.toggle("capture-target", isCapture);
     wrap.classList.toggle("active-cursor", isActive);
     wrap.classList.toggle("invalid", chord.valid === false);
+    if (fn && FUNCTION_BORDER[fn]) wrap.style.borderLeftColor = FUNCTION_BORDER[fn];
     const isEditing = !chord.symbol;
     if (isEditing) {
       const input = document.createElement("input");
@@ -7190,17 +7337,17 @@ ${explainCadence(cadence)}` : "");
       const input = document.createElement("input");
       input.className = "chord-input";
       input.value = chord.symbol;
-      const commit2 = () => {
+      const commit3 = () => {
         const symbol = readTypedChord(input.value) || prevVal;
         _song = updateChord(_song, chord.id, symbol, symbol === prevVal ? notesState : void 0);
         saveSong(_song);
         h.onSongChange(_song);
       };
       input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") commit2();
+        if (e.key === "Enter") commit3();
         if (e.key === "Escape") h.onSongChange(_song);
       });
-      input.addEventListener("blur", commit2);
+      input.addEventListener("blur", commit3);
       editWrap.appendChild(input);
       if (notesState?.length) {
         const notesRow = document.createElement("div");
@@ -7310,14 +7457,6 @@ ${explainCadence(cadence)}` : "");
       h.onSongChange(_song);
     });
     return wrap;
-  }
-  function makeBtn(label, bg, onClick) {
-    const btn = document.createElement("button");
-    btn.textContent = label;
-    btn.className = "song-btn";
-    btn.style.background = bg;
-    btn.addEventListener("click", onClick);
-    return btn;
   }
   function makeSmallBtn(label, onClick) {
     const btn = document.createElement("button");
@@ -8047,7 +8186,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const mark = (i) => {
       if (!items.length) return;
       marked = (i + items.length) % items.length;
-      o.list.querySelectorAll(".cmd-item").forEach((el, j) => el.setAttribute("aria-selected", String(j === marked)));
+      o.list.querySelectorAll(".cmd-item").forEach((el2, j) => el2.setAttribute("aria-selected", String(j === marked)));
       o.input.setAttribute("aria-activedescendant", `cmd-${marked}`);
       o.list.querySelector(`#cmd-${marked}`)?.scrollIntoView({ block: "nearest" });
     };
@@ -8090,10 +8229,10 @@ ${explainCadence(c.cadence)}` : ""}`;
       }
     });
     o.list.addEventListener("pointerdown", (e) => {
-      const el = e.target.closest(".cmd-item");
-      if (!el) return;
+      const el2 = e.target.closest(".cmd-item");
+      if (!el2) return;
       e.preventDefault();
-      run(Number(el.dataset.i));
+      run(Number(el2.dataset.i));
     });
   }
 
@@ -8208,20 +8347,20 @@ ${explainCadence(c.cadence)}` : ""}`;
     setHistoryChangeCallback(onHistoryChange);
     restoreCarriedHistory();
     setAudioMissedCallback(() => {
-      const el = document.getElementById("audio-progress");
-      if (!el) return;
-      el.classList.remove("missed");
-      void el.offsetWidth;
-      el.classList.add("missed");
+      const el2 = document.getElementById("audio-progress");
+      if (!el2) return;
+      el2.classList.remove("missed");
+      void el2.offsetWidth;
+      el2.classList.add("missed");
     });
     let progressTimer = null;
     let progressValue = 0;
     setAudioStatusCallback((status2) => {
-      const el = document.getElementById("audio-status");
+      const el2 = document.getElementById("audio-status");
       const fill = document.getElementById("audio-progress-fill");
-      if (!el || !fill) return;
+      if (!el2 || !fill) return;
       const known = ["idle", "loading", "suspended", "ready", "error"];
-      el.textContent = known.includes(status2) ? t(`audio.${status2}`) : status2;
+      el2.textContent = known.includes(status2) ? t(`audio.${status2}`) : status2;
       if (progressTimer) {
         clearInterval(progressTimer);
         progressTimer = null;
@@ -8270,7 +8409,8 @@ ${explainCadence(c.cadence)}` : ""}`;
       },
       activeCursorId: state.activeCursorId,
       captureTargetId: state.captureTargetId,
-      activeKey: analysisKey(),
+      activeKey: songKey2(),
+      keyIsAuto: !state.activeKey,
       onSongChange: (song) => {
         state.song = song;
         saveSong(song);
@@ -8482,6 +8622,13 @@ ${explainCadence(c.cadence)}` : ""}`;
   function analysisKey() {
     return state.activeKey ?? autoKey;
   }
+  function songKey2() {
+    if (state.activeKey) return state.activeKey;
+    const chords = state.song.sections.flatMap((s) => s.measures.flatMap((m) => m.chords)).filter((c) => c.valid && c.symbol);
+    if (chords.length < 3) return autoKey;
+    const entries2 = chords.map((c) => ({ id: c.id, symbol: c.symbol, notes: c.notes?.length ? c.notes : chordNoteNames(c.symbol) }));
+    return getAutoKey(entries2) ?? autoKey;
+  }
   function selectedSymbol() {
     const d = state.detection;
     if (d?.kind !== "chord") return null;
@@ -8544,8 +8691,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     renderZone1Diagrams(displayedNotes(), selectedSymbol());
   }
   function renderExplain() {
-    const el = document.getElementById("explain-container");
-    if (el) renderExplanation(el, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev));
+    const el2 = document.getElementById("explain-container");
+    if (el2) renderExplanation(el2, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev));
   }
   function announceDetection() {
     const d = state.detection;
@@ -8814,9 +8961,9 @@ ${explainCadence(c.cadence)}` : ""}`;
     renderIfChanged("piano", `${notes}|${fn}|${prev?.join(" ")}|${containerOctaves($2("piano-container"))}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev));
     const spoken = noteNames.map(noteLabel).join(" ") || t("a11y.nothing");
     for (const [id, key2] of [["staff-container", "a11y.staff"], ["piano-container", "a11y.piano"]]) {
-      const el = $2(id);
-      el.setAttribute("role", "img");
-      el.setAttribute("aria-label", t(key2, { notes: spoken }));
+      const el2 = $2(id);
+      el2.setAttribute("role", "img");
+      el2.setAttribute("aria-label", t(key2, { notes: spoken }));
     }
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
@@ -8848,8 +8995,8 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function drawTuner(error) {
     document.querySelectorAll('[data-act="mic"]').forEach((b) => b.classList.toggle("active-mode", isMicOn()));
-    const el = document.getElementById("tuner-container");
-    if (el) renderTuner(el, { toggle: toggleMic }, error);
+    const el2 = document.getElementById("tuner-container");
+    if (el2) renderTuner(el2, { toggle: toggleMic }, error);
   }
   function toggleMic() {
     if (isMicOn()) {
@@ -8859,8 +9006,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     startMic({
       notes: (midis, velocity2) => setHeardNotes(midis, velocity2),
       frame: (heard) => {
-        const el = document.getElementById("tuner-container");
-        if (el) updateTuner(el, heard);
+        const el2 = document.getElementById("tuner-container");
+        if (el2) updateTuner(el2, heard);
       },
       state: (_on, error) => drawTuner(error)
     });
@@ -8912,10 +9059,10 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   var progressionsKey;
   function renderProgressionPanel() {
-    const el = document.getElementById("progressions-container");
-    if (!el || progressionsKey === analysisKey()) return;
+    const el2 = document.getElementById("progressions-container");
+    if (!el2 || progressionsKey === analysisKey()) return;
     progressionsKey = analysisKey();
-    renderProgressions(el, analysisKey(), {
+    renderProgressions(el2, analysisKey(), {
       play: (symbol, prev, key) => {
         if (analysisKey() !== key) {
           progressionsKey = key;
@@ -9044,9 +9191,9 @@ ${explainCadence(c.cadence)}` : ""}`;
     $2("midi-device").addEventListener("change", () => setTimeout(refreshOutputDropdown));
   }
   function showMidiBanner(msg) {
-    const el = $2("midi-banner");
-    el.textContent = msg;
-    el.style.display = "block";
+    const el2 = $2("midi-banner");
+    el2.textContent = msg;
+    el2.style.display = "block";
   }
   function wireShortcuts() {
     wireKeyboard({
@@ -9194,10 +9341,10 @@ ${explainCadence(c.cadence)}` : ""}`;
     $2("key-btn-auto").textContent = state.activeKey ? "" : t("key.autoShort").toLowerCase();
   }
   function setMidiStatus(text, color2, title) {
-    const el = $2("midi-status");
-    el.textContent = text;
-    el.title = title;
-    el.style.setProperty("--dot", color2);
+    const el2 = $2("midi-status");
+    el2.textContent = text;
+    el2.title = title;
+    el2.style.setProperty("--dot", color2);
     $2("rail-midi-dot").style.background = color2;
   }
   function updateSoundStatus() {
