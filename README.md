@@ -275,7 +275,7 @@ tests/
   analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
   midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
   library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
-  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, piano.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts, pitch.test.ts, settings.test.ts, commands.test.ts
+  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, piano.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts, pitch.test.ts, settings.test.ts, commands.test.ts, strings.test.ts
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both

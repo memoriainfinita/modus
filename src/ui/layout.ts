@@ -105,7 +105,7 @@ export function wirePanelToggles(panels: Panels) {
 
 export function applyPanelVisibility(panels: Panels) {
   setGuitarControlsVisible(panels.guitarControls)
-  const gcw = document.getElementById('guitar-ctrl-wrap'); if (gcw) gcw.style.display = panels.guitarControls ? '' : 'none'
+  document.getElementById('guitar-container')?.classList.toggle('strings-bare', !panels.guitarControls)
   document.querySelector('.menu-item[data-panel="guitarControls"]')?.setAttribute('aria-pressed', String(panels.guitarControls))
 }
 
@@ -134,7 +134,8 @@ function wirePanelMenus() {
       open = { btn, menu }
       return
     }
-    if (open && !open.menu.contains(target)) close()
+    // composedPath: a menu that redraws its items on the click no longer contains the target
+    if (open && !e.composedPath().includes(open.menu)) close()
   })
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && open) { e.stopPropagation(); close(true) } }, true)
 }
@@ -297,7 +298,7 @@ function panelMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean
       ${item('btn-key-neg', t('menu.negative'), t('keyPanel.neg.title'))}
       ${item('btn-key-par', t('menu.parallel'), t('keyPanel.par.title'))}
       ${item('btn-key-colt', t('menu.coltrane'), t('keyPanel.colt.title'))}`
-    case 'guitar': return `<button type="button" class="menu-item" data-panel="guitarControls"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t('menu.controls')}</span></button>`
+    case 'guitar': return `<div id="strings-menu"></div><div class="menu-sep"></div><button type="button" class="menu-item" data-panel="guitarControls"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t('menu.controls')}</span></button>`
     default: return ''
   }
 }
@@ -428,7 +429,7 @@ function watchFittedDiagrams() {
   const fitAll = (el: HTMLElement) => {
     // abcjs fixes the height of the element it draws into and leaves part of its canvas empty
     el.style.height = ''
-    const svgs = el.id === 'guitar-container' ? el.querySelectorAll(':scope > div:first-child svg') : el.querySelectorAll(':scope > svg')
+    const svgs = el.id === 'guitar-container' ? el.querySelectorAll('.strings-drawing svg') : el.querySelectorAll(':scope > svg')
     svgs.forEach(svg => fitSvg(svg as SVGSVGElement, el.id === 'staff-container'))
   }
   const containers = [...document.querySelectorAll<HTMLElement>('.fit, #guitar-container')]
@@ -513,7 +514,7 @@ export function panelMenuCommands(): Command[] {
     const menu = document.getElementById(`menu-${id}`)
     if (!menu) return []
     const panel = t(`module.${id as ModuleId}`)
-    return [...menu.querySelectorAll<HTMLElement>('.menu-item, .menu-step')].map(el => {
+    return [...menu.querySelectorAll<HTMLElement>('.menu-item, .menu-step, .menu-chip')].map(el => {
       const text = el.classList.contains('menu-step') ? `${t('menu.size')} ${el.textContent}` : el.dataset.label ?? (el.querySelector('.menu-label') ?? el).textContent ?? ''
       return { label: `${panel}: ${text.trim()}`, hint: el.getAttribute('aria-pressed') === 'true' ? t('cmd.on') : t('cmd.menu'), run: () => el.click() }
     })

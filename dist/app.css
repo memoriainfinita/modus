@@ -1091,14 +1091,6 @@ body.rail-hidden .rail-col {
   display: flex;
   flex-direction: column;
 }
-#guitar-container > div:first-child {
-  flex: 1;
-  min-height: 0;
-}
-#guitar-container > div:first-child > svg {
-  width: 100%;
-  height: 100%;
-}
 .module-history .module-body,
 .module-song .module-body {
   padding: 0 0 4px;
@@ -1380,7 +1372,7 @@ body.presenting #midi-banner,
 body.presenting .module-header,
 body.presenting .module-resize,
 body.presenting .module-menu,
-body.presenting #guitar-ctrl-wrap,
+body.presenting .guitar-chrome,
 body.presenting .chord-head-alts {
   display: none !important;
 }
@@ -1625,112 +1617,169 @@ body.presenting .grid {
   font-size: 1em;
   overflow-wrap: break-word;
 }
-#guitar-ctrl-wrap {
-  margin-top: 6px;
-  flex-direction: column;
+.strings-tabs {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+.strings-tab {
+  height: 26px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.strings-tab:hover {
+  color: var(--text);
+}
+.strings-tab[aria-pressed=true] {
+  background: var(--surface);
+  color: var(--text-strong);
+}
+.strings-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
   gap: 4px;
 }
-.guitar-ctrl-row {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  justify-content: center;
+.strings-drawing {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
 }
-.guitar-ctrl-row-wrap {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.guitar-ctrl {
-  border: 1px solid var(--border-soft);
-  border-radius: 5px;
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  padding: 3px 9px;
-  background: transparent;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-.guitar-ctrl.active {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
+.strings-drawing > svg,
+.strings-drawing > div > svg {
+  width: 100%;
+  height: 100%;
 }
 .guitar-nav {
-  border: 1px solid var(--border-soft);
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px;
-  padding: 1px 8px;
-  line-height: 1.6;
+  flex: none;
+  width: 36px;
+  height: min(120px, 60%);
+  border: 0;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-muted);
-}
-.guitar-voicing-count {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.guitar-nav-placeholder {
-  font-size: 10px;
-  color: var(--border-soft);
-}
-.guitar-size-btn {
-  border: 1px solid var(--border-soft);
-  border-radius: 5px;
+  font: inherit;
+  font-size: 26px;
   cursor: pointer;
-  background: transparent;
-  color: var(--text-muted);
-  padding: 0 4px;
-  font-size: 10px;
-  line-height: 1.6;
 }
-.guitar-tuning-sel,
-.guitar-instrument-sel {
+.guitar-nav:hover {
   background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--border-soft);
-  border-radius: 6px;
-  padding: 3px 6px;
+}
+@media (pointer: coarse) {
+  .guitar-nav {
+    background: var(--surface);
+  }
+}
+.strings-foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+}
+.strings-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+.strings-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.strings-dot.on {
+  background: var(--accent);
+}
+.strings-count {
   font-size: 12px;
+  color: var(--text-muted);
+}
+.strings-caption {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.strings-caption:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+#guitar-container.strings-bare .guitar-chrome {
+  display: none;
 }
 .guitar-placeholder {
   opacity: 0.35;
-}
-.tuner-row {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  margin-top: 5px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.guitar-string-input {
-  width: 28px;
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  font-size: 11px;
-  text-align: center;
-  padding: 2px 0;
-}
-.guitar-string-input.invalid {
-  border-color: var(--danger);
-}
-.note-icon {
-  font-size: 13px;
-  line-height: 1;
+  height: 100%;
 }
 .no-voicing {
-  font-size: 11px;
+  flex: 1;
+  font-size: 12px;
   color: var(--text-dim);
   text-align: center;
   padding: 16px;
+}
+.menu-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 4px 4px;
+}
+.menu-chip {
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.menu-chip:hover {
+  border-color: var(--border);
+}
+.menu-chip[aria-pressed=true] {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.strings-inputs {
+  display: grid;
+  gap: 4px;
+  padding: 2px 4px 4px;
+}
+.guitar-string-input {
+  height: 28px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: center;
+  font: inherit;
+  font-size: 12px;
+}
+.guitar-string-input.invalid {
+  border-color: var(--danger);
 }
 .history-wrap {
   display: flex;
@@ -2266,6 +2315,9 @@ body.presenting .grid {
 body.view-mode {
   overflow: hidden;
 }
+body.view-mode .guitar-chrome {
+  display: none;
+}
 #view-content {
   width: 100vw;
   height: 100vh;
@@ -2661,7 +2713,7 @@ body {
   .ctrl-btn,
   .mode-btn,
   .size-ctrl-btn,
-  .guitar-ctrl,
+  .guitar-nav,
   .ear-answer,
   .ctrl-select,
   .module-close,
