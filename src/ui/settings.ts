@@ -10,6 +10,7 @@ import { showUndo } from './undo'
 import { t, getLang, getNoteNaming, saveLang, saveNoteNaming, LANGS, LANG_NAMES, NOTE_NAMINGS, cadenceLabel } from '../i18n/i18n'
 import type { Lang, NoteNaming } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
+import type { Command } from './commands'
 import { getThemeChoice, saveThemeChoice, THEME_CHOICES } from './theme'
 import type { ThemeChoice } from './theme'
 import { PREFS, getPref, setPref, resetPref, type PrefName, type PrefDef } from '../settings/prefs'
@@ -391,6 +392,27 @@ export function openSettings(at?: Section) {
   ;(el.querySelector('#set-search') as HTMLInputElement).value = ''
   applySearch('')
   el.querySelector<HTMLElement>(`.set-nav-item[data-section="${section}"]`)?.focus()
+}
+
+/** Settings opened on what a search finds: the row asked for, and any other that matches. */
+export function openSettingsAt(query: string) {
+  openSettings()
+  const search = root()!.querySelector('#set-search') as HTMLInputElement
+  search.value = query
+  applySearch(query)
+}
+
+/** Each row of Settings as an order for the bar's field: it opens Settings on that row. */
+export function settingsCommands(): Command[] {
+  const el = root()
+  if (!el) return []
+  return [...el.querySelectorAll<HTMLElement>('.set-section')].flatMap(sec => {
+    const hint = sec.querySelector('.set-section-title')?.textContent ?? ''
+    return [...sec.querySelectorAll<HTMLElement>('.set-row .set-label')].map(label => {
+      const name = label.textContent?.trim() ?? ''
+      return { label: t('cmd.setting', { name }), hint, run: () => openSettingsAt(name) }
+    })
+  })
 }
 
 export function closeSettings(): boolean {

@@ -30,11 +30,11 @@ import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-pa
 import { explainDetection, renderExplanation } from './detector/explain'
 import { renderProgressions } from './ui/progressions'
 import { renderEar, resetEarScore, type EarQuestion } from './ui/ear'
-import { wireSettings, openSettings, closeSettings, offerSettingsUndo } from './ui/settings'
+import { wireSettings, openSettings, closeSettings, offerSettingsUndo, settingsCommands } from './ui/settings'
 import { renderPlayer } from './ui/player'
 import { getPref, onPrefChange, type PrefName } from './settings/prefs'
 import { renderTuner, updateTuner } from './ui/tuner'
-import { maybeStartTour } from './ui/tour'
+import { maybeStartTour, startTour } from './ui/tour'
 import { wirePopover, closePopover } from './ui/popover'
 import { wireCommandSearch, type Command } from './ui/commands'
 import { instrumentLabel } from './i18n/instruments'
@@ -45,7 +45,7 @@ import { spellDetection, spellVoicing } from './theory/spelling'
 import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps, MAJOR_ROOTS, MINOR_ROOTS } from './theory/keys'
-import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands } from './ui/layout'
+import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands, panelMenuCommands, isModuleShown } from './ui/layout'
 import { applyTheme, onThemeChange, followSystemTheme } from './ui/theme'
 import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang, getLang } from './i18n/i18n'
 import { announce, watchIconButtons } from './ui/a11y'
@@ -406,6 +406,7 @@ function buildLayout() {
     shown = now
     for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k]
     renderDetector()
+    renderZone2()   // → Song shows with the Song panel
   })
 }
 
@@ -955,8 +956,30 @@ function renderZone2() {
       showChord(entry.symbol, entry.notes, state.history[i + 1] ?? null)
       markActiveHistoryEntry($('zone2-content'), entry.id)
     },
-    state.historyActiveCursorId
+    state.historyActiveCursorId,
+    isModuleShown('song') ? sendActiveToSong : undefined,
   )
+}
+
+/** The history chip marked, or the newest, into the song at its cursor (S, → Song). */
+function sendActiveToSong() {
+  const entry = state.historyActiveCursorId
+    ? state.history.find(e => e.id === state.historyActiveCursorId)
+    : state.history[0]
+  if (entry) sendToSong(entry)
+}
+
+/** Esc: leaves presentation; otherwise lets go of a held chord, stops MIDI fill, clears the cursors. */
+function escapeAll() {
+  if (isPresenting()) { closePresentation(); return }
+  melody = []
+  releaseKeptNotes()
+  cancelCapture()
+  state.activeCursorId = null
+  state.captureTargetId = null
+  state.historyActiveCursorId = null
+  markActiveHistoryEntry($('zone2-content'), null)
+  renderZone3()
 }
 
 function renderZone3() {
@@ -1076,13 +1099,7 @@ function wireShortcuts() {
     toggleHold: () => setModeBtn(getMode() === 'hold' ? 'normal' : 'hold'),
     toggleArpeggio: () => setModeBtn(getMode() === 'arpeggio' ? 'normal' : 'arpeggio'),
     play: playCurrent,
-    sendToSong: () => {
-      // Active history chip, or the most recent one if none is selected
-      const entry = state.historyActiveCursorId
-        ? state.history.find(e => e.id === state.historyActiveCursorId)
-        : state.history[0]
-      if (entry) sendToSong(entry)
-    },
+    sendToSong: sendActiveToSong,
     clearHistory: clearHistoryWithUndo,
     step: stepCursor,
     deleteAtCursor: () => {
@@ -1095,17 +1112,7 @@ function wireShortcuts() {
     togglePresentation,
     openSettings: () => openSettings(),
     closeSettings,
-    escape: () => {
-      if (isPresenting()) { closePresentation(); return }
-      melody = []
-      releaseKeptNotes()
-      cancelCapture()
-      state.activeCursorId = null
-      state.captureTargetId = null
-      state.historyActiveCursorId = null
-      markActiveHistoryEntry($('zone2-content'), null)
-      renderZone3()
-    },
+    escape: escapeAll,
     selectCandidate: idx => {
       if (state.detection?.kind === 'chord' && idx < state.detection.candidates.length) onAltSelect(idx)
     },
@@ -1310,10 +1317,20 @@ function barCommands(): Command[] {
     ...FIFTHS_MAJOR.flatMap(pc => [`${MAJOR_ROOTS[pc]} Major`, `${MINOR_ROOTS[(pc + 9) % 12]} Minor`])
       .map(k => ({ label: t('cmd.key', { key: keyLabel(k) }), run: () => pickKey(k) })),
     ...layoutCommands(),
+    { label: t('cmd.playCurrent'), hint: t('kbd.space'), run: playCurrent },
+    { label: t('cmd.send'), hint: 'S', run: sendActiveToSong },
+    { label: t('cmd.clearHistory'), hint: 'C', run: clearHistoryWithUndo },
+    { label: t('cmd.escape'), hint: 'Esc', run: escapeAll },
+    ...panelMenuCommands(),
     { label: t('cmd.present'), hint: 'P', run: togglePresentation },
     ...VIEW_NAMES.map(v => ({ label: t('cmd.view', { name: t(`view.${v}`) }), hint: 'OBS', run: () => (document.querySelector<HTMLElement>(`#view-menu [data-view="${v}"]`))?.click() })),
     { label: t('cmd.settings'), run: () => openSettings() },
     { label: t('cmd.help'), hint: '?', run: toggleHelp },
+    { label: t('cmd.tour'), run: startTour },
+    ...[...document.querySelectorAll<HTMLElement>('#view-menu [data-export]')].map(b => ({
+      label: t('cmd.export', { name: t(`view.${b.dataset.export as ViewName}`), format: b.dataset.format!.toUpperCase() }), hint: t('views.save'), run: () => b.click(),
+    })),
+    ...settingsCommands(),
     { label: t('cmd.rail'), run: () => $('btn-rail').click() },
     ...GM_INSTRUMENT_GROUPS.flatMap(g => g.instruments.map(i => ({
       label: t('cmd.instrument', { name: instrumentLabel(i) }), hint: t(g.label),

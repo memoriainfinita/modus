@@ -1070,6 +1070,27 @@ await check('the rail hides and stays hidden after a reload; its menus also open
   assert(await page.locator('#rail').isVisible(), 'rail not back')
 })
 
+await check('the field reaches the panels\' ⋯ options and each row of Settings', async () => {
+  await page.click('#typed-chord')
+  await page.keyboard.type('circle seventh')
+  assert((await text('#cmd-results .cmd-item')).startsWith('Circle of fifths: '), `results: ${await text('#cmd-results')}`)
+  await page.keyboard.press('Escape')
+  await page.fill('#typed-chord', 'settings theme')
+  await page.keyboard.press('Enter')
+  assert(await page.locator('#settings').isVisible(), 'Settings not open')
+  assert(await page.inputValue('#set-search') !== '', 'Settings not on the row')
+  await page.keyboard.press('Escape')
+})
+
+await check('→ Song puts the newest history chord in the song', async () => {
+  await showPanel('song', true)
+  await play([62, 65, 69], 1000)
+  await off([62, 65, 69])
+  const before = await page.locator('.chord-chip').count()
+  await page.click('.history-send-btn')
+  assert(await page.locator('.chord-chip').count() === before + 1, 'no chord added to the song')
+})
+
 await check('toolbar fits on one row in English', async () => {
   assert(await toolbarRows() === 1, 'toolbar wraps')
 })

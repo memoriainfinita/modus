@@ -6,7 +6,7 @@ import type { AppState } from '../types'
 import { ALL_KEYS } from '../theory/keys'
 import { GM_INSTRUMENT_GROUPS, getCurrentInstrument, getVolume } from '../audio/audio'
 import { setGuitarControlsVisible } from '../diagrams/guitar'
-import { ANALYSIS_FIELD_KEYS, fieldTooltip } from '../detector/analysis-panel'
+import { ANALYSIS_FIELD_KEYS, fieldTooltip, fieldLabel } from '../detector/analysis-panel'
 import type { AnalysisFieldKey } from '../detector/analysis-panel'
 import { loadBool, loadJSON, save } from './storage'
 import { escapeHtml } from './html'
@@ -282,7 +282,7 @@ function panelMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean
       ${steps('btn-analysis-minus', 'btn-analysis-plus')}
       ${heading(t('menu.fields'))}
       <div class="menu-grid">${ANALYSIS_FIELD_KEYS.map(f =>
-        `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? ' active' : ''}" aria-pressed="${fieldsVisible[f]}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
+        `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? ' active' : ''}" aria-pressed="${fieldsVisible[f]}" data-label="${escapeHtml(fieldLabel(f))}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
       ).join('')}</div>`
     case 'cof': return `
       ${item('btn-cof-flat', t('menu.flat'), t('cof.flat.title'))}
@@ -505,6 +505,19 @@ export function layoutCommands(): Command[] {
       return { label: t(shown ? 'cmd.hide' : 'cmd.show', { name }), hint: t('layout.panels'), run: () => showModule(id, !shown) }
     }),
   ]
+}
+
+/** The options in the ⋯ menus of the panels shown, as orders: each presses its item. */
+export function panelMenuCommands(): Command[] {
+  return grid.flatMap(({ id }) => {
+    const menu = document.getElementById(`menu-${id}`)
+    if (!menu) return []
+    const panel = t(`module.${id as ModuleId}`)
+    return [...menu.querySelectorAll<HTMLElement>('.menu-item, .menu-step')].map(el => {
+      const text = el.classList.contains('menu-step') ? `${t('menu.size')} ${el.textContent}` : el.dataset.label ?? (el.querySelector('.menu-label') ?? el).textContent ?? ''
+      return { label: `${panel}: ${text.trim()}`, hint: el.getAttribute('aria-pressed') === 'true' ? t('cmd.on') : t('cmd.menu'), run: () => el.click() }
+    })
+  })
 }
 
 function saveCurrentAs() {

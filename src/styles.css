@@ -872,7 +872,7 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 .module-history .history-chip-symbol { font-size: 1em; }
 .module-history :is(.history-chip-roman, .history-cadence, .history-modulation) { font-size: 0.8em; }
 .module-history .history-chip { min-width: 4.2em; padding: 0.33em 0.66em; }
-.history-clear-btn {
+.history-clear-btn, .history-send-btn {
   padding: 4px 10px;
   border-radius: 4px;
   background: var(--btn-neutral);

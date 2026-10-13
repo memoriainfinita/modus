@@ -54,6 +54,14 @@ export const en = {
   'cmd.help': 'Help',
   'cmd.rail': 'Show or hide the rail',
   'cmd.on': 'on',
+  'cmd.menu': '⋯ menu',
+  'cmd.setting': 'Settings: {name}',
+  'cmd.playCurrent': 'Play the chord',
+  'cmd.send': 'Send the chord to the song',
+  'cmd.clearHistory': 'Clear the history',
+  'cmd.escape': 'Let go of the held chord, stop MIDI fill',
+  'cmd.tour': 'Guided tour',
+  'cmd.export': 'Save {name} as {format}',
   'cmd.none': 'No chord or order matches “{q}”',
   'cmd.hint': 'A chord (G7, F#m7b5…) plays it; the name of an option does it.',
   'rail.title': 'Show or hide the rail (input, sound, layout, presentation, view windows)',
@@ -723,6 +731,8 @@ export const en = {
 
   // History
   'history.clear': 'Clear',
+  'history.send': '→ Song',
+  'history.send.title': 'Put the chord marked (or the newest) in the song, after its cursor (S)',
   'history.clear.title': 'Clear history (C) — can be undone',
   'history.cleared': 'History cleared ({n})',
   'history.removed': 'Removed {chord}',

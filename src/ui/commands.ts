@@ -12,6 +12,8 @@ const MAX_RESULTS = 8
 /** Lower case and without accents: "Música" is found as "musica". */
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 const words = (s: string) => fold(s).split(/[^a-z0-9#]+/).filter(Boolean)
+/** A plural typed finds the singular name: "sevenths" finds "Seventh chords", "menores" "menor". */
+const singular = (w: string) => w.length > 4 ? w.replace(/e?s$/, '') : w
 
 /**
  * The orders whose name (or hint) has a word starting with each word typed: "arp" finds
@@ -23,7 +25,7 @@ export function matchCommands(query: string, commands: Command[]): Command[] {
   if (!q.length) return []
   const scored = commands.flatMap((c, i) => {
     const w = words(`${c.label} ${c.hint ?? ''}`)
-    if (!q.every(part => w.some(word => word.startsWith(part)))) return []
+    if (!q.every(part => w.some(word => word.startsWith(part) || word.startsWith(singular(part))))) return []
     const first = words(c.label.split(':').pop() ?? c.label)[0] ?? ''
     return [{ c, i, rank: first.startsWith(q[0]) ? 0 : 1 }]
   })

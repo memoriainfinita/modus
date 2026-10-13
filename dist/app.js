@@ -714,6 +714,14 @@
     "cmd.help": "Help",
     "cmd.rail": "Show or hide the rail",
     "cmd.on": "on",
+    "cmd.menu": "\u22EF menu",
+    "cmd.setting": "Settings: {name}",
+    "cmd.playCurrent": "Play the chord",
+    "cmd.send": "Send the chord to the song",
+    "cmd.clearHistory": "Clear the history",
+    "cmd.escape": "Let go of the held chord, stop MIDI fill",
+    "cmd.tour": "Guided tour",
+    "cmd.export": "Save {name} as {format}",
     "cmd.none": "No chord or order matches \u201C{q}\u201D",
     "cmd.hint": "A chord (G7, F#m7b5\u2026) plays it; the name of an option does it.",
     "rail.title": "Show or hide the rail (input, sound, layout, presentation, view windows)",
@@ -1371,6 +1379,8 @@
     "guitar.tuner.title": "Edit string tuning",
     // History
     "history.clear": "Clear",
+    "history.send": "\u2192 Song",
+    "history.send.title": "Put the chord marked (or the newest) in the song, after its cursor (S)",
     "history.clear.title": "Clear history (C) \u2014 can be undone",
     "history.cleared": "History cleared ({n})",
     "history.removed": "Removed {chord}",
@@ -1508,6 +1518,14 @@
     "cmd.help": "Ayuda",
     "cmd.rail": "Mostrar u ocultar el riel",
     "cmd.on": "activo",
+    "cmd.menu": "men\xFA \u22EF",
+    "cmd.setting": "Ajustes: {name}",
+    "cmd.playCurrent": "Tocar el acorde",
+    "cmd.send": "Mandar el acorde a la canci\xF3n",
+    "cmd.clearHistory": "Borrar el historial",
+    "cmd.escape": "Soltar el acorde mantenido, parar el relleno MIDI",
+    "cmd.tour": "Visita guiada",
+    "cmd.export": "Guardar {name} como {format}",
     "cmd.none": "Ni acorde ni orden con \xAB{q}\xBB",
     "cmd.hint": "Un acorde (Sol7, Fa#m7b5\u2026) lo toca; el nombre de una opci\xF3n la hace.",
     "rail.title": "Mostrar u ocultar el riel (entrada, sonido, disposici\xF3n, presentaci\xF3n, ventanas)",
@@ -2153,6 +2171,8 @@
     "guitar.tuning.custom": "Personal",
     "guitar.tuner.title": "Cambiar la afinaci\xF3n de cada cuerda",
     "history.clear": "Borrar",
+    "history.send": "\u2192 Canci\xF3n",
+    "history.send.title": "Pon el acorde marcado (o el \xFAltimo) en la canci\xF3n, tras su cursor (S)",
     "history.clear.title": "Borrar el historial (C); se puede deshacer",
     "history.cleared": "Historial borrado ({n})",
     "history.removed": "Quitado {chord}",
@@ -3336,6 +3356,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
 
   // src/detector/analysis-panel.ts
   var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "voices", "rules", "secondary", "subs", "upper", "forte"];
+  var fieldLabel = (f) => t(`field.${f}`);
   var fieldTooltip = (f) => t(`field.${f}.title`);
   var rowLabel = (f) => t(`field.${f}.row`);
   var fnClass = (fn) => fn === "T" || fn === "S" || fn === "D" ? ` fn-${fn}` : "";
@@ -4231,7 +4252,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       el.classList.toggle("active-cursor", el.dataset.id === entryId);
     });
   }
-  function renderHistory(container, activeKey, onChipClick, activeCursorEntryId) {
+  function renderHistory(container, activeKey, onChipClick, activeCursorEntryId, onSend) {
     const strip = document.createElement("div");
     strip.className = "history-strip";
     const shown = entries.map((e) => ({ ...e, symbol: spellChordSymbol(e.symbol, activeKey) }));
@@ -4311,6 +4332,14 @@ ${explainCadence(cadence)}` : "");
     const wrap = document.createElement("div");
     wrap.className = "history-wrap";
     wrap.appendChild(strip);
+    if (onSend && entries.length) {
+      const sendBtn = document.createElement("button");
+      sendBtn.textContent = t("history.send");
+      sendBtn.title = t("history.send.title");
+      sendBtn.className = "history-send-btn";
+      sendBtn.addEventListener("click", onSend);
+      wrap.appendChild(sendBtn);
+    }
     wrap.appendChild(clearBtn);
     container.innerHTML = "";
     container.appendChild(wrap);
@@ -4727,6 +4756,23 @@ ${explainCadence(cadence)}` : "");
     el.querySelector("#set-search").value = "";
     applySearch("");
     el.querySelector(`.set-nav-item[data-section="${section}"]`)?.focus();
+  }
+  function openSettingsAt(query) {
+    openSettings();
+    const search = root().querySelector("#set-search");
+    search.value = query;
+    applySearch(query);
+  }
+  function settingsCommands() {
+    const el = root();
+    if (!el) return [];
+    return [...el.querySelectorAll(".set-section")].flatMap((sec) => {
+      const hint2 = sec.querySelector(".set-section-title")?.textContent ?? "";
+      return [...sec.querySelectorAll(".set-row .set-label")].map((label) => {
+        const name = label.textContent?.trim() ?? "";
+        return { label: t("cmd.setting", { name }), hint: hint2, run: () => openSettingsAt(name) };
+      });
+    });
   }
   function closeSettings() {
     const el = root();
@@ -5517,7 +5563,7 @@ ${explainCadence(cadence)}` : "");
       ${steps("btn-analysis-minus", "btn-analysis-plus")}
       ${heading(t("menu.fields"))}
       <div class="menu-grid">${ANALYSIS_FIELD_KEYS.map(
-          (f) => `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? " active" : ""}" aria-pressed="${fieldsVisible[f]}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
+          (f) => `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? " active" : ""}" aria-pressed="${fieldsVisible[f]}" data-label="${escapeHtml(fieldLabel(f))}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
         ).join("")}</div>`;
       case "cof":
         return `
@@ -5741,6 +5787,17 @@ ${explainCadence(cadence)}` : "");
         return { label: t(shown ? "cmd.hide" : "cmd.show", { name }), hint: t("layout.panels"), run: () => showModule(id, !shown) };
       })
     ];
+  }
+  function panelMenuCommands() {
+    return grid2.flatMap(({ id }) => {
+      const menu = document.getElementById(`menu-${id}`);
+      if (!menu) return [];
+      const panel = t(`module.${id}`);
+      return [...menu.querySelectorAll(".menu-item, .menu-step")].map((el) => {
+        const text = el.classList.contains("menu-step") ? `${t("menu.size")} ${el.textContent}` : el.dataset.label ?? (el.querySelector(".menu-label") ?? el).textContent ?? "";
+        return { label: `${panel}: ${text.trim()}`, hint: el.getAttribute("aria-pressed") === "true" ? t("cmd.on") : t("cmd.menu"), run: () => el.click() };
+      });
+    });
   }
   function saveCurrentAs() {
     const input = document.getElementById("layout-name");
@@ -7853,12 +7910,13 @@ ${explainCadence(c.cadence)}` : ""}`;
   var MAX_RESULTS = 8;
   var fold = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   var words = (s) => fold(s).split(/[^a-z0-9#]+/).filter(Boolean);
+  var singular = (w) => w.length > 4 ? w.replace(/e?s$/, "") : w;
   function matchCommands(query, commands) {
     const q = words(query);
     if (!q.length) return [];
     const scored = commands.flatMap((c, i) => {
       const w = words(`${c.label} ${c.hint ?? ""}`);
-      if (!q.every((part) => w.some((word) => word.startsWith(part)))) return [];
+      if (!q.every((part) => w.some((word) => word.startsWith(part) || word.startsWith(singular(part))))) return [];
       const first = words(c.label.split(":").pop() ?? c.label)[0] ?? "";
       return [{ c, i, rank: first.startsWith(q[0]) ? 0 : 1 }];
     });
@@ -8309,6 +8367,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       shown = now;
       for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k];
       renderDetector();
+      renderZone2();
     });
   }
   var autoKey = null;
@@ -8770,8 +8829,27 @@ ${explainCadence(c.cadence)}` : ""}`;
         showChord(entry.symbol, entry.notes, state.history[i + 1] ?? null);
         markActiveHistoryEntry($2("zone2-content"), entry.id);
       },
-      state.historyActiveCursorId
+      state.historyActiveCursorId,
+      isModuleShown("song") ? sendActiveToSong : void 0
     );
+  }
+  function sendActiveToSong() {
+    const entry = state.historyActiveCursorId ? state.history.find((e) => e.id === state.historyActiveCursorId) : state.history[0];
+    if (entry) sendToSong(entry);
+  }
+  function escapeAll() {
+    if (isPresenting()) {
+      closePresentation();
+      return;
+    }
+    melody = [];
+    releaseKeptNotes();
+    cancelCapture();
+    state.activeCursorId = null;
+    state.captureTargetId = null;
+    state.historyActiveCursorId = null;
+    markActiveHistoryEntry($2("zone2-content"), null);
+    renderZone3();
   }
   function renderZone3() {
     mountSong($2("zone3-content"), state.song, makeSongHandlers());
@@ -8868,10 +8946,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       toggleHold: () => setModeBtn(getMode() === "hold" ? "normal" : "hold"),
       toggleArpeggio: () => setModeBtn(getMode() === "arpeggio" ? "normal" : "arpeggio"),
       play: playCurrent,
-      sendToSong: () => {
-        const entry = state.historyActiveCursorId ? state.history.find((e) => e.id === state.historyActiveCursorId) : state.history[0];
-        if (entry) sendToSong(entry);
-      },
+      sendToSong: sendActiveToSong,
       clearHistory: clearHistoryWithUndo,
       step: stepCursor,
       deleteAtCursor: () => {
@@ -8887,20 +8962,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       togglePresentation,
       openSettings: () => openSettings(),
       closeSettings,
-      escape: () => {
-        if (isPresenting()) {
-          closePresentation();
-          return;
-        }
-        melody = [];
-        releaseKeptNotes();
-        cancelCapture();
-        state.activeCursorId = null;
-        state.captureTargetId = null;
-        state.historyActiveCursorId = null;
-        markActiveHistoryEntry($2("zone2-content"), null);
-        renderZone3();
-      },
+      escape: escapeAll,
       selectCandidate: (idx) => {
         if (state.detection?.kind === "chord" && idx < state.detection.candidates.length) onAltSelect(idx);
       }
@@ -9083,10 +9145,22 @@ ${explainCadence(c.cadence)}` : ""}`;
       { label: t("cmd.keyAuto"), hint: t("a11y.key"), run: () => pickKey("") },
       ...FIFTHS_MAJOR.flatMap((pc3) => [`${MAJOR_ROOTS[pc3]} Major`, `${MINOR_ROOTS[(pc3 + 9) % 12]} Minor`]).map((k) => ({ label: t("cmd.key", { key: keyLabel(k) }), run: () => pickKey(k) })),
       ...layoutCommands(),
+      { label: t("cmd.playCurrent"), hint: t("kbd.space"), run: playCurrent },
+      { label: t("cmd.send"), hint: "S", run: sendActiveToSong },
+      { label: t("cmd.clearHistory"), hint: "C", run: clearHistoryWithUndo },
+      { label: t("cmd.escape"), hint: "Esc", run: escapeAll },
+      ...panelMenuCommands(),
       { label: t("cmd.present"), hint: "P", run: togglePresentation },
       ...VIEW_NAMES.map((v) => ({ label: t("cmd.view", { name: t(`view.${v}`) }), hint: "OBS", run: () => document.querySelector(`#view-menu [data-view="${v}"]`)?.click() })),
       { label: t("cmd.settings"), run: () => openSettings() },
       { label: t("cmd.help"), hint: "?", run: toggleHelp },
+      { label: t("cmd.tour"), run: startTour },
+      ...[...document.querySelectorAll("#view-menu [data-export]")].map((b) => ({
+        label: t("cmd.export", { name: t(`view.${b.dataset.export}`), format: b.dataset.format.toUpperCase() }),
+        hint: t("views.save"),
+        run: () => b.click()
+      })),
+      ...settingsCommands(),
       { label: t("cmd.rail"), run: () => $2("btn-rail").click() },
       ...GM_INSTRUMENT_GROUPS.flatMap((g) => g.instruments.map((i) => ({
         label: t("cmd.instrument", { name: instrumentLabel(i) }),
