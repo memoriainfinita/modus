@@ -123,9 +123,11 @@ export function renderPlayer(container: HTMLElement) {
       <button class="ctrl-btn" data-act="back" title="${escapeHtml(t('player.back.title'))}"${dis}>⟲5</button>
       <button class="ctrl-btn" data-act="play" title="${escapeHtml(t('player.play.title'))}"${dis}>${audio && !audio.paused ? '⏸' : '▶'}</button>
       <span class="player-time">${formatTime(audio?.currentTime ?? 0, true)} / ${formatTime(audio?.duration ?? 0)}</span>
-      <select class="player-speed" title="${escapeHtml(t('player.speed.title'))}">
-        ${SPEEDS.map(s => `<option value="${s}"${s === speed ? ' selected' : ''}>${Math.round(Number(s) * 100)}%</option>`).join('')}
-      </select>
+      <span class="player-speed" role="group" aria-label="${escapeHtml(t('player.speed.title'))}" title="${escapeHtml(t('player.speed.title'))}">
+        <button class="size-ctrl-btn" data-speed="-1" aria-label="${escapeHtml(t('ctrl.smaller'))}"${speed === SPEEDS[0] ? ' disabled' : ''}>−</button>
+        <span class="player-speed-value">${Math.round(Number(speed) * 100)} %</span>
+        <button class="size-ctrl-btn" data-speed="1" aria-label="${escapeHtml(t('ctrl.larger'))}"${speed === SPEEDS[SPEEDS.length - 1] ? ' disabled' : ''}>+</button>
+      </span>
       <button class="size-ctrl-btn${loopA !== null ? ' active' : ''}" data-act="a" title="${escapeHtml(t('player.a.title'))}"${dis}>A${mark(loopA)}</button>
       <button class="size-ctrl-btn${loopB !== null ? ' active' : ''}" data-act="b" title="${escapeHtml(t('player.b.title'))}"${dis}>B${mark(loopB)}</button>
       <button class="size-ctrl-btn" data-act="clear" title="${escapeHtml(t('player.clear.title'))}"${loopA === null ? ' disabled' : ''}>×</button>
@@ -141,11 +143,15 @@ export function renderPlayer(container: HTMLElement) {
     openFile(f, container)
   }
 
-  container.querySelector<HTMLSelectElement>('.player-speed')!.addEventListener('change', e => {
-    speed = (e.target as HTMLSelectElement).value as Speed
+  // The speed steps through the list, slower or faster
+  container.querySelectorAll<HTMLButtonElement>('[data-speed]').forEach(b => b.addEventListener('click', () => {
+    const i = SPEEDS.indexOf(speed) + Number(b.dataset.speed)
+    if (i < 0 || i >= SPEEDS.length) return
+    speed = SPEEDS[i]
     save('player-speed', speed)
     if (audio) audio.playbackRate = Number(speed)
-  })
+    renderPlayer(container)
+  }))
 
   container.querySelectorAll<HTMLButtonElement>('[data-act]').forEach(b => b.addEventListener('click', () => {
     if (!audio?.src) return

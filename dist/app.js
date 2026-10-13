@@ -908,6 +908,9 @@
     "analysis.inversion": "Inversion",
     "analysis.semitones": "{n} st",
     "analysis.yes": "Yes",
+    "ex.term.diatonic": "Diatonic",
+    "ex.term.figbass": "Figured bass {fig}",
+    "ex.term.voicing": "Position: {v}",
     "analysis.borrowed": "Borrowed ({mode})",
     "analysis.chromatic": "Chromatic",
     "fn.T": "Tonic",
@@ -1035,6 +1038,9 @@
     "ex.vl.seventh": "The seventh of a dominant seventh asks to fall by step.",
     "ex.interval": "{n} semitones. Its inversion, with the lower note an octave up, is a {inv}: together they make an octave.",
     "ex.cadence.title": "{cadence}: {text}",
+    "prog.group.jazz": "Jazz",
+    "prog.group.blues": "Blues",
+    "prog.group.pop": "Pop and classical",
     "prog.select.title": "A named progression, written in the key",
     "prog.play.title": "Play the progression, a bar every 2.4 s",
     "prog.stop.title": "Stop",
@@ -1713,6 +1719,9 @@
     "analysis.inversion": "Inversi\xF3n",
     "analysis.semitones": "{n} semit.",
     "analysis.yes": "S\xED",
+    "ex.term.diatonic": "Diat\xF3nico",
+    "ex.term.figbass": "Bajo cifrado {fig}",
+    "ex.term.voicing": "Posici\xF3n {v}",
     "analysis.borrowed": "Prestado ({mode})",
     "analysis.chromatic": "Crom\xE1tico",
     "fn.T": "T\xF3nica",
@@ -1838,6 +1847,9 @@
     "ex.vl.seventh": "La s\xE9ptima de una s\xE9ptima de dominante pide bajar por grado conjunto.",
     "ex.interval": "{n} semitonos. Su inversi\xF3n, con la nota grave una octava arriba, es {inv}: juntas suman una octava.",
     "ex.cadence.title": "{cadence}: {text}",
+    "prog.group.jazz": "Jazz",
+    "prog.group.blues": "Blues",
+    "prog.group.pop": "Pop y cl\xE1sicas",
     "prog.select.title": "Una progresi\xF3n con nombre, escrita en la tonalidad",
     "prog.play.title": "Tocar la progresi\xF3n, un comp\xE1s cada 2,4 s",
     "prog.stop.title": "Parar",
@@ -3404,6 +3416,10 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   var fieldLabel = (f) => t(`field.${f}`);
   var fieldTooltip = (f) => t(`field.${f}.title`);
   var rowLabel = (f) => t(`field.${f}.row`);
+  function cadenceWithDegrees(cadence) {
+    const degrees = cadence.match(/\(([^)]*)\)/)?.[1];
+    return degrees ? `${cadenceLabel(cadence, true)} (${degrees.replace(/->/g, "\u2192")})` : cadenceLabel(cadence, true);
+  }
   var fnClass = (fn) => fn === "T" || fn === "S" || fn === "D" ? ` fn-${fn}` : "";
   function renderChordSummary(detection, analysis, head, onAltSelect2) {
     const el = document.getElementById("chord-summary");
@@ -3486,13 +3502,13 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       figuredBass = analysis.figuredBass || "\u2014";
       diatonic = analysis.isDiatonic ? t("analysis.yes") : analysis.isBorrowed ? t("analysis.borrowed", { mode: analysis.borrowedFrom ?? "?" }) : t("analysis.chromatic");
       scales = analysis.suggestedScales.slice(0, 4).join(", ") || "\u2014";
-      cadence = analysis.cadence ? cadenceLabel(analysis.cadence) : "\u2014";
+      cadence = analysis.cadence ? cadenceWithDegrees(analysis.cadence) : "\u2014";
       if (analysis.isSecondary) secondary = `\u2192 ${analysis.secondaryTarget?.split("/")[1] ?? "?"}`;
       if (analysis.substitutions?.length) subs = analysis.substitutions.join(", ");
       voicing = analysis.voicing;
       plr = analysis.transformation;
       voices2 = analysis.voiceLeading;
-      if (analysis.voiceRules) rules = analysis.voiceRules.length ? analysis.voiceRules.join(", ") : t("vl.none");
+      if (analysis.voiceRules) rules = analysis.voiceRules.length ? analysis.voiceRules.join("\n") : t("vl.none");
       if (analysis.upperStructures.length) upper = analysis.upperStructures.join(", ");
     }
     const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.map(noteLabel).join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
@@ -4140,7 +4156,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       const vars = { chord, roman: a.secondaryTarget, target: targetChord ? chordLabel(targetChord) : target, targetRoman: target };
       return [{ term: a.secondaryTarget, text: t(kind.startsWith("vii") ? "ex.secondaryVii" : "ex.secondaryV", vars) }];
     }
-    if (a.isDiatonic) return [{ term: t("analysis.yes"), text: t("ex.diatonic", { chord, key: k }) }];
+    if (a.isDiatonic) return [{ term: t("ex.term.diatonic"), text: t("ex.diatonic", { chord, key: k }) }];
     const notes = notesOutside(symbol, key).join(" ");
     if (a.isBorrowed && a.borrowedFrom) {
       const mode4 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
@@ -4181,7 +4197,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     const chord = tryParseChord(symbol);
     const v = tryUMT("voicing", () => UMT.analyzeVoicing(noteNames.map((n) => UMT.parseNote(n)), chord), null);
     if (!v) return [];
-    const out = [{ term: t(`voicing.${v.position}`), text: t(`ex.voicing.${v.position}`) }];
+    const out = [{ term: t("ex.term.voicing", { v: t(`voicing.${v.position}`) }), text: t(`ex.voicing.${v.position}`) }];
     if (v.drop) out.push({ term: v.drop, text: t("ex.voicing.drop") });
     return out;
   }
@@ -4201,7 +4217,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       out.push(...colourEntries(symbol, key, a));
     }
     const fig = FIGURES[a.figuredBass ?? ""];
-    if (fig) out.push({ term: a.figuredBass || "5/3", text: `${t(fig)} ${t("ex.fig.intro")}` });
+    if (fig) out.push({ term: t("ex.term.figbass", { fig: a.figuredBass || "5/3" }), text: `${t(fig)} ${t("ex.fig.intro")}` });
     out.push(...voicingEntries(detection.notes, symbol));
     if (a.cadence) {
       const text = explainCadence(a.cadence);
@@ -7488,6 +7504,12 @@ ${explainCadence(cadence)}` : "");
     "pachelbel",
     "andalusian"
   ];
+  var GROUPS = {
+    jazz: ["ii-V-I", "ii-V-i", "turnaround-jazz", "backdoor-ii-V", "rhythm-changes", "coltrane-changes", "giant-steps-cycle"],
+    blues: ["blues-12", "blues-minor", "blues-jazz", "bird-blues"],
+    pop: ["I-V-vi-IV", "I-vi-IV-V", "I-IV-V", "pachelbel", "andalusian"]
+  };
+  var groupOf = (id) => Object.keys(GROUPS).find((g) => GROUPS[g].includes(id));
   var MINOR = ["ii-V-i", "blues-minor", "andalusian"];
   var barMs = () => 4 * 6e4 / getPref("progression-bpm");
   var BLUES = ["blues-12", "blues-jazz", "bird-blues"];
@@ -7540,7 +7562,9 @@ ${explainCadence(cadence)}` : "");
     stopProgression();
     const key = progressionKey(current3, analysisKey2);
     const chords = realizeProgression(current3, key);
-    const options = PROGRESSION_IDS.map((id) => `<option value="${id}"${id === current3 ? " selected" : ""}>${escapeHtml(t(`prog.${id}`))}</option>`).join("");
+    const group = groupOf(current3);
+    const groups = Object.keys(GROUPS).map((g) => `<button type="button" class="mode-btn${g === group ? " active-mode" : ""}" data-group="${g}">${escapeHtml(t(`prog.group.${g}`))}</button>`).join("");
+    const picks = GROUPS[group].map((id) => `<button type="button" class="menu-chip" data-prog="${id}" aria-pressed="${id === current3}">${escapeHtml(t(`prog.${id}`))}</button>`).join("");
     let strip = "";
     chords.forEach((c, i) => {
       if (i > 0 && c.bar !== chords[i - 1].bar) strip += '<span class="prog-bar">|</span>';
@@ -7556,18 +7580,23 @@ ${explainCadence(c.cadence)}` : ""}`;
     });
     container.innerHTML = `
     <div class="prog-head">
-      <select id="prog-select" title="${escapeHtml(t("prog.select.title"))}">${options}</select>
+      <div class="seg" role="group" aria-label="${escapeHtml(t("prog.select.title"))}">${groups}</div>
+      <div class="prog-picks" role="group" aria-label="${escapeHtml(t("prog.select.title"))}">${picks}</div>
       <button id="prog-play" class="ctrl-btn" title="${escapeHtml(t("prog.play.title"))}">\u25B6</button>
       <span class="prog-key">${escapeHtml(keyLabel(key))}</span>
     </div>
     <p class="prog-about">${escapeHtml(t(`prog.${current3}.about`))}</p>
     <div class="prog-strip">${strip}</div>`;
-    const select = container.querySelector("#prog-select");
-    select.addEventListener("change", () => {
-      current3 = select.value;
+    const pick2 = (id) => {
+      current3 = id;
       save("progression", current3);
       renderProgressions(container, analysisKey2, handlers);
-    });
+    };
+    container.querySelectorAll("[data-group]").forEach((b) => b.addEventListener("click", () => {
+      const g = b.dataset.group;
+      if (g !== group) pick2(GROUPS[g][0]);
+    }));
+    container.querySelectorAll("[data-prog]").forEach((b) => b.addEventListener("click", () => pick2(b.dataset.prog)));
     const chips = [...container.querySelectorAll(".prog-chip")];
     const mark = (i) => chips.forEach((c, j) => c.classList.toggle("playing", i === j));
     const show = (i) => {
@@ -7836,9 +7865,11 @@ ${explainCadence(c.cadence)}` : ""}`;
       <button class="ctrl-btn" data-act="back" title="${escapeHtml(t("player.back.title"))}"${dis}>\u27F25</button>
       <button class="ctrl-btn" data-act="play" title="${escapeHtml(t("player.play.title"))}"${dis}>${audio && !audio.paused ? "\u23F8" : "\u25B6"}</button>
       <span class="player-time">${formatTime(audio?.currentTime ?? 0, true)} / ${formatTime(audio?.duration ?? 0)}</span>
-      <select class="player-speed" title="${escapeHtml(t("player.speed.title"))}">
-        ${SPEEDS.map((s) => `<option value="${s}"${s === speed ? " selected" : ""}>${Math.round(Number(s) * 100)}%</option>`).join("")}
-      </select>
+      <span class="player-speed" role="group" aria-label="${escapeHtml(t("player.speed.title"))}" title="${escapeHtml(t("player.speed.title"))}">
+        <button class="size-ctrl-btn" data-speed="-1" aria-label="${escapeHtml(t("ctrl.smaller"))}"${speed === SPEEDS[0] ? " disabled" : ""}>\u2212</button>
+        <span class="player-speed-value">${Math.round(Number(speed) * 100)} %</span>
+        <button class="size-ctrl-btn" data-speed="1" aria-label="${escapeHtml(t("ctrl.larger"))}"${speed === SPEEDS[SPEEDS.length - 1] ? " disabled" : ""}>+</button>
+      </span>
       <button class="size-ctrl-btn${loopA !== null ? " active" : ""}" data-act="a" title="${escapeHtml(t("player.a.title"))}"${dis}>A${mark(loopA)}</button>
       <button class="size-ctrl-btn${loopB !== null ? " active" : ""}" data-act="b" title="${escapeHtml(t("player.b.title"))}"${dis}>B${mark(loopB)}</button>
       <button class="size-ctrl-btn" data-act="clear" title="${escapeHtml(t("player.clear.title"))}"${loopA === null ? " disabled" : ""}>\xD7</button>
@@ -7857,11 +7888,14 @@ ${explainCadence(c.cadence)}` : ""}`;
       e.preventDefault();
       openFile(f, container);
     };
-    container.querySelector(".player-speed").addEventListener("change", (e) => {
-      speed = e.target.value;
+    container.querySelectorAll("[data-speed]").forEach((b) => b.addEventListener("click", () => {
+      const i = SPEEDS.indexOf(speed) + Number(b.dataset.speed);
+      if (i < 0 || i >= SPEEDS.length) return;
+      speed = SPEEDS[i];
       save("player-speed", speed);
       if (audio) audio.playbackRate = Number(speed);
-    });
+      renderPlayer(container);
+    }));
     container.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => {
       if (!audio?.src) return;
       const act = b.dataset.act;

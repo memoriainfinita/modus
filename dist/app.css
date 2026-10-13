@@ -1616,6 +1616,7 @@ body.presenting .grid {
 .analysis-value {
   font-size: 1em;
   overflow-wrap: break-word;
+  white-space: pre-line;
 }
 .strings-tabs {
   display: flex;
@@ -2479,16 +2480,17 @@ body.view-mode .guitar-chrome {
 }
 .prog-head {
   display: flex;
-  gap: 6px;
+  gap: 8px 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
-#prog-select {
+.prog-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.prog-picks .menu-chip:not([aria-pressed=true]) {
   background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 4px;
-  font-size: 12px;
 }
 .prog-key {
   font-size: 12px;
@@ -2620,11 +2622,16 @@ body.view-mode .guitar-chrome {
   text-align: center;
 }
 .player-speed {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.player-speed-value {
+  min-width: 3.4em;
+  text-align: center;
   font-size: 12px;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
 }
 #tuner-container {
   display: flex;
