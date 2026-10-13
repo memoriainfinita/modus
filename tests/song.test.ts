@@ -6,6 +6,7 @@ import {
   insertChordAfter, updateChord, duplicateChord,
   moveChordToPosition, reorderSections, reorderChordInMeasure,
   computeDegree, isBorrowedChord, transposeKey, withoutEmptyChords, parseProgressionMeasures, appendProgression,
+  replaceSectionProgression, sectionAsText,
 } from '../src/song/model'
 import { saveSong, loadActiveSong } from '../src/song/library'
 
@@ -538,5 +539,34 @@ describe('appendProgression', () => {
     s = appendProgression(s, s.sections[0].id, [['xyz']])
     expect(s.sections[0].measures).toHaveLength(2)
     expect(s.sections[0].measures[1].chords[0].valid).toBe(false)
+  })
+})
+
+describe('a section written as text', () => {
+  const withChords = () => {
+    let s = addSection(createSong(), 'Verse', 'verse')
+    s = appendProgression(s, s.sections[0].id, [['Am', 'F'], ['C', 'G']])
+    const id = s.sections[0].measures[0].chords[0].id
+    return { song: updateChord(s, id, 'Am', ['A3', 'C4', 'E4']), sectionId: s.sections[0].id }
+  }
+
+  it('reads back as typed: chords by spaces, measures by bars', () => {
+    const { song } = withChords()
+    expect(sectionAsText(song.sections[0])).toBe('Am F | C G')
+  })
+
+  it('replaces the measures, keeping a chord left in its place and its voicing', () => {
+    const { song, sectionId } = withChords()
+    const next = replaceSectionProgression(song, sectionId, [['Am', 'Dm'], ['E7']])
+    const [m1, m2] = next.sections[0].measures
+    expect(m1.chords.map(c => c.symbol)).toEqual(['Am', 'Dm'])
+    expect(m1.chords[0].notes).toEqual(['A3', 'C4', 'E4'])
+    expect(m2.chords.map(c => c.symbol)).toEqual(['E7'])
+    expect(next.sections[0].measures).toHaveLength(2)
+  })
+
+  it('an empty text leaves one empty measure', () => {
+    const { song, sectionId } = withChords()
+    expect(replaceSectionProgression(song, sectionId, []).sections[0].measures).toHaveLength(1)
   })
 })

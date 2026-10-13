@@ -236,7 +236,8 @@ function makeSongHandlers() {
     },
     activeCursorId: state.activeCursorId,
     captureTargetId: state.captureTargetId,
-    activeKey: analysisKey(),
+    activeKey: songKey(),
+    keyIsAuto: !state.activeKey,
     onSongChange: (song: Song) => {
       state.song = song
       saveSong(song)
@@ -429,6 +430,18 @@ let lastChordNotes: string[] = []       // last known chord shown — what Space
 
 function analysisKey(): string | null {
   return state.activeKey ?? autoKey
+}
+
+/**
+ * The key the song is read in: the one chosen; on Auto, the one its own chords give (three or
+ * more), so its numerals show with an empty history; else the one the history gives.
+ */
+function songKey(): string | null {
+  if (state.activeKey) return state.activeKey
+  const chords = state.song.sections.flatMap(s => s.measures.flatMap(m => m.chords)).filter(c => c.valid && c.symbol)
+  if (chords.length < 3) return autoKey
+  const entries = chords.map(c => ({ id: c.id, symbol: c.symbol, notes: c.notes?.length ? c.notes : chordNoteNames(c.symbol) }))
+  return getAutoKey(entries) ?? autoKey
 }
 
 function selectedSymbol(): string | null {

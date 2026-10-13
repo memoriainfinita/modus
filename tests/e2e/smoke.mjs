@@ -485,7 +485,8 @@ await check('changing MIDI mode clears a held chord', async () => {
 })
 
 await check('no orphan chord input after reload', async () => {
-  await page.getByRole('button', { name: '+ Verse' }).click()
+  await page.click('#mod-song .song-header .pop-anchor.pop-end > .song-btn')
+  await page.locator('#mod-song .song-header .song-menu .choice-row', { hasText: 'Verse' }).first().click()
   await page.locator('.chord-add-btn').first().click()
   await page.waitForTimeout(100)
   assert(await page.locator('.chord-input').count() === 1, 'input opened')
@@ -529,7 +530,7 @@ await check('releasing a captured chord key by key does not fill the next slot',
 })
 
 await check('deleting a section can be undone', async () => {
-  await page.locator('.section-header button', { hasText: '×' }).first().click()
+  await page.locator('.section-header .song-danger').first().click()
   assert(await page.locator('.chord-chip').count() === 0, 'section still there')
   await page.locator('.undo-btn').click()
   assert(await page.locator('.chord-chip').count() === 3, 'undo did not restore')
@@ -994,7 +995,17 @@ await check('typed chord: / focuses the field, Enter shows it; an unknown name i
 })
 
 const songChips = () => page.locator('.chord-chip-symbol').allInnerTexts()
-const songOptions = () => page.locator('.song-select option').allInnerTexts()
+// The song's list and its ⋯ menu, opened from the song's head
+const songOptions = () => page.locator('#mod-song .song-list-item').evaluateAll(es => es.map(e => e.textContent))
+const songMore = async label => {
+  await page.click('#mod-song .song-more-btn')
+  await page.locator('#mod-song .pop-anchor:has(.song-more-btn) .choice-row', { hasText: label }).click()
+}
+// + Section: its menu of section kinds
+const addSectionKind = async name => {
+  await page.click('#mod-song .song-header .pop-anchor.pop-end > .song-btn')
+  await page.locator('#mod-song .song-header .song-menu .choice-row', { hasText: name }).first().click()
+}
 
 await check('New keeps the previous song; opening it again restores its chords and key', async () => {
   await page.fill('.song-title-input', 'First song')
@@ -1002,19 +1013,19 @@ await check('New keeps the previous song; opening it again restores its chords a
   await setKey('A Minor')
   const chips = await songChips()
   assert(chips.length > 0, 'first song has chords')
-  await page.getByRole('button', { name: 'New', exact: true }).click()
+  await songMore('New song')
   assert((await songChips()).length === 0, 'new song is empty')
   assert(await page.locator('#key-select').inputValue() === '', 'new song starts on Auto')
   assert((await songOptions()).includes('First song'), `list: ${(await songOptions()).join(', ')}`)
-  const firstId = await page.locator('.song-select option', { hasText: 'First song' }).getAttribute('value')
-  await page.selectOption('.song-select', firstId)
+  await page.click('#mod-song .song-list-btn')
+  await page.locator('#mod-song .song-list-item', { hasText: 'First song' }).click()
   assert((await songChips()).join(' ') === chips.join(' '), `chips: ${(await songChips()).join(' ')}`)
   assert(await page.locator('#key-select').inputValue() === 'A Minor', 'key restored')
 })
 
 await check('Delete removes the open song; Undo brings it back', async () => {
   const before = await songOptions()
-  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+  await songMore('Delete the song')
   assert(!(await songOptions()).includes('First song'), `after delete: ${(await songOptions()).join(', ')}`)
   await page.locator('.undo-btn').click()
   assert((await songOptions()).length === before.length, `after undo: ${(await songOptions()).join(', ')}`)
@@ -1029,6 +1040,30 @@ await check('the open song and the list survive a reload', async () => {
   assert(await page.locator('.song-title-input').inputValue() === 'First song', 'open song after reload')
   assert((await songOptions()).length === options.length, `list after reload: ${(await songOptions()).join(', ')}`)
   assert(await page.locator('#key-select').inputValue() === 'A Minor', 'key after reload')
+})
+
+await check('song: the form strip, a section as text, the key read from the song on Auto', async () => {
+  await songMore('New song')
+  await setKey('')
+  await addSectionKind('Verse')
+  assert(await page.locator('#mod-song .song-strip').count() === 0, 'a strip for one section')
+  await page.getByRole('button', { name: 'Paste chords' }).click()
+  await page.fill('.paste-textarea', 'Am F | C G | Am F | E7')
+  await page.getByRole('button', { name: 'Add chords' }).click()
+  const degrees = await page.locator('#mod-song .chord-chip-degree').allInnerTexts()
+  assert(degrees[0] === 'i' && degrees.at(-1) === 'V7', `degrees from the song's own key: ${degrees.join(' ')}`)
+  await addSectionKind('Chorus')
+  const blocks = await page.locator('#mod-song .strip-block').allInnerTexts()
+  assert(blocks.length === 2 && blocks[0].startsWith('Verse'), `strip: ${blocks.join(' | ')}`)
+  // The chorus as text
+  await page.locator('.section-wrap').nth(1).locator('.section-write-btn', { hasText: 'Text' }).click()
+  await page.fill('.section-text-input', 'F G | E Am')
+  assert((await text('.section-text-status')).includes('2 bars, 4 chords'), `status: ${await text('.section-text-status')}`)
+  await page.keyboard.press('Enter')
+  await page.locator('.section-wrap').nth(1).locator('.section-write-btn', { hasText: 'Chips' }).click()
+  const chorus = await page.locator('.section-wrap').nth(1).locator('.chord-chip-symbol').allInnerTexts()
+  assert(chorus.join(' ') === 'F G E Am', `chorus: ${chorus.join(' ')}`)
+  assert((await page.locator('#mod-song .strip-block').nth(1).innerText()).includes('2'), 'the strip does not follow the bars')
 })
 
 await check('no errors after the walk', async () => {
