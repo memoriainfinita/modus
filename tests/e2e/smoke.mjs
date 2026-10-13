@@ -201,9 +201,19 @@ await check('voice leading: each voice from the chord before; staff and piano ca
   await off([48, 60, 64, 67])
 })
 
+const pickProgression = id => page.click(`#progressions-container [data-prog="${id}"]`)
+// The player's speed, stepped with − and + until it reads the percent asked for
+async function setSpeed(pct) {
+  for (let i = 0; i < 10; i++) {
+    const now = parseInt(await text('.player-speed-value'))
+    if (now === pct) return
+    await page.click(`#player-container [data-speed="${now > pct ? -1 : 1}"]`)
+  }
+}
+
 await check('progressions: a ii-V-I in the key; a click shows the chord, ▶ walks it', async () => {
   await setKey('F Major')
-  await page.selectOption('#prog-select', 'ii-V-I')
+  await pickProgression('ii-V-I')
   const chips = await page.locator('.prog-chip-symbol').allInnerTexts()
   assert(chips.join(' ') === 'Gm7 C7 Fmaj7', `chips: ${chips}`)
   assert((await text('#progressions-container .history-cadence')).length > 0, 'no cadence tag')
@@ -214,9 +224,12 @@ await check('progressions: a ii-V-I in the key; a click shows the chord, ▶ wal
   await page.waitForFunction(() => document.querySelector('.chord-name-badge')?.textContent === 'C7', null, { timeout: 4000 })
   await page.click('#prog-play')
   assert(await page.locator('.prog-chip.playing').count() === 0, 'still playing')
-  await page.selectOption('#prog-select', 'ii-V-i')
+  await pickProgression('ii-V-i')
   assert(await text('#progressions-container .prog-key') === 'F Minor', `minor key: ${await text('#progressions-container .prog-key')}`)
-  await page.selectOption('#prog-select', 'ii-V-I')
+  await page.click('#progressions-container [data-group="blues"]')
+  assert((await page.locator('#progressions-container [data-prog="blues-12"]').getAttribute('aria-pressed')) === 'true', 'a kind does not pick its first')
+  await page.click('#progressions-container [data-group="jazz"]')
+  await pickProgression('ii-V-I')
   await setKey('')
 })
 
@@ -263,7 +276,7 @@ await check('player: a recording opens with its length and waveform; speed, A–
     for (let i = 3; i < g.length; i += 4) if (g[i]) lit++
     return lit > c.width * 4
   }, null, { timeout: 5000 })
-  await page.selectOption('.player-speed', '0.5')
+  await setSpeed(50)
   await page.click('#player-container [data-act="play"]')
   await page.waitForTimeout(600)
   await page.click('#player-container [data-act="a"]')
@@ -277,7 +290,7 @@ await check('player: a recording opens with its length and waveform; speed, A–
   assert(secs('x ' + t.split(' / ')[0]) <= secs(b) + 0.3, `the loop did not hold it: ${t} (B ${b})`)
   await page.click('#player-container [data-act="play"]')
   await page.click('#player-container [data-act="clear"]')
-  await page.selectOption('.player-speed', '1')
+  await setSpeed(100)
 })
 
 await check('microphone: a sung A3 shows on the tuner and in the detector as a note; off lets it go', async () => {

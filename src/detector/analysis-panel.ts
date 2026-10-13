@@ -14,6 +14,12 @@ const rowLabel = (f: AnalysisFieldKey) => t(`field.${f}.row`)
 
 // ─── Chord header (private — called only by renderZone1Analysis) ──────────────
 
+/** The field's label already says Cadence: its short name and its degrees, "Authentic (V → I)". */
+function cadenceWithDegrees(cadence: string): string {
+  const degrees = cadence.match(/\(([^)]*)\)/)?.[1]
+  return degrees ? `${cadenceLabel(cadence, true)} (${degrees.replace(/->/g, '→')})` : cadenceLabel(cadence, true)
+}
+
 /** The chord the cadence is read from, for the header: "from G7 · V7". */
 export interface ChordHeadContext {
   from: string | null
@@ -126,14 +132,14 @@ export function renderZone1Analysis(
     figuredBass = analysis.figuredBass || '—'
     diatonic = analysis.isDiatonic ? t('analysis.yes') : analysis.isBorrowed ? t('analysis.borrowed', { mode: analysis.borrowedFrom ?? '?' }) : t('analysis.chromatic')
     scales = analysis.suggestedScales.slice(0, 4).join(', ') || '—'
-    cadence = analysis.cadence ? cadenceLabel(analysis.cadence) : '—'
+    cadence = analysis.cadence ? cadenceWithDegrees(analysis.cadence) : '—'
     // The Roman field already reads V7/x; this row names the tonicized degree.
     if (analysis.isSecondary) secondary = `→ ${analysis.secondaryTarget?.split('/')[1] ?? '?'}`
     if (analysis.substitutions?.length) subs = analysis.substitutions.join(', ')
     voicing = analysis.voicing
     plr = analysis.transformation
     voices = analysis.voiceLeading
-    if (analysis.voiceRules) rules = analysis.voiceRules.length ? analysis.voiceRules.join(', ') : t('vl.none')
+    if (analysis.voiceRules) rules = analysis.voiceRules.length ? analysis.voiceRules.join('\n') : t('vl.none')
     if (analysis.upperStructures.length) upper = analysis.upperStructures.join(', ')
   }
   const fits = noteSet?.fits.length

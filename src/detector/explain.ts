@@ -67,7 +67,7 @@ function colourEntries(symbol: string, key: string, a: HarmonicAnalysis): Explan
     const vars = { chord, roman: a.secondaryTarget, target: targetChord ? chordLabel(targetChord) : target, targetRoman: target }
     return [{ term: a.secondaryTarget, text: t(kind.startsWith('vii') ? 'ex.secondaryVii' : 'ex.secondaryV', vars) }]
   }
-  if (a.isDiatonic) return [{ term: t('analysis.yes'), text: t('ex.diatonic', { chord, key: k }) }]
+  if (a.isDiatonic) return [{ term: t('ex.term.diatonic'), text: t('ex.diatonic', { chord, key: k }) }]
   const notes = notesOutside(symbol, key).join(' ')
   if (a.isBorrowed && a.borrowedFrom) {
     const mode = scaleLabel(`${key.split(' ')[0]} ${a.borrowedFrom}`)
@@ -99,7 +99,7 @@ function voicingEntries(noteNames: string[], symbol: string): Explanation[] {
   const chord = tryParseChord(symbol)
   const v = tryUMT('voicing', () => UMT.analyzeVoicing(noteNames.map(n => UMT.parseNote(n)), chord), null)
   if (!v) return []
-  const out: Explanation[] = [{ term: t(`voicing.${v.position}`), text: t(`ex.voicing.${v.position}`) }]
+  const out: Explanation[] = [{ term: t('ex.term.voicing', { v: t(`voicing.${v.position}`) }), text: t(`ex.voicing.${v.position}`) }]
   if (v.drop) out.push({ term: v.drop, text: t('ex.voicing.drop') })
   return out
 }
@@ -122,7 +122,7 @@ export function explainDetection(detection: DetectionResult, a: HarmonicAnalysis
     out.push(...colourEntries(symbol, key, a))
   }
   const fig = FIGURES[a.figuredBass ?? '']
-  if (fig) out.push({ term: a.figuredBass || '5/3', text: `${t(fig)} ${t('ex.fig.intro')}` })
+  if (fig) out.push({ term: t('ex.term.figbass', { fig: a.figuredBass || '5/3' }), text: `${t(fig)} ${t('ex.fig.intro')}` })
   out.push(...voicingEntries(detection.notes, symbol))
   if (a.cadence) {
     const text = explainCadence(a.cadence)

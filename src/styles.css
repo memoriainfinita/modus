@@ -745,7 +745,7 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 /* ─── Analysis rows ───────────────────────────────────────────── */
 .analysis-row { display: flex; gap: 0.5em; align-items: baseline; }
 .analysis-label { font-size: 0.86em; color: var(--text-muted); min-width: 6.5em; flex-shrink: 0; }
-.analysis-value { font-size: 1em; overflow-wrap: break-word; }
+.analysis-value { font-size: 1em; overflow-wrap: break-word; white-space: pre-line; }   /* a list, one item a line */
 
 /* ─── Strings panel (diagrams/guitar.ts) ──────────────────────── */
 /* The view on top, the drawing between two arrows, the shapes as dots and where it is
@@ -1189,8 +1189,9 @@ body.view-mode .guitar-chrome { display: none; }
 
 /* Progressions panel: the progression bar by bar, as history chips */
 #progressions-container { display: flex; flex-direction: column; gap: 4px; min-height: 0; }
-.prog-head { display: flex; gap: 6px; align-items: center; }
-#prog-select { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 2px 4px; font-size: 12px; }
+.prog-head { display: flex; gap: 8px 10px; align-items: center; flex-wrap: wrap; }
+.prog-picks { display: flex; flex-wrap: wrap; gap: 4px; }
+.prog-picks .menu-chip:not([aria-pressed="true"]) { background: var(--surface); }   /* on the panel, not in a menu */
 .prog-key { font-size: 12px; color: var(--text-muted); }
 .prog-about { margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-soft); }
 .prog-strip { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 4px 0; }
@@ -1223,7 +1224,8 @@ body.view-mode .guitar-chrome { display: none; }
 .player-wave { width: 100%; flex: 1; min-height: 40px; background: var(--surface); border-radius: 4px; cursor: pointer; }
 .player-ctrl { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 .player-time { color: var(--text-soft); font-variant-numeric: tabular-nums; min-width: 6.5em; text-align: center; }
-.player-speed { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-size: 12px; }
+.player-speed { display: inline-flex; align-items: center; gap: 4px; }
+.player-speed-value { min-width: 3.4em; text-align: center; font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
 
 /* Tuner panel */
 #tuner-container { display: flex; flex-direction: column; gap: 6px; align-items: stretch; font-size: 12px; }

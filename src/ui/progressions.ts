@@ -19,6 +19,15 @@ export const PROGRESSION_IDS = [
 ] as const
 export type ProgressionId = typeof PROGRESSION_IDS[number]
 
+/** The progressions by kind, as the panel offers them: a kind, then its progressions. */
+const GROUPS = {
+  jazz: ['ii-V-I', 'ii-V-i', 'turnaround-jazz', 'backdoor-ii-V', 'rhythm-changes', 'coltrane-changes', 'giant-steps-cycle'],
+  blues: ['blues-12', 'blues-minor', 'blues-jazz', 'bird-blues'],
+  pop: ['I-V-vi-IV', 'I-vi-IV-V', 'I-IV-V', 'pachelbel', 'andalusian'],
+} as const satisfies Record<string, readonly ProgressionId[]>
+type Group = keyof typeof GROUPS
+const groupOf = (id: ProgressionId) => (Object.keys(GROUPS) as Group[]).find(g => (GROUPS[g] as readonly string[]).includes(id))!
+
 /** Progressions written in a minor key: in a major key they are played in its parallel minor. */
 const MINOR: readonly ProgressionId[] = ['ii-V-i', 'blues-minor', 'andalusian']
 
@@ -86,8 +95,11 @@ export function renderProgressions(container: HTMLElement, analysisKey: string |
   stopProgression()
   const key = progressionKey(current, analysisKey)
   const chords = realizeProgression(current, key)
-  const options = PROGRESSION_IDS.map(id =>
-    `<option value="${id}"${id === current ? ' selected' : ''}>${escapeHtml(t(`prog.${id}` as StringKey))}</option>`).join('')
+  const group = groupOf(current)
+  const groups = (Object.keys(GROUPS) as Group[]).map(g =>
+    `<button type="button" class="mode-btn${g === group ? ' active-mode' : ''}" data-group="${g}">${escapeHtml(t(`prog.group.${g}`))}</button>`).join('')
+  const picks = (GROUPS[group] as readonly ProgressionId[]).map(id =>
+    `<button type="button" class="menu-chip" data-prog="${id}" aria-pressed="${id === current}">${escapeHtml(t(`prog.${id}` as StringKey))}</button>`).join('')
 
   let strip = ''
   chords.forEach((c, i) => {
@@ -104,19 +116,25 @@ export function renderProgressions(container: HTMLElement, analysisKey: string |
 
   container.innerHTML = `
     <div class="prog-head">
-      <select id="prog-select" title="${escapeHtml(t('prog.select.title'))}">${options}</select>
+      <div class="seg" role="group" aria-label="${escapeHtml(t('prog.select.title'))}">${groups}</div>
+      <div class="prog-picks" role="group" aria-label="${escapeHtml(t('prog.select.title'))}">${picks}</div>
       <button id="prog-play" class="ctrl-btn" title="${escapeHtml(t('prog.play.title'))}">▶</button>
       <span class="prog-key">${escapeHtml(keyLabel(key))}</span>
     </div>
     <p class="prog-about">${escapeHtml(t(`prog.${current}.about` as StringKey))}</p>
     <div class="prog-strip">${strip}</div>`
 
-  const select = container.querySelector<HTMLSelectElement>('#prog-select')!
-  select.addEventListener('change', () => {
-    current = select.value as ProgressionId
+  // A kind shows its progressions and picks its first; a progression is picked by its chip
+  const pick = (id: ProgressionId) => {
+    current = id
     save('progression', current)
     renderProgressions(container, analysisKey, handlers)
-  })
+  }
+  container.querySelectorAll<HTMLElement>('[data-group]').forEach(b => b.addEventListener('click', () => {
+    const g = b.dataset.group as Group
+    if (g !== group) pick(GROUPS[g][0])
+  }))
+  container.querySelectorAll<HTMLElement>('[data-prog]').forEach(b => b.addEventListener('click', () => pick(b.dataset.prog as ProgressionId)))
 
   const chips = [...container.querySelectorAll<HTMLElement>('.prog-chip')]
   const mark = (i: number) => chips.forEach((c, j) => c.classList.toggle('playing', i === j))
