@@ -149,12 +149,12 @@ await check('piano keys carry data-note', async () => {
 })
 
 await check('strings panel, neck view: every note sounding on the neck, named; shapes again', async () => {
-  await page.click('.guitar-ctrl[data-action="view-neck"]')
+  await page.click('.strings-tab[data-view="neck"]')
   await play([60, 64, 67])
   const t = await page.locator('#guitar-container text').allTextContents()
   assert(t.includes('E') && t.includes('G'), `neck texts: ${t.join(',')}`)
   await off([60, 64, 67])
-  await page.click('.guitar-ctrl[data-action="view-shapes"]')
+  await page.click('.strings-tab[data-view="shapes"]')
   assert(await page.locator('#guitar-container .guitar-nav').count() === 0, 'no chord, no voicing list')
 })
 
@@ -592,13 +592,20 @@ await check('on Auto, history chips show romans in the detected key', async () =
 
 await check('guitar shows a short list of playable voicings, open shape first', async () => {
   await page.locator('#cof-container [data-chord="C"]').click()
-  const count = await text('.guitar-voicing-count')
+  const count = await page.getAttribute('#guitar-container .strings-dots', 'data-count')
   const total = Number(count.split('/')[1])
   assert(count.startsWith('1/') && total > 3 && total < 30, `count: ${count}`)
+  assert((await text('.strings-caption')).startsWith('Open'), `caption: ${await text('.strings-caption')}`)
+  await page.click('#guitar-container .guitar-nav[data-dir="1"]')
+  assert((await page.getAttribute('#guitar-container .strings-dots', 'data-count')).startsWith('2/'), 'the arrow did not move to the next shape')
+  await page.click('#guitar-container .guitar-nav[data-dir="-1"]')
 })
 
+// The Strings panel's ⋯ menu: instrument, tuning, strings and labels
+const stringsMenu = async () => { if (!(await page.locator('#menu-guitar').isVisible())) await page.click('#guitar-container .strings-caption') }
+
 await check('custom tuning rejects a non-note and keeps the string', async () => {
-  await page.locator('.guitar-ctrl[data-action="toggle-tuner"]').click()
+  await stringsMenu()
   const first = page.locator('.guitar-string-input').first()
   await first.fill('H')
   await first.press('Enter')
@@ -606,22 +613,27 @@ await check('custom tuning rejects a non-note and keeps the string', async () =>
   await page.locator('.guitar-string-input').first().fill('d')
   await page.locator('.guitar-string-input').first().press('Enter')
   assert(await page.locator('.guitar-string-input').first().inputValue() === 'D', 'not normalized')
-  assert(await page.inputValue('.guitar-tuning-sel') === 'dropD', 'preset not detected')
-  await page.selectOption('.guitar-tuning-sel', 'standard')
+  assert(await page.getAttribute('#strings-menu [data-tuning="dropD"]', 'aria-pressed') === 'true', 'preset not detected')
+  await page.click('#strings-menu [data-tuning="standard"]')
+  assert(await page.locator('#menu-guitar').isVisible(), 'the menu closed on a choice')
+  await page.keyboard.press('Escape')
 })
 
 await check('strings panel: a ukulele has four strings and plays C as 0003', async () => {
-  await page.selectOption('.guitar-instrument-sel', 'ukulele')
+  await stringsMenu()
+  await page.click('#strings-menu [data-instrument="ukulele"]')
+  await page.keyboard.press('Escape')
   await page.waitForTimeout(450)   // a second click on C within 400 ms would set the key
   await page.locator('#cof-container [data-chord="C"]').click()
   assert(await page.locator('.guitar-string-input').count() === 4, 'tuning row not four strings')
   const values = await page.locator('.guitar-string-input').evaluateAll(es => es.map(e => e.value))
   assert(values.join('') === 'GCEA', `ukulele tuning: ${values}`)
-  const dots = await page.locator('#guitar-container > div:first-child circle').count()
+  const dots = await page.locator('#guitar-container .strings-drawing circle').count()
   assert(dots >= 1, `dots: ${dots}`)
-  await page.locator('.guitar-ctrl[data-action="toggle-tuner"]').click()
-  await page.selectOption('.guitar-instrument-sel', 'guitar')
-  assert(await page.inputValue('.guitar-tuning-sel') === 'standard', 'guitar tuning')
+  await stringsMenu()
+  await page.click('#strings-menu [data-instrument="guitar"]')
+  assert(await page.getAttribute('#strings-menu [data-tuning="standard"]', 'aria-pressed') === 'true', 'guitar tuning')
+  await page.keyboard.press('Escape')
 })
 
 // Where a panel sits: its grid column and row, as the page applies them

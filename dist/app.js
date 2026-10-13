@@ -1351,18 +1351,12 @@
     "guitar.prev": "Previous voicing",
     "guitar.next": "Next voicing",
     "guitar.string": "String {n}",
-    "guitar.labels.off": "Off",
-    "guitar.labels.off.title": "Hide string labels",
-    "guitar.labels.tuning.title": "Show open string notes (tuning)",
-    "guitar.labels.notes.title": "Show fretted note names",
-    "guitar.tuning.title": "Tuning preset",
     "tuning.standard": "Standard",
     "tuning.dropD": "Drop D",
     "tuning.openG": "Open G",
     "tuning.openD": "Open D",
     "tuning.dadgad": "DADGAD",
     "tuning.lowG": "Low G",
-    "strings.instrument.title": "Instrument",
     "instrument.guitar": "Guitar",
     "instrument.guitar7": "7-string guitar",
     "instrument.bass": "Bass",
@@ -1371,12 +1365,25 @@
     "instrument.baritone": "Baritone ukulele",
     "instrument.mandolin": "Mandolin",
     "instrument.banjo": "Banjo (5-string)",
+    "strings.view": "View",
+    "strings.open": "Open",
+    "strings.openFrom": "Open strings, from fret {n}",
+    "strings.barre": "Barre at fret {n}",
+    "strings.fromFret": "From fret {n}",
+    "strings.position": "Shape {i} of {n}",
+    "strings.setup.title": "Instrument, tuning and labels: in the \u22EF menu",
+    "strings.instrument": "Instrument",
+    "strings.tuning": "Tuning",
+    "strings.strings": "Strings, lowest first: type a note for a tuning of your own",
+    "strings.labels": "Under the strings",
+    "strings.labels.none": "Nothing",
+    "strings.labels.tuning": "Tuning",
+    "strings.labels.notes": "Notes",
     "strings.view.shapes": "Shapes",
     "strings.view.shapes.title": "The chord's playable shapes, one at a time",
     "strings.view.neck": "Neck",
     "strings.view.neck.title": "Every place the notes sounding are on the neck, frets 0\u201312",
     "guitar.tuning.custom": "Custom",
-    "guitar.tuner.title": "Edit string tuning",
     // History
     "history.clear": "Clear",
     "history.send": "\u2192 Song",
@@ -2144,18 +2151,12 @@
     "guitar.prev": "Posici\xF3n anterior",
     "guitar.next": "Posici\xF3n siguiente",
     "guitar.string": "Cuerda {n}",
-    "guitar.labels.off": "No",
-    "guitar.labels.off.title": "Ocultar los nombres de las cuerdas",
-    "guitar.labels.tuning.title": "Mostrar las notas al aire (afinaci\xF3n)",
-    "guitar.labels.notes.title": "Mostrar las notas pisadas",
-    "guitar.tuning.title": "Afinaci\xF3n",
     "tuning.standard": "Est\xE1ndar",
     "tuning.dropD": "Drop D",
     "tuning.openG": "Sol abierto",
     "tuning.openD": "Re abierto",
     "tuning.dadgad": "DADGAD",
     "tuning.lowG": "Sol grave",
-    "strings.instrument.title": "Instrumento",
     "instrument.guitar": "Guitarra",
     "instrument.guitar7": "Guitarra de 7 cuerdas",
     "instrument.bass": "Bajo",
@@ -2164,12 +2165,25 @@
     "instrument.baritone": "Ukelele bar\xEDtono",
     "instrument.mandolin": "Mandolina",
     "instrument.banjo": "Banjo (5 cuerdas)",
+    "strings.view": "Vista",
+    "strings.open": "Al aire",
+    "strings.openFrom": "Al aire, desde el traste {n}",
+    "strings.barre": "Cejilla en el {n}",
+    "strings.fromFret": "Desde el traste {n}",
+    "strings.position": "Posici\xF3n {i} de {n}",
+    "strings.setup.title": "Instrumento, afinaci\xF3n y etiquetas: en el men\xFA \u22EF",
+    "strings.instrument": "Instrumento",
+    "strings.tuning": "Afinaci\xF3n",
+    "strings.strings": "Cuerdas, de la m\xE1s grave a la m\xE1s aguda: escribe una nota para una afinaci\xF3n propia",
+    "strings.labels": "Bajo las cuerdas",
+    "strings.labels.none": "Nada",
+    "strings.labels.tuning": "Afinaci\xF3n",
+    "strings.labels.notes": "Notas",
     "strings.view.shapes": "Posiciones",
     "strings.view.shapes.title": "Las posiciones tocables del acorde, una a una",
     "strings.view.neck": "M\xE1stil",
     "strings.view.neck.title": "Todos los sitios del m\xE1stil donde est\xE1n las notas que suenan, trastes 0\u201312",
     "guitar.tuning.custom": "Personal",
-    "guitar.tuner.title": "Cambiar la afinaci\xF3n de cada cuerda",
     "history.clear": "Borrar",
     "history.send": "\u2192 Canci\xF3n",
     "history.send.title": "Pon el acorde marcado (o el \xFAltimo) en la canci\xF3n, tras su cursor (S)",
@@ -3133,7 +3147,6 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   var instrument2 = loadChoice("guitar-instrument", INSTRUMENT_IDS, "guitar");
   var tuningKeys = () => [...Object.keys(INSTRUMENT_TUNINGS[instrument2]), "custom"];
   var guitarTuningKey = loadChoice("guitar-tuning", tuningKeys(), defaultTuning(instrument2));
-  var guitarTunerExpanded = false;
   var stringsView = loadChoice("guitar-view", ["shapes", "neck"], "shapes");
   function getStringsView() {
     return stringsView;
@@ -3141,6 +3154,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   var NECK_FRETS = 12;
   var SHAPE_SPACING = 19;
   var NECK_SPACING = 16;
+  var NECK_SPACING_VERTICAL = 28;
   var nameOf = (midi) => PITCH_NAMES_FLAT[(midi % 12 + 12) % 12];
   function namesOf(open2) {
     return open2.map(nameOf);
@@ -3177,8 +3191,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       } : {}
     };
   }
-  function neckStyle(preferFlats) {
-    const sp = NECK_SPACING;
+  function neckStyle(preferFlats, vertical) {
+    const sp = vertical ? NECK_SPACING_VERTICAL : NECK_SPACING;
     return {
       ...fretboardColors(),
       numFrets: NECK_FRETS,
@@ -3187,58 +3201,110 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       chordNameY: 4,
       chordNameGapH: 4,
       stringSpacing: sp,
-      fretSpacing: Math.round(sp * 28 / 16),
-      dotRadius: Math.max(4, Math.round(sp * 7 / 16)),
+      fretSpacing: vertical ? Math.round(sp * 0.85) : Math.round(sp * 28 / 16),
+      dotRadius: vertical ? Math.round(sp * 0.36) : Math.max(4, Math.round(sp * 7 / 16)),
       fingerNumberSize: Math.max(5, Math.round(sp * 7 / 16)),
       showNoteNames: true,
       preferFlats,
-      orientation: "horizontal"
+      orientation: vertical ? "vertical" : "horizontal"
     };
   }
-  var FORK_ICON = `<svg width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="vertical-align:middle;display:inline-block">
-  <path d="M3,7 L3,2 Q3,0.5 5.5,0.5 Q8,0.5 8,2 L8,7"/>
-  <line x1="5.5" y1="7" x2="5.5" y2="12.5"/>
-</svg>`;
-  var NOTE_ICON = `<span class="note-icon">\u2669</span>`;
-  function guitarControls(total, idx) {
-    const btn = (action, label, active, tip) => `<button class="guitar-ctrl${active ? " active" : ""}" data-action="${action}" title="${tip}">${label}</button>`;
-    const nav = stringsView === "shapes" && total > 1 ? `
-    <button class="guitar-nav" data-dir="-1" title="${t("guitar.prev")}">\u2039</button>
-    <span class="guitar-voicing-count">${idx + 1}/${total}</span>
-    <button class="guitar-nav" data-dir="1" title="${t("guitar.next")}">\u203A</button>` : "";
+  var showChordName = true;
+  function setGuitarShowsName(v) {
+    showChordName = v;
+  }
+  var SOLFEGE = { do: "C", re: "D", mi: "E", fa: "F", sol: "G", la: "A", si: "B" };
+  function readStringNote(text) {
+    const m = text.trim().toLowerCase().match(/^(do|re|mi|fa|sol|la|si)([#b]?)$/);
+    return m ? SOLFEGE[m[1]] + m[2] : normalizeNoteName(text);
+  }
+  function whereLabel(frets) {
+    const fretted = frets.filter((f) => f > 0);
+    if (!fretted.length) return t("strings.open");
+    const low = Math.min(...fretted);
+    if (frets.includes(0)) return low <= 1 ? t("strings.open") : t("strings.openFrom", { n: low });
+    return fretted.filter((f) => f === low).length >= 3 ? t("strings.barre", { n: low }) : t("strings.fromFret", { n: low });
+  }
+  function setupLabel() {
+    const tuning = guitarTuningKey === "custom" ? guitarStringTuning.map(noteLabel).join(" ") : t(`tuning.${guitarTuningKey}`);
+    return `${t(`instrument.${instrument2}`)}, ${tuning.toLowerCase()}`;
+  }
+  function tabs() {
+    const tab = (v, label, tip) => `<button type="button" class="strings-tab" data-view="${v}" aria-pressed="${stringsView === v}" title="${escapeHtml(tip)}">${escapeHtml(label)}</button>`;
+    return `<div class="strings-tabs guitar-chrome" role="group" aria-label="${escapeHtml(t("strings.view"))}">
+    ${tab("shapes", t("strings.view.shapes"), t("strings.view.shapes.title"))}${tab("neck", t("strings.view.neck"), t("strings.view.neck.title"))}</div>`;
+  }
+  function stage(drawing, label, total) {
+    const nav = (dir, tip) => total > 1 ? `<button type="button" class="guitar-nav guitar-chrome" data-dir="${dir}" title="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">${dir < 0 ? "\u2039" : "\u203A"}</button>` : "";
+    return `<div class="strings-stage">${nav(-1, t("guitar.prev"))}<div class="strings-drawing" role="img" aria-label="${escapeHtml(label)}">${drawing}</div>${nav(1, t("guitar.next"))}</div>`;
+  }
+  var MAX_DOTS = 16;
+  function foot(where, total, idx) {
+    const count = `${idx + 1}/${total}`;
+    const shapes = total > 1 ? `<div class="strings-dots" data-count="${count}" role="img" aria-label="${escapeHtml(t("strings.position", { i: idx + 1, n: total }))}">${total <= MAX_DOTS ? Array.from({ length: total }, (_, i) => `<span class="strings-dot${i === idx ? " on" : ""}"></span>`).join("") : `<span class="strings-count">${idx + 1} / ${total}</span>`}</div>` : "";
+    return `<div class="strings-foot guitar-chrome">${shapes}
+    <button type="button" class="strings-caption" title="${escapeHtml(t("strings.setup.title"))}">${escapeHtml([where, setupLabel()].filter(Boolean).join(" \xB7 "))}</button></div>`;
+  }
+  function renderMenu() {
+    const menu = document.getElementById("strings-menu");
+    if (!menu) return;
+    const chip = (attr, value, label, on) => `<button type="button" class="menu-chip" ${attr}="${value}" data-label="${escapeHtml(label)}" aria-pressed="${on}">${escapeHtml(label)}</button>`;
+    const tunings = Object.keys(INSTRUMENT_TUNINGS[instrument2]);
     const count = guitarStringTuning.length;
-    const tunerRow = guitarTunerExpanded ? `
-    <div class="tuner-row">
-      ${guitarStringTuning.map(
-      (note, i) => `<input class="guitar-string-input" data-string="${i}" value="${note}" title="${t("guitar.string", { n: count - i })}" maxlength="2">`
-    ).join("")}
-    </div>` : "";
-    return `
-    <div id="guitar-ctrl-wrap" style="display:${guitarControlsVisible ? "flex" : "none"}">
-      <div class="guitar-ctrl-row">
-        ${btn("view-shapes", t("strings.view.shapes"), stringsView === "shapes", t("strings.view.shapes.title"))}
-        ${btn("view-neck", t("strings.view.neck"), stringsView === "neck", t("strings.view.neck.title"))}
-        ${nav}
-      </div>
-      <div class="guitar-ctrl-row-wrap">
-        <select class="guitar-instrument-sel" title="${t("strings.instrument.title")}">
-          ${INSTRUMENT_IDS.map((id) => `<option value="${id}" ${instrument2 === id ? "selected" : ""}>${t(`instrument.${id}`)}</option>`).join("")}
-        </select>
-        <select class="guitar-tuning-sel" title="${t("guitar.tuning.title")}">
-          ${Object.keys(INSTRUMENT_TUNINGS[instrument2]).map(
-      (k) => `<option value="${k}" ${guitarTuningKey === k ? "selected" : ""}>${t(`tuning.${k}`)}</option>`
-    ).join("")}
-          <option value="custom" ${guitarTuningKey === "custom" ? "selected" : ""}>${t("guitar.tuning.custom")}</option>
-        </select>
-        ${btn("toggle-tuner", "\u270E", guitarTunerExpanded, t("guitar.tuner.title"))}
-      </div>
-      <div class="guitar-ctrl-row-wrap"${stringsView === "neck" ? ' style="display:none"' : ""}>
-        ${btn("label-none", t("guitar.labels.off"), guitarLabelMode === "none", t("guitar.labels.off.title"))}
-        ${btn("label-tuning", FORK_ICON, guitarLabelMode === "tuning", t("guitar.labels.tuning.title"))}
-        ${btn("label-notes", NOTE_ICON, guitarLabelMode === "notes", t("guitar.labels.notes.title"))}
-      </div>
-      ${tunerRow}
-    </div>`;
+    menu.innerHTML = `
+    <div class="menu-heading">${t("strings.instrument")}</div>
+    <div class="menu-chips">${INSTRUMENT_IDS.map((id) => chip("data-instrument", id, t(`instrument.${id}`), id === instrument2)).join("")}</div>
+    <div class="menu-heading">${t("strings.tuning")}</div>
+    <div class="menu-chips">${tunings.map((k) => chip("data-tuning", k, t(`tuning.${k}`), k === guitarTuningKey)).join("")}${guitarTuningKey === "custom" ? chip("data-tuning", "custom", t("guitar.tuning.custom"), true) : ""}</div>
+    <div class="menu-heading">${t("strings.strings")}</div>
+    <div class="strings-inputs" style="grid-template-columns: repeat(${count}, minmax(0, 1fr))">${guitarStringTuning.map((note, i) => `<input class="guitar-string-input" data-string="${i}" value="${escapeHtml(noteLabel(note))}" aria-label="${escapeHtml(t("guitar.string", { n: count - i }))}" maxlength="4" autocomplete="off" spellcheck="false">`).join("")}</div>
+    <div class="menu-heading">${t("strings.labels")}</div>
+    <div class="menu-chips">${["none", "tuning", "notes"].map((m) => chip("data-labels", m, t(`strings.labels.${m}`), guitarLabelMode === m)).join("")}</div>`;
+    if (menu.dataset.wired) return;
+    menu.dataset.wired = "1";
+    const redraw = () => {
+      const c = document.getElementById("guitar-container");
+      if (c) redrawFresh(c);
+    };
+    menu.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-instrument], [data-tuning], [data-labels]");
+      if (!b) return;
+      if (b.dataset.instrument) {
+        instrument2 = b.dataset.instrument;
+        save("guitar-instrument", instrument2);
+        guitarTuningKey = defaultTuning(instrument2);
+        save("guitar-tuning", guitarTuningKey);
+        guitarStringTuning = namesOf(referenceStrings(instrument2));
+      } else if (b.dataset.tuning) {
+        const preset = INSTRUMENT_TUNINGS[instrument2][b.dataset.tuning];
+        if (!preset) return;
+        guitarTuningKey = b.dataset.tuning;
+        save("guitar-tuning", guitarTuningKey);
+        guitarStringTuning = namesOf(preset);
+        save("guitar-string-tuning", guitarStringTuning);
+      } else if (b.dataset.labels) {
+        guitarLabelMode = b.dataset.labels;
+        save("guitar-label-mode", guitarLabelMode);
+      }
+      redraw();
+    });
+    menu.addEventListener("change", (e) => {
+      const input = e.target.closest(".guitar-string-input");
+      if (!input) return;
+      const i = parseInt(input.dataset.string);
+      const val = readStringNote(input.value);
+      if (!val) {
+        input.value = noteLabel(guitarStringTuning[i]);
+        input.classList.add("invalid");
+        setTimeout(() => input.classList.remove("invalid"), 1200);
+        return;
+      }
+      guitarStringTuning[i] = val;
+      save("guitar-string-tuning", guitarStringTuning);
+      guitarTuningKey = detectPreset(guitarStringTuning);
+      save("guitar-tuning", guitarTuningKey);
+      redraw();
+    });
   }
   function redrawFresh(container) {
     const sym = lastGuitarSymbol;
@@ -3246,104 +3312,83 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     lastGuitarSymbol = null;
     renderGuitar(container, sym, [...lastNoteNames], void 0, lastPreferFlats);
   }
-  function wireGuitarControls(container) {
-    container.querySelectorAll(".guitar-ctrl").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const action = btn.dataset.action;
-        if (action.startsWith("label-")) {
-          guitarLabelMode = action.replace("label-", "");
-          save("guitar-label-mode", guitarLabelMode);
-        } else if (action.startsWith("view-")) {
-          stringsView = action.replace("view-", "");
-          save("guitar-view", stringsView);
-        } else if (action === "toggle-tuner") {
-          guitarTunerExpanded = !guitarTunerExpanded;
-        }
-        renderGuitar(container, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
-      });
-    });
-    const inst = container.querySelector(".guitar-instrument-sel");
-    inst?.addEventListener("change", () => {
-      instrument2 = inst.value;
-      save("guitar-instrument", instrument2);
-      guitarTuningKey = defaultTuning(instrument2);
-      save("guitar-tuning", guitarTuningKey);
-      guitarStringTuning = namesOf(referenceStrings(instrument2));
-      redrawFresh(container);
-    });
-    const sel = container.querySelector(".guitar-tuning-sel");
-    sel?.addEventListener("change", () => {
-      guitarTuningKey = sel.value;
-      save("guitar-tuning", guitarTuningKey);
-      const preset = INSTRUMENT_TUNINGS[instrument2][guitarTuningKey];
-      if (preset) guitarStringTuning = namesOf(preset);
-      save("guitar-string-tuning", guitarStringTuning);
-      redrawFresh(container);
-    });
-    container.querySelectorAll(".guitar-string-input").forEach((input) => {
-      input.addEventListener("change", () => {
-        const i = parseInt(input.dataset.string);
-        const val = normalizeNoteName(input.value);
-        if (!val) {
-          input.value = guitarStringTuning[i];
-          input.classList.add("invalid");
-          setTimeout(() => input.classList.remove("invalid"), 1200);
-          return;
-        }
-        guitarStringTuning[i] = val;
-        save("guitar-string-tuning", guitarStringTuning);
-        guitarTuningKey = detectPreset(guitarStringTuning);
-        save("guitar-tuning", guitarTuningKey);
-        redrawFresh(container);
-      });
+  function wireChrome(container) {
+    container.querySelectorAll(".strings-tab").forEach((b) => b.addEventListener("click", () => {
+      stringsView = b.dataset.view;
+      save("guitar-view", stringsView);
+      renderGuitar(container, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
+    }));
+    container.querySelector(".strings-caption")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.querySelector("#mod-guitar .module-more")?.click();
     });
   }
-  function neckSvg(noteNames, open2, preferFlats) {
+  var neckVertical = (container) => container.clientHeight > container.clientWidth * 1.15;
+  var neckDrawnVertical = null;
+  var watched = /* @__PURE__ */ new WeakSet();
+  function watchShape(container) {
+    if (watched.has(container) || typeof ResizeObserver === "undefined") return;
+    watched.add(container);
+    new ResizeObserver(() => {
+      if (stringsView === "neck" && neckDrawnVertical !== null && neckVertical(container) !== neckDrawnVertical) {
+        renderGuitar(container, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
+      }
+    }).observe(container);
+  }
+  function neckSvg(noteNames, open2, preferFlats, vertical) {
     const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
     const frets = open2.map((o) => {
       const pos = midi.map((n) => n - o).filter((f) => f >= 0 && f <= NECK_FRETS);
       return pos.length ? pos : [null];
     });
-    return tryUMT("neck", () => Notae.renderFretboard({ name: "", frets, tuning: guitarStringTuning }, neckStyle(preferFlats)), "");
+    return tryUMT("neck", () => Notae.renderFretboard({ name: "", frets, tuning: guitarStringTuning }, neckStyle(preferFlats, vertical)), "");
   }
   function renderGuitar(container, chordSymbol, noteNames = [], voicingIndex, preferFlats = true) {
     lastNoteNames = noteNames;
     lastPreferFlats = preferFlats;
     const open2 = openStrings();
+    container.classList.toggle("strings-bare", !guitarControlsVisible);
+    watchShape(container);
+    renderMenu();
     if (chordSymbol !== lastGuitarSymbol) {
       guitarVoicingIdx = 0;
       lastGuitarSymbol = chordSymbol;
     }
     if (voicingIndex !== void 0) guitarVoicingIdx = voicingIndex;
+    const named = chordSymbol ? chordLabel(chordSymbol) : t("a11y.nothing");
     if (stringsView === "neck") {
-      container.innerHTML = `<div role="img" aria-label="${escapeHtml(t("a11y.strings", { chord: chordSymbol ? chordLabel(chordSymbol) : t("a11y.nothing") }))}">${neckSvg(noteNames, open2, preferFlats)}</div>` + guitarControls(0, 0);
-      localizeDrawnNoteNames(container.firstElementChild);
-      wireGuitarControls(container);
+      neckDrawnVertical = neckVertical(container);
+      container.innerHTML = tabs() + stage(neckSvg(noteNames, open2, preferFlats, neckDrawnVertical), t("a11y.strings", { chord: named }), 0) + foot("", 0, 0);
+      localizeDrawnNoteNames(container.querySelector(".strings-drawing"));
+      wireChrome(container);
       return;
     }
+    neckDrawnVertical = null;
     if (!chordSymbol) {
       const empty = { name: "", frets: open2.map(() => null), tuning: guitarStringTuning };
       const svg2 = tryUMT("fretboard", () => Notae.renderFretboard(empty, shapeStyle()), "");
-      container.innerHTML = `<div class="guitar-placeholder">${svg2}</div>` + guitarControls(0, 0);
-      wireGuitarControls(container);
+      container.innerHTML = tabs() + stage(`<div class="guitar-placeholder">${svg2}</div>`, t("a11y.strings", { chord: named }), 0) + foot("", 0, 0);
+      wireChrome(container);
       return;
     }
     const chord = tryParseChord(chordSymbol);
     const bassPc = chord ? (((chord.bassStep ?? chord.rootStep) + 9) % 12 + 12) % 12 : 0;
     const voicings = chord ? playableVoicings(tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, open2.map((m) => m - 69)) ?? [], []), open2, bassPc) : [];
     if (!voicings.length) {
-      container.innerHTML = `<div class="no-voicing">${t("guitar.none")}</div>` + guitarControls(0, 0);
-      wireGuitarControls(container);
+      container.innerHTML = tabs() + `<div class="no-voicing">${t("guitar.none")}</div>` + foot("", 0, 0);
+      wireChrome(container);
       return;
     }
     const total = voicings.length;
     const idx = Math.min(guitarVoicingIdx, total - 1);
+    const voicing = voicings[idx];
     const svg = tryUMT("fretboard", () => Notae.renderFretboard(
-      { name: chordLabel(chordSymbol), ...voicings[idx], tuning: guitarStringTuning },
-      shapeStyle()
+      { name: showChordName ? chordLabel(chordSymbol) : "", ...voicing, tuning: guitarStringTuning },
+      showChordName ? shapeStyle() : { ...shapeStyle(), chordNameSize: 0, chordNameY: 4, chordNameGapH: 4 }
     ), "");
-    container.innerHTML = `<div role="img" aria-label="${escapeHtml(t("a11y.strings", { chord: `${chordLabel(chordSymbol)} ${voicings[idx].frets.map((f) => f < 0 ? "x" : f).join(" ")}` }))}">${svg}</div>` + guitarControls(total, idx);
-    localizeDrawnNoteNames(container.firstElementChild);
+    const label = t("a11y.strings", { chord: `${chordLabel(chordSymbol)} ${voicing.frets.map((f) => f < 0 ? "x" : f).join(" ")}` });
+    container.innerHTML = tabs() + stage(svg, label, total) + foot(whereLabel(voicing.frets), total, idx);
+    localizeDrawnNoteNames(container.querySelector(".strings-drawing"));
     container.querySelectorAll(".guitar-nav").forEach((btn) => {
       btn.addEventListener("click", () => {
         guitarVoicingIdx = (idx + parseInt(btn.dataset.dir) + total) % total;
@@ -3351,7 +3396,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         onVoicingChange(guitarVoicingIdx);
       });
     });
-    wireGuitarControls(container);
+    wireChrome(container);
   }
 
   // src/detector/analysis-panel.ts
@@ -5395,8 +5440,7 @@ ${explainCadence(cadence)}` : "");
   }
   function applyPanelVisibility(panels) {
     setGuitarControlsVisible(panels.guitarControls);
-    const gcw = document.getElementById("guitar-ctrl-wrap");
-    if (gcw) gcw.style.display = panels.guitarControls ? "" : "none";
+    document.getElementById("guitar-container")?.classList.toggle("strings-bare", !panels.guitarControls);
     document.querySelector('.menu-item[data-panel="guitarControls"]')?.setAttribute("aria-pressed", String(panels.guitarControls));
   }
   function wirePanelMenus() {
@@ -5423,7 +5467,7 @@ ${explainCadence(cadence)}` : "");
         open2 = { btn, menu };
         return;
       }
-      if (open2 && !open2.menu.contains(target)) close();
+      if (open2 && !e.composedPath().includes(open2.menu)) close();
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && open2) {
@@ -5581,7 +5625,7 @@ ${explainCadence(cadence)}` : "");
       ${item("btn-key-par", t("menu.parallel"), t("keyPanel.par.title"))}
       ${item("btn-key-colt", t("menu.coltrane"), t("keyPanel.colt.title"))}`;
       case "guitar":
-        return `<button type="button" class="menu-item" data-panel="guitarControls"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t("menu.controls")}</span></button>`;
+        return `<div id="strings-menu"></div><div class="menu-sep"></div><button type="button" class="menu-item" data-panel="guitarControls"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t("menu.controls")}</span></button>`;
       default:
         return "";
     }
@@ -5715,7 +5759,7 @@ ${explainCadence(cadence)}` : "");
   function watchFittedDiagrams() {
     const fitAll = (el) => {
       el.style.height = "";
-      const svgs = el.id === "guitar-container" ? el.querySelectorAll(":scope > div:first-child svg") : el.querySelectorAll(":scope > svg");
+      const svgs = el.id === "guitar-container" ? el.querySelectorAll(".strings-drawing svg") : el.querySelectorAll(":scope > svg");
       svgs.forEach((svg) => fitSvg(svg, el.id === "staff-container"));
     };
     const containers = [...document.querySelectorAll(".fit, #guitar-container")];
@@ -5793,7 +5837,7 @@ ${explainCadence(cadence)}` : "");
       const menu = document.getElementById(`menu-${id}`);
       if (!menu) return [];
       const panel = t(`module.${id}`);
-      return [...menu.querySelectorAll(".menu-item, .menu-step")].map((el) => {
+      return [...menu.querySelectorAll(".menu-item, .menu-step, .menu-chip")].map((el) => {
         const text = el.classList.contains("menu-step") ? `${t("menu.size")} ${el.textContent}` : el.dataset.label ?? (el.querySelector(".menu-label") ?? el).textContent ?? "";
         return { label: `${panel}: ${text.trim()}`, hint: el.getAttribute("aria-pressed") === "true" ? t("cmd.on") : t("cmd.menu"), run: () => el.click() };
       });
@@ -8716,7 +8760,9 @@ ${explainCadence(c.cadence)}` : ""}`;
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
     const neck = getStringsView() === "neck" ? `${notes}|${keyPrefersSharps(key)}` : "";
-    renderIfChanged("guitar", `${chordSymbol}|${neck}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames, void 0, !keyPrefersSharps(key)));
+    const named = !isModuleShown("chord");
+    setGuitarShowsName(named);
+    renderIfChanged("guitar", `${chordSymbol}|${neck}|${named}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames, void 0, !keyPrefersSharps(key)));
     renderIfChanged("cof", `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, COF_SIZE, cofOpts));
     const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale };
     const keyTitle = key ? state.activeKey ? keyLabel(key) : t("keyPanel.auto", { key: keyLabel(key) }) : "";

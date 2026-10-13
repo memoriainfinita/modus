@@ -10,7 +10,7 @@ import { renderPiano, isNarrow } from './diagrams/piano'
 import { renderVelocity } from './diagrams/velocity'
 import type { NoteVelocity } from './diagrams/velocity'
 import { noteNameToMidi } from './theory/notes'
-import { renderGuitar, getStringsView, getGuitarVoicingIndex, setGuitarVoicingChange } from './diagrams/guitar'
+import { renderGuitar, getStringsView, getGuitarVoicingIndex, setGuitarVoicingChange, setGuitarShowsName } from './diagrams/guitar'
 import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS, VIEW_NAMES } from './view/channel'
 import type { ViewName, ViewBackground, ViewState } from './view/channel'
 import { runViewerFromUrl } from './view/viewer'
@@ -834,7 +834,10 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderIfChanged('velocity', JSON.stringify(vel), () => renderVelocity($('velocity-container'), vel))
   // The shapes follow the chord; the neck view, every note
   const neck = getStringsView() === 'neck' ? `${notes}|${keyPrefersSharps(key)}` : ''
-  renderIfChanged('guitar', `${chordSymbol}|${neck}`, () =>
+  // The chord's name over the shape only where no Chord panel names it
+  const named = !isModuleShown('chord')
+  setGuitarShowsName(named)
+  renderIfChanged('guitar', `${chordSymbol}|${neck}|${named}`, () =>
     renderGuitar($('guitar-container'), chordSymbol, noteNames, undefined, !keyPrefersSharps(key)))
   renderIfChanged('cof', `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () =>
     renderCircleOfFifths($('cof-container'), key, chordSymbol, onCofClick, COF_SIZE, cofOpts))
