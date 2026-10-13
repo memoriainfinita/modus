@@ -15,6 +15,8 @@ import { announce } from './a11y'
 import { buildSettings } from './settings'
 import { ICONS, LOGO } from './icons'
 import { wirePopover } from './popover'
+import { prefMenuHtml } from './pref-menu'
+import { STAFF_CLEFS } from '../diagrams/staff'
 import type { Command } from './commands'
 import { instrumentLabel } from '../i18n/instruments'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
@@ -272,11 +274,19 @@ const steps = (minus: string, plus: string) =>
     <button type="button" id="${plus}" class="menu-step" title="${t('ctrl.larger')}">+</button></div>`
 const heading = (text: string) => `<div class="menu-heading">${escapeHtml(text)}</div>`
 
-/** The options in a panel's ⋯ menu; '' for a panel without any. */
+/** The options in a panel's ⋯ menu, then its preferences (also in Settings); '' for a panel without any. */
 function panelMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
+  const own = ownMenu(id, fieldsVisible)
+  const prefs = prefMenuHtml(id)
+  return own && prefs ? `${own}<div class="menu-sep"></div>${prefs}` : own || prefs
+}
+
+function ownMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
   switch (id) {
     case 'staff': return `
-      <button type="button" id="btn-staff-clef" class="menu-item menu-cycle" title="${t('staff.clef.title')}"></button>
+      ${heading(t('menu.clef'))}
+      <div class="menu-chips" role="group" aria-label="${t('menu.clef')}" title="${t('staff.clef.title')}">${STAFF_CLEFS.map(c =>
+        `<button type="button" class="menu-chip" data-clef="${c}" data-label="${escapeHtml(`${t('menu.clef')}: ${t(`staff.clef.${c}`)}`)}" aria-pressed="false">${t(`staff.clef.${c}`)}</button>`).join('')}</div>
       ${item('btn-staff-prev', t('menu.prev'), t('staff.prev.title'))}`
     case 'piano': return item('btn-piano-prev', t('menu.prev'), t('piano.prev.title'))
     case 'analysis': return `

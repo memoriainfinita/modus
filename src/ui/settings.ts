@@ -13,7 +13,7 @@ import type { StringKey } from '../i18n/en'
 import type { Command } from './commands'
 import { getThemeChoice, saveThemeChoice, THEME_CHOICES } from './theme'
 import type { ThemeChoice } from './theme'
-import { PREFS, getPref, setPref, resetPref, type PrefName, type PrefDef } from '../settings/prefs'
+import { PREFS, getPref, setPref, resetPref, onPrefChange, type PrefName, type PrefDef } from '../settings/prefs'
 import { ACTIONS, DEFAULT_KEYS, MAX_KEYS, RESERVED, keysOf, isDefaultBinding, keyName, conflictFor, assignKey, removeKey, resetKeys, resetAllKeys, type Action } from '../input/bindings'
 import { MIC_MODES, getMicMode, setMicMode } from '../input/mic'
 import { startTour } from './tour'
@@ -52,8 +52,10 @@ const CADENCE_UMT: Record<string, string> = {
 // ─── Rows ────────────────────────────────────────────────────────────────────
 
 const lbl = (name: PrefName) => t(`pref.${name}` as StringKey)
+export const prefLabel = lbl
 const hint = (name: PrefName) => t(`pref.${name}.hint` as StringKey)
 
+export function prefOptionLabel(name: PrefName, option: string): string { return optionLabel(name, option) }
 function optionLabel(name: PrefName, option: string): string {
   if (name === 'ear-chords') return t(`ear.chord.${option || 'maj'}` as StringKey)
   if (name === 'ear-cadences') return cadenceLabel(CADENCE_UMT[option], true)
@@ -104,6 +106,24 @@ function prefRow(name: PrefName): string {
         `<div class="set-checks">${def.options.map(o => `<label class="set-check-label"><input type="checkbox" data-pref-set="${name}" value="${escapeHtml(o)}"${(v as string[]).includes(o) ? ' checked' : ''}> ${escapeHtml(optionLabel(name, o))}</label>`).join('')}</div>`,
         search + ' ' + def.options.map(o => optionLabel(name, o)).join(' '), true)
   }
+}
+
+/** A preference changed elsewhere (a panel's ⋯ menu): its control here shows the new value. */
+function syncPrefControl(name: PrefName) {
+  const el = root()
+  if (!el) return
+  const def = PREFS[name] as PrefDef
+  const v = getPref(name)
+  el.querySelectorAll<HTMLElement>(`[data-pref="${name}"]`).forEach(c => {
+    if (c instanceof HTMLInputElement && c.type === 'range') {
+      c.value = String(v)
+      const out = el.querySelector(`output[for="${c.id}"]`)
+      if (out) out.textContent = formatPrefValue(def as { unit: string }, v as number)
+    } else if (c instanceof HTMLInputElement && c.type === 'checkbox') c.checked = v as boolean
+    else if (c instanceof HTMLSelectElement) c.value = v as string
+    else if (c.dataset.value !== undefined) c.setAttribute('aria-pressed', String(c.dataset.value === v))
+  })
+  el.querySelectorAll<HTMLInputElement>(`input[data-pref-set="${name}"]`).forEach(box => { box.checked = (v as string[]).includes(box.value) })
 }
 
 // ─── Shortcuts ───────────────────────────────────────────────────────────────
@@ -431,6 +451,7 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
   const el = root()
   if (!el) return
   document.addEventListener('keydown', onCaptureKey, true)
+  onPrefChange(syncPrefControl)
   el.addEventListener('mousedown', e => { if (e.target === el) closeSettings() })
   el.querySelector('.set-close')!.addEventListener('click', () => closeSettings())
   el.querySelectorAll<HTMLElement>('.set-nav-item').forEach(b => b.addEventListener('click', () => {

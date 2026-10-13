@@ -36,6 +36,7 @@ import { getPref, onPrefChange, type PrefName } from './settings/prefs'
 import { renderTuner, updateTuner } from './ui/tuner'
 import { maybeStartTour, startTour } from './ui/tour'
 import { wirePopover, closePopover } from './ui/popover'
+import { wirePrefMenus } from './ui/pref-menu'
 import { wireCommandSearch, type Command } from './ui/commands'
 import { instrumentLabel } from './i18n/instruments'
 import { startMic, stopMic, isMicOn } from './input/mic'
@@ -134,6 +135,9 @@ function init() {
   renderDetector()
   drawEar()
   wireSettings({ resetEarScore: () => { resetEarScore(); drawEar() } })
+  wirePrefMenus()
+  // The ear-training panel's menu resets its score as Settings does
+  document.querySelector('#menu-ear [data-ear-reset]')?.addEventListener('click', () => { resetEarScore(); drawEar() })
   $('btn-settings').addEventListener('click', () => openSettings())
   applyZoom()
   onPrefChange(applyPref)
@@ -318,15 +322,16 @@ function wireLayoutEvents() {
     renderAnalysisPanel()
   })
 
-  const clefBtn = $('btn-staff-clef')
-  const showClef = () => { clefBtn.innerHTML = `<span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t('menu.clef')}: ${t(`staff.clef.${staffClef}`)}</span>` }
+  // The staves: the three in view, the one chosen marked
+  const clefChips = [...document.querySelectorAll<HTMLElement>('#menu-staff [data-clef]')]
+  const showClef = () => clefChips.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.clef === staffClef)))
   showClef()
-  clefBtn.addEventListener('click', () => {
-    staffClef = STAFF_CLEFS[(STAFF_CLEFS.indexOf(staffClef) + 1) % STAFF_CLEFS.length]
+  clefChips.forEach(b => b.addEventListener('click', () => {
+    staffClef = b.dataset.clef as typeof staffClef
     save('staff-clef', staffClef)
     showClef()
     renderZone1Diagrams(displayedNotes(), selectedSymbol())
-  })
+  }))
 
   const prevButtons = [$('btn-staff-prev'), $('btn-piano-prev')]
   const showPrev = () => prevButtons.forEach(b => { b.classList.toggle('active', showPrevChord); b.setAttribute('aria-pressed', String(showPrevChord)) })

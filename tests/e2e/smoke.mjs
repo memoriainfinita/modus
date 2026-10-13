@@ -707,19 +707,30 @@ await check('layout: × hides a panel, the ▦ menu shows it again; a preset put
   assert(!(await page.locator('#layout-menu').getAttribute('class')).includes('open'), 'menu open')
 })
 
-await check('the clef button cycles grand, treble and bass staves', async () => {
+await check('the staves: grand, treble or bass, each in view in the menu, the one chosen marked', async () => {
   // The staff fills its panel: a grand staff is the taller drawing
   const h = () => page.locator('#staff-container svg').evaluate(s => s.viewBox.baseVal.height / s.viewBox.baseVal.width)
-  const clef = async () => (await text('#btn-staff-clef')).split(': ')[1]
-  assert(await clef() === 'Grand', 'default grand')
+  const chosen = () => page.locator('#menu-staff [data-clef][aria-pressed="true"]').evaluateAll(es => es.map(e => e.dataset.clef))
+  assert((await chosen()).join() === 'grand', `default: ${await chosen()}`)
+  const labels = await page.locator('#menu-staff [data-clef]').evaluateAll(es => es.map(e => e.textContent))
+  assert(labels.join(' ') === 'Grand Treble Bass', `labels: ${labels}`)
   const grand = await h()
-  await option('staff', '#btn-staff-clef')
-  assert(await clef() === 'Treble', 'treble')
+  await option('staff', '#menu-staff [data-clef="treble"]')
+  assert((await chosen()).join() === 'treble', `treble: ${await chosen()}`)
   const treble = await h()
-  await option('staff', '#btn-staff-clef')
-  assert(await clef() === 'Bass', 'bass')
-  await option('staff', '#btn-staff-clef')
-  assert(await clef() === 'Grand' && grand > treble * 1.4, `heights ${grand} ${treble}`)
+  await option('staff', '#menu-staff [data-clef="bass"]')
+  await option('staff', '#menu-staff [data-clef="grand"]')
+  assert((await chosen()).join() === 'grand' && grand > treble * 1.4, `heights ${grand} ${treble}`)
+})
+
+await check('a panel\'s preferences in its menu are the ones in Settings', async () => {
+  await option('progressions', '#menu-progressions [data-pref-step="progression-bpm"][data-dir="1"]')
+  await openSettings('practice')
+  const inSettings = await page.inputValue('#pref-progression-bpm')
+  await page.keyboard.press('Escape')
+  assert(inSettings === '105', `Settings shows ${inSettings}`)
+  await option('progressions', '#menu-progressions [data-pref-step="progression-bpm"][data-dir="-1"]')
+  assert((await text('#menu-progressions [data-pref-value="progression-bpm"]')) === '100 bpm', 'not back to 100')
 })
 
 await check('P presents the layout without controls, filling the window; Esc leaves', async () => {

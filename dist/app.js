@@ -4473,7 +4473,11 @@ ${explainCadence(cadence)}` : "");
     half: "Half Cadence (-> V)"
   };
   var lbl = (name) => t(`pref.${name}`);
+  var prefLabel = lbl;
   var hint = (name) => t(`pref.${name}.hint`);
+  function prefOptionLabel(name, option) {
+    return optionLabel(name, option);
+  }
   function optionLabel(name, option) {
     if (name === "ear-chords") return t(`ear.chord.${option || "maj"}`);
     if (name === "ear-cadences") return cadenceLabel(CADENCE_UMT[option], true);
@@ -4528,6 +4532,24 @@ ${explainCadence(cadence)}` : "");
           true
         );
     }
+  }
+  function syncPrefControl(name) {
+    const el2 = root();
+    if (!el2) return;
+    const def = PREFS[name];
+    const v = getPref(name);
+    el2.querySelectorAll(`[data-pref="${name}"]`).forEach((c) => {
+      if (c instanceof HTMLInputElement && c.type === "range") {
+        c.value = String(v);
+        const out = el2.querySelector(`output[for="${c.id}"]`);
+        if (out) out.textContent = formatPrefValue(def, v);
+      } else if (c instanceof HTMLInputElement && c.type === "checkbox") c.checked = v;
+      else if (c instanceof HTMLSelectElement) c.value = v;
+      else if (c.dataset.value !== void 0) c.setAttribute("aria-pressed", String(c.dataset.value === v));
+    });
+    el2.querySelectorAll(`input[data-pref-set="${name}"]`).forEach((box) => {
+      box.checked = v.includes(box.value);
+    });
   }
   function keyLabel2(key) {
     const named = { Space: "kbd.space", Delete: "kbd.del", Escape: "kbd.esc" };
@@ -4893,6 +4915,7 @@ ${explainCadence(cadence)}` : "");
     const el2 = root();
     if (!el2) return;
     document.addEventListener("keydown", onCaptureKey, true);
+    onPrefChange(syncPrefControl);
     el2.addEventListener("mousedown", (e) => {
       if (e.target === el2) closeSettings();
     });
@@ -5091,6 +5114,76 @@ ${explainCadence(cadence)}` : "");
     closePopover();
     trigger.focus();
   });
+
+  // src/ui/pref-menu.ts
+  var PANEL_PREFS = {
+    analysis: ["voice-rules"],
+    explain: ["movable-do"],
+    piano: ["piano-velocity"],
+    history: ["history-hold-ms", "history-max"],
+    progressions: ["progression-bpm"],
+    ear: ["ear-interval-play", "ear-chords", "ear-cadences"],
+    tuner: ["a4-hz", "mic-sensitivity", "mic-response"]
+  };
+  function itemHtml(name) {
+    const def = PREFS[name];
+    const v = getPref(name);
+    const label = escapeHtml(prefLabel(name));
+    switch (def.kind) {
+      case "number":
+        return `
+      <div class="menu-row"><span class="menu-label">${label}</span>
+        <button type="button" class="menu-step" data-pref-step="${name}" data-dir="-1" aria-label="${escapeHtml(t("ctrl.smaller"))}">\u2212</button>
+        <span class="menu-value" data-pref-value="${name}">${escapeHtml(formatPrefValue(def, v))}</span>
+        <button type="button" class="menu-step" data-pref-step="${name}" data-dir="1" aria-label="${escapeHtml(t("ctrl.larger"))}">+</button></div>`;
+      case "bool":
+        return `
+      <button type="button" class="menu-item" data-pref-bool="${name}" aria-pressed="${v}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${label}</span></button>`;
+      case "choice":
+        return `<div class="menu-heading">${label}</div><div class="menu-chips">${def.options.map((o) => `<button type="button" class="menu-chip" data-pref-choice="${name}" data-value="${escapeHtml(o)}" data-label="${escapeHtml(`${prefLabel(name)}: ${prefOptionLabel(name, o)}`)}" aria-pressed="${o === v}">${escapeHtml(prefOptionLabel(name, o))}</button>`).join("")}</div>`;
+      case "set":
+        return `<div class="menu-heading">${label}</div><div class="menu-chips">${def.options.map((o) => `<button type="button" class="menu-chip" data-pref-set="${name}" data-value="${escapeHtml(o)}" data-label="${escapeHtml(`${prefLabel(name)}: ${prefOptionLabel(name, o)}`)}" aria-pressed="${v.includes(o)}">${escapeHtml(prefOptionLabel(name, o))}</button>`).join("")}</div>`;
+    }
+  }
+  function prefMenuHtml(id) {
+    const names = PANEL_PREFS[id];
+    if (!names) return "";
+    const extra = id === "ear" ? `<button type="button" class="menu-item menu-action" data-ear-reset><span class="menu-label">${escapeHtml(t("set.ear.reset"))}</span></button>` : "";
+    return `<div class="pref-items" data-pref-panel="${id}">${names.map(itemHtml).join("")}${extra}</div>`;
+  }
+  function refresh(name) {
+    const def = PREFS[name];
+    const v = getPref(name);
+    document.querySelectorAll(`[data-pref-value="${name}"]`).forEach((e) => {
+      e.textContent = formatPrefValue(def, v);
+    });
+    document.querySelectorAll(`[data-pref-bool="${name}"]`).forEach((e) => e.setAttribute("aria-pressed", String(v)));
+    document.querySelectorAll(`[data-pref-choice="${name}"]`).forEach((e) => e.setAttribute("aria-pressed", String(e.dataset.value === v)));
+    document.querySelectorAll(`[data-pref-set="${name}"]`).forEach((e) => e.setAttribute("aria-pressed", String(v.includes(e.dataset.value))));
+  }
+  function wirePrefMenus() {
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest(".pref-items button");
+      if (!b) return;
+      if (b.dataset.prefStep) {
+        const name = b.dataset.prefStep;
+        const def = PREFS[name];
+        const next = Math.round((getPref(name) + Number(b.dataset.dir) * def.step) * 1e3) / 1e3;
+        setPref(name, Math.min(def.max, Math.max(def.min, next)));
+      } else if (b.dataset.prefBool) {
+        const name = b.dataset.prefBool;
+        setPref(name, !getPref(name));
+      } else if (b.dataset.prefChoice) {
+        setPref(b.dataset.prefChoice, b.dataset.value);
+      } else if (b.dataset.prefSet) {
+        const name = b.dataset.prefSet;
+        const now = getPref(name);
+        const v = b.dataset.value;
+        setPref(name, now.includes(v) ? now.filter((x) => x !== v) : [...now, v]);
+      }
+    });
+    onPrefChange(refresh);
+  }
 
   // src/i18n/instruments.ts
   var ES = {
@@ -5651,10 +5744,16 @@ ${explainCadence(cadence)}` : "");
     <button type="button" id="${plus}" class="menu-step" title="${t("ctrl.larger")}">+</button></div>`;
   var heading = (text) => `<div class="menu-heading">${escapeHtml(text)}</div>`;
   function panelMenu(id, fieldsVisible) {
+    const own = ownMenu(id, fieldsVisible);
+    const prefs = prefMenuHtml(id);
+    return own && prefs ? `${own}<div class="menu-sep"></div>${prefs}` : own || prefs;
+  }
+  function ownMenu(id, fieldsVisible) {
     switch (id) {
       case "staff":
         return `
-      <button type="button" id="btn-staff-clef" class="menu-item menu-cycle" title="${t("staff.clef.title")}"></button>
+      ${heading(t("menu.clef"))}
+      <div class="menu-chips" role="group" aria-label="${t("menu.clef")}" title="${t("staff.clef.title")}">${STAFF_CLEFS.map((c) => `<button type="button" class="menu-chip" data-clef="${c}" data-label="${escapeHtml(`${t("menu.clef")}: ${t(`staff.clef.${c}`)}`)}" aria-pressed="false">${t(`staff.clef.${c}`)}</button>`).join("")}</div>
       ${item("btn-staff-prev", t("menu.prev"), t("staff.prev.title"))}`;
       case "piano":
         return item("btn-piano-prev", t("menu.prev"), t("piano.prev.title"));
@@ -8324,6 +8423,11 @@ ${explainCadence(c.cadence)}` : ""}`;
       resetEarScore();
       drawEar();
     } });
+    wirePrefMenus();
+    document.querySelector("#menu-ear [data-ear-reset]")?.addEventListener("click", () => {
+      resetEarScore();
+      drawEar();
+    });
     $2("btn-settings").addEventListener("click", () => openSettings());
     applyZoom();
     onPrefChange(applyPref);
@@ -8514,17 +8618,15 @@ ${explainCadence(c.cadence)}` : ""}`;
       save("analysis-scale", analysisScale);
       renderAnalysisPanel();
     });
-    const clefBtn = $2("btn-staff-clef");
-    const showClef = () => {
-      clefBtn.innerHTML = `<span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t("menu.clef")}: ${t(`staff.clef.${staffClef}`)}</span>`;
-    };
+    const clefChips = [...document.querySelectorAll("#menu-staff [data-clef]")];
+    const showClef = () => clefChips.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.clef === staffClef)));
     showClef();
-    clefBtn.addEventListener("click", () => {
-      staffClef = STAFF_CLEFS[(STAFF_CLEFS.indexOf(staffClef) + 1) % STAFF_CLEFS.length];
+    clefChips.forEach((b) => b.addEventListener("click", () => {
+      staffClef = b.dataset.clef;
       save("staff-clef", staffClef);
       showClef();
       renderZone1Diagrams(displayedNotes(), selectedSymbol());
-    });
+    }));
     const prevButtons = [$2("btn-staff-prev"), $2("btn-piano-prev")];
     const showPrev = () => prevButtons.forEach((b) => {
       b.classList.toggle("active", showPrevChord);
