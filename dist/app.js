@@ -6695,6 +6695,9 @@ ${explainCadence(cadence)}` : "");
     write(INDEX_KEY, created);
     return created;
   }
+  function songTabs() {
+    return ensureIndex().songs;
+  }
   function listSongs() {
     return ensureIndex().songs.map((meta, order) => ({ meta, order })).sort((a, b) => b.meta.updatedAt - a.meta.updatedAt || b.order - a.order).map((x) => x.meta);
   }
@@ -6702,7 +6705,9 @@ ${explainCadence(cadence)}` : "");
     const stored = { ...withoutEmptyChords(song), updatedAt: Date.now() };
     write(songKey(stored.id), stored);
     const index = ensureIndex();
-    write(INDEX_KEY, { ...index, songs: [...index.songs.filter((m) => m.id !== stored.id), metaOf(stored)] });
+    const at = index.songs.findIndex((m) => m.id === stored.id);
+    const songs = at < 0 ? [...index.songs, metaOf(stored)] : index.songs.map((m, i) => i === at ? metaOf(stored) : m);
+    write(INDEX_KEY, { ...index, songs });
     if (!isBlankSong(stored)) requestPersistence();
   }
   var PERSIST_ASKED_KEY = "storage-persist-asked";
@@ -6855,23 +6860,33 @@ ${explainCadence(cadence)}` : "");
     titleInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") titleInput.blur();
     });
-    const listAnchor = el("div", "pop-anchor");
-    const listBtn = el("button", "song-list-btn");
-    listBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-    listBtn.title = t("song.list");
-    listBtn.setAttribute("aria-label", t("song.list"));
-    const listMenu = el("div", "view-menu pop-menu song-menu");
-    const metas = h.songs.some((m) => m.id === song.id) ? h.songs : [{ id: song.id, title: song.title, updatedAt: song.updatedAt }, ...h.songs];
-    listMenu.innerHTML = `<div class="view-menu-title">${escapeHtml(t("song.list"))}</div>` + metas.map((m) => `<button class="choice-row song-list-item" data-song-id="${escapeHtml(m.id)}" aria-pressed="${m.id === song.id}">${escapeHtml((m.id === song.id ? song.title : m.title) || t("song.untitled"))}</button>`).join("") + `<button class="choice-row" data-song-new>${escapeHtml(t("song.newSong"))}</button>`;
-    listMenu.addEventListener("click", (e) => {
-      const b = e.target.closest("button");
-      if (!b) return;
-      closePopover();
-      if (b.dataset.songId && b.dataset.songId !== _song.id) h.onOpenSong(b.dataset.songId);
-      else if (b.hasAttribute("data-song-new") && !isBlankSong(_song)) h.onNewSong();
+    const tabs2 = el("div", "song-tabs");
+    tabs2.setAttribute("role", "tablist");
+    tabs2.setAttribute("aria-label", t("song.list"));
+    const metas = h.songs.some((m) => m.id === song.id) ? h.songs : [...h.songs, { id: song.id, title: song.title, updatedAt: song.updatedAt }];
+    for (const m of metas) {
+      const tab = el("button", "song-tab", (m.id === song.id ? song.title : m.title) || t("song.untitled"));
+      tab.setAttribute("role", "tab");
+      tab.setAttribute("aria-selected", String(m.id === song.id));
+      tab.dataset.songId = m.id;
+      tab.addEventListener("click", () => {
+        if (m.id !== _song.id) h.onOpenSong(m.id);
+      });
+      tab.addEventListener("dblclick", () => {
+        titleInput.focus();
+        titleInput.select();
+      });
+      tabs2.appendChild(tab);
+    }
+    const newTab = el("button", "song-tab song-tab-new", "+");
+    newTab.title = t("song.new.title");
+    newTab.setAttribute("aria-label", t("song.newSong"));
+    newTab.addEventListener("click", () => {
+      if (!isBlankSong(_song)) h.onNewSong();
     });
-    listAnchor.append(listBtn, listMenu);
-    wirePopover(listMenu, [listBtn]);
+    tabs2.appendChild(newTab);
+    root2.appendChild(tabs2);
+    requestAnimationFrame(() => tabs2.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" }));
     const bars = song.sections.reduce((n, s) => n + s.measures.length * Math.max(1, s.repeatCount), 0);
     const summary = el("span", "song-form-info");
     summary.textContent = song.sections.length ? [
@@ -6919,7 +6934,7 @@ ${explainCadence(cadence)}` : "");
     moreAnchor.append(moreBtn, moreMenu);
     wirePopover(moreMenu, [moreBtn]);
     const titleWrap = el("div", "song-title-wrap");
-    titleWrap.append(titleInput, listAnchor);
+    titleWrap.append(titleInput);
     header.append(titleWrap, summary, el("span", "song-gap"), addAnchor, pasteBtn, moreAnchor);
     root2.appendChild(header);
     const pasteArea = el("div", "paste-area");
@@ -8416,7 +8431,7 @@ ${explainCadence(c.cadence)}` : ""}`;
         saveSong(song);
         renderZone3();
       },
-      songs: listSongs(),
+      songs: songTabs(),
       onOpenSong: (id) => {
         const song = openSong(id);
         if (song) showSong(song);

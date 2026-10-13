@@ -1897,6 +1897,44 @@ body.presenting .grid {
   align-items: center;
   gap: 2px;
 }
+.song-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: thin;
+}
+.song-tab {
+  flex: none;
+  max-width: 16em;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+.song-tab:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+.song-tab[aria-selected=true] {
+  color: var(--text-strong);
+  background: var(--surface);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+.song-tab-new {
+  padding: 0 12px;
+  font-size: 16px;
+}
 .song-title-input {
   font: inherit;
   font-size: 20px;
@@ -1917,7 +1955,6 @@ body.presenting .grid {
   border-color: var(--accent);
   outline: none;
 }
-.song-list-btn,
 .song-more-btn {
   height: 32px;
   min-width: 32px;
@@ -1932,9 +1969,7 @@ body.presenting .grid {
   align-items: center;
   justify-content: center;
 }
-.song-list-btn:hover,
 .song-more-btn:hover,
-.song-list-btn[aria-expanded=true],
 .song-more-btn[aria-expanded=true] {
   background: var(--surface);
   color: var(--text);
