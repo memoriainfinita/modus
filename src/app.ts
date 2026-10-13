@@ -6,7 +6,7 @@ import { initAudioOnGesture, GM_INSTRUMENT_GROUPS, unlockAudioOnAnyGesture, prel
 import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
 import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
 import { openPresentation, closePresentation, isPresenting } from './view/presentation'
-import { renderPiano, isNarrow } from './diagrams/piano'
+import { renderPiano, isNarrow, containerOctaves } from './diagrams/piano'
 import { renderVelocity } from './diagrams/velocity'
 import type { NoteVelocity } from './diagrams/velocity'
 import { noteNameToMidi } from './theory/notes'
@@ -399,6 +399,13 @@ function buildLayout() {
   wireLayoutEvents()
   applyPanelVisibility(state.panels)
   // A panel shown again is drawn again: a hidden one has nothing to measure its drawing by
+  // The piano has as many octaves as its panel holds: drawn again when that number changes
+  const pianoEl = $('piano-container')
+  let octaves = containerOctaves(pianoEl)
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => {
+    const now = containerOctaves(pianoEl)
+    if (now !== octaves) { octaves = now; renderDetector() }
+  }).observe(pianoEl)
   let shown = currentGrid().map(c => c.id).sort().join()
   onLayoutChange(() => {
     const now = currentGrid().map(c => c.id).sort().join()
@@ -821,7 +828,7 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderIfChanged('staff', `${notes}|${key}|${staffClef}|${prev?.join(' ')}`, () =>
     renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef, prev))
   const fn = chordSymbol ? state.analysis?.function ?? null : null
-  renderIfChanged('piano', `${notes}|${fn}|${prev?.join(' ')}|${isNarrow()}`, () =>
+  renderIfChanged('piano', `${notes}|${fn}|${prev?.join(' ')}|${containerOctaves($('piano-container'))}`, () =>
     renderPiano($('piano-container'), noteNames, fn, onPianoPress, prev))
   // The drawings by name, for a screen reader: the notes they show
   const spoken = noteNames.map(noteLabel).join(' ') || t('a11y.nothing')

@@ -716,6 +716,14 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 .key-mode-chords { display: flex; gap: 0.3em; }
 .key-mode-chord { display: flex; flex-direction: column; align-items: center; gap: 0.1em; }
 .key-axis { font-size: 0.95em; color: var(--text); }
+/* A wide panel: one flow in two balanced columns, the key's chords and then the parallel
+   modes, so the modes fill the space under the key's chords instead of a tall column */
+@container (min-width: 820px) {
+  #key-container { display: block; columns: 2; column-gap: 2.4em; }
+  #key-container .key-main { break-inside: avoid; margin-bottom: 1.2em; }
+  #key-container .key-parallel, #key-container .key-mode-grid { display: block; }
+  #key-container .key-mode-row { break-inside: avoid; margin-bottom: 0.3em; }
+}
 
 /* ─── Chord header ────────────────────────────────────────────── */
 /* Name, notes, degree and function, the cadence from the chord before, the other readings */
@@ -1202,14 +1210,18 @@ body.view-mode .guitar-chrome { display: none; }
 /* Ear training panel */
 #ear-container { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
 .ear-head { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-.ear-score { margin-left: auto; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.ear-actions { display: flex; gap: 6px; align-items: center; }
+.ear-new { height: 32px; padding: 0 14px; border: 0; border-radius: 6px; background: var(--accent); color: var(--on-accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.ear-new:hover { background: var(--accent-soft); }
+.ear-score { margin-left: auto; font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .ear-prompt { margin: 0; color: var(--text-soft); }
 .ear-answers { display: flex; flex-wrap: wrap; gap: 4px; }
 .ear-answer {
-  padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface);
+  padding: 4px 10px; border-radius: 6px; border: 1px solid transparent; background: var(--surface);
   color: var(--text); font: inherit; cursor: pointer;
 }
-.ear-answer:disabled { cursor: default; opacity: .6; }
+.ear-answer:hover:not(:disabled) { border-color: var(--border); }
+.ear-answer:disabled { cursor: default; opacity: .5; }
 .ear-answer.ear-correct { border-color: var(--fn-t); opacity: 1; }
 .ear-answer.ear-missed { border-color: var(--fn-d); opacity: 1; }
 .ear-feedback { margin: 0; min-height: 1.4em; font-weight: 600; }

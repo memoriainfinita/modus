@@ -145,7 +145,7 @@ await check('D7 in C Major reads V7/V, secondary → V; the explanation says wha
 
 await check('piano keys carry data-note', async () => {
   const n = await page.locator('#piano-container rect[data-note]').count()
-  assert(n === 48, `data-note keys: ${n}`)
+  assert(n >= 24 && n <= 84 && n % 12 === 0, `data-note keys: ${n}`)   // whole octaves, as many as the panel holds
 })
 
 await check('strings panel, neck view: every note sounding on the neck, named; shapes again', async () => {
@@ -243,7 +243,7 @@ await check('ear training: a chord plays unseen; once named, the score counts an
   await page.locator('.ear-answer').first().click()
   const feedback = await text('.ear-feedback')
   assert(/^(Right|It was)/.test(feedback), `feedback: ${feedback}`)
-  assert(/^[01] \/ 1$/.test(await text('.ear-score')), `score: ${await text('.ear-score')}`)
+  assert(/^right [01] of 1$/.test(await text('.ear-score')), `score: ${await text('.ear-score')}`)
   assert(await page.locator('.ear-answer.ear-correct').count() === 1, 'right answer not marked')
   assert((await text('.chord-name-badge')).length > 0, 'answer not shown in the detector')
   await page.click('.ear-mode[data-mode="cadence"]')

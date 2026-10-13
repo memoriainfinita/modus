@@ -388,6 +388,8 @@ export const es: Record<StringKey, string> = {
   'ear.new': 'Pregunta nueva',
   'ear.new.title': 'Tocar una pregunta nueva',
   'ear.again.title': 'Tocarla otra vez',
+  'ear.kind': 'Qué preguntar',
+  'ear.score': 'aciertos {right} de {total}',
   'ear.score.title': 'Aciertos sobre el total, en este tipo de pregunta',
   'ear.start': 'Pulsa Pregunta nueva: la app toca sin enseñar, y tú dices lo que has oído.',
   'ear.ask.interval': '¿Qué intervalo? Dos notas una tras otra y luego juntas.',

@@ -1507,6 +1507,25 @@ body.presenting .grid {
   font-size: 0.95em;
   color: var(--text);
 }
+@container (min-width: 820px) {
+  #key-container {
+    display: block;
+    columns: 2;
+    column-gap: 2.4em;
+  }
+  #key-container .key-main {
+    break-inside: avoid;
+    margin-bottom: 1.2em;
+  }
+  #key-container .key-parallel,
+  #key-container .key-mode-grid {
+    display: block;
+  }
+  #key-container .key-mode-row {
+    break-inside: avoid;
+    margin-bottom: 0.3em;
+  }
+}
 .chord-head {
   display: flex;
   align-items: center;
@@ -2533,8 +2552,29 @@ body.view-mode .guitar-chrome {
   align-items: center;
   flex-wrap: wrap;
 }
+.ear-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ear-new {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ear-new:hover {
+  background: var(--accent-soft);
+}
 .ear-score {
   margin-left: auto;
+  font-size: 12px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -2548,17 +2588,20 @@ body.view-mode .guitar-chrome {
   gap: 4px;
 }
 .ear-answer {
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
   background: var(--surface);
   color: var(--text);
   font: inherit;
   cursor: pointer;
 }
+.ear-answer:hover:not(:disabled) {
+  border-color: var(--border);
+}
 .ear-answer:disabled {
   cursor: default;
-  opacity: .6;
+  opacity: .5;
 }
 .ear-answer.ear-correct {
   border-color: var(--fn-t);
