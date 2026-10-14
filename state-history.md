@@ -2,6 +2,11 @@
 
 What left `state.md`. Most recent first.
 
+### 2026-10-13 — The song builder is reopened
+
+**What changed:** the freeze of 2026-10-10 (no new features for the song builder) no longer holds. The Song panel became a chord chart with the form as a strip, sections written as text and songs as tabs; playing the whole song is TODO.
+**Why:** the user asked for it while reviewing the panels one by one.
+
 ### 2026-10-10 — Scope: the analysis is Modus; the song builder is frozen
 
 **What changed:** the roadmap was split. Analysis work is ordered (pitch spelling, voicing analysis, scales from a melody, unused UMT output, key explorer, next-chord suggestions, progression analysis over the history, OBS view and image export, MIDI output). The song builder keeps working with its tests but gets no new features; its roadmap items are parked (file export, sharing, MIDI and MusicXML files, PDF, tempo playback, durations, lyrics, undo / redo, metronome, takes). Whole-song analysis moved to the history.
