@@ -1,6 +1,6 @@
 ---
 created: 2026-05-20
-last_updated: 2026-10-11
+last_updated: 2026-10-14
 ---
 
 # Modus — state
@@ -18,10 +18,11 @@ What is true now. What already happened lives in `state-history.md`.
 
 - Working: detector, analysis with voice leading, explanation, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, strings panel (any fretted instrument, shapes or neck), piano, velocity, grand staff, progressions, ear training, player, microphone and tuner, modular layout and presentation, view windows for OBS and export, MIDI out, input channel filter, offline and installable, keyboard and screen reader, touch, guided tour. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-12: TSC clean, 390 unit tests against the real UMT bundle, `pnpm test:e2e` 83/83 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
+- Tests 2026-10-14: TSC clean, 390 unit tests against the real UMT bundle, `pnpm test:e2e` 83/83 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 on 2026-10-13, before the song tabs and the panel menus (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `v0.4.0` on 2026-10-11, when the UMT audit ended (all tests passed unchanged), and to `v0.4.1` and `v0.5.0` (theory names in Spanish) the same day; to `v0.6.0` on 2026-10-12 (P/L/R on triads only, turnarounds as tonicizations, the blues style the Progressions panel passes). The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Numerals follow the letter written (`analyzeProgression` with `spelling: 'written'`): Gb in C is ♭V, F# is ♯IV. CoF degrees come from the same call
-- Scope 2026-10-10: Modus is the detector and its analysis. The song builder is frozen: it works and keeps its tests, no new features (see TODO)
+- Scope: Modus is the detector and its analysis, and the song builder, reopened 2026-10-13 at the user's request (chart, form strip, sections as text, songs as tabs; playing the song is TODO 20)
+- Flaky e2e checks, each failed once and passed on the next run (2026-10-13): Hold with real MIDI in Firefox, the circle's flats and sharps. Not investigated
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
 - Interface languages: English and Spanish, with note names in letters or Do Re Mi (spec → Language). Docs, code and commits stay in English
 
@@ -87,7 +88,7 @@ Ordered by what each one makes cheaper or depends on: strings, colours and the m
 
 16. [x] Settings, 2026-10-12: ⚙ dialog (design A of the canvas `Modus · Ajustes`, claude.ai artifact 3FNjKBDN) with ten sections, search, reset per section; every fixed timing and option exposed through `settings/prefs.ts`; shortcuts customizable (two keys, conflicts asked); export / import / reset with Undo. MIDI channels, out and Thru moved from the toolbar; language, note names and theme from the help panel, which keeps only help
 
-18. [x] Bar and rail, 2026-10-12: the field finds orders by name (modes, keys, layouts, panels, instruments, presentation, view windows); instruments named in Spanish. Then the panels one by one: Strings done 2026-10-13 (board `Cuerdas C` of the canvas, with the instrument line of A); the others still to review.
+18. [x] Bar and rail, 2026-10-12: the field finds orders by name (modes, keys, layouts, panels, instruments, presentation, view windows); instruments named in Spanish. Then the panels one by one, all reviewed 2026-10-13: Strings (board `Cuerdas C` of the canvas, with the instrument line of A), the Song (19), the key panel, ear training and the piano (21); each panel's preferences also in its ⋯ menu, the staves chosen in view.
 19. [x] Song panel, decided and built 2026-10-13 (boards `Canción A` and `Canción C` of the canvas `Modus · Diseño`): the measures flow four to a line with bar lines, as a chord chart, the section's name in a margin on the left (A); above it a strip with the song's form, blocks as long as their bars, as a map: a click goes to the section in the chart (all sections stay below), dragging a block reorders the sections, ×N and "+ section" live in the strip, hidden with one section, the block in play marked during MIDI fill and ← →. Each section can also be written as text ("Am F | C G", the toggle of board B), with what was understood shown below. The song's head: its name opens the song list, then key, bars and sections; "+ Section", "Paste chords" and ⋯ (New, Transpose, Export, Delete); no native select. Chips in the function's colour, their tools (edit, duplicate, MIDI fill, remove) shown on the chip selected. On Auto the key is read from the song's own chords, so the numerals no longer read "—" with an empty history
 21. [x] Three panels, decided and built 2026-10-13 with the Song (19), to build together:
    - Key panel: with a wide panel the parallel modes go in two columns, so the panel is half as tall and the left column leaves no gap; narrow, one column as now
