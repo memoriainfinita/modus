@@ -1182,8 +1182,8 @@
     "pref.ui-zoom.hint": "Everything larger or smaller, for a far screen or a small one",
     "pref.preview-s": "Length of previews",
     "pref.preview-s.hint": "A chord played from history, circle, key panel or song",
-    "pref.piano-velocity": "Strength of the on-screen piano and previews",
-    "pref.piano-velocity.hint": "MIDI velocity, 1\u2013127; MIDI out sends it too",
+    "pref.piano-velocity": "Velocity of the on-screen piano and previews",
+    "pref.piano-velocity.hint": "The MIDI velocity (1\u2013127) of the notes that do not come from your controller, as they sound and as MIDI out sends them",
     "pref.chord-style": "Chord symbols",
     "pref.chord-style.hint": "How a major seventh chord is written",
     "pref.chord-style.standard": "Cmaj7",
@@ -2011,8 +2011,8 @@
     "pref.ui-zoom.hint": "Todo m\xE1s grande o m\xE1s peque\xF1o, para una pantalla lejana o peque\xF1a",
     "pref.preview-s": "Duraci\xF3n de las vistas previas",
     "pref.preview-s.hint": "Un acorde tocado desde el historial, el c\xEDrculo, la tonalidad o la canci\xF3n",
-    "pref.piano-velocity": "Fuerza del piano en pantalla y las vistas previas",
-    "pref.piano-velocity.hint": "Velocidad MIDI, 1\u2013127; la salida MIDI tambi\xE9n la env\xEDa",
+    "pref.piano-velocity": "Velocidad del piano en pantalla y las vistas previas",
+    "pref.piano-velocity.hint": "La velocidad MIDI (1\u2013127) con la que suenan y se env\xEDan por la salida MIDI las notas que no vienen de tu controlador",
     "pref.chord-style": "Cifrado",
     "pref.chord-style.hint": "C\xF3mo se escribe un acorde de s\xE9ptima mayor",
     "pref.chord-style.standard": "Cmaj7",
@@ -2865,7 +2865,7 @@
     if (!inst) return;
     whenRunning(() => {
       previewNodes.forEach(stopNode);
-      previewNodes = midis.map((midi) => inst.play(midi, audioCtx.currentTime, { duration, gain: 1 }));
+      previewNodes = midis.map((midi) => inst.play(midi, audioCtx.currentTime, { duration, gain: velocityGain(getPref("piano-velocity")) }));
     });
   }
   function playNoteNames(noteNames, duration = getPref("preview-s")) {

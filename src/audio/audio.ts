@@ -193,7 +193,7 @@ function playPreview(midis: number[], duration: number) {
   if (!inst) return
   whenRunning(() => {
     previewNodes.forEach(stopNode)
-    previewNodes = midis.map(midi => inst.play(midi, audioCtx!.currentTime, { duration, gain: 1 }))
+    previewNodes = midis.map(midi => inst.play(midi, audioCtx!.currentTime, { duration, gain: velocityGain(getPref('piano-velocity')) }))
   })
 }
 
@@ -204,7 +204,7 @@ export function playNoteByName(noteName: string, duration = 1.5) {
   onPreview([midi], duration, false)
   const inst = playableInstrument()
   if (!inst) return
-  whenRunning(() => inst.play(midi, audioCtx!.currentTime, { duration, gain: 1 }))
+  whenRunning(() => inst.play(midi, audioCtx!.currentTime, { duration, gain: velocityGain(getPref('piano-velocity')) }))
 }
 
 export function playNoteNames(noteNames: string[], duration = getPref('preview-s')) {
