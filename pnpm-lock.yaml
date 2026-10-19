@@ -27,8 +27,8 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
       umt:
-        specifier: github:memoriainfinita/UMT#v0.6.0
-        version: universal-music-theory-library@https://codeload.github.com/memoriainfinita/UMT/tar.gz/5e8c52c86965f4e6c53f5c92d0d9e2c051f8a90d
+        specifier: github:memoriainfinita/UMT#v0.7.1
+        version: universal-music-theory-library@https://codeload.github.com/memoriainfinita/UMT/tar.gz/7c81fa77d761c6688b4750d1661e91d96aef176c
       vite:
         specifier: ^8.3.1
         version: 8.3.1(@types/node@24.19.0)(esbuild@0.28.2)
@@ -649,9 +649,9 @@ packages:
     resolution: {integrity: sha512-u4UB2/IrKdU6lFxumHmmo1a3fCQO5tzQllRorfoRS63txhrB7xTpSn1PftwC4qEHkOaqP95fCWW4lJzwErwzhQ==}
     engines: {node: '>=22.19.0'}
 
-  universal-music-theory-library@https://codeload.github.com/memoriainfinita/UMT/tar.gz/5e8c52c86965f4e6c53f5c92d0d9e2c051f8a90d:
-    resolution: {gitHosted: true, integrity: sha512-fkgxTNca2LBFmHD6DRAfJAmYMLIp95jRjPp1PEXJyMXYqlpEAl3bzjAGYJT1fW0ux68ztXYV9YZFzkzIW5WrUg==, tarball: https://codeload.github.com/memoriainfinita/UMT/tar.gz/5e8c52c86965f4e6c53f5c92d0d9e2c051f8a90d}
-    version: 0.6.0
+  universal-music-theory-library@https://codeload.github.com/memoriainfinita/UMT/tar.gz/7c81fa77d761c6688b4750d1661e91d96aef176c:
+    resolution: {gitHosted: true, integrity: sha512-zU7obgRqC/ZfGEefjxlS0UYdc/2ioNxkZoDdgfFLmT8K0WUjA1Fm4Omm/LMMcGko373bq313Aa61hkrf3gKsvw==, tarball: https://codeload.github.com/memoriainfinita/UMT/tar.gz/7c81fa77d761c6688b4750d1661e91d96aef176c}
+    version: 0.7.1
 
   vite@8.3.1:
     resolution: {integrity: sha512-/bvH9E9tmCXRGp2uXY3WbOldqpTwFkbha/8ANaEQ6VkxhH60KyqLwgZq6lG2y+4uT55x9+9eUHMpQ7uGnOCKjA==}
@@ -1226,7 +1226,7 @@ snapshots:
 
   undici@8.11.2: {}
 
-  universal-music-theory-library@https://codeload.github.com/memoriainfinita/UMT/tar.gz/5e8c52c86965f4e6c53f5c92d0d9e2c051f8a90d: {}
+  universal-music-theory-library@https://codeload.github.com/memoriainfinita/UMT/tar.gz/7c81fa77d761c6688b4750d1661e91d96aef176c: {}
 
   vite@8.3.1(@types/node@24.19.0)(esbuild@0.28.2):
     dependencies:
