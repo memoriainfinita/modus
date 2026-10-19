@@ -12,7 +12,7 @@ export const PANEL_PREFS: Partial<Record<ModuleId, PrefName[]>> = {
   analysis: ['voice-rules'],
   explain: ['movable-do'],
   piano: ['piano-velocity'],
-  history: ['history-hold-ms', 'history-max'],
+  history: ['history-hold-ms', 'history-max', 'history-bpm', 'history-beats'],
   progressions: ['progression-bpm'],
   ear: ['ear-interval-play', 'ear-chords', 'ear-cadences'],
   tuner: ['a4-hz', 'mic-sensitivity', 'mic-response'],

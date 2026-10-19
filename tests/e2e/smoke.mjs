@@ -151,6 +151,19 @@ await check('C3 D4 F#4 A4 reads D over C, an upper structure, in Analysis and Ex
   await off([48, 62, 66, 69])
 })
 
+await check('harmonic rhythm: two chords of 1.5 s each, a change every 1.5 s under the history', async () => {
+  await page.click('.history-clear-btn').catch(() => {})
+  for (const chord of [[60, 64, 67], [65, 69, 72]]) {
+    await on(chord)
+    await page.waitForTimeout(1500)
+    await off(chord)
+    await page.waitForTimeout(300)
+  }
+  const line = await text('.history-rhythm')
+  const s = parseFloat(line.match(/every ([\d.]+) s/)?.[1] ?? 'NaN')
+  assert(Math.abs(s - 1.5) < 0.3, `rhythm: ${line}`)
+})
+
 await check('Next (Study layout): A7 in C Major resolves to Dm7; a click plays it and shows it after A7', async () => {
   await page.click('#btn-layout'); await page.click('#layout-menu [data-preset="study"]'); await page.mouse.click(5, 990)
   await play([57, 61, 64, 67])

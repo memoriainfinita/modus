@@ -4,7 +4,8 @@ import { playChord, playNoteNames } from '../audio/audio'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
 import { spellChordSymbol } from '../theory/spelling'
-import { t, chordLabel, keyLabel, cadenceLabel } from '../i18n/i18n'
+import { t, chordLabel, keyLabel, cadenceLabel, getLang } from '../i18n/i18n'
+import { entrySeconds, harmonicRhythm } from './rhythm'
 import { explainCadence } from '../detector/explain'
 import { makeActivatable, onLongPress } from '../ui/a11y'
 import { getPref } from '../settings/prefs'
@@ -43,8 +44,8 @@ export function restoreCarriedHistory() {
   if (list.length && list.every(e => e && typeof e.id === 'string' && typeof e.symbol === 'string' && Array.isArray(e.notes))) restoreEntries(list)
 }
 
-export function addEntry(symbol: string, notes: string[]) {
-  const entry: HistoryEntry = { id: crypto.randomUUID(), symbol, notes }
+export function addEntry(symbol: string, notes: string[], time?: { at: number; until?: number }) {
+  const entry: HistoryEntry = { id: crypto.randomUUID(), symbol, notes, ...time }
   entries = [entry, ...entries].slice(0, getPref('history-max'))
   onChange(entries)
 }
@@ -77,14 +78,33 @@ export function clearHistory() {
   onChange(entries)
 }
 
-export function notifyChordDetected(symbol: string, notes: string[]) {
+// The chord being held before it goes to the history: when it started, and its release if
+// that came first (a chord shorter than the hold still has its time)
+let pending: { symbol: string; at: number; until?: number } | null = null
+
+export function notifyChordDetected(symbol: string, notes: string[], at = Date.now()) {
   if (debounceTimer) clearTimeout(debounceTimer)
+  if (pending?.symbol !== symbol) pending = { symbol, at }
+  else delete pending.until
+  // The newest chord struck again: it sounds on, its release is still to come
+  if (symbol === lastAutoAppended && entries[0]) delete entries[0].until
   debounceTimer = setTimeout(() => {
     if (symbol !== lastAutoAppended && symbol !== '?') {
-      addEntry(symbol, notes)
+      const p = pending?.symbol === symbol ? pending : null
+      addEntry(symbol, notes, p ? { at: p.at, until: p.until } : undefined)
       lastAutoAppended = symbol
     }
   }, getPref('history-hold-ms'))
+}
+
+/** The chord played was released: the newest entry (or the one still being held) stops sounding. */
+export function notifyChordReleased(at = Date.now()) {
+  if (pending && pending.until === undefined) pending.until = at
+  const e = entries[0]
+  if (e?.at !== undefined && e.until === undefined && e.symbol === pending?.symbol) {
+    e.until = at
+    onChange(entries)
+  }
 }
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
@@ -139,7 +159,9 @@ export function renderHistory(
       else playChord(entry.symbol)
     })
     const inKey = steps[i].key ? ` (${t('history.chip.inKey', { roman, key: keyLabel(steps[i].key!) })})` : ''
-    chip.title = `${chordLabel(entry.symbol)}${inKey} — ${t('history.chip.actions')}`
+    const secs = entrySeconds(entries, i)
+    const lasted = secs !== null ? ` · ${t('history.chip.duration', { s: decimal(secs) })}` : ''
+    chip.title = `${chordLabel(entry.symbol)}${inKey}${lasted} — ${t('history.chip.actions')}`
 
     // Drag to song
     chip.draggable = true
@@ -209,4 +231,25 @@ export function renderHistory(
 
   container.innerHTML = ''
   container.appendChild(wrap)
+
+  const rhythm = rhythmText()
+  if (rhythm) {
+    const line = document.createElement('div')
+    line.className = 'history-rhythm'
+    line.textContent = rhythm
+    line.title = t('history.rhythm.title')
+    container.appendChild(line)
+  }
+}
+
+const decimal = (n: number) => n.toLocaleString(getLang(), { maximumFractionDigits: 1 })
+
+/** The history's harmonic rhythm in one line, or null with fewer than two timed chords. */
+export function rhythmText(): string | null {
+  const bpm = getPref('history-bpm'), beats = getPref('history-beats')
+  const r = harmonicRhythm(entries, bpm, beats)
+  if (!r) return null
+  return r.kind === 'per-bar'
+    ? t('history.rhythm.perBar', { n: decimal(r.changes), bpm: r.bpm, beats: r.beatsPerBar })
+    : t('history.rhythm.seconds', { s: decimal(r.secondsPerChange) })
 }

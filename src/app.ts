@@ -19,7 +19,7 @@ import type { ExportTarget } from './ui/export'
 import { renderCircleOfFifths, cofAccidentalFor } from './diagrams/cof'
 import { renderKeyExplorer } from './diagrams/key-explorer'
 import { buildKeyMap } from './theory/key-map'
-import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, renderHistory, markActiveHistoryEntry, restoreCarriedHistory } from './history/history'
+import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, notifyChordReleased, renderHistory, markActiveHistoryEntry, restoreCarriedHistory, rhythmText } from './history/history'
 import { addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song/model'
 import { loadActiveSong, saveSong, songTabs, openSong, newSong, deleteSong, restoreSong } from './song/library'
 import { showUndo, dismiss as dismissUndo } from './ui/undo'
@@ -519,12 +519,18 @@ function renderDiagrams() {
 
 function renderExplain() {
   const el = document.getElementById('explain-container')
-  if (el) renderExplanation(el, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev))
+  if (!el) return
+  const items = explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev)
+  // The history's harmonic rhythm, when it has one: a term of the progression, not of the chord
+  const rhythm = state.detection ? rhythmText() : null
+  if (rhythm) items.push({ term: t('ex.term.rhythm'), text: `${rhythm}. ${t('ex.rhythm')}` })
+  renderExplanation(el, items)
 }
 
 // Next keeps the last chord shown after its keys are released, so a suggestion can still be picked
 let nextFrom: { symbol: string; notes: string[]; prev: string | null } | null = null
 let liftingNotes = false   // set while MIDI notes of a chord are being released
+let releaseNoted = false   // the release of the chord held has been told to the history
 
 function renderNextPanel() {
   const el = document.getElementById('next-container')
@@ -780,6 +786,9 @@ function onNoteChange(notes: number[]) {
   liftingNotes = releasing
   showDetection(result, known ? previousHistoryChord(known) : null)
   liftingNotes = false
+  // The first note lifted ends the chord's time in the history (harmonic rhythm)
+  if (releasing && !releaseNoted) { releaseNoted = true; notifyChordReleased() }
+  else if (!releasing) releaseNoted = false
   heldNotes = notes
   if (known && result?.kind === 'chord' && !releasing) notifyChordDetected(known, result.notes)
 }
@@ -798,6 +807,7 @@ function onHistoryChange(entries: HistoryEntry[]) {
     renderZone3()
   }
   renderZone2()
+  renderExplain()   // its harmonic rhythm follows the history
 }
 
 function updateAutoKeyLabel() {

@@ -78,6 +78,8 @@ export interface HistoryEntry {
   id: string
   symbol: string    // top candidate at capture time, e.g. "Cmaj7"
   notes: string[]   // note names, e.g. ["C4","E4","G4","B4"]
+  at?: number       // when it started sounding (ms since the epoch); played chords only
+  until?: number    // when it was last released; unset while it sounds or when it ran into the next chord
 }
 
 // ─── Song structure ──────────────────────────────────────────────────────────

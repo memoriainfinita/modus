@@ -225,7 +225,7 @@ Roman numeral and badge are computed on render from `symbol` + current key.
 
 - Horizontal strip of chips, newest on the left
 - Cadences: with a key, a tag between two chips names the cadence from the older to the newer (`analyzeProgression` → `cadenceWithNext`, i.e. `analyzeCadence`): Authentic, Half, Plagal, Deceptive, Phrygian… Full name and chords in the tooltip.
-- Modulations: where UMT finds one (three chords or more in a new key; fewer is a tonicization), a tag `→ G Major` sits next to the first chip in the new key, and from there each chip's numeral and the cadences are read in it (`ChordAnalysis.key`). The numeral is in the chip's tooltip with its key. Harmonic rhythm is not shown: the history has no timing
+- Modulations: where UMT finds one (three chords or more in a new key; fewer is a tonicization), a tag `→ G Major` sits next to the first chip in the new key, and from there each chip's numeral and the cadences are read in it (`ChordAnalysis.key`). The numeral is in the chip's tooltip with its key. Harmonic rhythm: each played chord keeps when it started and when it was last released; a line under the strip gives UMT's changes per bar when a tempo is set (History ⋯ menu or Settings: bpm and beats per bar), otherwise the mean seconds per change; each chip says in its tooltip how long it sounded
 - Auto-append: a chord held steady for 0.8 s, not twice in a row
 - Max 200 entries; oldest dropped
 - Click: load in the detector, play, mark active
