@@ -1447,6 +1447,13 @@
     "song.newSong": "New song",
     "song.addSection": "+ Section",
     "song.more": "More: new song, transpose, export, delete",
+    "song.play": "Play the song",
+    "song.play.title": "Play the song from the chord selected, or from the top: each chord as long as its share of the bar, the sections as many times as their \xD7N (Esc stops)",
+    "song.stop": "Stop the song",
+    "song.stop.title": "Stop (Esc)",
+    "song.tempo": "Tempo",
+    "song.beats": "Beats per bar",
+    "song.tempo.title": "The tempo and the bar the song plays at",
     "song.transposeBy": "Transpose up",
     "song.bars": "{n} bars",
     "song.auto": "auto",
@@ -2304,6 +2311,13 @@
     "song.newSong": "Nueva canci\xF3n",
     "song.addSection": "+ Secci\xF3n",
     "song.more": "M\xE1s: nueva canci\xF3n, transportar, exportar, borrar",
+    "song.play": "Reproducir la canci\xF3n",
+    "song.play.title": "Reproduce la canci\xF3n desde el acorde seleccionado, o desde el principio: cada acorde lo que le toca del comp\xE1s, las secciones tantas veces como su \xD7N (Esc la para)",
+    "song.stop": "Parar la canci\xF3n",
+    "song.stop.title": "Parar (Esc)",
+    "song.tempo": "Tempo",
+    "song.beats": "Pulsos por comp\xE1s",
+    "song.tempo.title": "El tempo y el comp\xE1s a los que suena la canci\xF3n",
     "song.transposeBy": "Transportar hacia arriba",
     "song.bars": "{n} compases",
     "song.auto": "auto",
@@ -3704,18 +3718,18 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   }
   var LONG_PRESS_MS = 600;
   function onLongPress(el2, fn) {
-    let timer3 = null;
+    let timer4 = null;
     let fired = false;
     const cancel = () => {
-      if (timer3) clearTimeout(timer3);
-      timer3 = null;
+      if (timer4) clearTimeout(timer4);
+      timer4 = null;
     };
     el2.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "mouse") return;
       fired = false;
       cancel();
-      timer3 = setTimeout(() => {
-        timer3 = null;
+      timer4 = setTimeout(() => {
+        timer4 = null;
         fired = true;
         fn();
       }, LONG_PRESS_MS);
@@ -7056,6 +7070,73 @@ ${explainCadence(cadence)}` : "");
     setActive(song.id);
   }
 
+  // src/song/playback.ts
+  var DEFAULT_TEMPO = 100;
+  var DEFAULT_BEATS = 4;
+  var TEMPO_RANGE = [40, 240];
+  var BEATS_RANGE = [1, 12];
+  var songTempo = (song) => song.tempo ?? DEFAULT_TEMPO;
+  var songBeats = (song) => song.beatsPerBar ?? DEFAULT_BEATS;
+  function songSchedule(song, fromChordId = null) {
+    const beatsPerBar = songBeats(song);
+    const steps2 = [];
+    let start = 0;
+    for (const section2 of song.sections) {
+      for (let r = 0; r < Math.max(1, section2.repeatCount); r++) {
+        for (const measure of section2.measures) {
+          const chords = measure.chords;
+          if (!chords.length) {
+            steps2.push({ chordId: null, sectionId: section2.id, symbol: null, start, beats: beatsPerBar });
+            start += beatsPerBar;
+            continue;
+          }
+          const each = beatsPerBar / chords.length;
+          for (const c of chords) {
+            steps2.push({ chordId: c.id, sectionId: section2.id, symbol: c.symbol && c.valid ? c.symbol : null, notes: c.notes, start, beats: each });
+            start += each;
+          }
+        }
+      }
+    }
+    const from = fromChordId ? steps2.findIndex((s) => s.chordId === fromChordId) : -1;
+    if (from <= 0) return steps2;
+    const offset = steps2[from].start;
+    return steps2.slice(from).map((s) => ({ ...s, start: s.start - offset }));
+  }
+  var timer2 = null;
+  var onEnd = null;
+  var isSongPlaying = () => timer2 !== null;
+  function playSchedule(steps2, tempo, h) {
+    stopSong();
+    if (!steps2.length) {
+      h.end();
+      return;
+    }
+    const beatMs = 6e4 / tempo;
+    const t0 = performance.now();
+    onEnd = h.end;
+    let previous = null;
+    const run = (i) => {
+      if (i >= steps2.length) {
+        stopSong();
+        return;
+      }
+      const s = steps2[i];
+      h.step(s, previous, s.beats * beatMs / 1e3);
+      if (s.symbol) previous = s;
+      const next = i + 1 < steps2.length ? steps2[i + 1].start : s.start + s.beats;
+      timer2 = setTimeout(() => run(i + 1), Math.max(0, t0 + next * beatMs - performance.now()));
+    };
+    timer2 = setTimeout(() => run(0), 0);
+  }
+  function stopSong() {
+    if (timer2) clearTimeout(timer2);
+    timer2 = null;
+    const end = onEnd;
+    onEnd = null;
+    end?.();
+  }
+
   // src/song/view.ts
   var SECTION_COLORS = {
     intro: "var(--section-intro)",
@@ -7104,6 +7185,7 @@ ${explainCadence(cadence)}` : "");
     if (chord) applyWithUndo(removeChord(_song, chordId), t("chord.removed", { chord: chord.symbol ? chordLabel(chord.symbol) : t("chord.generic") }));
   }
   function mountSong(container, song, handlers) {
+    if (song.id !== _song.id && isSongPlaying()) stopSong();
     _song = song;
     _handlers = handlers;
     _container = container;
@@ -7121,6 +7203,33 @@ ${explainCadence(cadence)}` : "");
     closePopover();
     _container.innerHTML = "";
     _container.appendChild(buildSongDOM(_song, _handlers));
+    markPlaying(_playing);
+  }
+  var _playing = null;
+  function markPlaying(step2) {
+    _playing = step2;
+    if (!_container) return;
+    _container.querySelectorAll(".chord-chip").forEach((c) => c.classList.toggle("playing", !!step2 && c.dataset.chordId === step2.chordId));
+    if (step2) _container.querySelectorAll(".strip-block").forEach((b) => b.classList.toggle("in-play", b.dataset.sectionId === step2.sectionId));
+    _container.querySelector(".chord-chip.playing")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const btn = _container.querySelector(".song-play");
+    if (btn) {
+      const on = isSongPlaying();
+      btn.textContent = on ? "\u25A0" : "\u25B6";
+      btn.title = t(on ? "song.stop.title" : "song.play.title");
+      btn.setAttribute("aria-label", t(on ? "song.stop" : "song.play"));
+    }
+  }
+  function playFromCursor(h) {
+    playSchedule(songSchedule(_song, h.activeCursorId), songTempo(_song), {
+      step: (s, previous, seconds) => {
+        if (s.symbol) playNoteNames(s.notes?.length ? s.notes : chordNoteNames(s.symbol), seconds);
+        markPlaying(s);
+        h.onPlayStep(s, previous);
+      },
+      end: () => markPlaying(null)
+    });
+    markPlaying(_playing);
   }
   var _textSections = /* @__PURE__ */ new Set();
   var TEMPLATES = [
@@ -7230,9 +7339,30 @@ ${explainCadence(cadence)}` : "");
     });
     moreAnchor.append(moreBtn, moreMenu);
     wirePopover(moreMenu, [moreBtn]);
+    const playBtn = el("button", "song-btn song-play", "\u25B6");
+    playBtn.disabled = !song.sections.some((s) => s.measures.length);
+    playBtn.addEventListener("click", () => {
+      if (isSongPlaying()) stopSong();
+      else playFromCursor(h);
+    });
+    const tempoAnchor = el("div", "pop-anchor pop-end");
+    const tempoBtn = el("button", "song-btn song-tempo", `\u2669 ${songTempo(song)} \xB7 ${songBeats(song)}/4`);
+    tempoBtn.title = t("song.tempo.title");
+    const tempoMenu = el("div", "view-menu pop-menu song-menu");
+    const numberRow = (field, label, value, [min, max], unit) => `<label class="song-tempo-row">${escapeHtml(label)}<input type="number" class="song-tempo-input" data-field="${field}" min="${min}" max="${max}" step="1" value="${value}">${escapeHtml(unit)}</label>`;
+    tempoMenu.innerHTML = numberRow("tempo", t("song.tempo"), songTempo(song), TEMPO_RANGE, "bpm") + numberRow("beats", t("song.beats"), songBeats(song), BEATS_RANGE, "/4");
+    tempoMenu.querySelectorAll("input").forEach((input) => input.addEventListener("change", () => {
+      const [min, max] = input.dataset.field === "tempo" ? TEMPO_RANGE : BEATS_RANGE;
+      const v = Math.round(Number(input.value));
+      if (!Number.isFinite(v)) return;
+      const n = Math.min(max, Math.max(min, v));
+      commit2(input.dataset.field === "tempo" ? { ..._song, tempo: n } : { ..._song, beatsPerBar: n });
+    }));
+    tempoAnchor.append(tempoBtn, tempoMenu);
+    wirePopover(tempoMenu, [tempoBtn]);
     const titleWrap = el("div", "song-title-wrap");
     titleWrap.append(titleInput);
-    header.append(titleWrap, summary, el("span", "song-gap"), addAnchor, pasteBtn, moreAnchor);
+    header.append(titleWrap, summary, el("span", "song-gap"), playBtn, tempoAnchor, addAnchor, pasteBtn, moreAnchor);
     root2.appendChild(header);
     const pasteArea = el("div", "paste-area");
     pasteArea.hidden = true;
@@ -8012,11 +8142,11 @@ ${explainCadence(cadence)}` : "");
     unknown: "var(--text-dim)"
   };
   var current3 = loadChoice("progression", PROGRESSION_IDS, "ii-V-I");
-  var timer2 = null;
+  var timer3 = null;
   var playing = -1;
   function stopProgression() {
-    if (timer2) clearTimeout(timer2);
-    timer2 = null;
+    if (timer3) clearTimeout(timer3);
+    timer3 = null;
     playing = -1;
     document.querySelectorAll(".prog-chip.playing").forEach((c) => c.classList.remove("playing"));
     const btn = document.getElementById("prog-play");
@@ -8090,7 +8220,7 @@ ${explainCadence(c.cadence)}` : ""}`;
         playing = i;
         show(i);
         const inBar = chords.filter((c) => c.bar === chords[i].bar).length;
-        timer2 = setTimeout(() => step2(i + 1), barMs() / inBar);
+        timer3 = setTimeout(() => step2(i + 1), barMs() / inBar);
       };
       step2(0);
     });
@@ -8863,6 +8993,10 @@ ${explainCadence(c.cadence)}` : ""}`;
         markActiveChord(id);
         if (symbol) showChord(symbol, notes2, previousSongChord(id));
       },
+      // The song playing: each chord in the detector, read from the one before it
+      onPlayStep: (step2, previous) => {
+        if (step2.symbol) showChord(step2.symbol, step2.notes, previous?.symbol ? { symbol: previous.symbol, notes: previous.notes } : null);
+      },
       onChordCapture: (id) => {
         state.captureTargetId = id;
         state.activeCursorId = id;
@@ -9581,6 +9715,10 @@ ${explainCadence(c.cadence)}` : ""}`;
   function escapeAll() {
     if (isPresenting()) {
       closePresentation();
+      return;
+    }
+    if (isSongPlaying()) {
+      stopSong();
       return;
     }
     melody = [];

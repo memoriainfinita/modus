@@ -114,6 +114,8 @@ export interface Song {
   key: string | null     // the key the song is analysed in, e.g. "A Minor"; null = auto
   updatedAt: number      // ms since epoch, set on save; orders the song list
   sections: Section[]
+  tempo?: number         // bpm the song plays at (song/playback.ts); unset = 100
+  beatsPerBar?: number   // unset = 4
 }
 
 // ─── App state ───────────────────────────────────────────────────────────────

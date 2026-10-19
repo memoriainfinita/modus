@@ -65,7 +65,8 @@ async function check(name, fn) {
   try { await fn(); results.push(['ok', name]) } catch (err) {
     // A timeout says what it waited for and, last, why it could not act
     const lines = err.message.split('\n').map(l => l.trim()).filter(Boolean)
-    const detail = /Timeout/.test(lines[0]) ? [lines.find(l => l.startsWith('- waiting for')), lines.at(-1)].filter(Boolean).join(' | ') : ''
+    const plain = lines.map(l => l.replace(/\x1b\[[0-9;]*m/g, ''))   // without the terminal's colours
+    const detail = /Timeout/.test(lines[0]) ? [plain.find(l => /locator\(|getBy/.test(l)), plain.at(-1)].filter(Boolean).join(' | ') : ''
     results.push(['FAIL', name, lines[0] + (detail ? ` (${detail})` : '')])
   }
   // A failed check must not leave keys held for the next one.
@@ -570,7 +571,7 @@ await check('changing MIDI mode clears a held chord', async () => {
 })
 
 await check('no orphan chord input after reload', async () => {
-  await page.click('#mod-song .song-header .pop-anchor.pop-end > .song-btn')
+  await page.locator('#mod-song .song-header .pop-anchor.pop-end > .song-btn', { hasText: '+ Section' }).click()
   await page.locator('#mod-song .song-header .song-menu .choice-row', { hasText: 'Verse' }).first().click()
   await page.locator('.chord-add-btn').first().click()
   await page.waitForTimeout(100)
@@ -1099,7 +1100,7 @@ const songMore = async label => {
 }
 // + Section: its menu of section kinds
 const addSectionKind = async name => {
-  await page.click('#mod-song .song-header .pop-anchor.pop-end > .song-btn')
+  await page.locator('#mod-song .song-header .pop-anchor.pop-end > .song-btn', { hasText: '+ Section' }).click()
   await page.locator('#mod-song .song-header .song-menu .choice-row', { hasText: name }).first().click()
 }
 
@@ -1159,6 +1160,34 @@ await check('song: the form strip, a section as text, the key read from the song
   const chorus = await page.locator('.section-wrap').nth(1).locator('.chord-chip-symbol').allInnerTexts()
   assert(chorus.join(' ') === 'F G E Am', `chorus: ${chorus.join(' ')}`)
   assert((await page.locator('#mod-song .strip-block').nth(1).innerText()).includes('2'), 'the strip does not follow the bars')
+})
+
+await check('song playback: ▶ plays the song at its tempo, the chart and the detector follow, ■ and the end stop it', async () => {
+  await songMore('New song')
+  await setKey('C Major')
+  await addSectionKind('Verse')
+  await page.getByRole('button', { name: 'Paste chords' }).click()
+  await page.fill('.paste-textarea', 'C | F G')
+  await page.getByRole('button', { name: 'Add chords' }).click()
+  // 240 bpm: a bar of 4/4 in a second
+  await page.click('#mod-song .song-tempo')
+  await page.fill('#mod-song .song-tempo-input[data-field="tempo"]', '240')
+  await page.keyboard.press('Enter')
+  await page.locator('#mod-song .song-tempo-input[data-field="tempo"]').evaluate(i => i.dispatchEvent(new Event('change')))
+  await page.keyboard.press('Escape')
+  assert((await text('#mod-song .song-tempo')).startsWith('♩ 240'), `tempo: ${await text('#mod-song .song-tempo')}`)
+  await page.click('#mod-song .song-play')
+  assert(await text('#mod-song .song-play') === '■', 'not playing')
+  await page.waitForFunction(() => document.querySelector('.chord-name-badge')?.textContent === 'F', null, { timeout: 3000 })
+  assert(await text('#mod-song .chord-chip.playing .chord-chip-symbol') === 'F', 'F not marked in the chart')
+  await page.waitForFunction(() => document.querySelector('.chord-name-badge')?.textContent === 'G', null, { timeout: 3000 })
+  // The song ends by itself: the button is ▶ again, nothing marked
+  await page.waitForFunction(() => document.querySelector('#mod-song .song-play')?.textContent === '▶', null, { timeout: 3000 })
+  assert(await page.locator('#mod-song .chord-chip.playing').count() === 0, 'a chip still marked')
+  // ■ stops it
+  await page.click('#mod-song .song-play')
+  await page.click('#mod-song .song-play')
+  assert(await text('#mod-song .song-play') === '▶', 'did not stop')
 })
 
 await check('no errors after the walk', async () => {

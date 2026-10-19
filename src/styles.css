@@ -989,6 +989,13 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 .chord-chip.capture-target { border: 1px dashed var(--accent); border-left-width: 3px; }
 .chord-chip.active-cursor,
 .history-chip.active-cursor { border-color: var(--cursor); }
+.chord-chip.playing { border-color: var(--cursor); background: var(--surface-2); }
+.song-tempo-row { display: flex; align-items: center; gap: 8px; padding: 4px 8px; white-space: nowrap; }
+.song-tempo-input {
+  font: inherit; width: 4.5em; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border-soft); border-radius: 6px; padding: 2px 6px;
+}
+.song-tempo-input:focus { border-color: var(--accent); outline: none; }
 .chord-chip-symbol { font-size: 15px; font-weight: 700; color: var(--text); }
 .chord-chip-degree { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
 .chord-chip-controls {
