@@ -66,7 +66,7 @@ Every element is a panel on a grid: drag it by its title, resize it from its cor
 - **Staff** (abcjs) — grand staff (treble and bass, split at middle C), or treble or bass alone; key signature follows the active key; ⇠ writes the previous chord before it, faded, to see the voices move (on the piano it lights the previous keys)
 - **Analysis** — all harmonic analysis fields, each field individually togglable; font scale +/−
 - **Progressions** — every named progression of UMT (ii-V-I, blues, rhythm changes, Coltrane changes, Andalusian cadence…) in the key, bar by bar with numerals and cadences and a sentence on what it is; click a chord to hear and analyse it, ▶ to play the whole progression
-- **Microphone and Tuner** — 🎤 hears what is sung or played: one note at a time (a melody, a voice, a wind instrument) goes to the detector and the scales of the melody; chords from the spectrum, experimental. The tuner shows the note, the cents and the frequency
+- **Microphone and Tuner** — 🎤 hears what is sung or played: one note at a time (a melody, a voice, a wind instrument) goes to the detector and the scales of the melody; chords heard by a model (Spotify's Basic Pitch, in a worker), under a second behind what is played. The tuner shows the note, the cents and the frequency
 - **Player** — a recording to transcribe, opened from a file: waveform, click to go anywhere, A–B loop, 50–125 % speed without changing the pitch, back 5 s
 - **Ear training** — the app plays an interval, a chord or a cadence without showing it; you name it, it keeps the score and shows the answer on the staff, piano and analysis
 - **Explanation** — what each term of the analysis means for the chord on screen: "D7 is V7/V: a secondary dominant, the dominant of G…", the borrowed mode and its foreign notes, the cadence, the inversion, the voice-leading rules broken
@@ -236,11 +236,15 @@ src/
     presentation.ts       presentation mode: the layout without controls, filling the screen
   output/
     midi-out.ts           MIDI out to a synth or DAW
+  audio-notes/
+    notes.ts              chords from audio: the page's side of the notes worker, the notes at a time
+    worker.ts             Spotify's Basic Pitch in a Web Worker (built apart: dist/notes-worker.js)
+    worker-env.ts         lets TensorFlow.js 3.21 run in a worker
   input/
     midi.ts               Web MIDI: device selection, note on/off, sustain, modes; the input path the other inputs share
     bindings.ts           the shortcuts: actions, factory keys, the user's keys
-    mic.ts                the microphone: notes (YIN) or chords (chromagram) held in the detector
-    pitch.ts              pitch detection: YIN, chromagram
+    mic.ts                the microphone: notes (YIN) or chords (Basic Pitch) held in the detector
+    pitch.ts              pitch detection: YIN; the old chromagram, kept for the bench
     computer-keyboard.ts  the computer keyboard as a piano (M), by physical key
     shortcuts.ts          keyboard handling; help popup with gestures, language and note names
   audio/

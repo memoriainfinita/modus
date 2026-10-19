@@ -287,9 +287,11 @@
     sound.noteOff(note, source);
     handleNoteOff(note);
   }
+  var heardBySource = /* @__PURE__ */ new Map();
   var heardNotes = /* @__PURE__ */ new Set();
-  function setHeardNotes(notes, velocity2) {
-    const next = new Set(notes);
+  function setHeardNotes(notes2, velocity2, source = "mic") {
+    heardBySource.set(source, new Set(notes2));
+    const next = new Set([...heardBySource.values()].flatMap((s) => [...s]));
     for (const n of heardNotes) if (!next.has(n)) handleNoteOff(n);
     for (const n of next) if (!heardNotes.has(n)) {
       velocities.set(n, velocity2);
@@ -1100,13 +1102,17 @@
     "player.a.title": "Loop start: here",
     "player.b.title": "Loop end: here; from B it goes back to A",
     "player.clear.title": "No loop",
+    "player.chords": "Chords",
+    "player.chords.title": "The chord at the playhead in the detector, as it plays and where you jump to: read from the recording when it is opened",
+    "player.reading": "reading chords {p} %",
+    "player.readFailed": "the chords could not be read",
     "mic.title": "Microphone: what is sung or played goes to the detector as notes held (never sounded)",
     "mic.on": "On",
     "mic.off": "Off",
     "mic.mode.notes": "Notes",
     "mic.mode.notes.title": "One note at a time: voice, wind, a melody on any instrument. Feeds the scales of the melody",
     "mic.mode.chords": "Chords",
-    "mic.mode.chords.title": "The notes of a chord, from the spectrum (experimental: clean, sustained chords read best)",
+    "mic.mode.chords.title": "The notes of a chord, heard by a model (Basic Pitch) a few times a second: under a second behind what is played",
     "mic.hint": "Turn the microphone on and sing or play.",
     "mic.listening": "Listening\u2026",
     "mic.error": "No microphone ({error}): allow it in the browser and try again.",
@@ -1160,7 +1166,7 @@
     "set.ear.reset": "Reset the ear-training score",
     "set.ear.reset.hint": "Every kind back to 0 / 0",
     "set.mic.mode": "What the microphone hears",
-    "set.mic.mode.hint": "One note at a time, or chords (experimental)",
+    "set.mic.mode.hint": "One note at a time, or chords",
     "set.keys.intro": "Change: press the new key; Esc keeps the one there was. Each action takes two keys.",
     "set.keys.press": "Press a key\u2026",
     "set.keys.change": "Change",
@@ -1958,13 +1964,17 @@
     "player.a.title": "Inicio del bucle: aqu\xED",
     "player.b.title": "Fin del bucle: aqu\xED; desde B vuelve a A",
     "player.clear.title": "Sin bucle",
+    "player.chords": "Acordes",
+    "player.chords.title": "El acorde del cabezal en el detector, al reproducir y donde saltes: le\xEDdo de la grabaci\xF3n al abrirla",
+    "player.reading": "leyendo acordes {p} %",
+    "player.readFailed": "no se pudieron leer los acordes",
     "mic.title": "Micr\xF3fono: lo que se canta o se toca entra al detector como notas pulsadas (nunca suena)",
     "mic.on": "Activo",
     "mic.off": "Apagado",
     "mic.mode.notes": "Notas",
     "mic.mode.notes.title": "Una nota cada vez: voz, viento, una melod\xEDa en cualquier instrumento. Alimenta las escalas de la melod\xEDa",
     "mic.mode.chords": "Acordes",
-    "mic.mode.chords.title": "Las notas de un acorde, del espectro (experimental: se leen mejor acordes limpios y sostenidos)",
+    "mic.mode.chords.title": "Las notas de un acorde, o\xEDdas por un modelo (Basic Pitch) varias veces por segundo: menos de un segundo por detr\xE1s de lo que se toca",
     "mic.hint": "Activa el micr\xF3fono y canta o toca.",
     "mic.listening": "Escuchando\u2026",
     "mic.error": "Sin micr\xF3fono ({error}): perm\xEDtelo en el navegador y vuelve a probar.",
@@ -2018,7 +2028,7 @@
     "set.ear.reset": "Poner a cero el marcador del entrenamiento",
     "set.ear.reset.hint": "Cada tipo vuelve a 0 / 0",
     "set.mic.mode": "Qu\xE9 escucha el micr\xF3fono",
-    "set.mic.mode.hint": "Una nota cada vez, o acordes (experimental)",
+    "set.mic.mode.hint": "Una nota cada vez, o acordes",
     "set.keys.intro": "Cambiar: pulsa la tecla nueva; Esc deja la que hab\xEDa. Cada acci\xF3n admite dos teclas.",
     "set.keys.press": "Pulsa una tecla\u2026",
     "set.keys.change": "Cambiar",
@@ -2705,8 +2715,8 @@
   function analyzeNoteSet(noteNames, key, fromMelody = false) {
     const names = [...new Set(noteNames.map(pcName))];
     if (!names.length) return null;
-    const notes = names.map((n) => tryUMT("notes", () => UMT.parseNote(n + "4"), null)).filter(Boolean);
-    const pcs = tryUMT("set theory", () => UMT.SetTheory.getPitchClasses(notes), []);
+    const notes2 = names.map((n) => tryUMT("notes", () => UMT.parseNote(n + "4"), null)).filter(Boolean);
+    const pcs = tryUMT("set theory", () => UMT.SetTheory.getPitchClasses(notes2), []);
     let forte = null;
     if (pcs.length >= 3) {
       const number = tryUMT("set theory", () => UMT.SetTheory.getForteNumber(pcs), "");
@@ -2716,7 +2726,7 @@
       forte = [number, prime.length ? `[${digits}]` : "", vector.length ? `<${vector.join("")}>` : ""].filter(Boolean).join(" \xB7 ") || null;
     }
     const tonic = key?.split(" ")[0];
-    const fits = tryUMT("scales", () => UMT.findScalesForNotes(notes, { tonic, limit: 7 }).filter((s) => s.notes.length < 12).slice(0, 6).map((s) => scaleLabel(s.name)), []);
+    const fits = tryUMT("scales", () => UMT.findScalesForNotes(notes2, { tonic, limit: 7 }).filter((s) => s.notes.length < 12).slice(0, 6).map((s) => scaleLabel(s.name)), []);
     return { notes: names, fromMelody, forte, fits };
   }
   function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol, noteNames = [], prevNotes = null) {
@@ -3043,8 +3053,8 @@
     pedalDown2 = down;
     send([status(176), 64, down ? 127 : 0]);
   }
-  function outPreview(notes, seconds, cut) {
-    if (!notes.length) return;
+  function outPreview(notes2, seconds, cut) {
+    if (!notes2.length) return;
     if (cut) {
       if (previewTimer) {
         clearTimeout(previewTimer);
@@ -3053,12 +3063,12 @@
       for (const n of previewNotes) if (sounding2.has(n)) noteOff(n);
       previewNotes = [];
     }
-    for (const n of notes) {
+    for (const n of notes2) {
       if (sounding2.has(n)) noteOff(n);
       noteOn(n, getPref("piano-velocity"));
     }
-    const these = notes;
-    previewNotes = [.../* @__PURE__ */ new Set([...previewNotes, ...notes])];
+    const these = notes2;
+    previewNotes = [.../* @__PURE__ */ new Set([...previewNotes, ...notes2])];
     const end = () => {
       for (const n of these) if (previewNotes.includes(n) && sounding2.has(n)) noteOff(n);
       previewNotes = previewNotes.filter((n) => !these.includes(n));
@@ -3105,11 +3115,11 @@
       return [{ mark, pitch, step: oct * 7 + LETTERS.indexOf(letter) }];
     });
   }
-  var chordOf = (notes) => `[${notes.map((n) => n.mark + n.pitch).join("")}]1`;
+  var chordOf = (notes2) => `[${notes2.map((n) => n.mark + n.pitch).join("")}]1`;
   var MIDDLE_C = 4 * 7;
   function buildStaffAbc(noteNames, keyStr, clef = "treble", prevNotes = null) {
     const { abcKey, accidentals } = keySignature(keyStr);
-    const notes = parseNotes(noteNames, accidentals);
+    const notes2 = parseNotes(noteNames, accidentals);
     const prev = prevNotes?.length ? parseNotes(prevNotes, accidentals) : null;
     const bar = (before, now, empty2) => {
       const chord = (ns) => ns.length ? chordOf(ns) : empty2;
@@ -3121,20 +3131,20 @@ M:none
 L:1
 K:${abcKey}${clef === "bass" ? " clef=bass" : ""}
 `;
-      return header + bar(prev, notes, notes.length || prev ? "x" : "z");
+      return header + bar(prev, notes2, notes2.length || prev ? "x" : "z");
     }
     const upper = (ns) => ns.filter((n) => n.step >= MIDDLE_C);
     const lower = (ns) => ns.filter((n) => n.step < MIDDLE_C);
-    const empty = notes.length || prev ? "x" : "z";
+    const empty = notes2.length || prev ? "x" : "z";
     return `X:1
 M:none
 L:1
 %%staves {RH LH}
 K:${abcKey}
 V:RH clef=treble
-${bar(prev && upper(prev), upper(notes), empty)}
+${bar(prev && upper(prev), upper(notes2), empty)}
 V:LH clef=bass
-${bar(prev && lower(prev), lower(notes), empty)}`;
+${bar(prev && lower(prev), lower(notes2), empty)}`;
   }
   function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2, clef = "treble", prevNotes = null) {
     ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr, clef, prevNotes), { staffwidth: width - 20, scale, add_classes: !!prevNotes?.length });
@@ -3892,25 +3902,54 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     const shift = a - 2 * b + c !== 0 ? (a - c) / (2 * (a - 2 * b + c)) : 0;
     return { freq: sampleRate / (tau + shift), clarity: 1 - b };
   }
-  function chromagram(db, sampleRate, fftSize) {
-    const chroma = new Array(12).fill(0);
-    const low = new Array(12).fill(0);
-    const binHz = sampleRate / fftSize;
-    for (let i = Math.ceil(60 / binHz); i < db.length && i * binHz <= 2e3; i++) {
-      const power = Math.pow(10, db[i] / 10);
-      if (!isFinite(power)) continue;
-      const midi = Math.round(69 + 12 * Math.log2(i * binHz / 440));
-      const pc3 = (midi % 12 + 12) % 12;
-      chroma[pc3] += power;
-      if (i * binHz < 260) low[pc3] += power;
-    }
-    const lowMax = Math.max(...low);
-    return { chroma, bass: lowMax > 0 ? low.indexOf(lowMax) : null };
+
+  // src/audio-notes/notes.ts
+  var MODEL_RATE = 22050;
+  var worker = null;
+  var nextId = 1;
+  var waiting = /* @__PURE__ */ new Map();
+  function getWorker() {
+    if (worker) return worker;
+    worker = new Worker("dist/notes-worker.js");
+    worker.onmessage = (e) => {
+      const w = waiting.get(e.data.id);
+      if (!w) return;
+      if (e.data.progress !== void 0) {
+        w.progress?.(e.data.progress);
+        return;
+      }
+      waiting.delete(e.data.id);
+      if (e.data.notes) w.resolve(e.data.notes);
+      else w.reject(new Error(e.data.error ?? "notes worker"));
+    };
+    worker.onerror = (e) => {
+      for (const w of waiting.values()) w.reject(new Error(e.message || "notes worker failed"));
+      waiting.clear();
+      worker = null;
+    };
+    return worker;
   }
-  function chromaNotes(chroma, share = 0.3) {
-    const max = Math.max(...chroma);
-    if (max <= 0) return [];
-    return chroma.map((v, pc3) => ({ v, pc: pc3 })).filter((x) => x.v >= max * share).sort((a, b) => b.v - a.v).slice(0, 5).map((x) => x.pc).sort((a, b) => a - b);
+  function transcribe(audio2, progress) {
+    const id = nextId++;
+    return new Promise((resolve, reject) => {
+      waiting.set(id, { resolve, reject, progress });
+      getWorker().postMessage({ id, audio: audio2 }, [audio2.buffer]);
+    });
+  }
+  async function toModelRate(samples2, rate) {
+    if (rate === MODEL_RATE) return samples2.slice();
+    const ctx2 = new OfflineAudioContext(1, Math.max(1, Math.ceil(samples2.length * MODEL_RATE / rate)), MODEL_RATE);
+    const buf = ctx2.createBuffer(1, samples2.length, rate);
+    buf.copyToChannel(samples2, 0);
+    const src = ctx2.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx2.destination);
+    src.start();
+    return (await ctx2.startRendering()).getChannelData(0).slice();
+  }
+  function soundingAt(notes2, time, slack = 0.05) {
+    const on = notes2.filter((n) => n.start <= time && n.end >= time - slack).map((n) => n.midi);
+    return [...new Set(on)].sort((a, b) => a - b);
   }
 
   // src/input/mic.ts
@@ -3919,6 +3958,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   var RELEASE_FRAMES = 5;
   var GATES = { low: 0.02, normal: 0.01, high: 4e-3 };
   var HOLDS = { fast: 2, normal: 3, steady: 5 };
+  var CHORD_EVERY_MS = 300;
+  var CHORD_READ_BEFORE_END_S = 0.1;
   var mode2 = loadChoice("mic-mode", MIC_MODES, "notes");
   function getMicMode() {
     return mode2;
@@ -3938,44 +3979,59 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   var candidate = "";
   var candidateFrames = 0;
   var missFrames = 0;
-  function commit(notes, level) {
-    if (notes.join() === held.join()) return;
-    held = notes;
-    callbacks?.notes(notes, Math.max(1, Math.min(127, Math.round(level * 600))));
+  var reading = false;
+  var lastReadAt = 0;
+  var soundLevel = 0;
+  function commit(notes2, level) {
+    if (notes2.join() === held.join()) return;
+    held = notes2;
+    callbacks?.notes(notes2, Math.max(1, Math.min(127, Math.round(level * 600))));
   }
-  function hear(analyser, time, spectrum, rate) {
+  async function readChord(time, rate) {
+    reading = true;
+    try {
+      const audio2 = await toModelRate(time, rate);
+      const notes2 = await transcribe(audio2);
+      const at = time.length / rate - CHORD_READ_BEFORE_END_S;
+      const midis = soundingAt(notes2, at);
+      if (timer && missFrames < RELEASE_FRAMES && midis.length >= 2) commit(midis, soundLevel);
+    } catch {
+    }
+    reading = false;
+  }
+  function hear(analyser, time, rate) {
     analyser.getFloatTimeDomainData(time);
     const recent = time.subarray(time.length - 2048);
     const level = rms(recent);
-    let notes = [];
+    const sounding3 = level >= GATES[getPref("mic-sensitivity")];
     let heard = null;
-    if (level >= GATES[getPref("mic-sensitivity")]) {
-      if (mode2 === "notes") {
-        const p = detectPitch(recent, rate);
-        if (p) {
-          const n = frequencyToNote(p.freq, getPref("a4-hz"));
-          heard = { ...n, freq: p.freq, level };
-          notes = [n.midi];
-        }
-      } else {
-        analyser.getFloatFrequencyData(spectrum);
-        const { chroma, bass } = chromagram(spectrum, rate, analyser.fftSize);
-        const pcs = chromaNotes(chroma);
-        if (pcs.length >= 2) notes = [...bass !== null ? [48 + bass] : [], ...pcs.filter((pc3) => pc3 !== bass).map((pc3) => 60 + pc3)];
-        const p = detectPitch(recent, rate);
-        if (p) heard = { ...frequencyToNote(p.freq, getPref("a4-hz")), freq: p.freq, level };
-      }
-    }
+    const p = sounding3 ? detectPitch(recent, rate) : null;
+    if (p) heard = { ...frequencyToNote(p.freq, getPref("a4-hz")), freq: p.freq, level };
     callbacks?.frame(heard);
-    const key = notes.join();
-    if (notes.length) {
+    if (mode2 === "chords") {
+      if (!sounding3) {
+        if (++missFrames >= RELEASE_FRAMES) commit([], 0);
+        return;
+      }
+      missFrames = 0;
+      soundLevel = level;
+      const now = performance.now();
+      if (!reading && now - lastReadAt >= CHORD_EVERY_MS) {
+        lastReadAt = now;
+        readChord(time.slice(), rate);
+      }
+      return;
+    }
+    const notes2 = heard ? [heard.midi] : [];
+    const key = notes2.join();
+    if (notes2.length) {
       missFrames = 0;
       if (key === candidate) candidateFrames++;
       else {
         candidate = key;
         candidateFrames = 1;
       }
-      if (candidateFrames >= HOLDS[getPref("mic-response")]) commit(notes, level);
+      if (candidateFrames >= HOLDS[getPref("mic-response")]) commit(notes2, level);
     } else if (++missFrames >= RELEASE_FRAMES) {
       candidate = "";
       commit([], 0);
@@ -3993,13 +4049,11 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     ctx = new AudioContext();
     const source = ctx.createMediaStreamSource(stream);
     const analyser = ctx.createAnalyser();
-    analyser.fftSize = 8192;
-    analyser.smoothingTimeConstant = 0.5;
+    analyser.fftSize = 32768;
     source.connect(analyser);
     const time = new Float32Array(analyser.fftSize);
-    const spectrum = new Float32Array(analyser.frequencyBinCount);
     const rate = ctx.sampleRate;
-    timer = setInterval(() => hear(analyser, time, spectrum, rate), FRAME_MS);
+    timer = setInterval(() => hear(analyser, time, rate), FRAME_MS);
     cb.state(true);
   }
   function stopMic() {
@@ -4300,13 +4354,13 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       return [{ term: a.secondaryTarget, text: t(kind.startsWith("vii") ? "ex.secondaryVii" : "ex.secondaryV", vars) }];
     }
     if (a.isDiatonic) return [{ term: t("ex.term.diatonic"), text: t("ex.diatonic", { chord, key: k }) }];
-    const notes = notesOutside(symbol, key).join(" ");
+    const notes2 = notesOutside(symbol, key).join(" ");
     if (a.isBorrowed && a.borrowedFrom) {
       const mode4 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
-      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode4, key: k, notes }) }];
+      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode4, key: k, notes: notes2 }) }];
     }
     if (a.substitutionCandidate?.startsWith("tritone")) return [{ term: substitutionTypeLabel("tritone"), text: t("ex.tritoneSub", { chord }) }];
-    return [{ term: t("analysis.chromatic"), text: t("ex.chromatic", { chord, key: k, notes }) }];
+    return [{ term: t("analysis.chromatic"), text: t("ex.chromatic", { chord, key: k, notes: notes2 }) }];
   }
   var CADENCES = [
     ["Authentic", "authentic"],
@@ -4421,8 +4475,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     const list = Array.isArray(carried) ? carried : [];
     if (list.length && list.every((e) => e && typeof e.id === "string" && typeof e.symbol === "string" && Array.isArray(e.notes))) restoreEntries(list);
   }
-  function addEntry(symbol, notes, time) {
-    const entry = { id: crypto.randomUUID(), symbol, notes, ...time };
+  function addEntry(symbol, notes2, time) {
+    const entry = { id: crypto.randomUUID(), symbol, notes: notes2, ...time };
     entries = [entry, ...entries].slice(0, getPref("history-max"));
     onChange2(entries);
   }
@@ -4448,7 +4502,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     onChange2(entries);
   }
   var pending2 = null;
-  function notifyChordDetected(symbol, notes, at = Date.now()) {
+  function notifyChordDetected(symbol, notes2, at = Date.now()) {
     if (debounceTimer) clearTimeout(debounceTimer);
     if (pending2?.symbol !== symbol) pending2 = { symbol, at };
     else delete pending2.until;
@@ -4456,7 +4510,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     debounceTimer = setTimeout(() => {
       if (symbol !== lastAutoAppended && symbol !== "?") {
         const p = pending2?.symbol === symbol ? pending2 : null;
-        addEntry(symbol, notes, p ? { at: p.at, until: p.until } : void 0);
+        addEntry(symbol, notes2, p ? { at: p.at, until: p.until } : void 0);
         lastAutoAppended = symbol;
       }
     }, getPref("history-hold-ms"));
@@ -4704,13 +4758,13 @@ ${explainCadence(cadence)}` : "");
     </div>` : "";
     const rows = ACTIONS.map((a) => {
       const keys = keysOf(a);
-      const waiting = capturing?.action === a;
-      const chips = keys.map((k, slot) => waiting && capturing.slot === slot ? `<kbd class="set-kbd set-kbd-wait">${escapeHtml(t("set.keys.press"))}</kbd>` : `<span class="set-kbd-wrap"><kbd class="set-kbd${DEFAULT_KEYS[a].includes(k) ? "" : " set-kbd-custom"}">${escapeHtml(keyLabel2(k))}</kbd><button type="button" class="set-kbd-x" data-key-remove="${a}" data-key="${escapeHtml(k)}" aria-label="${escapeHtml(t("set.keys.remove", { key: keyLabel2(k) }))}">\xD7</button></span>`).join("");
-      const adding = waiting && capturing.slot >= keys.length ? `<kbd class="set-kbd set-kbd-wait">${escapeHtml(t("set.keys.press"))}</kbd>` : "";
-      const buttons = waiting ? `<button type="button" class="ctrl-btn" data-key-cancel>${escapeHtml(t("set.keys.cancel"))}</button>` : `${keys.length ? `<button type="button" class="ctrl-btn" data-key-change="${a}">${escapeHtml(t("set.keys.change"))}</button>` : ""}
+      const waiting2 = capturing?.action === a;
+      const chips = keys.map((k, slot) => waiting2 && capturing.slot === slot ? `<kbd class="set-kbd set-kbd-wait">${escapeHtml(t("set.keys.press"))}</kbd>` : `<span class="set-kbd-wrap"><kbd class="set-kbd${DEFAULT_KEYS[a].includes(k) ? "" : " set-kbd-custom"}">${escapeHtml(keyLabel2(k))}</kbd><button type="button" class="set-kbd-x" data-key-remove="${a}" data-key="${escapeHtml(k)}" aria-label="${escapeHtml(t("set.keys.remove", { key: keyLabel2(k) }))}">\xD7</button></span>`).join("");
+      const adding = waiting2 && capturing.slot >= keys.length ? `<kbd class="set-kbd set-kbd-wait">${escapeHtml(t("set.keys.press"))}</kbd>` : "";
+      const buttons = waiting2 ? `<button type="button" class="ctrl-btn" data-key-cancel>${escapeHtml(t("set.keys.cancel"))}</button>` : `${keys.length ? `<button type="button" class="ctrl-btn" data-key-change="${a}">${escapeHtml(t("set.keys.change"))}</button>` : ""}
          ${keys.length < MAX_KEYS ? `<button type="button" class="ctrl-btn" data-key-add="${a}" aria-label="${escapeHtml(t("set.keys.add.title"))}">+</button>` : ""}
          ${isDefaultBinding(a) ? "" : `<button type="button" class="ctrl-btn" data-key-reset="${a}" title="${escapeHtml(t("set.keys.reset"))}" aria-label="${escapeHtml(t("set.keys.reset"))}">\u21BA</button>`}`;
-      return `<div class="set-row set-key-row${waiting ? " set-key-waiting" : ""}" data-search="${escapeHtml(`${t(`action.${a}`)} ${keys.join(" ")}`.toLowerCase())}">
+      return `<div class="set-row set-key-row${waiting2 ? " set-key-waiting" : ""}" data-search="${escapeHtml(`${t(`action.${a}`)} ${keys.join(" ")}`.toLowerCase())}">
       <div class="set-text"><div class="set-label">${escapeHtml(t(`action.${a}`))}</div></div>
       <div class="set-control set-keys">${chips}${adding || (keys.length ? "" : `<span class="set-hint">${escapeHtml(t("set.keys.none"))}</span>`)}</div>
       <div class="set-key-buttons">${buttons}</div>
@@ -6254,12 +6308,12 @@ ${explainCadence(cadence)}` : "");
   }
 
   // src/diagrams/velocity.ts
-  function renderVelocity(container, notes) {
-    if (!notes.length) {
+  function renderVelocity(container, notes2) {
+    if (!notes2.length) {
       container.innerHTML = `<div class="vel-empty">${escapeHtml(t("velocity.empty"))}</div>`;
       return;
     }
-    const sorted = [...notes].sort((a, b) => b.midi - a.midi);
+    const sorted = [...notes2].sort((a, b) => b.midi - a.midi);
     container.innerHTML = sorted.map((n) => `
     <div class="vel-row" title="${escapeHtml(t("velocity.bar", { note: noteLabel(n.name), v: n.velocity }))}">
       <span class="vel-note">${escapeHtml(noteLabel(n.name))}</span>
@@ -6652,9 +6706,9 @@ ${explainCadence(cadence)}` : "");
       })
     };
   }
-  function addChord(song, sectionId, measureId, symbol, notes, beforeChordId) {
+  function addChord(song, sectionId, measureId, symbol, notes2, beforeChordId) {
     const valid2 = isValidChordSymbol(symbol);
-    const chord = { id: newId(), symbol, valid: valid2, ...notes?.length ? { notes } : {} };
+    const chord = { id: newId(), symbol, valid: valid2, ...notes2?.length ? { notes: notes2 } : {} };
     return {
       ...song,
       sections: song.sections.map((s) => s.id !== sectionId ? s : {
@@ -6669,9 +6723,9 @@ ${explainCadence(cadence)}` : "");
       })
     };
   }
-  function insertChordAfter(song, afterChordId, symbol, notes) {
+  function insertChordAfter(song, afterChordId, symbol, notes2) {
     const valid2 = isValidChordSymbol(symbol);
-    const newChord = { id: newId(), symbol, valid: valid2, ...notes?.length ? { notes } : {} };
+    const newChord = { id: newId(), symbol, valid: valid2, ...notes2?.length ? { notes: notes2 } : {} };
     return {
       ...song,
       sections: song.sections.map((s) => ({
@@ -6686,7 +6740,7 @@ ${explainCadence(cadence)}` : "");
       }))
     };
   }
-  function updateChord(song, chordId, symbol, notes) {
+  function updateChord(song, chordId, symbol, notes2) {
     const valid2 = isValidChordSymbol(symbol);
     return {
       ...song,
@@ -6694,7 +6748,7 @@ ${explainCadence(cadence)}` : "");
         ...s,
         measures: s.measures.map((m) => ({
           ...m,
-          chords: m.chords.map((c) => c.id === chordId ? { ...c, symbol, valid: valid2, ...notes?.length ? { notes } : { notes: void 0 } } : c)
+          chords: m.chords.map((c) => c.id === chordId ? { ...c, symbol, valid: valid2, ...notes2?.length ? { notes: notes2 } : { notes: void 0 } } : c)
         }))
       }))
     };
@@ -7501,8 +7555,8 @@ ${explainCadence(cadence)}` : "");
       const histData = e.dataTransfer.getData("application/x-history-chord");
       if (histData) {
         e.preventDefault();
-        const { symbol, notes } = JSON.parse(histData);
-        _song = addChord(_song, section2.id, measure.id, symbol, notes, _insertBeforeChordId ?? void 0);
+        const { symbol, notes: notes2 } = JSON.parse(histData);
+        _song = addChord(_song, section2.id, measure.id, symbol, notes2, _insertBeforeChordId ?? void 0);
         _insertBeforeChordId = null;
         saveSong(_song);
         h.onSongChange(_song);
@@ -8181,7 +8235,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   var timers = [];
   function playQuestion(q) {
     timers.forEach(clearTimeout);
-    timers = q.steps.map((notes, i) => setTimeout(() => playNoteNames(notes, q.mode === "interval" && q.steps.length > 1 && i < 2 ? 0.8 : 1.6), i * STEP_MS[q.mode]));
+    timers = q.steps.map((notes2, i) => setTimeout(() => playNoteNames(notes2, q.mode === "interval" && q.steps.length > 1 && i < 2 ? 0.8 : 1.6), i * STEP_MS[q.mode]));
   }
   var emptyScore = () => ({ interval: { right: 0, total: 0 }, chord: { right: 0, total: 0 }, cadence: { right: 0, total: 0 } });
   var mode3 = loadChoice("ear-mode", EAR_MODES, "chord");
@@ -8280,6 +8334,50 @@ ${explainCadence(c.cadence)}` : ""}`;
   var loopB = null;
   var speed = loadChoice("player-speed", SPEEDS, "1");
   var frame = 0;
+  var notes = null;
+  var reading2 = null;
+  var readFailed = false;
+  var readToken = 0;
+  var followChords = loadBool("player-chords", true);
+  var sentNotes = "";
+  var onNotes = () => {
+  };
+  function setPlayerNotesCallback(cb) {
+    onNotes = cb;
+  }
+  function sendPlayheadNotes() {
+    const midis = followChords && notes && audio ? soundingAt(notes, audio.currentTime) : [];
+    const key = midis.join();
+    if (key === sentNotes) return;
+    sentNotes = key;
+    onNotes(midis);
+  }
+  async function readChords(source, rate, container) {
+    const token = ++readToken;
+    reading2 = 0;
+    readFailed = false;
+    showReading(container);
+    try {
+      const found = await transcribe(await toModelRate(source, rate), (p) => {
+        if (token !== readToken) return;
+        reading2 = p;
+        showReading(container);
+      });
+      if (token !== readToken) return;
+      notes = found;
+    } catch {
+      if (token === readToken) readFailed = true;
+    }
+    if (token !== readToken) return;
+    reading2 = null;
+    showReading(container);
+    sendPlayheadNotes();
+  }
+  function showReading(container) {
+    const el2 = container.querySelector(".player-reading");
+    if (el2) el2.textContent = readingText();
+  }
+  var readingText = () => reading2 !== null ? t("player.reading", { p: Math.round(reading2 * 100) }) : readFailed ? t("player.readFailed") : "";
   if (audio) {
     audio.preload = "auto";
     audio.preservesPitch = true;
@@ -8292,15 +8390,23 @@ ${explainCadence(c.cadence)}` : ""}`;
     fileName2 = file.name;
     loopA = loopB = null;
     samples = null;
+    notes = null;
+    readToken++;
+    reading2 = null;
+    readFailed = false;
+    sendPlayheadNotes();
     renderPlayer(container);
+    let rate = 44100;
     try {
       const ctx2 = new OfflineAudioContext(1, 1, 44100);
       const buffer = await ctx2.decodeAudioData(await file.arrayBuffer());
       samples = buffer.getChannelData(0);
+      rate = buffer.sampleRate;
     } catch {
       samples = null;
     }
     drawWave(container);
+    if (samples) readChords(samples, rate, container);
   }
   function drawWave(container) {
     const canvas = container.querySelector(".player-wave");
@@ -8342,6 +8448,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const time = container.querySelector(".player-time");
     if (time) time.textContent = `${formatTime(audio.currentTime, true)} / ${formatTime(audio.duration)}`;
     drawWave(container);
+    sendPlayheadNotes();
     frame = requestAnimationFrame(() => tick(container));
   }
   function renderPlayer(container) {
@@ -8352,6 +8459,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     <div class="player-head">
       <label class="ctrl-btn player-open" title="${escapeHtml(t("player.open.title"))}">${escapeHtml(t("player.open"))}<input type="file" accept="audio/*" hidden></label>
       <span class="player-name">${escapeHtml(fileName2 || t("player.none"))}</span>
+      <span class="player-reading">${escapeHtml(readingText())}</span>
     </div>
     <canvas class="player-wave" title="${escapeHtml(t("player.wave.title"))}"></canvas>
     <div class="player-ctrl">
@@ -8366,6 +8474,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       <button class="size-ctrl-btn${loopA !== null ? " active" : ""}" data-act="a" title="${escapeHtml(t("player.a.title"))}"${dis}>A${mark(loopA)}</button>
       <button class="size-ctrl-btn${loopB !== null ? " active" : ""}" data-act="b" title="${escapeHtml(t("player.b.title"))}"${dis}>B${mark(loopB)}</button>
       <button class="size-ctrl-btn" data-act="clear" title="${escapeHtml(t("player.clear.title"))}"${loopA === null ? " disabled" : ""}>\xD7</button>
+      <button class="size-ctrl-btn${followChords ? " active" : ""}" data-act="chords" aria-pressed="${followChords}" title="${escapeHtml(t("player.chords.title"))}">${escapeHtml(t("player.chords"))}</button>
     </div>`;
     const input = container.querySelector("input[type=file]");
     input.addEventListener("change", () => {
@@ -8390,8 +8499,15 @@ ${explainCadence(c.cadence)}` : ""}`;
       renderPlayer(container);
     }));
     container.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => {
-      if (!audio?.src) return;
       const act = b.dataset.act;
+      if (act === "chords") {
+        followChords = !followChords;
+        save("player-chords", followChords);
+        sendPlayheadNotes();
+        renderPlayer(container);
+        return;
+      }
+      if (!audio?.src) return;
       if (act === "play") {
         if (audio.paused) audio.play().then(() => tick(container)).catch(() => {
         });
@@ -8413,6 +8529,9 @@ ${explainCadence(c.cadence)}` : ""}`;
       audio.currentTime = Math.max(0, Math.min(audio.duration, (e.clientX - r.left) / r.width * audio.duration));
       renderPlayer(container);
     });
+    if (audio) {
+      audio.onseeked = () => sendPlayheadNotes();
+    }
     if (audio) {
       audio.onloadedmetadata = () => renderPlayer(container);
       audio.onpause = () => {
@@ -8656,6 +8775,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     offerSettingsUndo();
     const player = document.getElementById("player-container");
     if (player) renderPlayer(player);
+    setPlayerNotesCallback((midis) => setHeardNotes(midis, 80, "player"));
     drawTuner();
     maybeStartTour();
     initMidi().then((result) => {
@@ -8738,10 +8858,10 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function makeSongHandlers() {
     return {
-      onChordClick: (id, symbol, notes) => {
+      onChordClick: (id, symbol, notes2) => {
         state.activeCursorId = id;
         markActiveChord(id);
-        if (symbol) showChord(symbol, notes, previousSongChord(id));
+        if (symbol) showChord(symbol, notes2, previousSongChord(id));
       },
       onChordCapture: (id) => {
         state.captureTargetId = id;
@@ -8984,9 +9104,9 @@ ${explainCadence(c.cadence)}` : ""}`;
   var melody = [];
   var melodyAt = 0;
   var melodyHeld = /* @__PURE__ */ new Set();
-  function trackMelody(notes, detection) {
-    const struck = notes.filter((n) => !melodyHeld.has(n));
-    melodyHeld = new Set(notes);
+  function trackMelody(notes2, detection) {
+    const struck = notes2.filter((n) => !melodyHeld.has(n));
+    melodyHeld = new Set(notes2);
     if (!detection || !struck.length) return;
     if (detection.kind === "chord") {
       melody = [];
@@ -8996,7 +9116,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     if (now - melodyAt > getPref("melody-gap-s") * 1e3) melody = [];
     melodyAt = now;
     const names = detection.kind === "note" ? [detection.noteName] : detection.notes;
-    const midis = detection.kind === "note" ? [detection.midiNumber] : notes;
+    const midis = detection.kind === "note" ? [detection.midiNumber] : notes2;
     names.forEach((name, i) => {
       const pc3 = name.replace(/-?\d+$/, "");
       if (struck.includes(midis[i]) && !melody.includes(pc3)) melody.push(pc3);
@@ -9004,14 +9124,14 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function refreshAnalysis() {
     const sym = selectedSymbol();
-    const notes = displayedNotes();
-    const sig = `${sym}|${analysisKey()}|${cadencePrev}|${prevVoicing?.join(" ")}|${notes.join(" ")}|${melody.join(" ")}`;
+    const notes2 = displayedNotes();
+    const sig = `${sym}|${analysisKey()}|${cadencePrev}|${prevVoicing?.join(" ")}|${notes2.join(" ")}|${melody.join(" ")}`;
     if (sig === lastAnalysisSig) return;
     lastAnalysisSig = sig;
-    state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev, notes, prevVoicing) : null;
+    state.analysis = sym ? buildHarmonicAnalysis(sym, analysisKey(), cadencePrev, notes2, prevVoicing) : null;
     const kind = state.detection?.kind;
     const useMelody = (kind === "note" || kind === "interval") && melody.length >= 2;
-    noteSet = useMelody ? analyzeNoteSet(melody, analysisKey(), true) : notes.length >= 2 ? analyzeNoteSet(notes, analysisKey()) : null;
+    noteSet = useMelody ? analyzeNoteSet(melody, analysisKey(), true) : notes2.length >= 2 ? analyzeNoteSet(notes2, analysisKey()) : null;
   }
   function renderAnalysisPanel() {
     const from = selectedSymbol() ? cadencePrev : null;
@@ -9152,11 +9272,11 @@ ${explainCadence(c.cadence)}` : ""}`;
     refreshAnalysis();
     renderDetector();
   }
-  function showChord(symbol, notes, prev) {
+  function showChord(symbol, notes2, prev) {
     detectionFromMidi = false;
     showDetection({
       kind: "chord",
-      notes: notes?.length ? spellVoicing(notes, symbol, analysisKey()) : chordNoteNames(symbol),
+      notes: notes2?.length ? spellVoicing(notes2, symbol, analysisKey()) : chordNoteNames(symbol),
       candidates: [symbol],
       selectedIndex: 0
     }, prev);
@@ -9188,8 +9308,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     renderZone3();
   }
   function playCurrent() {
-    const notes = selectedSymbol() ? displayedNotes() : lastChordNotes;
-    if (notes.length) playNoteNames(notes);
+    const notes2 = selectedSymbol() ? displayedNotes() : lastChordNotes;
+    if (notes2.length) playNoteNames(notes2);
   }
   function previousHistoryChord(symbol) {
     return state.history.find((e) => e.symbol !== symbol) ?? null;
@@ -9202,9 +9322,9 @@ ${explainCadence(c.cadence)}` : ""}`;
   var captureTimer = null;
   var captureArmed = true;
   var pendingCapture = null;
-  function scheduleCapture(symbol, notes) {
+  function scheduleCapture(symbol, notes2) {
     if (captureTimer) clearTimeout(captureTimer);
-    pendingCapture = { symbol, notes, since: performance.now() };
+    pendingCapture = { symbol, notes: notes2, since: performance.now() };
     captureTimer = setTimeout(commitCapture, getPref("capture-ms"));
   }
   function commitCapture() {
@@ -9233,20 +9353,20 @@ ${explainCadence(c.cadence)}` : ""}`;
     if (pendingCapture && performance.now() - pendingCapture.since >= getPref("capture-ms")) commitCapture();
     else cancelCapture();
   }
-  function onNoteChange2(notes) {
+  function onNoteChange2(notes2) {
     detectionFromMidi = true;
-    const result = spellDetection(analyzeNotes(notes), analysisKey());
-    trackMelody(notes, result);
+    const result = spellDetection(analyzeNotes(notes2), analysisKey());
+    trackMelody(notes2, result);
     const top = result?.kind === "chord" ? result.candidates[0] : null;
     const known = top && top !== "?" ? top : null;
     if (state.captureTargetId) {
-      if (notes.length < 3) captureArmed = true;
+      if (notes2.length < 3) captureArmed = true;
       if (captureArmed && known && result?.kind === "chord") {
         if (pendingCapture && pendingCapture.symbol !== known) chordChangedBeforeFill();
         if (state.captureTargetId && captureArmed) scheduleCapture(known, result.notes);
       } else chordChangedBeforeFill();
     }
-    const releasing = notes.length < heldNotes.length && notes.every((n) => heldNotes.includes(n));
+    const releasing = notes2.length < heldNotes.length && notes2.every((n) => heldNotes.includes(n));
     liftingNotes = releasing;
     showDetection(result, known ? previousHistoryChord(known) : null);
     liftingNotes = false;
@@ -9254,7 +9374,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       releaseNoted = true;
       notifyChordReleased();
     } else if (!releasing) releaseNoted = false;
-    heldNotes = notes;
+    heldNotes = notes2;
     if (known && result?.kind === "chord" && !releasing) notifyChordDetected(known, result.notes);
   }
   function onHistoryChange(entries2) {
@@ -9319,13 +9439,13 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function renderZone1Diagrams(noteNames, chordSymbol) {
     const key = analysisKey();
-    const notes = noteNames.join(" ");
+    const notes2 = noteNames.join(" ");
     syncCofAccidentalButtons();
     const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
     const prev = showPrevChord && chordSymbol ? prevVoicing : null;
-    renderIfChanged("staff", `${notes}|${key}|${staffClef}|${prev?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev));
+    renderIfChanged("staff", `${notes2}|${key}|${staffClef}|${prev?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev));
     const fn = chordSymbol ? state.analysis?.function ?? null : null;
-    renderIfChanged("piano", `${notes}|${fn}|${prev?.join(" ")}|${containerOctaves($2("piano-container"))}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev));
+    renderIfChanged("piano", `${notes2}|${fn}|${prev?.join(" ")}|${containerOctaves($2("piano-container"))}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev));
     const spoken = noteNames.map(noteLabel).join(" ") || t("a11y.nothing");
     for (const [id, key2] of [["staff-container", "a11y.staff"], ["piano-container", "a11y.piano"]]) {
       const el2 = $2(id);
@@ -9334,7 +9454,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     }
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
-    const neck = getStringsView() === "neck" ? `${notes}|${keyPrefersSharps(key)}` : "";
+    const neck = getStringsView() === "neck" ? `${notes2}|${keyPrefersSharps(key)}` : "";
     const named = !isModuleShown("chord");
     setGuitarShowsName(named);
     renderIfChanged("guitar", `${chordSymbol}|${neck}|${named}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames, void 0, !keyPrefersSharps(key)));
@@ -9412,8 +9532,8 @@ ${explainCadence(c.cadence)}` : ""}`;
   function showEarAnswer(q) {
     if (!q.symbol) {
       detectionFromMidi = false;
-      const notes = q.steps[q.steps.length - 1];
-      showDetection(spellDetection(analyzeNotes(notes.map(noteNameToMidi).filter((m) => m !== null)), analysisKey()), null);
+      const notes2 = q.steps[q.steps.length - 1];
+      showDetection(spellDetection(analyzeNotes(notes2.map(noteNameToMidi).filter((m) => m !== null)), analysisKey()), null);
       return;
     }
     if (q.key && analysisKey() !== q.key) {
@@ -9611,8 +9731,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     showChord(entry.symbol, entry.notes, state.history[at + 1] ?? null);
     playChordOrNotes(entry.symbol, entry.notes);
   }
-  function playChordOrNotes(symbol, notes) {
-    if (notes?.length) playNoteNames(notes);
+  function playChordOrNotes(symbol, notes2) {
+    if (notes2?.length) playNoteNames(notes2);
     else playChord(symbol);
   }
   function deleteChordAtCursor() {

@@ -21,6 +21,9 @@ export const BUNDLED_INSTRUMENTS = ['acoustic_grand_piano']
 
 const FILES = [
   { to: 'vendor/umt.js', from: { local: 'node_modules/umt/dist/umt.js' } },
+  // Basic Pitch's model, for the notes worker (chords from audio); its code is bundled in dist/notes-worker.js
+  { to: 'vendor/basic-pitch/model.json', from: { local: 'node_modules/@spotify/basic-pitch/model/model.json' } },
+  { to: 'vendor/basic-pitch/group1-shard1of1.bin', from: { local: 'node_modules/@spotify/basic-pitch/model/group1-shard1of1.bin' } },
   { to: 'vendor/notae.js', from: { url: `https://cdn.jsdelivr.net/gh/memoriainfinita/notae@${PINS.notae}/dist/notae.js` } },
   { to: 'vendor/abcjs-basic-min.js', from: { url: `https://cdn.jsdelivr.net/npm/abcjs@${PINS.abcjs}/dist/abcjs-basic-min.js` } },
   { to: 'vendor/soundfont-player.min.js', from: { url: `https://cdn.jsdelivr.net/npm/soundfont-player@${PINS.soundfontPlayer}/dist/soundfont-player.min.js` } },

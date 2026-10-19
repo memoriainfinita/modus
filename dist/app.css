@@ -3045,6 +3045,11 @@ body.view-mode .guitar-chrome {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.player-reading {
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
 .player-wave {
   width: 100%;
   flex: 1;

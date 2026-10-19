@@ -1,9 +1,12 @@
 // The Player panel: a recording being transcribed, from a local file. Its waveform, a click
 // to go anywhere, an A–B loop, slower or faster without changing the pitch, back 5 s. The
 // file is not stored: it is the user's, read in this page only, and opened again after a reload.
+// Opened, its notes are read once (audio-notes/, Basic Pitch) and the chord at the playhead
+// goes to the detector, as the microphone's would.
 
 import { escapeHtml } from './html'
-import { loadChoice, save } from './storage'
+import { loadBool, loadChoice, save } from './storage'
+import { transcribe, toModelRate, soundingAt, type NoteEvent } from '../audio-notes/notes'
 import { color } from './theme'
 import { t } from '../i18n/i18n'
 
@@ -47,6 +50,59 @@ let loopB: number | null = null
 let speed = loadChoice<Speed>('player-speed', SPEEDS, '1')
 let frame = 0
 
+// The chords of the recording: its notes, read once by the notes worker when it is opened
+// (audio-notes/), and the ones sounding at the playhead sent to the detector, never sounded
+let notes: NoteEvent[] | null = null
+let reading: number | null = null     // 0–1 while the recording is read; null when not
+let readFailed = false
+let readToken = 0                     // a file opened while another is read: the old reading is dropped
+let followChords = loadBool('player-chords', true)
+let sentNotes = ''
+let onNotes: (midis: number[]) => void = () => {}
+
+/** Where the notes at the playhead go: the detector, as heard notes. */
+export function setPlayerNotesCallback(cb: (midis: number[]) => void) { onNotes = cb }
+
+/** The notes at the playhead to the detector, when they changed; none when chords are not followed. */
+function sendPlayheadNotes() {
+  const midis = followChords && notes && audio ? soundingAt(notes, audio.currentTime) : []
+  const key = midis.join()
+  if (key === sentNotes) return
+  sentNotes = key
+  onNotes(midis)
+}
+
+async function readChords(source: Float32Array, rate: number, container: HTMLElement) {
+  const token = ++readToken
+  reading = 0
+  readFailed = false
+  showReading(container)
+  try {
+    const found = await transcribe(await toModelRate(source, rate), p => {
+      if (token !== readToken) return
+      reading = p
+      showReading(container)
+    })
+    if (token !== readToken) return
+    notes = found
+  } catch {
+    if (token === readToken) readFailed = true
+  }
+  if (token !== readToken) return
+  reading = null
+  showReading(container)
+  sendPlayheadNotes()
+}
+
+/** The reading's progress next to the file's name, without drawing the panel again. */
+function showReading(container: HTMLElement) {
+  const el = container.querySelector('.player-reading')
+  if (el) el.textContent = readingText()
+}
+
+const readingText = () => reading !== null ? t('player.reading', { p: Math.round(reading * 100) })
+  : readFailed ? t('player.readFailed') : ''
+
 if (audio) {
   audio.preload = 'auto'
   ;(audio as HTMLAudioElement & { preservesPitch: boolean }).preservesPitch = true
@@ -60,14 +116,23 @@ async function openFile(file: File, container: HTMLElement) {
   fileName = file.name
   loopA = loopB = null
   samples = null
+  notes = null
+  readToken++
+  reading = null
+  readFailed = false
+  sendPlayheadNotes()
   renderPlayer(container)
   // The waveform: decoded once, the first channel is enough to see where things are
+  let rate = 44100
   try {
     const ctx = new OfflineAudioContext(1, 1, 44100)
     const buffer = await ctx.decodeAudioData(await file.arrayBuffer())
     samples = buffer.getChannelData(0)
+    rate = buffer.sampleRate
   } catch { samples = null }
   drawWave(container)
+  // The chords, from the same channel
+  if (samples) readChords(samples, rate, container)
 }
 
 function drawWave(container: HTMLElement) {
@@ -106,6 +171,7 @@ function tick(container: HTMLElement) {
   const time = container.querySelector('.player-time')
   if (time) time.textContent = `${formatTime(audio.currentTime, true)} / ${formatTime(audio.duration)}`
   drawWave(container)
+  sendPlayheadNotes()
   frame = requestAnimationFrame(() => tick(container))
 }
 
@@ -117,6 +183,7 @@ export function renderPlayer(container: HTMLElement) {
     <div class="player-head">
       <label class="ctrl-btn player-open" title="${escapeHtml(t('player.open.title'))}">${escapeHtml(t('player.open'))}<input type="file" accept="audio/*" hidden></label>
       <span class="player-name">${escapeHtml(fileName || t('player.none'))}</span>
+      <span class="player-reading">${escapeHtml(readingText())}</span>
     </div>
     <canvas class="player-wave" title="${escapeHtml(t('player.wave.title'))}"></canvas>
     <div class="player-ctrl">
@@ -131,6 +198,7 @@ export function renderPlayer(container: HTMLElement) {
       <button class="size-ctrl-btn${loopA !== null ? ' active' : ''}" data-act="a" title="${escapeHtml(t('player.a.title'))}"${dis}>A${mark(loopA)}</button>
       <button class="size-ctrl-btn${loopB !== null ? ' active' : ''}" data-act="b" title="${escapeHtml(t('player.b.title'))}"${dis}>B${mark(loopB)}</button>
       <button class="size-ctrl-btn" data-act="clear" title="${escapeHtml(t('player.clear.title'))}"${loopA === null ? ' disabled' : ''}>×</button>
+      <button class="size-ctrl-btn${followChords ? ' active' : ''}" data-act="chords" aria-pressed="${followChords}" title="${escapeHtml(t('player.chords.title'))}">${escapeHtml(t('player.chords'))}</button>
     </div>`
 
   const input = container.querySelector<HTMLInputElement>('input[type=file]')!
@@ -154,8 +222,15 @@ export function renderPlayer(container: HTMLElement) {
   }))
 
   container.querySelectorAll<HTMLButtonElement>('[data-act]').forEach(b => b.addEventListener('click', () => {
-    if (!audio?.src) return
     const act = b.dataset.act
+    if (act === 'chords') {
+      followChords = !followChords
+      save('player-chords', followChords)
+      sendPlayheadNotes()
+      renderPlayer(container)
+      return
+    }
+    if (!audio?.src) return
     if (act === 'play') {
       if (audio.paused) audio.play().then(() => tick(container)).catch(() => {})
       else audio.pause()
@@ -173,6 +248,11 @@ export function renderPlayer(container: HTMLElement) {
     audio.currentTime = Math.max(0, Math.min(audio.duration, ((e.clientX - r.left) / r.width) * audio.duration))
     renderPlayer(container)
   })
+
+  if (audio) {
+    // A jump (click, back 5 s, the loop) shows the chord where it lands, playing or not
+    audio.onseeked = () => sendPlayheadNotes()
+  }
 
   if (audio) {
     audio.onloadedmetadata = () => renderPlayer(container)
