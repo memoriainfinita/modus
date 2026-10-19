@@ -1,6 +1,7 @@
 // End-to-end smoke test: serves the repo, opens index.html in the installed Chrome with a
 // fake Web MIDI input, and walks the main flows. Needs network (UMT, notae, abcjs and the
-// soundfont come from CDNs). Run: pnpm test:e2e  (HEADED=1 to watch it)
+// soundfont come from CDNs). Run: pnpm test:e2e  (HEADED=1 to watch it; E2E_ONLY="next" for the
+// checks whose name holds "next")
 
 import { chromium } from 'playwright-core'
 import { serve } from './serve.mjs'
@@ -55,8 +56,18 @@ const browser = await chromium.launch({ channel: 'chrome', headless: !process.en
 const results = []
 let page
 
+// E2E_ONLY="text|other" runs only the checks whose name holds one of them (case ignored),
+// plus the first load: the checks of what a change touched, without the whole walk
+const ONLY = process.env.E2E_ONLY?.toLowerCase().split('|').filter(Boolean)
+
 async function check(name, fn) {
-  try { await fn(); results.push(['ok', name]) } catch (err) { results.push(['FAIL', name, err.message.split('\n')[0]]) }
+  if (ONLY?.length && results.length && !ONLY.some(o => name.toLowerCase().includes(o))) return
+  try { await fn(); results.push(['ok', name]) } catch (err) {
+    // A timeout says what it waited for and, last, why it could not act
+    const lines = err.message.split('\n').map(l => l.trim()).filter(Boolean)
+    const detail = /Timeout/.test(lines[0]) ? [lines.find(l => l.startsWith('- waiting for')), lines.at(-1)].filter(Boolean).join(' | ') : ''
+    results.push(['FAIL', name, lines[0] + (detail ? ` (${detail})` : '')])
+  }
   // A failed check must not leave keys held for the next one.
   await page.evaluate(() => { for (let n = 0; n < 128; n++) window.__midi([0x80, n, 0]) }).catch(() => {})
 }
@@ -106,6 +117,9 @@ async function freshPage() {
   await context.addInitScript(FAKE_MIDI)
   await context.addInitScript(() => { try { if (!sessionStorage.getItem('e2e')) { localStorage.clear(); sessionStorage.setItem('e2e', '1') } } catch {} })
   page = await context.newPage()
+  // A click on something that is not there fails in 10 s, not Playwright's 30: one broken
+  // check costs seconds, not minutes, before the next one runs
+  page.setDefaultTimeout(10000)
   page.errors = []
   page.on('pageerror', e => page.errors.push(e.message))
   page.on('console', m => { if (m.type() === 'error' && !/soundfont|gleitz|Failed to load resource/i.test(m.text())) page.errors.push(m.text()) })

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { addSection } from '../src/song/model'
 import { listSongs, loadActiveSong, saveSong, openSong, newSong, deleteSong, restoreSong } from '../src/song/library'
