@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
 import { midiToNoteName } from '../src/theory/notes'
 import { isNoteOff, isSustain, setMode, setNoteChangeCallback, setSoundCallbacks, handleMidiMessage, setInputChannel, getVelocity } from '../src/input/midi'

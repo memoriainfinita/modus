@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest'
 import { getPref, setPref, resetPref, isDefault, clearPrefCache, PREFS } from '../src/settings/prefs'
 import { keysOf, actionFor, keyName, assignKey, conflictFor, setKeys, resetAllKeys, reloadBindings, removeKey, MAX_KEYS } from '../src/input/bindings'

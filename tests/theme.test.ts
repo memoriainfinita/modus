@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
