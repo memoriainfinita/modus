@@ -788,6 +788,7 @@
     "module.cof": "Circle of fifths",
     "module.guitar": "Strings",
     "module.explain": "Explanation",
+    "module.next": "Next",
     "module.progressions": "Progressions",
     "module.ear": "Ear training",
     "module.player": "Player",
@@ -965,6 +966,12 @@
     "vl.issue.doubledLeadingTone": "leading tone doubled ({voices})",
     "vl.issue.seventh": "seventh does not fall by step ({voices})",
     "ex.empty": "Play or pick a chord: each term the analysis shows is explained here, in its key.",
+    "next.empty": "Play or pick a chord: the chords that usually follow it are suggested here, each with why.",
+    "next.noKey": "Pick a key, or play a few chords for it to be read: what follows a chord depends on the key.",
+    "next.none": "Nothing in this key usually follows this chord: no resolution, cadence or named progression leads from it.",
+    "next.resolves": "{chord} is {roman}: it resolves to {target}",
+    "next.inProgressions": "In",
+    "next.play": "Play {chord} and show it after this chord",
     "ex.nth.1": "1st",
     "ex.nth.2": "2nd",
     "ex.nth.3": "3rd",
@@ -1287,6 +1294,7 @@
     "help.panel.staff": "The notes on the staff, in the key's signature; its \u22EF menu shows the chord before",
     "help.panel.analysis": "Numeral, function, figured bass, voicing, scales, cadence, voice leading\u2026",
     "help.panel.explain": "Each term of the analysis, in words",
+    "help.panel.next": "Chords that usually follow, and why",
     "help.panel.cof": "A click plays a chord, two clicks set its key",
     "help.panel.guitar": "Chord shapes or the whole neck, for guitar, bass, ukulele and more",
     "help.panel.key": "The key's chords, negative harmony, parallel modes, Coltrane axis",
@@ -1623,6 +1631,7 @@
     "module.cof": "C\xEDrculo de quintas",
     "module.guitar": "Cuerdas",
     "module.explain": "Explicaci\xF3n",
+    "module.next": "Siguiente",
     "module.progressions": "Progresiones",
     "module.ear": "Entrenamiento auditivo",
     "module.player": "Reproductor",
@@ -1794,6 +1803,12 @@
     "vl.issue.doubledLeadingTone": "sensible doblada ({voices})",
     "vl.issue.seventh": "la s\xE9ptima no baja por grado conjunto ({voices})",
     "ex.empty": "Toca o elige un acorde: aqu\xED se explica cada t\xE9rmino del an\xE1lisis, en su tonalidad.",
+    "next.empty": "Toca o elige un acorde: aqu\xED se proponen los acordes que suelen seguirle, cada uno con su porqu\xE9.",
+    "next.noKey": "Elige una tonalidad, o toca unos acordes para que se lea: lo que sigue a un acorde depende de la tonalidad.",
+    "next.none": "En esta tonalidad nada suele seguir a este acorde: ninguna resoluci\xF3n, cadencia ni progresi\xF3n con nombre parte de \xE9l.",
+    "next.resolves": "{chord} es {roman}: resuelve en {target}",
+    "next.inProgressions": "En",
+    "next.play": "Tocar {chord} y mostrarlo tras este acorde",
     "ex.nth.1": "1.\xBA",
     "ex.nth.2": "2.\xBA",
     "ex.nth.3": "3.\xBA",
@@ -2116,6 +2131,7 @@
     "help.panel.staff": "Las notas en el pentagrama, con la armadura de la tonalidad; su men\xFA \u22EF muestra el acorde anterior",
     "help.panel.analysis": "Grado, funci\xF3n, bajo cifrado, disposici\xF3n, escalas, cadencia, conducci\xF3n de voces\u2026",
     "help.panel.explain": "Cada t\xE9rmino del an\xE1lisis, en palabras",
+    "help.panel.next": "Los acordes que suelen seguir, y por qu\xE9",
     "help.panel.cof": "Un clic toca un acorde, dos clics fijan su tonalidad",
     "help.panel.guitar": "Posiciones del acorde o el m\xE1stil entero, para guitarra, bajo, ukelele y m\xE1s",
     "help.panel.key": "Los acordes de la tonalidad, armon\xEDa negativa, modos paralelos, eje de Coltrane",
@@ -5433,6 +5449,7 @@ ${explainCadence(cadence)}` : "");
     "staff",
     "analysis",
     "explain",
+    "next",
     "cof",
     "guitar",
     "key",
@@ -5450,6 +5467,7 @@ ${explainCadence(cadence)}` : "");
     staff: { w: 4, h: 8 },
     analysis: { w: 3, h: 11 },
     explain: { w: 4, h: 11 },
+    next: { w: 4, h: 8 },
     cof: { w: 3, h: 7 },
     guitar: { w: 3, h: 9 },
     key: { w: 12, h: 11 },
@@ -5465,7 +5483,7 @@ ${explainCadence(cadence)}` : "");
   var PRESET_IDS = ["standard", "study", "class", "transcription", "recording"];
   var grid = (specs) => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }));
   var PRESETS = {
-    // Everything but Velocity (in the layout menu): the chord as a header across the page, the four
+    // Everything but Velocity and Next (in the layout menu): the chord as a header across the page, the four
     // diagrams under it, the key and its explanation, then the piano and the practice panels
     standard: grid([
       ["chord", 0, 0, 12, 3],
@@ -5494,17 +5512,19 @@ ${explainCadence(cadence)}` : "");
       ["explain", 8, 12, 4, 12],
       ["piano", 0, 24, 12, 5],
       ["progressions", 0, 29, 12, 4],
-      ["ear", 0, 33, 6, 5]
+      ["ear", 0, 33, 6, 5],
+      ["next", 6, 33, 6, 5]
     ]),
     // Teaching on a projector (made to be presented with P): few panels, large; the history
-    // under the chord shows where it came from
+    // under the chord shows where it came from, Next where it can go
     class: grid([
       ["chord", 0, 0, 12, 4],
       ["history", 0, 4, 12, 4],
       ["staff", 0, 8, 4, 10],
       ["cof", 4, 8, 4, 10],
       ["guitar", 8, 8, 4, 10],
-      ["piano", 0, 18, 12, 6]
+      ["piano", 0, 18, 12, 6],
+      ["next", 0, 24, 12, 4]
     ]),
     // Writing down a recording: the player on top, the song and the history in reach of what is heard
     transcription: grid([
@@ -5801,6 +5821,8 @@ ${explainCadence(cadence)}` : "");
         return '<div id="key-container"></div>';
       case "explain":
         return '<div id="explain-container"></div>';
+      case "next":
+        return '<div id="next-container"></div>';
       case "progressions":
         return '<div id="progressions-container"></div>';
       case "ear":
@@ -7779,11 +7801,11 @@ ${explainCadence(cadence)}` : "");
     pop: ["I-V-vi-IV", "I-vi-IV-V", "I-IV-V", "pachelbel", "andalusian"]
   };
   var groupOf = (id) => Object.keys(GROUPS).find((g) => GROUPS[g].includes(id));
-  var MINOR = ["ii-V-i", "blues-minor", "andalusian"];
+  var MINOR_PROGRESSIONS = ["ii-V-i", "blues-minor", "andalusian"];
   var barMs = () => 4 * 6e4 / getPref("progression-bpm");
   var BLUES = ["blues-12", "blues-jazz", "bird-blues"];
   function progressionKey(id, key) {
-    const minor = MINOR.includes(id);
+    const minor = MINOR_PROGRESSIONS.includes(id);
     if (key) {
       const root2 = key.split(" ")[0];
       return normalizeKey(`${root2} ${minor ? "Minor" : "Major"}`) ?? key;
@@ -7896,6 +7918,84 @@ ${explainCadence(c.cadence)}` : ""}`;
       };
       step2(0);
     });
+  }
+
+  // src/detector/next.ts
+  function keyChords(key, sevenths) {
+    const map = buildKeyMap(key, sevenths);
+    return map ? map.diatonic.flatMap((c) => c.alternative ? [c.symbol, c.alternative.symbol] : [c.symbol]) : [];
+  }
+  function resolutionTarget(target, key, sevenths) {
+    const map = buildKeyMap(key, sevenths);
+    const plain = (r) => r.replace(/[°ø+7]|maj/g, "").toLowerCase();
+    return map?.diatonic.find((c) => plain(c.roman) === plain(target))?.symbol ?? null;
+  }
+  function suggestNext(current4, key, previous = null) {
+    const chord = tryParseChord(current4);
+    if (!chord || !key) return [];
+    const sevenths = (chord.intervalsInSteps?.length ?? 0) >= 4;
+    const out = [];
+    const entry = (symbol) => {
+      if (sameChord(symbol, current4)) return null;
+      let s = out.find((o) => sameChord(o.symbol, symbol));
+      if (!s) {
+        const info2 = romanInKey(symbol, key);
+        out.push(s = { symbol, roman: info2?.roman ?? null, function: info2?.function ?? "unknown", resolution: null, cadence: null, progressions: [] });
+      }
+      return s;
+    };
+    const info = romanInKey(current4, key);
+    if (info?.isSecondary && info.secondaryTarget) {
+      const target = info.secondaryTarget.split("/")[1];
+      const to = target ? resolutionTarget(target, key, sevenths) : null;
+      const s = to ? entry(to) : null;
+      if (s) s.resolution = t("next.resolves", { chord: chordLabel(current4), roman: info.secondaryTarget, target: chordLabel(s.symbol) });
+    }
+    for (const symbol of keyChords(key, sevenths)) {
+      const next = tryParseChord(symbol);
+      const cad = next ? tryUMT("cadence", () => UMT.Harmony.analyzeCadence(chord, next, key), null) : null;
+      if (!cad || cad === "No standard cadence") continue;
+      const s = entry(symbol);
+      if (s) s.cadence = { name: cadenceLabel(cad), about: explainCadence(cad) };
+    }
+    const minorKey = / minor$/i.test(key);
+    const matches = [];
+    for (const id of PROGRESSION_IDS) {
+      if (MINOR_PROGRESSIONS.includes(id) !== minorKey) continue;
+      const chords = realizeProgression(id, key).map((c) => c.symbol);
+      let best = null;
+      chords.forEach((c, i) => {
+        if (!sameChord(c, current4)) return;
+        const next = chords.slice(i + 1).find((n) => !sameChord(n, current4));
+        if (!next) return;
+        const before = chords.slice(0, i).reverse().find((p) => !sameChord(p, current4));
+        const length = previous && before && sameChord(before, previous) ? 2 : 1;
+        if (!best || length > best.length) best = { symbol: next, length };
+      });
+      const b = best;
+      if (b) matches.push({ id, ...b });
+    }
+    matches.sort((a, b) => b.length - a.length).forEach((m) => entry(m.symbol)?.progressions.push(m.id));
+    return out;
+  }
+  function renderNext(container, current4, key, items, onPick) {
+    if (!current4 || !items.length) {
+      container.innerHTML = `<p class="next-empty">${escapeHtml(t(current4 && !key ? "next.noKey" : current4 ? "next.none" : "next.empty"))}</p>`;
+      return;
+    }
+    const progression = (id) => `<span class="next-reason" title="${escapeHtml(t(`prog.${id}.about`))}">${escapeHtml(t(`prog.${id}`))}</span>`;
+    container.innerHTML = `<ul class="next-list">${items.map((s) => `
+    <li class="next-row">
+      <button type="button" class="key-chord key-fnb-${s.function}" data-chord="${escapeHtml(s.symbol)}"
+        title="${escapeHtml(t("next.play", { chord: chordLabel(s.symbol) }))}">${escapeHtml(chordLabel(s.symbol))}</button>
+      <span class="key-roman">${escapeHtml(s.roman ?? "\u2014")}</span>
+      <span class="next-why">
+        ${s.resolution ? `<span>${escapeHtml(s.resolution)}</span>` : ""}
+        ${s.cadence ? `<span class="next-reason"${s.cadence.about ? ` title="${escapeHtml(s.cadence.about)}"` : ""}>${escapeHtml(s.cadence.name)}</span>` : ""}
+        ${s.progressions.length ? `<span>${escapeHtml(t("next.inProgressions"))} ${s.progressions.map(progression).join(", ")}</span>` : ""}
+      </span>
+    </li>`).join("")}</ul>`;
+    container.querySelectorAll(".key-chord").forEach((btn) => btn.addEventListener("click", () => onPick(btn.dataset.chord)));
   }
 
   // src/ui/ear.ts
@@ -8811,6 +8911,21 @@ ${explainCadence(c.cadence)}` : ""}`;
     const el2 = document.getElementById("explain-container");
     if (el2) renderExplanation(el2, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev));
   }
+  var nextFrom = null;
+  var liftingNotes = false;
+  function renderNextPanel() {
+    const el2 = document.getElementById("next-container");
+    if (!el2) return;
+    const sym = selectedSymbol();
+    if (sym && !liftingNotes) nextFrom = { symbol: sym, notes: displayedNotes(), prev: cadencePrev };
+    const key = analysisKey();
+    renderNext(el2, nextFrom?.symbol ?? null, key, nextFrom ? suggestNext(nextFrom.symbol, key, nextFrom.prev) : [], onNextPick);
+  }
+  function onNextPick(chord) {
+    const from = nextFrom;
+    playChord(chord);
+    showChord(chord, void 0, from ? { symbol: from.symbol, notes: from.notes } : null);
+  }
   function announceDetection() {
     const d = state.detection;
     if (!d) return;
@@ -8833,6 +8948,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     announceDetection();
     renderAnalysisPanel();
     renderExplain();
+    renderNextPanel();
     renderProgressionPanel();
     renderDiagrams();
     publishView();
@@ -9003,8 +9119,10 @@ ${explainCadence(c.cadence)}` : ""}`;
         if (state.captureTargetId && captureArmed) scheduleCapture(known, result.notes);
       } else chordChangedBeforeFill();
     }
-    showDetection(result, known ? previousHistoryChord(known) : null);
     const releasing = notes.length < heldNotes.length && notes.every((n) => heldNotes.includes(n));
+    liftingNotes = releasing;
+    showDetection(result, known ? previousHistoryChord(known) : null);
+    liftingNotes = false;
     heldNotes = notes;
     if (known && result?.kind === "chord" && !releasing) notifyChordDetected(known, result.notes);
   }

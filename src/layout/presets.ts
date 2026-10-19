@@ -4,13 +4,13 @@
 import type { Grid } from './grid'
 
 export const MODULE_IDS = [
-  'chord', 'staff', 'analysis', 'explain', 'cof', 'guitar', 'key', 'piano', 'velocity', 'progressions', 'ear', 'player', 'tuner', 'history', 'song',
+  'chord', 'staff', 'analysis', 'explain', 'next', 'cof', 'guitar', 'key', 'piano', 'velocity', 'progressions', 'ear', 'player', 'tuner', 'history', 'song',
 ] as const
 export type ModuleId = typeof MODULE_IDS[number]
 
 /** Width and height a panel takes when it is added (columns of 12, rows). */
 export const MODULE_SIZE: Record<ModuleId, { w: number; h: number }> = {
-  chord: { w: 4, h: 3 }, staff: { w: 4, h: 8 }, analysis: { w: 3, h: 11 }, explain: { w: 4, h: 11 }, cof: { w: 3, h: 7 },
+  chord: { w: 4, h: 3 }, staff: { w: 4, h: 8 }, analysis: { w: 3, h: 11 }, explain: { w: 4, h: 11 }, next: { w: 4, h: 8 }, cof: { w: 3, h: 7 },
   guitar: { w: 3, h: 9 }, key: { w: 12, h: 11 }, piano: { w: 7, h: 5 },
   velocity: { w: 2, h: 5 }, progressions: { w: 12, h: 4 }, ear: { w: 6, h: 5 }, player: { w: 6, h: 5 }, tuner: { w: 3, h: 5 }, history: { w: 12, h: 3 }, song: { w: 12, h: 12 },
 }
@@ -22,7 +22,7 @@ type Spec = [ModuleId, number, number, number, number]   // id, x, y, w, h
 const grid = (specs: Spec[]): Grid => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }))
 
 export const PRESETS: Record<PresetId, Grid> = {
-  // Everything but Velocity (in the layout menu): the chord as a header across the page, the four
+  // Everything but Velocity and Next (in the layout menu): the chord as a header across the page, the four
   // diagrams under it, the key and its explanation, then the piano and the practice panels
   standard: grid([
     ['chord', 0, 0, 12, 3],
@@ -38,14 +38,15 @@ export const PRESETS: Record<PresetId, Grid> = {
     ['key', 0, 12, 8, 12], ['explain', 8, 12, 4, 12],
     ['piano', 0, 24, 12, 5],
     ['progressions', 0, 29, 12, 4],
-    ['ear', 0, 33, 6, 5],
+    ['ear', 0, 33, 6, 5], ['next', 6, 33, 6, 5],
   ]),
   // Teaching on a projector (made to be presented with P): few panels, large; the history
-  // under the chord shows where it came from
+  // under the chord shows where it came from, Next where it can go
   class: grid([
     ['chord', 0, 0, 12, 4], ['history', 0, 4, 12, 4],
     ['staff', 0, 8, 4, 10], ['cof', 4, 8, 4, 10], ['guitar', 8, 8, 4, 10],
     ['piano', 0, 18, 12, 6],
+    ['next', 0, 24, 12, 4],
   ]),
   // Writing down a recording: the player on top, the song and the history in reach of what is heard
   transcription: grid([
