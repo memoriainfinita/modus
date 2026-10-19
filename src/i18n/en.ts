@@ -573,6 +573,10 @@ export const en = {
   'pref.history-hold-ms.hint': 'How long a chord holds before it goes to the history',
   'pref.history-max': 'Chips the history keeps',
   'pref.history-max.hint': 'The oldest go first',
+  'pref.history-bpm': 'Tempo of what you play',
+  'pref.history-bpm.hint': 'For the harmonic rhythm per bar. 0: no tempo, the time between changes in seconds',
+  'pref.history-beats': 'Beats per bar',
+  'pref.history-beats.hint': 'The bar the harmonic rhythm is counted in: 4 for 4/4, 3 for 3/4',
   'pref.arpeggio-ms': 'Arpeggio mode window',
   'pref.arpeggio-ms.hint': 'Notes played within it make one chord',
   'pref.melody-gap-s': 'Pause that starts a new melody',
@@ -772,6 +776,12 @@ export const en = {
   'history.removed': 'Removed {chord}',
   'history.chip.inKey': '{roman} in {key}',
   'history.chip.actions': 'click to play, drag to song, right-click to remove',
+  'history.chip.duration': 'sounded {s} s',
+  'history.rhythm.perBar': 'Harmonic rhythm: {n} changes per bar (♩ = {bpm}, {beats}/4)',
+  'history.rhythm.seconds': 'Harmonic rhythm: a change every {s} s on average',
+  'history.rhythm.title': 'How often the chords change, over the chords played since the last ones without a time. Set a tempo in the ⋯ menu to read it per bar.',
+  'ex.term.rhythm': 'Harmonic rhythm',
+  'ex.rhythm': 'How often the chords change, whatever the melody does: one chord per bar is a slow harmonic rhythm, two or more a fast one. It quickens towards a cadence and holds still on a pedal.',
   'history.modulation': 'Modulation to {key}: from here the numerals are read in it',
 
   // Song

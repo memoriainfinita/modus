@@ -26,6 +26,8 @@ export const PREFS = {
   // Detector and history
   'history-hold-ms': num(300, 2000, 100, 800, 'ms'),
   'history-max':     num(20, 1000, 10, 200),
+  'history-bpm':     num(0, 240, 1, 0, 'bpm'),   // 0: no tempo, the harmonic rhythm in seconds
+  'history-beats':   num(2, 12, 1, 4),
   'arpeggio-ms':     num(500, 3000, 100, 1200, 'ms'),
   'melody-gap-s':    num(2, 15, 1, 6, 's'),
   'capture-ms':      num(100, 800, 50, 250, 'ms'),

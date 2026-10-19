@@ -807,6 +807,7 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 
 /* ─── History ─────────────────────────────────────────────────── */
 .history-wrap { display: flex; gap: 8px; align-items: center; }
+.history-rhythm { font-size: 12px; color: var(--text-muted); margin-top: 4px; cursor: help; }
 .history-strip {
   display: flex;
   gap: 6px;

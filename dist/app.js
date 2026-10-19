@@ -51,6 +51,9 @@
     // Detector and history
     "history-hold-ms": num(300, 2e3, 100, 800, "ms"),
     "history-max": num(20, 1e3, 10, 200),
+    "history-bpm": num(0, 240, 1, 0, "bpm"),
+    // 0: no tempo, the harmonic rhythm in seconds
+    "history-beats": num(2, 12, 1, 4),
     "arpeggio-ms": num(500, 3e3, 100, 1200, "ms"),
     "melody-gap-s": num(2, 15, 1, 6, "s"),
     "capture-ms": num(100, 800, 50, 250, "ms"),
@@ -1225,6 +1228,10 @@
     "pref.history-hold-ms.hint": "How long a chord holds before it goes to the history",
     "pref.history-max": "Chips the history keeps",
     "pref.history-max.hint": "The oldest go first",
+    "pref.history-bpm": "Tempo of what you play",
+    "pref.history-bpm.hint": "For the harmonic rhythm per bar. 0: no tempo, the time between changes in seconds",
+    "pref.history-beats": "Beats per bar",
+    "pref.history-beats.hint": "The bar the harmonic rhythm is counted in: 4 for 4/4, 3 for 3/4",
     "pref.arpeggio-ms": "Arpeggio mode window",
     "pref.arpeggio-ms.hint": "Notes played within it make one chord",
     "pref.melody-gap-s": "Pause that starts a new melody",
@@ -1420,6 +1427,12 @@
     "history.removed": "Removed {chord}",
     "history.chip.inKey": "{roman} in {key}",
     "history.chip.actions": "click to play, drag to song, right-click to remove",
+    "history.chip.duration": "sounded {s} s",
+    "history.rhythm.perBar": "Harmonic rhythm: {n} changes per bar (\u2669 = {bpm}, {beats}/4)",
+    "history.rhythm.seconds": "Harmonic rhythm: a change every {s} s on average",
+    "history.rhythm.title": "How often the chords change, over the chords played since the last ones without a time. Set a tempo in the \u22EF menu to read it per bar.",
+    "ex.term.rhythm": "Harmonic rhythm",
+    "ex.rhythm": "How often the chords change, whatever the melody does: one chord per bar is a slow harmonic rhythm, two or more a fast one. It quickens towards a cadence and holds still on a pedal.",
     "history.modulation": "Modulation to {key}: from here the numerals are read in it",
     // Song
     "song.untitled": "Untitled",
@@ -2073,6 +2086,10 @@
     "pref.history-hold-ms.hint": "Cu\xE1nto se mantiene un acorde antes de pasar al historial",
     "pref.history-max": "Fichas que guarda el historial",
     "pref.history-max.hint": "Las m\xE1s antiguas se van primero",
+    "pref.history-bpm": "Tempo de lo que tocas",
+    "pref.history-bpm.hint": "Para el ritmo arm\xF3nico por comp\xE1s. 0: sin tempo, el tiempo entre cambios en segundos",
+    "pref.history-beats": "Pulsos por comp\xE1s",
+    "pref.history-beats.hint": "El comp\xE1s en que se cuenta el ritmo arm\xF3nico: 4 para 4/4, 3 para 3/4",
     "pref.arpeggio-ms": "Ventana del modo Arpegio",
     "pref.arpeggio-ms.hint": "Las notas tocadas dentro forman un acorde",
     "pref.melody-gap-s": "Pausa que empieza otra melod\xEDa",
@@ -2264,6 +2281,12 @@
     "history.removed": "Quitado {chord}",
     "history.chip.inKey": "{roman} en {key}",
     "history.chip.actions": "clic para tocar, arrastra a la canci\xF3n, clic derecho para quitar",
+    "history.chip.duration": "son\xF3 {s} s",
+    "history.rhythm.perBar": "Ritmo arm\xF3nico: {n} cambios por comp\xE1s (\u2669 = {bpm}, {beats}/4)",
+    "history.rhythm.seconds": "Ritmo arm\xF3nico: un cambio cada {s} s de media",
+    "history.rhythm.title": "Cada cu\xE1nto cambian los acordes, sobre los tocados desde los \xFAltimos sin tiempo. Pon un tempo en el men\xFA \u22EF para leerlo por comp\xE1s.",
+    "ex.term.rhythm": "Ritmo arm\xF3nico",
+    "ex.rhythm": "Cada cu\xE1nto cambian los acordes, haga lo que haga la melod\xEDa: un acorde por comp\xE1s es un ritmo arm\xF3nico lento, dos o m\xE1s uno r\xE1pido. Se acelera hacia una cadencia y se detiene sobre un pedal.",
     "history.modulation": "Modulaci\xF3n a {key}: desde aqu\xED los grados se leen en ella",
     "song.untitled": "Sin t\xEDtulo",
     "song.list": "Tus canciones",
@@ -4151,6 +4174,34 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     return { ...d, candidates, notes: spellVoicing(d.notes, selected === "?" ? null : selected, key) };
   }
 
+  // src/history/rhythm.ts
+  function entrySeconds(entries2, i) {
+    const e = entries2[i];
+    if (e?.at === void 0) return null;
+    const next = i > 0 ? entries2[i - 1].at : void 0;
+    const end = e.until !== void 0 && next !== void 0 ? Math.min(e.until, next) : e.until ?? next;
+    return end !== void 0 && end > e.at ? (end - e.at) / 1e3 : null;
+  }
+  function timedRun(entries2) {
+    const symbols = [], seconds = [];
+    for (let i = 0; i < entries2.length && entries2[i].at !== void 0; i++) {
+      const s = entrySeconds(entries2, i);
+      if (s === null || !tryParseChord(entries2[i].symbol)) continue;
+      symbols.unshift(entries2[i].symbol);
+      seconds.unshift(s);
+    }
+    return { symbols, seconds };
+  }
+  function harmonicRhythm(entries2, bpm, beatsPerBar) {
+    const { symbols, seconds } = timedRun(entries2);
+    if (symbols.length < 2) return null;
+    if (bpm <= 0) return { kind: "seconds", secondsPerChange: seconds.reduce((a, b) => a + b, 0) / seconds.length };
+    const chords = symbols.map(tryParseChord);
+    const durations = seconds.map((s) => s * bpm / 60);
+    const r = tryUMT("harmonic rhythm", () => UMT.Harmony.analyzeProgression(chords, "C Major", { durations, beatsPerBar }), null);
+    return r && r.harmonicRhythmUnit === "per-bar" ? { kind: "per-bar", changes: r.harmonicRhythm, bpm, beatsPerBar } : null;
+  }
+
   // src/theory/key-map.ts
   function keyChord(symbol, key) {
     const a = romanInKey(symbol, key);
@@ -4370,8 +4421,8 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     const list = Array.isArray(carried) ? carried : [];
     if (list.length && list.every((e) => e && typeof e.id === "string" && typeof e.symbol === "string" && Array.isArray(e.notes))) restoreEntries(list);
   }
-  function addEntry(symbol, notes) {
-    const entry = { id: crypto.randomUUID(), symbol, notes };
+  function addEntry(symbol, notes, time) {
+    const entry = { id: crypto.randomUUID(), symbol, notes, ...time };
     entries = [entry, ...entries].slice(0, getPref("history-max"));
     onChange2(entries);
   }
@@ -4396,14 +4447,27 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     lastAutoAppended = null;
     onChange2(entries);
   }
-  function notifyChordDetected(symbol, notes) {
+  var pending2 = null;
+  function notifyChordDetected(symbol, notes, at = Date.now()) {
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (pending2?.symbol !== symbol) pending2 = { symbol, at };
+    else delete pending2.until;
+    if (symbol === lastAutoAppended && entries[0]) delete entries[0].until;
     debounceTimer = setTimeout(() => {
       if (symbol !== lastAutoAppended && symbol !== "?") {
-        addEntry(symbol, notes);
+        const p = pending2?.symbol === symbol ? pending2 : null;
+        addEntry(symbol, notes, p ? { at: p.at, until: p.until } : void 0);
         lastAutoAppended = symbol;
       }
     }, getPref("history-hold-ms"));
+  }
+  function notifyChordReleased(at = Date.now()) {
+    if (pending2 && pending2.until === void 0) pending2.until = at;
+    const e = entries[0];
+    if (e?.at !== void 0 && e.until === void 0 && e.symbol === pending2?.symbol) {
+      e.until = at;
+      onChange2(entries);
+    }
   }
   function markActiveHistoryEntry(container, entryId) {
     container.querySelectorAll(".history-chip").forEach((el2) => {
@@ -4438,7 +4502,9 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
         else playChord(entry.symbol);
       });
       const inKey = steps2[i].key ? ` (${t("history.chip.inKey", { roman, key: keyLabel(steps2[i].key) })})` : "";
-      chip.title = `${chordLabel(entry.symbol)}${inKey} \u2014 ${t("history.chip.actions")}`;
+      const secs = entrySeconds(entries, i);
+      const lasted = secs !== null ? ` \xB7 ${t("history.chip.duration", { s: decimal(secs) })}` : "";
+      chip.title = `${chordLabel(entry.symbol)}${inKey}${lasted} \u2014 ${t("history.chip.actions")}`;
       chip.draggable = true;
       chip.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol, notes: entry.notes }));
@@ -4501,6 +4567,21 @@ ${explainCadence(cadence)}` : "");
     wrap.appendChild(clearBtn);
     container.innerHTML = "";
     container.appendChild(wrap);
+    const rhythm = rhythmText();
+    if (rhythm) {
+      const line2 = document.createElement("div");
+      line2.className = "history-rhythm";
+      line2.textContent = rhythm;
+      line2.title = t("history.rhythm.title");
+      container.appendChild(line2);
+    }
+  }
+  var decimal = (n) => n.toLocaleString(getLang(), { maximumFractionDigits: 1 });
+  function rhythmText() {
+    const bpm = getPref("history-bpm"), beats = getPref("history-beats");
+    const r = harmonicRhythm(entries, bpm, beats);
+    if (!r) return null;
+    return r.kind === "per-bar" ? t("history.rhythm.perBar", { n: decimal(r.changes), bpm: r.bpm, beats: r.beatsPerBar }) : t("history.rhythm.seconds", { s: decimal(r.secondsPerChange) });
   }
 
   // src/ui/settings.ts
@@ -4509,7 +4590,7 @@ ${explainCadence(cadence)}` : "");
     general: ["ui-zoom"],
     sound: ["preview-s", "piano-velocity"],
     theory: ["chord-style", "key-profile", "voice-rules", "movable-do"],
-    detector: ["history-hold-ms", "history-max", "arpeggio-ms", "melody-gap-s", "capture-ms"],
+    detector: ["history-hold-ms", "history-max", "history-bpm", "history-beats", "arpeggio-ms", "melody-gap-s", "capture-ms"],
     practice: ["progression-bpm", "ear-interval-play", "ear-chords", "ear-cadences"],
     mic: ["a4-hz", "mic-sensitivity", "mic-response"]
   };
@@ -4699,15 +4780,15 @@ ${explainCadence(cadence)}` : "");
     location.reload();
   }
   function offerSettingsUndo() {
-    let pending2 = null;
+    let pending3 = null;
     try {
-      pending2 = JSON.parse(sessionStorage.getItem("settings-undo") ?? "null");
+      pending3 = JSON.parse(sessionStorage.getItem("settings-undo") ?? "null");
       sessionStorage.removeItem("settings-undo");
     } catch {
     }
-    if (!pending2) return;
-    const before = pending2.before;
-    showUndo(t(pending2.message), () => {
+    if (!pending3) return;
+    const before = pending3.before;
+    showUndo(t(pending3.message), () => {
       try {
         for (const k of Object.keys(settingsSnapshot())) localStorage.removeItem(k);
         for (const [k, v] of Object.entries(before)) localStorage.setItem(k, v);
@@ -5177,7 +5258,7 @@ ${explainCadence(cadence)}` : "");
     analysis: ["voice-rules"],
     explain: ["movable-do"],
     piano: ["piano-velocity"],
-    history: ["history-hold-ms", "history-max"],
+    history: ["history-hold-ms", "history-max", "history-bpm", "history-beats"],
     progressions: ["progression-bpm"],
     ear: ["ear-interval-play", "ear-chords", "ear-cadences"],
     tuner: ["a4-hz", "mic-sensitivity", "mic-response"]
@@ -8950,10 +9031,15 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function renderExplain() {
     const el2 = document.getElementById("explain-container");
-    if (el2) renderExplanation(el2, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev));
+    if (!el2) return;
+    const items = explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev);
+    const rhythm = state.detection ? rhythmText() : null;
+    if (rhythm) items.push({ term: t("ex.term.rhythm"), text: `${rhythm}. ${t("ex.rhythm")}` });
+    renderExplanation(el2, items);
   }
   var nextFrom = null;
   var liftingNotes = false;
+  var releaseNoted = false;
   function renderNextPanel() {
     const el2 = document.getElementById("next-container");
     if (!el2) return;
@@ -9124,11 +9210,11 @@ ${explainCadence(c.cadence)}` : ""}`;
   function commitCapture() {
     if (captureTimer) clearTimeout(captureTimer);
     captureTimer = null;
-    const pending2 = pendingCapture;
+    const pending3 = pendingCapture;
     pendingCapture = null;
     const targetId = state.captureTargetId;
-    if (!pending2 || !targetId) return;
-    state.song = updateChord(state.song, targetId, pending2.symbol, pending2.notes);
+    if (!pending3 || !targetId) return;
+    state.song = updateChord(state.song, targetId, pending3.symbol, pending3.notes);
     saveSong(state.song);
     captureArmed = false;
     const next = findChordAfter(state.song, targetId)?.id ?? null;
@@ -9164,6 +9250,10 @@ ${explainCadence(c.cadence)}` : ""}`;
     liftingNotes = releasing;
     showDetection(result, known ? previousHistoryChord(known) : null);
     liftingNotes = false;
+    if (releasing && !releaseNoted) {
+      releaseNoted = true;
+      notifyChordReleased();
+    } else if (!releasing) releaseNoted = false;
     heldNotes = notes;
     if (known && result?.kind === "chord" && !releasing) notifyChordDetected(known, result.notes);
   }
@@ -9180,6 +9270,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       renderZone3();
     }
     renderZone2();
+    renderExplain();
   }
   function updateAutoKeyLabel() {
     $2("auto-key-label").textContent = !state.activeKey && autoKey ? t("key.autoDetected", { key: keyLabel(autoKey) }) : "";
