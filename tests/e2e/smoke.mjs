@@ -143,6 +143,19 @@ await check('D7 in C Major reads V7/V, secondary → V; the explanation says wha
   await off([62, 66, 69, 72])
 })
 
+await check('Next (Study layout): A7 in C Major resolves to Dm7; a click plays it and shows it after A7', async () => {
+  await page.click('#btn-layout'); await page.click('#layout-menu [data-preset="study"]'); await page.mouse.click(5, 990)
+  await play([57, 61, 64, 67])
+  const next = await text('#next-container')
+  assert(next.includes('V7/ii') && next.includes('Dm7'), `next: ${next}`)
+  await off([57, 61, 64, 67])
+  // Released, Next keeps A7: not the chord its last notes made on the way up
+  await page.click('#next-container .key-chord[data-chord="Dm7"]')
+  assert((await text('.chord-name-badge')) === 'Dm7', 'picked chord on screen')
+  assert((await text('#next-container')).includes('G7'), 'Dm7 leads to G7')
+  await page.click('#btn-layout'); await page.click('#layout-menu [data-preset="standard"]'); await page.mouse.click(5, 990)
+})
+
 await check('piano keys carry data-note', async () => {
   const n = await page.locator('#piano-container rect[data-note]').count()
   assert(n >= 24 && n <= 84 && n % 12 === 0, `data-note keys: ${n}`)   // whole octaves, as many as the panel holds
@@ -745,7 +758,7 @@ await check('P presents the layout without controls, filling the window; Esc lea
   await page.waitForFunction(() => document.querySelector('#mod-chord .chord-name-badge')?.textContent === 'C')
   const size = await page.locator('#mod-chord .chord-name-badge').evaluate(e => parseFloat(getComputedStyle(e).fontSize))
   assert(size > 40, `chord name ${size}px`)
-  const bottom = await page.locator('#mod-piano').evaluate(e => e.getBoundingClientRect().bottom)
+  const bottom = await page.locator('.module:not(.module-hidden)').evaluateAll(els => Math.max(...els.map(e => e.getBoundingClientRect().bottom)))
   const vh = await page.evaluate(() => window.innerHeight)
   assert(Math.abs(bottom - vh) < 30, `layout does not fill the window: ${bottom} of ${vh}`)
   await off([60, 64, 67])

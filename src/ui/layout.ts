@@ -322,6 +322,7 @@ function moduleBody(id: ModuleId): string {
     case 'guitar': return '<div id="guitar-container"></div>'
     case 'key': return '<div id="key-container"></div>'
     case 'explain': return '<div id="explain-container"></div>'
+    case 'next': return '<div id="next-container"></div>'
     case 'progressions': return '<div id="progressions-container"></div>'
     case 'ear': return '<div id="ear-container"></div>'
     case 'player': return '<div id="player-container"></div>'

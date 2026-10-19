@@ -28,6 +28,7 @@ import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import { explainDetection, renderExplanation } from './detector/explain'
+import { suggestNext, renderNext } from './detector/next'
 import { renderProgressions } from './ui/progressions'
 import { renderEar, resetEarScore, type EarQuestion } from './ui/ear'
 import { wireSettings, openSettings, closeSettings, offerSettingsUndo, settingsCommands } from './ui/settings'
@@ -521,6 +522,27 @@ function renderExplain() {
   if (el) renderExplanation(el, explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev))
 }
 
+// Next keeps the last chord shown after its keys are released, so a suggestion can still be picked
+let nextFrom: { symbol: string; notes: string[]; prev: string | null } | null = null
+let liftingNotes = false   // set while MIDI notes of a chord are being released
+
+function renderNextPanel() {
+  const el = document.getElementById('next-container')
+  if (!el) return
+  const sym = selectedSymbol()
+  // Kept until another chord is played: the notes left while a chord is released do not count
+  if (sym && !liftingNotes) nextFrom = { symbol: sym, notes: displayedNotes(), prev: cadencePrev }
+  const key = analysisKey()
+  renderNext(el, nextFrom?.symbol ?? null, key, nextFrom ? suggestNext(nextFrom.symbol, key, nextFrom.prev) : [], onNextPick)
+}
+
+/** A suggested chord: played and shown after the chord it follows, so its cadence reads from it. */
+function onNextPick(chord: string) {
+  const from = nextFrom
+  playChord(chord)
+  showChord(chord, undefined, from ? { symbol: from.symbol, notes: from.notes } : null)
+}
+
 /** What a screen reader hears when the detector changes: the chord with its degree and function, a note, an interval. */
 function announceDetection() {
   const d = state.detection
@@ -539,6 +561,7 @@ function renderDetector() {
   announceDetection()
   renderAnalysisPanel()
   renderExplain()
+  renderNextPanel()
   renderProgressionPanel()
   renderDiagrams()
   publishView()
@@ -751,10 +774,12 @@ function onNoteChange(notes: number[]) {
     } else chordChangedBeforeFill()
   }
 
-  showDetection(result, known ? previousHistoryChord(known) : null)
   // Releasing a chord lifts its notes one by one: the three left for a moment (F A C of a
-  // Dm7) are not a chord played, and the chord before them still goes to the history
+  // Dm7) are not a chord played, and the chord before them still goes to the history and Next
   const releasing = notes.length < heldNotes.length && notes.every(n => heldNotes.includes(n))
+  liftingNotes = releasing
+  showDetection(result, known ? previousHistoryChord(known) : null)
+  liftingNotes = false
   heldNotes = notes
   if (known && result?.kind === 'chord' && !releasing) notifyChordDetected(known, result.notes)
 }

@@ -29,7 +29,7 @@ type Group = keyof typeof GROUPS
 const groupOf = (id: ProgressionId) => (Object.keys(GROUPS) as Group[]).find(g => (GROUPS[g] as readonly string[]).includes(id))!
 
 /** Progressions written in a minor key: in a major key they are played in its parallel minor. */
-const MINOR: readonly ProgressionId[] = ['ii-V-i', 'blues-minor', 'andalusian']
+export const MINOR_PROGRESSIONS: readonly ProgressionId[] = ['ii-V-i', 'blues-minor', 'andalusian']
 
 /** A bar of 4/4 at the tempo chosen in Settings (100 bpm: 2.4 s). */
 const barMs = () => 4 * 60000 / getPref('progression-bpm')
@@ -42,7 +42,7 @@ export interface ProgressionChord { symbol: string; bar: number; roman: string; 
 
 /** The key a progression is written in: the one given, in the progression's mode; its own key; or C major / A minor. */
 export function progressionKey(id: ProgressionId, key: string | null): string {
-  const minor = MINOR.includes(id)
+  const minor = MINOR_PROGRESSIONS.includes(id)
   if (key) {
     const root = key.split(' ')[0]
     return normalizeKey(`${root} ${minor ? 'Minor' : 'Major'}`) ?? key
