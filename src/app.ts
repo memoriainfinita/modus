@@ -24,6 +24,7 @@ import { addChord as songAddChord, addSection, insertChordAfter, updateChord } f
 import { loadActiveSong, saveSong, songTabs, openSong, newSong, deleteSong, restoreSong } from './song/library'
 import { showUndo, dismiss as dismissUndo } from './ui/undo'
 import { mountSong, markActiveChord, removeChordWithUndo } from './song/view'
+import { isSongPlaying, stopSong, type SongStep } from './song/playback'
 import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis, Song, SongChord } from './types'
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
@@ -235,6 +236,10 @@ function makeSongHandlers() {
       state.activeCursorId = id
       markActiveChord(id)
       if (symbol) showChord(symbol, notes, previousSongChord(id))
+    },
+    // The song playing: each chord in the detector, read from the one before it
+    onPlayStep: (step: SongStep, previous: SongStep | null) => {
+      if (step.symbol) showChord(step.symbol, step.notes, previous?.symbol ? { symbol: previous.symbol, notes: previous.notes } : null)
     },
     onChordCapture: (id: string) => {
       state.captureTargetId = id
@@ -1037,6 +1042,7 @@ function sendActiveToSong() {
 /** Esc: leaves presentation; otherwise lets go of a held chord, stops MIDI fill, clears the cursors. */
 function escapeAll() {
   if (isPresenting()) { closePresentation(); return }
+  if (isSongPlaying()) { stopSong(); return }
   melody = []
   releaseKeptNotes()
   cancelCapture()

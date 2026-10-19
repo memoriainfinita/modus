@@ -247,7 +247,7 @@ type Section = {
   id: string; name: string; color: SectionColor
   measures: Measure[]; collapsed: boolean; repeatCount: number
 }
-type Song = { schemaVersion: 2; id: string; title: string; key: string | null; updatedAt: number; sections: Section[] }
+type Song = { schemaVersion: 2; id: string; title: string; key: string | null; updatedAt: number; sections: Section[]; tempo?: number; beatsPerBar?: number }
 ```
 
 Several songs, each under its own localStorage key `modus-song:<id>`; the index `modus-songs` lists them and holds the open one. Each song keeps its key (`null` = Auto): opening a song restores it, picking a key stores it in the open song. The single schema-1 song of earlier versions (`modus-song`, or the older `harmony-companion-song`) is migrated once as the first song, with the key that was selected (`active-key`); the old keys are left in place. An unreadable song is skipped. Empty chord slots are never persisted. The first time a song with content is saved, the app asks the browser for persistent storage (once ever), so songs and preferences are not evicted under storage pressure: Firefox shows its permission prompt then, Chromium decides silently.
@@ -272,6 +272,8 @@ The songs as tabs above, in the order they were made (they do not move as songs 
 **Measures:** add (+ Bar), delete (× on the bar, when the section has more than one; Undo).
 
 **Sections:** rename, colour, collapse, repeat count (×N), duplicate, reorder by dragging their block in the form strip, delete (Undo), write as text.
+
+**Playing the song** (`song/playback.ts`): ▶ in the head plays it from the chord selected, or from the top: the sections in order, each as many times as its ×N; a bar lasts its beats at the song's tempo and its chords share it equally (as the Progressions panel plays); an empty bar or an invalid chord is a rest. Each chord sounds as long as it lasts, its captured notes when it has them. The chord sounding is outlined in the chart and kept in view, its section marked in the form strip, and shown in the detector read from the chord before it. ■ or Esc stops it; opening another song too. The tempo (40–240 bpm, 100 by default) and the beats per bar (1–12, 4) are the song's own (`tempo`, `beatsPerBar`, unset in songs saved before), shown in the head as ♩ 100 · 4/4 and edited in its menu.
 
 **Song:** song list (most recently changed first; opening one resets the cursor, MIDI fill and any pending Undo), title, New (a new empty song on Auto; the current one stays in the list; nothing happens on an empty untitled song), Delete (Undo; opens the most recent remaining song, or a new one), quick-add templates (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro), Transpose (⇄, +1 to +11 semitones; with a key set, spelling follows the transposed key; stored voicings move too), Export (⎙, browser print), Paste (`|` separates measures; without bars, one chord per measure).
 

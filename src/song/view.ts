@@ -13,7 +13,8 @@ import { saveSong, type SongMeta } from './library'
 import { makeActivatable } from '../ui/a11y'
 import { escapeHtml } from '../ui/html'
 import { showUndo } from '../ui/undo'
-import { readTypedChord, isKnownChord } from '../theory/chord'
+import { readTypedChord, isKnownChord, chordNoteNames } from '../theory/chord'
+import { songSchedule, playSchedule, stopSong, isSongPlaying, songTempo, songBeats, TEMPO_RANGE, BEATS_RANGE, type SongStep } from './playback'
 import { t, chordLabel, keyLabel } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
 
@@ -27,6 +28,8 @@ const SECTION_COLORS: Record<SectionColor, string> = {
 type SongEventHandlers = {
   onChordClick: (chordId: string, symbol: string, notes?: string[]) => void
   onChordCapture: (chordId: string) => void
+  /** The song playing reaches a step: show its chord (the view sounds it) */
+  onPlayStep: (step: SongStep, previous: SongStep | null) => void
   activeCursorId: string | null
   captureTargetId: string | null
   activeKey: string | null
@@ -84,6 +87,8 @@ export function removeChordWithUndo(chordId: string) {
 }
 
 export function mountSong(container: HTMLElement, song: Song, handlers: SongEventHandlers) {
+  // Another song opened (or a new one): the one playing stops
+  if (song.id !== _song.id && isSongPlaying()) stopSong()
   _song = song
   _handlers = handlers
   _container = container
@@ -104,6 +109,40 @@ function rerender() {
   closePopover()
   _container.innerHTML = ''
   _container.appendChild(buildSongDOM(_song, _handlers))
+  markPlaying(_playing)
+}
+
+// ─── Playing the song ────────────────────────────────────────────────────────
+
+let _playing: SongStep | null = null
+
+/** The chord sounding, outlined in the chart and kept in view; its section marked in the form strip. */
+function markPlaying(step: SongStep | null) {
+  _playing = step
+  if (!_container) return
+  _container.querySelectorAll<HTMLElement>('.chord-chip').forEach(c => c.classList.toggle('playing', !!step && c.dataset.chordId === step.chordId))
+  if (step) _container.querySelectorAll<HTMLElement>('.strip-block').forEach(b => b.classList.toggle('in-play', b.dataset.sectionId === step.sectionId))
+  _container.querySelector<HTMLElement>('.chord-chip.playing')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  const btn = _container.querySelector<HTMLButtonElement>('.song-play')
+  if (btn) {
+    const on = isSongPlaying()
+    btn.textContent = on ? '■' : '▶'
+    btn.title = t(on ? 'song.stop.title' : 'song.play.title')
+    btn.setAttribute('aria-label', t(on ? 'song.stop' : 'song.play'))
+  }
+}
+
+/** ▶: the song from the chord selected, or from the top; each chord sounds as long as it lasts. */
+function playFromCursor(h: SongEventHandlers) {
+  playSchedule(songSchedule(_song, h.activeCursorId), songTempo(_song), {
+    step: (s, previous, seconds) => {
+      if (s.symbol) playNoteNames(s.notes?.length ? s.notes : chordNoteNames(s.symbol), seconds)
+      markPlaying(s)
+      h.onPlayStep(s, previous)
+    },
+    end: () => markPlaying(null),
+  })
+  markPlaying(_playing)
 }
 
 // Sections written as text instead of chips, while the song is open (not stored)
@@ -221,9 +260,32 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   moreAnchor.append(moreBtn, moreMenu)
   wirePopover(moreMenu, [moreBtn])
 
+  // ▶ / ■, and the tempo and bar it plays at, edited in a small menu
+  const playBtn = el('button', 'song-btn song-play', '▶')
+  playBtn.disabled = !song.sections.some(s => s.measures.length)
+  playBtn.addEventListener('click', () => { if (isSongPlaying()) stopSong(); else playFromCursor(h) })
+
+  const tempoAnchor = el('div', 'pop-anchor pop-end')
+  const tempoBtn = el('button', 'song-btn song-tempo', `♩ ${songTempo(song)} · ${songBeats(song)}/4`)
+  tempoBtn.title = t('song.tempo.title')
+  const tempoMenu = el('div', 'view-menu pop-menu song-menu')
+  const numberRow = (field: 'tempo' | 'beats', label: string, value: number, [min, max]: readonly [number, number], unit: string) =>
+    `<label class="song-tempo-row">${escapeHtml(label)}<input type="number" class="song-tempo-input" data-field="${field}" min="${min}" max="${max}" step="1" value="${value}">${escapeHtml(unit)}</label>`
+  tempoMenu.innerHTML = numberRow('tempo', t('song.tempo'), songTempo(song), TEMPO_RANGE, 'bpm') +
+    numberRow('beats', t('song.beats'), songBeats(song), BEATS_RANGE, '/4')
+  tempoMenu.querySelectorAll<HTMLInputElement>('input').forEach(input => input.addEventListener('change', () => {
+    const [min, max] = input.dataset.field === 'tempo' ? TEMPO_RANGE : BEATS_RANGE
+    const v = Math.round(Number(input.value))
+    if (!Number.isFinite(v)) return
+    const n = Math.min(max, Math.max(min, v))
+    commit(input.dataset.field === 'tempo' ? { ..._song, tempo: n } : { ..._song, beatsPerBar: n })
+  }))
+  tempoAnchor.append(tempoBtn, tempoMenu)
+  wirePopover(tempoMenu, [tempoBtn])
+
   const titleWrap = el('div', 'song-title-wrap')
   titleWrap.append(titleInput)
-  header.append(titleWrap, summary, el('span', 'song-gap'), addAnchor, pasteBtn, moreAnchor)
+  header.append(titleWrap, summary, el('span', 'song-gap'), playBtn, tempoAnchor, addAnchor, pasteBtn, moreAnchor)
   root.appendChild(header)
 
   // Paste: a line of chords as text, added to the last section

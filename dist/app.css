@@ -2397,6 +2397,30 @@ body.presenting .grid {
 .history-chip.active-cursor {
   border-color: var(--cursor);
 }
+.chord-chip.playing {
+  border-color: var(--cursor);
+  background: var(--surface-2);
+}
+.song-tempo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+.song-tempo-input {
+  font: inherit;
+  width: 4.5em;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.song-tempo-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
 .chord-chip-symbol {
   font-size: 15px;
   font-weight: 700;
