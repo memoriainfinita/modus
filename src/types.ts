@@ -49,10 +49,19 @@ export interface HarmonicAnalysis {
   cadence: string | null    // null = no standard cadence vs prev chord
   voicing: string | null        // e.g. "1st inversion · open · drop 2 · doubled R · no 5"
   upperStructures: string[]     // upper-structure triads present over a dominant: "II UST (D: 9 #11 13)"
+  slash: SlashReading | null    // a chord over a bass foreign to it (UMT analyzeSlash); null for an inversion
   transformation: string | null // neo-Riemannian P / L / R from the previous triad, e.g. "R", "PL"
   voiceLeading: string | null   // each voice from the chord before: "C→B ↓1  E =  G =  — outer voices oblique · …"
   voiceRules: string[] | null   // four-part rules broken from the chord before; null when it cannot be read
   voiceRuleKeys: string[]       // the same rules by key ("parallel5"), each once
+}
+
+/** A chord over a foreign bass, as UMT reads it: D over C, an upper structure, 9 #11 13. */
+export interface SlashReading {
+  type: 'upper-structure' | 'polychord' | 'hybrid'
+  upper: string | null      // the chord above the bass; none for a hybrid
+  bass: string              // pitch class: "C"
+  tensions: string[]        // the notes above, as intervals over the bass: "9", "#11", "13"
 }
 
 /** What any set of notes on screen is, chord or not: set class and the scales that hold it. */

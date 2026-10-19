@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { analyzeNotes, getAutoKey, buildHarmonicAnalysis, romanInKey } from '../src/detector/analyzer'
 import type { DetectionResult, ChordResult, IntervalResult, SingleNoteResult } from '../src/types'
+import { slashText } from '../src/detector/analysis-panel'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
 
@@ -182,5 +183,27 @@ describe('romanInKey', () => {
 
   it('buildHarmonicAnalysis carries the same roman', () => {
     expect(buildHarmonicAnalysis('A7', 'C Major', null).roman).toBe('V7/ii')
+  })
+})
+
+describe('slash chords (UMT analyzeSlash)', () => {
+  it('a triad over a foreign bass, from the notes played: D over C, an upper structure', () => {
+    const a = buildHarmonicAnalysis('D7/C', 'C Major', null, ['C3', 'D4', 'F#4', 'A4'])
+    expect(a.slash).toEqual({ type: 'upper-structure', upper: 'D', bass: 'C', tensions: ['9', '#11', '13'] })
+  })
+
+  it('from the symbol when the notes are not known', () => {
+    expect(buildHarmonicAnalysis('D/C', 'C Major', null, []).slash).toMatchObject({ upper: 'D', bass: 'C' })
+  })
+
+  it('a seventh chord on its root, or an inversion, is no slash reading', () => {
+    expect(buildHarmonicAnalysis('Cmaj7', 'C Major', null, ['C3', 'E4', 'G4', 'B4']).slash).toBeNull()
+    expect(buildHarmonicAnalysis('C/E', 'C Major', null, ['E3', 'C4', 'G4']).slash).toBeNull()
+  })
+})
+
+describe('slashText', () => {
+  it('says the reading in one line', () => {
+    expect(slashText({ type: 'upper-structure', upper: 'D', bass: 'C', tensions: ['9', '#11', '13'] })).toBe('D over C · upper structure · 9 #11 13')
   })
 })

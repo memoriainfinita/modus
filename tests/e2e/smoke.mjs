@@ -143,6 +143,14 @@ await check('D7 in C Major reads V7/V, secondary → V; the explanation says wha
   await off([62, 66, 69, 72])
 })
 
+await check('C3 D4 F#4 A4 reads D over C, an upper structure, in Analysis and Explanation', async () => {
+  await play([48, 62, 66, 69])
+  const a = await text('#analysis-content')
+  assert(a.includes('D over C · upper structure · 9 #11 13'), `analysis: ${a}`)
+  assert((await text('#explain-container')).includes('heard as one chord on C'), 'explanation')
+  await off([48, 62, 66, 69])
+})
+
 await check('Next (Study layout): A7 in C Major resolves to Dm7; a click plays it and shows it after A7', async () => {
   await page.click('#btn-layout'); await page.click('#layout-menu [data-preset="study"]'); await page.mouse.click(5, 990)
   await play([57, 61, 64, 67])

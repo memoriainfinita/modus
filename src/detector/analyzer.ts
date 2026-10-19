@@ -1,4 +1,4 @@
-import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult } from '../types'
+import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult, SlashReading } from '../types'
 import { midiToNoteName, pitchClassOf, PITCH_NAMES_FLAT } from '../theory/notes'
 import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from '../theory/chord'
 import { normalizeKey } from '../theory/keys'
@@ -179,6 +179,19 @@ export function presentUpperStructures(noteNames: string[], chord: any): string[
 }
 
 /**
+ * A chord over a bass foreign to it (UMT `analyzeSlash`): from the notes played when there
+ * are three or more, the lowest being the bass; otherwise from the symbol (D/C). Null for
+ * an inversion, and for a hybrid with nothing over its bass to name.
+ */
+export function readSlash(noteNames: string[], chord: any): SlashReading | null {
+  const s = tryUMT('slash chord', () => UMT.Harmony.analyzeSlash(noteNames.length >= 3 ? noteNames.map(n => UMT.parseNote(n)) : chord), null)
+  if (!s || s.type === 'inversion' || !s.lowerRoot) return null
+  const tensions = s.resultingTensions ?? []
+  if (s.type === 'hybrid' && !tensions.length) return null
+  return { type: s.type, upper: s.upperStructure?.name ?? null, bass: pcName(s.lowerRoot.name), tensions }
+}
+
+/**
  * The shortest chain of neo-Riemannian moves (P, L, R from UMT) from one triad to the
  * next, up to three. Null when either is not a major or minor triad, or nothing that short.
  */
@@ -241,6 +254,7 @@ export function buildHarmonicAnalysis(
   result.suggestedScales = tryUMT('scales', () => UMT.Harmony.getSuggestedScales(chord).map(s => scaleLabel(s.scale)), [])
   result.voicing = describeVoicing(noteNames, chord)
   result.upperStructures = presentUpperStructures(noteNames, chord)
+  result.slash = readSlash(noteNames, chord)
 
   const prevChord = tryParseChord(prevChordSymbol)
   if (prevChord) result.transformation = neoRiemannianPath(prevChord, chord)
@@ -272,7 +286,7 @@ function emptyAnalysis(chordName: string): HarmonicAnalysis {
     chordName, roman: '?', function: 'unknown',
     isDiatonic: false, isBorrowed: false, isSecondary: false,
     figuredBass: '', suggestedScales: [], substitutions: [],
-    cadence: null, voicing: null, upperStructures: [], transformation: null,
+    cadence: null, voicing: null, upperStructures: [], slash: null, transformation: null,
     substitutionTypes: [], voiceLeading: null, voiceRules: null, voiceRuleKeys: [],
   }
 }

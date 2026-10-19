@@ -11,6 +11,7 @@ declare const UMT: {
   GUITAR_OPEN_G: readonly number[]
   Harmony: {
     detectChords: (notes: any[]) => string[]
+    analyzeSlash: (chordOrNotes: any) => { type: 'inversion' | 'upper-structure' | 'polychord' | 'hybrid'; upperStructure?: { name: string }; lowerRoot?: { name: string }; lowerChord?: { name: string }; resultingTensions?: string[] }
     detectChordsScored: (notes: any[]) => { name: string; root: string; bass: string; quality: string; score: number; rootInBass: boolean; omitted: string[]; tensions: string[] }[]
     analyzeProgression: (chords: any[], key: string, opts?: { spelling?: 'key' | 'written'; durations?: number[]; beatsPerBar?: number; style?: 'blues' }) => { analysis: any[]; modulations: any[]; harmonicRhythm: number; harmonicRhythmUnit?: 'per-bar' | 'per-chord' }
     analyzeCadence: (c1: any, c2: any, key: string) => string
