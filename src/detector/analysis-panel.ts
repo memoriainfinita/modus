@@ -1,16 +1,22 @@
-import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis } from '../types'
+import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis, SlashReading } from '../types'
 import { escapeHtml } from '../ui/html'
 import { t, noteLabel, chordLabel, cadenceLabel } from '../i18n/i18n'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 
-export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','voicing','diatonic','scales','fits','cadence','plr','voices','rules','secondary','subs','upper','forte'] as const
+export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','voicing','diatonic','scales','fits','cadence','plr','voices','rules','secondary','subs','upper','slash','forte'] as const
 export type AnalysisFieldKey = (typeof ANALYSIS_FIELD_KEYS)[number]
 
 /** The field's toggle button, its tooltip and its row label in the panel. */
 export const fieldLabel = (f: AnalysisFieldKey) => t(`field.${f}`)
 export const fieldTooltip = (f: AnalysisFieldKey) => t(`field.${f}.title`)
 const rowLabel = (f: AnalysisFieldKey) => t(`field.${f}.row`)
+
+/** A slash reading in one line: "D over C · upper structure · 9 #11 13". */
+export function slashText(s: SlashReading): string {
+  const over = s.upper ? t('slash.over', { upper: chordLabel(s.upper), bass: noteLabel(s.bass) }) : t('slash.overBass', { bass: noteLabel(s.bass) })
+  return [over, t(`slash.type.${s.type}`), s.tensions.join(' ')].filter(Boolean).join(' · ')
+}
 
 // ─── Chord header (private — called only by renderZone1Analysis) ──────────────
 
@@ -118,7 +124,7 @@ export function renderZone1Analysis(
 
   let roman = '—', func_ = '—', figuredBass = '—', diatonic = '—', scales = '—', cadence = '—'
   let secondary: string | null = null, subs: string | null = null
-  let voicing: string | null = null, plr: string | null = null, upper: string | null = null
+  let voicing: string | null = null, plr: string | null = null, upper: string | null = null, slash: string | null = null
   let voices: string | null = null, rules: string | null = null
   let extra = ''
 
@@ -141,6 +147,7 @@ export function renderZone1Analysis(
     voices = analysis.voiceLeading
     if (analysis.voiceRules) rules = analysis.voiceRules.length ? analysis.voiceRules.join('\n') : t('vl.none')
     if (analysis.upperStructures.length) upper = analysis.upperStructures.join(', ')
+    if (analysis.slash) slash = slashText(analysis.slash)
   }
   const fits = noteSet?.fits.length
     ? (noteSet.fromMelody ? `(${noteSet.notes.map(noteLabel).join(' ')}) ` : '') + noteSet.fits.slice(0, 4).join(', ')
@@ -161,6 +168,7 @@ export function renderZone1Analysis(
     fieldRow('secondary', secondary) +
     fieldRow('subs', subs) +
     fieldRow('upper', upper) +
+    fieldRow('slash', slash) +
     fieldRow('forte', noteSet?.forte ?? null) +
     extra
 }

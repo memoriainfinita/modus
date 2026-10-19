@@ -894,6 +894,14 @@
     "field.upper": "UST",
     "field.upper.title": "Upper-structure triads sounding over a dominant",
     "field.upper.row": "Upper str.",
+    "field.slash": "Slash",
+    "field.slash.title": "A chord over a bass foreign to it: upper structure, polychord or hybrid",
+    "field.slash.row": "Slash",
+    "slash.over": "{upper} over {bass}",
+    "slash.overBass": "over {bass}",
+    "slash.type.upper-structure": "upper structure",
+    "slash.type.polychord": "polychord",
+    "slash.type.hybrid": "hybrid",
     "field.forte": "Set",
     "field.forte.title": "Set class: Forte number, prime form, interval vector",
     "field.forte.row": "Set class",
@@ -1033,6 +1041,9 @@
     "ex.voicing.open": "Open position: the upper voices span more than an octave.",
     "ex.voicing.drop": "Drop voicing: from a close chord, the 2nd voice from the top (drop 2), the 3rd (drop 3) or both 2nd and 4th (drop 2+4) go down an octave.",
     "ex.upper": "Upper structure: a triad on top of a dominant's shell (its third and seventh); its notes are the dominant's tensions.",
+    "ex.slash.upper-structure": "{upper} over {bass}: a chord on top of a bass that is not one of its notes, heard as one chord on {bass}; the notes above are its tensions ({tensions}).",
+    "ex.slash.polychord": "{upper} over {bass}: a polychord, a chord over a bass foreign to it, heard as two layers more than as one chord; over {bass} its notes are {tensions}.",
+    "ex.slash.hybrid": "Over {bass}, the notes above form no chord of their own: a hybrid, read as intervals over the bass ({tensions}).",
     "ex.vl.parallel5": "Two voices a fifth apart move to another fifth: they blend into one and the part loses a voice. Avoided in four-part writing; common in rock and in parallel harmony.",
     "ex.vl.parallel8": "Two voices an octave apart move to another octave: they double each other and the part loses a voice.",
     "ex.vl.hidden5": "The outer voices reach a fifth moving the same way, with a leap on top: it sounds almost like parallel fifths.",
@@ -1734,6 +1745,14 @@
     "field.upper": "UST",
     "field.upper.title": "Tr\xEDadas de estructura superior que suenan sobre un dominante",
     "field.upper.row": "Estr. sup.",
+    "field.slash": "Barra",
+    "field.slash.title": "Un acorde sobre un bajo ajeno a \xE9l: estructura superior, policordio o h\xEDbrido",
+    "field.slash.row": "Barra",
+    "slash.over": "{upper} sobre {bass}",
+    "slash.overBass": "sobre {bass}",
+    "slash.type.upper-structure": "estructura superior",
+    "slash.type.polychord": "policordio",
+    "slash.type.hybrid": "h\xEDbrido",
     "field.forte": "Conj",
     "field.forte.title": "Clase de conjunto: n\xFAmero de Forte, forma prima, vector interv\xE1lico",
     "field.forte.row": "Conjunto",
@@ -1870,6 +1889,9 @@
     "ex.voicing.open": "Posici\xF3n abierta: las voces superiores abarcan m\xE1s de una octava.",
     "ex.voicing.drop": "Voicing drop: desde un acorde cerrado, la 2.\xAA voz desde arriba (drop 2), la 3.\xAA (drop 3) o la 2.\xAA y la 4.\xAA (drop 2+4) bajan una octava.",
     "ex.upper": "Estructura superior: una tr\xEDada sobre el esqueleto de un dominante (su tercera y su s\xE9ptima); sus notas son las tensiones del dominante.",
+    "ex.slash.upper-structure": "{upper} sobre {bass}: un acorde encima de un bajo que no es nota suya, que se oye como un solo acorde sobre {bass}; las notas de arriba son sus tensiones ({tensions}).",
+    "ex.slash.polychord": "{upper} sobre {bass}: un policordio, un acorde sobre un bajo ajeno a \xE9l, que se oye m\xE1s como dos capas que como un acorde; sobre {bass} sus notas son {tensions}.",
+    "ex.slash.hybrid": "Sobre {bass}, las notas de arriba no forman un acorde propio: un h\xEDbrido, le\xEDdo como intervalos sobre el bajo ({tensions}).",
     "ex.vl.parallel5": "Dos voces a distancia de quinta pasan a otra quinta: se funden en una y la escritura pierde una voz. Se evita a cuatro voces; es habitual en el rock y en la armon\xEDa paralela.",
     "ex.vl.parallel8": "Dos voces a distancia de octava pasan a otra octava: se doblan y la escritura pierde una voz.",
     "ex.vl.hidden5": "Las voces extremas llegan a una quinta en el mismo sentido, con salto arriba: suena casi como quintas paralelas.",
@@ -2631,6 +2653,13 @@
       return triad.length && triad.every((n) => sounding3.has(pcOf(n))) ? [`${u.label} (${chordLabel(u.triad.name)}: ${u.tensions.join(" ")})`] : [];
     });
   }
+  function readSlash(noteNames, chord) {
+    const s = tryUMT("slash chord", () => UMT.Harmony.analyzeSlash(noteNames.length >= 3 ? noteNames.map((n) => UMT.parseNote(n)) : chord), null);
+    if (!s || s.type === "inversion" || !s.lowerRoot) return null;
+    const tensions = s.resultingTensions ?? [];
+    if (s.type === "hybrid" && !tensions.length) return null;
+    return { type: s.type, upper: s.upperStructure?.name ?? null, bass: pcName(s.lowerRoot.name), tensions };
+  }
   function neoRiemannianPath(from, to) {
     const id = (c) => c ? `${(c.rootStep % 12 + 12) % 12}:${c.intervalsInSteps.join(",")}` : "";
     const target = id(to);
@@ -2676,6 +2705,7 @@
     result.suggestedScales = tryUMT("scales", () => UMT.Harmony.getSuggestedScales(chord).map((s) => scaleLabel(s.scale)), []);
     result.voicing = describeVoicing(noteNames, chord);
     result.upperStructures = presentUpperStructures(noteNames, chord);
+    result.slash = readSlash(noteNames, chord);
     const prevChord = tryParseChord(prevChordSymbol);
     if (prevChord) result.transformation = neoRiemannianPath(prevChord, chord);
     const vl = analyzeVoiceLeading(prevNotes, noteNames, activeKey, prevChordSymbol, chordSymbol);
@@ -2713,6 +2743,7 @@
       cadence: null,
       voicing: null,
       upperStructures: [],
+      slash: null,
       transformation: null,
       substitutionTypes: [],
       voiceLeading: null,
@@ -3468,10 +3499,14 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
   }
 
   // src/detector/analysis-panel.ts
-  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "voices", "rules", "secondary", "subs", "upper", "forte"];
+  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "voices", "rules", "secondary", "subs", "upper", "slash", "forte"];
   var fieldLabel = (f) => t(`field.${f}`);
   var fieldTooltip = (f) => t(`field.${f}.title`);
   var rowLabel = (f) => t(`field.${f}.row`);
+  function slashText(s) {
+    const over = s.upper ? t("slash.over", { upper: chordLabel(s.upper), bass: noteLabel(s.bass) }) : t("slash.overBass", { bass: noteLabel(s.bass) });
+    return [over, t(`slash.type.${s.type}`), s.tensions.join(" ")].filter(Boolean).join(" \xB7 ");
+  }
   function cadenceWithDegrees(cadence) {
     const degrees = cadence.match(/\(([^)]*)\)/)?.[1];
     return degrees ? `${cadenceLabel(cadence, true)} (${degrees.replace(/->/g, "\u2192")})` : cadenceLabel(cadence, true);
@@ -3545,7 +3580,7 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
     const fieldRow = (f, val) => fieldsVisible[f] ? row2(rowLabel(f), val ?? "\u2014") : "";
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
     let secondary = null, subs = null;
-    let voicing = null, plr = null, upper = null;
+    let voicing = null, plr = null, upper = null, slash = null;
     let voices2 = null, rules = null;
     let extra = "";
     if (detection?.kind === "note") {
@@ -3566,9 +3601,10 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       voices2 = analysis.voiceLeading;
       if (analysis.voiceRules) rules = analysis.voiceRules.length ? analysis.voiceRules.join("\n") : t("vl.none");
       if (analysis.upperStructures.length) upper = analysis.upperStructures.join(", ");
+      if (analysis.slash) slash = slashText(analysis.slash);
     }
     const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.map(noteLabel).join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
-    el2.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("voices", voices2) + fieldRow("rules", rules) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
+    el2.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("voices", voices2) + fieldRow("rules", rules) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("slash", slash) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
   }
 
   // src/ui/fit.ts
@@ -4290,6 +4326,11 @@ ${bar(prev && lower(prev), lower(notes), empty)}`;
       if (SUBSTITUTION_TYPES.includes(type)) out.push({ term: substitutionTypeLabel(type), text: t(`ex.sub.${type}`) });
     }
     if (a.upperStructures.length) out.push({ term: a.upperStructures.join(", "), text: t("ex.upper") });
+    if (a.slash) {
+      const s = a.slash;
+      const vars = { upper: s.upper ? chordLabel(s.upper) : "", bass: noteLabel(s.bass), tensions: s.tensions.join(" ") };
+      out.push({ term: t(`slash.type.${s.type}`), text: t(`ex.slash.${s.type}`, vars) });
+    }
     for (const k of a.voiceRuleKeys) out.push({ term: t(`vl.issue.${k}`, { voices: "" }).replace(/\s*\(\)$/, ""), text: t(`ex.vl.${k}`) });
     return out;
   }

@@ -139,6 +139,11 @@ export function explainDetection(detection: DetectionResult, a: HarmonicAnalysis
     if (SUBSTITUTION_TYPES.includes(type)) out.push({ term: substitutionTypeLabel(type), text: t(`ex.sub.${type}` as StringKey) })
   }
   if (a.upperStructures.length) out.push({ term: a.upperStructures.join(', '), text: t('ex.upper') })
+  if (a.slash) {
+    const s = a.slash
+    const vars = { upper: s.upper ? chordLabel(s.upper) : '', bass: noteLabel(s.bass), tensions: s.tensions.join(' ') }
+    out.push({ term: t(`slash.type.${s.type}`), text: t(`ex.slash.${s.type}`, vars) })
+  }
   // The rule's name, without the voices it names in the Rules row
   for (const k of a.voiceRuleKeys) out.push({ term: t(`vl.issue.${k}` as StringKey, { voices: '' }).replace(/\s*\(\)$/, ''), text: t(`ex.vl.${k}` as StringKey) })
   return out
