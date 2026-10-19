@@ -239,13 +239,17 @@ export function keyUp(note: number, source: NoteSource = 'virtual') {
   handleNoteOff(note)
 }
 
-// The microphone's notes are held like keys and let go when it stops hearing them; they
-// never sound, or the microphone would hear them again.
+// Notes heard in audio (the microphone, the Player's playhead) are held like keys and let go
+// when they stop; they never sound, or the microphone would hear them again. Each source
+// keeps its own: one stopping does not let go of the other's.
+export type HeardSource = 'mic' | 'player'
+const heardBySource = new Map<HeardSource, Set<number>>()
 let heardNotes = new Set<number>()
 
-/** The notes the microphone hears now. */
-export function setHeardNotes(notes: number[], velocity: number) {
-  const next = new Set(notes)
+/** The notes a source hears now. */
+export function setHeardNotes(notes: number[], velocity: number, source: HeardSource = 'mic') {
+  heardBySource.set(source, new Set(notes))
+  const next = new Set([...heardBySource.values()].flatMap(s => [...s]))
   for (const n of heardNotes) if (!next.has(n)) handleNoteOff(n)
   for (const n of next) if (!heardNotes.has(n)) { velocities.set(n, velocity); handleNoteOn(n) }
   heardNotes = next

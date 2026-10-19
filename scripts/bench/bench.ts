@@ -130,6 +130,15 @@ async function run(): Promise<{ rows: Row[] }> {
         for (const at of AT_S) {
           score('basic-pitch', at, events.filter(e => e.start <= at && e.end >= at).map(e => e.midi).sort((a, b) => a - b), ms)
           score('basic-pitch strum', at, strumNotes(events, at), ms)
+          // As the microphone reads it: the last 32768 samples at 44.1 kHz (0.74 s) up to `at`,
+          // the notes sounding 0.1 s before the window's end
+          const win = Math.min(at, 32768 / RATE)
+          const slice = audio22.slice(Math.round((at - win) * 22050), Math.round(at * 22050))
+          const w0 = performance.now()
+          const winEvents = await basicPitchNotes(bp, slice)
+          const wms = performance.now() - w0
+          const t = win - 0.1
+          score('basic-pitch 0.74 s', at, [...new Set(winEvents.filter(e => e.start <= t && e.end >= t - 0.05).map(e => e.midi))].sort((a, b) => a - b), wms)
         }
       }
     }

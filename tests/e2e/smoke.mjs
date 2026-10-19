@@ -341,6 +341,43 @@ await check('player: a recording opens with its length and waveform; speed, A–
   await setSpeed(100)
 })
 
+// A chord as a string instrument sounds: each note with harmonics that fade, struck together
+function chordWav(midis, seconds) {
+  const rate = 22050, n = rate * seconds, buf = Buffer.alloc(44 + n * 2)
+  buf.write('RIFF', 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write('WAVEfmt ', 8)
+  buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22)
+  buf.writeUInt32LE(rate, 24); buf.writeUInt32LE(rate * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34)
+  buf.write('data', 36); buf.writeUInt32LE(n * 2, 40)
+  for (let i = 0; i < n; i++) {
+    const t = i / rate
+    let v = 0
+    for (const m of midis) {
+      const f = 440 * 2 ** ((m - 69) / 12)
+      for (let h = 1; h <= 6; h++) v += Math.sin(2 * Math.PI * f * h * t) * Math.exp(-t * (0.8 + h * 0.4)) / h
+    }
+    buf.writeInt16LE(Math.max(-32767, Math.min(32767, Math.round(v * 2500))), 44 + i * 2)
+  }
+  return buf
+}
+
+await check('player chords: a recorded C chord is read, and the playhead shows it in the detector; off lets it go', async () => {
+  await page.setInputFiles('#player-container input[type=file]', { name: 'chord.wav', mimeType: 'audio/wav', buffer: chordWav([48, 52, 55, 60, 64], 3) })
+  // The model loads and reads the 3 s in the worker
+  await page.waitForFunction(() => document.querySelector('.player-name')?.textContent === 'chord.wav')
+  await page.waitForFunction(() => document.querySelector('.player-reading')?.textContent === '', null, { timeout: 30000 })
+    .catch(async () => { throw new Error(`reading: "${await text('.player-reading')}" errors: ${page.errors.join(' | ')}`) })
+  // On the waveform itself (scrolled into view), a third of the way: 1 s into the chord
+  const wave = page.locator('.player-wave')
+  const size = await wave.evaluate(c => ({ w: c.clientWidth, h: c.clientHeight }))
+  await wave.click({ position: { x: size.w / 3, y: size.h / 2 } })
+  await page.waitForFunction(() => document.querySelector('.chord-name-badge')?.textContent === 'C', null, { timeout: 3000 })
+    .catch(async () => { throw new Error(`chord: ${await text('#chord-summary')}`) })
+  await page.click('#player-container [data-act="chords"]')
+  assert(await page.getAttribute('#player-container [data-act="chords"]', 'aria-pressed') === 'false', 'chords still on')
+  await page.waitForFunction(() => document.querySelector('.chord-name-badge')?.textContent !== 'C', null, { timeout: 3000 })
+    .catch(async () => { throw new Error(`still held: ${await text('#chord-summary')}`) })
+})
+
 await check('microphone: a sung A3 shows on the tuner and in the detector as a note; off lets it go', async () => {
   await page.click('#btn-mic')
   await page.waitForFunction(() => document.querySelector('.tuner-note')?.textContent === 'A3', null, { timeout: 5000 })

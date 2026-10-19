@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
 import { midiToNoteName } from '../src/theory/notes'
-import { isNoteOff, isSustain, setMode, setNoteChangeCallback, setSoundCallbacks, handleMidiMessage, setInputChannel, getVelocity } from '../src/input/midi'
+import { isNoteOff, isSustain, setMode, setNoteChangeCallback, setSoundCallbacks, handleMidiMessage, setInputChannel, getVelocity, setHeardNotes } from '../src/input/midi'
 
 describe('midiToNoteName', () => {
   it('converts middle C (MIDI 60) to C4', () => {
@@ -96,5 +96,20 @@ describe('input channel filter', () => {
     msg(0x90, 70, 37); msg(0x80, 70, 0)
     expect(getVelocity(70)).toBe(37)
     expect(getVelocity(71)).toBeNull()
+  })
+})
+
+describe('heard notes', () => {
+  it('each source keeps its own: the microphone stopping does not let go of the Player\'s chord', () => {
+    const cb = vi.fn()
+    setNoteChangeCallback(cb)
+    setMode('normal')
+    setHeardNotes([48, 52, 55], 80, 'player')
+    setHeardNotes([57], 80, 'mic')
+    expect(cb.mock.calls.at(-1)?.[0]).toEqual([48, 52, 55, 57])
+    setHeardNotes([], 0, 'mic')
+    expect(cb.mock.calls.at(-1)?.[0]).toEqual([48, 52, 55])
+    setHeardNotes([], 0, 'player')
+    expect(cb.mock.calls.at(-1)?.[0]).toEqual([])
   })
 })

@@ -32,7 +32,7 @@ import { suggestNext, renderNext } from './detector/next'
 import { renderProgressions } from './ui/progressions'
 import { renderEar, resetEarScore, type EarQuestion } from './ui/ear'
 import { wireSettings, openSettings, closeSettings, offerSettingsUndo, settingsCommands } from './ui/settings'
-import { renderPlayer } from './ui/player'
+import { renderPlayer, setPlayerNotesCallback } from './ui/player'
 import { getPref, onPrefChange, type PrefName } from './settings/prefs'
 import { renderTuner, updateTuner } from './ui/tuner'
 import { maybeStartTour, startTour } from './ui/tour'
@@ -145,6 +145,8 @@ function init() {
   offerSettingsUndo()
   const player = document.getElementById('player-container')
   if (player) renderPlayer(player)
+  // The chord at the Player's playhead reaches the detector as heard notes, as the microphone's do
+  setPlayerNotesCallback(midis => setHeardNotes(midis, 80, 'player'))
   drawTuner()
   maybeStartTour()
 
