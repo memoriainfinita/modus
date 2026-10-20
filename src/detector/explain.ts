@@ -9,6 +9,7 @@ import { t, chordLabel, keyLabel, noteLabel, scaleLabel, cadenceLabel, substitut
 import { chordNoteNames, tryParseChord, tryUMT } from '../theory/chord'
 import { pitchClassOf } from '../theory/notes'
 import { buildKeyMap } from '../theory/key-map'
+import { movableSyllable } from '../theory/solfege'
 import { escapeHtml } from '../ui/html'
 import { getPref } from '../settings/prefs'
 
@@ -31,24 +32,25 @@ function romanEntry(symbol: string, key: string, a: HarmonicAnalysis): Explanati
   const n = a.degreeNumber
   if (!roman || roman === '?' || !n || n < 1 || n > 7) return null
   const vars = { chord: chordLabel(symbol), roman, key: keyLabel(key), nth: nth(n) }
+  // The root in movable do, when asked for: a chromatic root has its own syllable too (♭VII is te)
+  const withDo = (text: string) => ({ term: roman, text: getPref('movable-do') ? `${text} ${movableDo(symbol, key)}` : text })
   const acc = roman.match(/^([b#♭♯])/)?.[1]
   if (acc) {
     const flat = acc === 'b' || acc === '♭'
-    return { term: roman, text: t('ex.romanAltered', { ...vars, dir: t(flat ? 'ex.lowered' : 'ex.raised'), acc: flat ? '♭' : '♯', n }) }
+    return withDo(t('ex.romanAltered', { ...vars, dir: t(flat ? 'ex.lowered' : 'ex.raised'), acc: flat ? '♭' : '♯', n }))
   }
   // The 7th degree of a minor key is the subtonic, a whole step below; raised, the leading tone
   const minor = /minor$/i.test(key)
   const subtonic = n === 7 && minor && /^VII/.test(roman)
   const name = subtonic ? t('ex.deg.subtonic') : t(`ex.deg.${n as Degree}`)
-  const text = t('ex.roman', { ...vars, name })
-  return { term: roman, text: getPref('movable-do') ? `${text} ${movableDo(symbol, key)}` : text }
+  return withDo(t('ex.roman', { ...vars, name }))
 }
 
-/** The root in movable do (the tonic is do; minor is la-based), as UMT names it. */
+/** The root in movable do (the tonic is do; minor is la-based; a chromatic root has its own syllable). */
 function movableDo(symbol: string, key: string): string {
   const root = symbol.match(/^[A-G][#b]*/)?.[0]
-  const syllable = root ? tryUMT('solfege', () => UMT.Solfege.movableDo(UMT.parseNote(root + '4'), key), '?') : '?'
-  return syllable && syllable !== '?' ? t('ex.movableDo', { syllable }) : ''
+  const syllable = root ? movableSyllable(root, key) : null
+  return syllable ? t('ex.movableDo', { syllable }) : ''
 }
 
 /** The tonicized chord of a secondary reading: "V7/V" in C → G. */

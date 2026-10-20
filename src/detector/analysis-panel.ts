@@ -4,7 +4,7 @@ import { t, noteLabel, chordLabel, cadenceLabel } from '../i18n/i18n'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 
-export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','voicing','diatonic','scales','fits','cadence','plr','voices','rules','secondary','subs','upper','slash','forte'] as const
+export const ANALYSIS_FIELD_KEYS = ['roman','function','figbass','voicing','diatonic','scales','fits','cadence','plr','voices','rules','secondary','subs','upper','slash','movable','forte'] as const
 export type AnalysisFieldKey = (typeof ANALYSIS_FIELD_KEYS)[number]
 
 /** The field's toggle button, its tooltip and its row label in the panel. */
@@ -169,6 +169,7 @@ export function renderZone1Analysis(
     fieldRow('subs', subs) +
     fieldRow('upper', upper) +
     fieldRow('slash', slash) +
+    fieldRow('movable', noteSet?.syllables?.length ? noteSet.syllables.join(' ') : null) +
     fieldRow('forte', noteSet?.forte ?? null) +
     extra
 }

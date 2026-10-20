@@ -903,6 +903,9 @@
     "field.slash": "Slash",
     "field.slash.title": "A chord over a bass foreign to it: upper structure, polychord or hybrid",
     "field.slash.row": "Slash",
+    "field.movable": "Mov. do",
+    "field.movable.title": "The notes in movable do in the key: do is the tonic, ti the seventh, the notes outside the scale with their own syllables (fi, te\u2026)",
+    "field.movable.row": "Mov. do",
     "slash.over": "{upper} over {bass}",
     "slash.overBass": "over {bass}",
     "slash.type.upper-structure": "upper structure",
@@ -1071,6 +1074,7 @@
     "ear.mode.interval": "Intervals",
     "ear.mode.chord": "Chords",
     "ear.mode.cadence": "Cadences",
+    "ear.mode.degree": "Degrees",
     "ear.new": "New question",
     "ear.new.title": "Play a new question",
     "ear.again.title": "Play it again",
@@ -1081,6 +1085,7 @@
     "ear.ask.interval": "Which interval? Two notes one after the other, then together.",
     "ear.ask.chord": "Which kind of chord?",
     "ear.ask.cadence": "Which cadence? The tonic, then the two chords that close the phrase.",
+    "ear.ask.degree": "Which degree is the last note? The cadence sets the key; answer in movable do.",
     "ear.right": "Right: {answer}",
     "ear.wrong": "It was {answer}",
     "ear.chord.maj": "major",
@@ -1808,6 +1813,9 @@
     "field.slash": "Barra",
     "field.slash.title": "Un acorde sobre un bajo ajeno a \xE9l: estructura superior, policordio o h\xEDbrido",
     "field.slash.row": "Barra",
+    "field.movable": "Do m\xF3vil",
+    "field.movable.title": "Las notas en do m\xF3vil en la tonalidad: do es la t\xF3nica, ti la s\xE9ptima, las notas fuera de la escala con su propia s\xEDlaba (fi, te\u2026)",
+    "field.movable.row": "Do m\xF3vil",
     "slash.over": "{upper} sobre {bass}",
     "slash.overBass": "sobre {bass}",
     "slash.type.upper-structure": "estructura superior",
@@ -1973,6 +1981,7 @@
     "ear.mode.interval": "Intervalos",
     "ear.mode.chord": "Acordes",
     "ear.mode.cadence": "Cadencias",
+    "ear.mode.degree": "Grados",
     "ear.new": "Pregunta nueva",
     "ear.new.title": "Tocar una pregunta nueva",
     "ear.again.title": "Tocarla otra vez",
@@ -1983,6 +1992,7 @@
     "ear.ask.interval": "\xBFQu\xE9 intervalo? Dos notas una tras otra y luego juntas.",
     "ear.ask.chord": "\xBFQu\xE9 tipo de acorde?",
     "ear.ask.cadence": "\xBFQu\xE9 cadencia? La t\xF3nica y despu\xE9s los dos acordes que cierran la frase.",
+    "ear.ask.degree": "\xBFQu\xE9 grado es la \xFAltima nota? La cadencia fija la tonalidad; contesta en do m\xF3vil.",
     "ear.right": "Correcto: {answer}",
     "ear.wrong": "Era {answer}",
     "ear.chord.maj": "mayor",
@@ -2649,6 +2659,14 @@
     return `${vl.moves.map(moveText).join("  ")} \u2014 ${summary}`;
   }
 
+  // src/theory/solfege.ts
+  var SYLLABLES = { syllables: "ti" };
+  function movableSyllable(note, key) {
+    const name = /\d$/.test(note) ? note : note + "4";
+    const s = tryUMT("solfege", () => UMT.Solfege.movableDo(UMT.parseNote(name), key, SYLLABLES), "?");
+    return s && s !== "?" ? s : null;
+  }
+
   // src/detector/analyzer.ts
   var intervalName = (n) => t(`interval.${n}`);
   function semitonesToInterval(semitones) {
@@ -2807,7 +2825,8 @@
     }
     const tonic = key?.split(" ")[0];
     const fits = tryUMT("scales", () => UMT.findScalesForNotes(notes2, { tonic, limit: 7 }).filter((s) => s.notes.length < 12).slice(0, 6).map((s) => scaleLabel(s.name)), []);
-    return { notes: names, fromMelody, forte, fits };
+    const syllables = key ? names.map((n) => movableSyllable(n, key) ?? "?") : null;
+    return { notes: names, fromMelody, forte, fits, syllables };
   }
   function buildHarmonicAnalysis(chordSymbol, activeKey, prevChordSymbol, noteNames = [], prevNotes = null) {
     const chord = tryParseChord(chordSymbol);
@@ -3618,7 +3637,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   }
 
   // src/detector/analysis-panel.ts
-  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "voices", "rules", "secondary", "subs", "upper", "slash", "forte"];
+  var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "voices", "rules", "secondary", "subs", "upper", "slash", "movable", "forte"];
   var fieldLabel = (f) => t(`field.${f}`);
   var fieldTooltip = (f) => t(`field.${f}.title`);
   var rowLabel = (f) => t(`field.${f}.row`);
@@ -3723,7 +3742,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       if (analysis.slash) slash = slashText(analysis.slash);
     }
     const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.map(noteLabel).join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
-    el2.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("voices", voices2) + fieldRow("rules", rules) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("slash", slash) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
+    el2.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("voices", voices2) + fieldRow("rules", rules) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("slash", slash) + fieldRow("movable", noteSet2?.syllables?.length ? noteSet2.syllables.join(" ") : null) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
   }
 
   // src/ui/fit.ts
@@ -4605,21 +4624,21 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     const n = a.degreeNumber;
     if (!roman || roman === "?" || !n || n < 1 || n > 7) return null;
     const vars = { chord: chordLabel(symbol), roman, key: keyLabel(key), nth: nth(n) };
+    const withDo = (text) => ({ term: roman, text: getPref("movable-do") ? `${text} ${movableDo(symbol, key)}` : text });
     const acc = roman.match(/^([b#♭♯])/)?.[1];
     if (acc) {
       const flat = acc === "b" || acc === "\u266D";
-      return { term: roman, text: t("ex.romanAltered", { ...vars, dir: t(flat ? "ex.lowered" : "ex.raised"), acc: flat ? "\u266D" : "\u266F", n }) };
+      return withDo(t("ex.romanAltered", { ...vars, dir: t(flat ? "ex.lowered" : "ex.raised"), acc: flat ? "\u266D" : "\u266F", n }));
     }
     const minor = /minor$/i.test(key);
     const subtonic = n === 7 && minor && /^VII/.test(roman);
     const name = subtonic ? t("ex.deg.subtonic") : t(`ex.deg.${n}`);
-    const text = t("ex.roman", { ...vars, name });
-    return { term: roman, text: getPref("movable-do") ? `${text} ${movableDo(symbol, key)}` : text };
+    return withDo(t("ex.roman", { ...vars, name }));
   }
   function movableDo(symbol, key) {
     const root2 = symbol.match(/^[A-G][#b]*/)?.[0];
-    const syllable = root2 ? tryUMT("solfege", () => UMT.Solfege.movableDo(UMT.parseNote(root2 + "4"), key), "?") : "?";
-    return syllable && syllable !== "?" ? t("ex.movableDo", { syllable }) : "";
+    const syllable = root2 ? movableSyllable(root2, key) : null;
+    return syllable ? t("ex.movableDo", { syllable }) : "";
   }
   function secondaryTarget(target, key) {
     const map = buildKeyMap(key, false);
@@ -8754,7 +8773,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
 
   // src/ui/ear.ts
-  var EAR_MODES = ["interval", "chord", "cadence"];
+  var EAR_MODES = ["interval", "chord", "cadence", "degree"];
   var INTERVALS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
   var CHORDS = ["", "m", "dim", "aug", "sus4", "7", "maj7", "m7", "m7b5", "dim7"];
   var CADENCES2 = {
@@ -8763,10 +8782,12 @@ ${explainCadence(c.cadence)}` : ""}`;
     deceptive: { numerals: "V7 vi", umt: "Deceptive Cadence (V -> vi)" },
     half: { numerals: "IV V", umt: "Half Cadence (-> V)" }
   };
+  var DEGREES = ["1", "2", "3", "4", "5", "6", "7"];
   var EAR_ANSWERS = {
     interval: INTERVALS,
     chord: CHORDS,
-    cadence: Object.keys(CADENCES2)
+    cadence: Object.keys(CADENCES2),
+    degree: DEGREES
   };
   function earAnswers(mode4) {
     const chosen = mode4 === "chord" ? getPref("ear-chords") : mode4 === "cadence" ? getPref("ear-cadences") : null;
@@ -8798,6 +8819,19 @@ ${explainCadence(c.cadence)}` : ""}`;
       const symbol = root2 + suffix;
       return { mode: mode4, answer: suffix, steps: [chordNoteNames(symbol)], symbol, prev: null, key: null };
     }
+    if (mode4 === "degree") {
+      const answer2 = pick(DEGREES, rng);
+      const key2 = pick(ALL_KEYS.filter((k) => k.endsWith("Major")), rng);
+      const chords2 = tryUMT("roman numerals", () => UMT.parseRomanProgression("I IV V7 I", key2), []);
+      const scale = tryUMT("scale", () => UMT.parseScaleSymbol(key2).getNotes().map((n) => n.name.replace(/-?\d+$/, "")), []);
+      const name = scale[Number(answer2) - 1];
+      let midi = noteNameToMidi(name + "4") ?? 60;
+      while (midi < 60) midi += 12;
+      while (midi >= 72) midi -= 12;
+      const note = name + (Math.floor(midi / 12) - 1);
+      const steps3 = [...chords2.map((c) => voiceNear(chordNoteNames(c.name), c.rootStep + 9)), [note]];
+      return { mode: mode4, answer: answer2, steps: steps3, symbol: null, prev: null, key: key2 };
+    }
     const answer = pick(earAnswers("cadence"), rng);
     const key = pick(ALL_KEYS.filter((k) => k.endsWith("Major")), rng);
     const chords = tryUMT("roman numerals", () => UMT.parseRomanProgression(`I ${CADENCES2[answer].numerals}`, key), []);
@@ -8808,15 +8842,16 @@ ${explainCadence(c.cadence)}` : ""}`;
   function answerLabel(mode4, answer) {
     if (mode4 === "interval") return answer === "12" ? t("interval.octave") : t(`interval.${answer}`);
     if (mode4 === "chord") return t(`ear.chord.${answer || "maj"}`);
+    if (mode4 === "degree") return movableSyllable(["C", "D", "E", "F", "G", "A", "B"][Number(answer) - 1], "C Major") ?? answer;
     return cadenceLabel(CADENCES2[answer].umt, true);
   }
-  var STEP_MS = { interval: 700, chord: 0, cadence: 1100 };
+  var STEP_MS = { interval: 700, chord: 0, cadence: 1100, degree: 900 };
   var timers = [];
   function playQuestion(q) {
     timers.forEach(clearTimeout);
     timers = q.steps.map((notes2, i) => setTimeout(() => playNoteNames(notes2, q.mode === "interval" && q.steps.length > 1 && i < 2 ? 0.8 : 1.6), i * STEP_MS[q.mode]));
   }
-  var emptyScore = () => ({ interval: { right: 0, total: 0 }, chord: { right: 0, total: 0 }, cadence: { right: 0, total: 0 } });
+  var emptyScore = () => ({ interval: { right: 0, total: 0 }, chord: { right: 0, total: 0 }, cadence: { right: 0, total: 0 }, degree: { right: 0, total: 0 } });
   var mode3 = loadChoice("ear-mode", EAR_MODES, "chord");
   var score = { ...emptyScore(), ...loadJSON("ear-score", {}) };
   var question = null;
@@ -9280,7 +9315,8 @@ ${explainCadence(c.cadence)}` : ""}`;
   var cofShow7ths = loadBool("cof-show-7ths", false);
   var showPrevChord = loadBool("show-prev-chord", false);
   var analysisFieldsVisible = Object.fromEntries(
-    ANALYSIS_FIELD_KEYS.map((f) => [f, loadBool(`analysis-field-${f}`, true)])
+    // Every field shown at first but Movable do, for who sings: from the panel's menu
+    ANALYSIS_FIELD_KEYS.map((f) => [f, loadBool(`analysis-field-${f}`, f !== "movable")])
   );
   var analysisScale = loadNumber("analysis-scale", 13, 10, 24);
   var keyScale = loadNumber("key-scale", 12, 10, 24);
@@ -10115,6 +10151,10 @@ ${explainCadence(c.cadence)}` : ""}`;
     renderZone3();
   }
   function showEarAnswer(q) {
+    if (!q.symbol && q.key && analysisKey() !== q.key) {
+      progressionsKey = q.key;
+      applyKey(q.key);
+    }
     if (!q.symbol) {
       detectionFromMidi = false;
       const notes2 = q.steps[q.steps.length - 1];

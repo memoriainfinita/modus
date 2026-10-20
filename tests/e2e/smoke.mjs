@@ -299,6 +299,14 @@ await check('ear training: a chord plays unseen; once named, the score counts an
   await page.click('#ear-new')
   await page.locator('.ear-answer').first().click()
   assert((await text('.ear-feedback')).includes('Major'), `cadence feedback: ${await text('.ear-feedback')}`)
+  // Degrees: answered in movable do; the note shown in the key its cadence set, read as a degree
+  await page.click('.ear-mode[data-mode="degree"]')
+  const syllables = await page.locator('.ear-answer').allInnerTexts()
+  assert(syllables.join(' ') === 'do re mi fa sol la ti', `degree answers: ${syllables.join(' ')}`)
+  await page.click('#ear-new')
+  await page.locator('.ear-answer').first().click()
+  assert((await text('.ear-feedback')).includes('Major'), `degree feedback: ${await text('.ear-feedback')}`)
+  assert(/Major/.test(await page.locator('#btn-key').innerText()), 'the key of the cadence not set')
   await setKey('')
 })
 

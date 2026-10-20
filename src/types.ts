@@ -70,6 +70,7 @@ export interface NoteSetAnalysis {
   fromMelody: boolean
   forte: string | null      // "3-11 · [037] · <001110>"
   fits: string[]            // scales containing every note, e.g. "C major"
+  syllables: string[] | null  // the notes in movable do in the key, in the same order; null without a key
 }
 
 // ─── History ─────────────────────────────────────────────────────────────────
