@@ -47,7 +47,7 @@ function romanEntry(symbol: string, key: string, a: HarmonicAnalysis): Explanati
 /** The root in movable do (the tonic is do; minor is la-based), as UMT names it. */
 function movableDo(symbol: string, key: string): string {
   const root = symbol.match(/^[A-G][#b]*/)?.[0]
-  const syllable = root ? tryUMT('solfege', () => UMT.Solfege.movableDo(UMT.parseNote(root + '4'), key.toLowerCase()), '?') : '?'
+  const syllable = root ? tryUMT('solfege', () => UMT.Solfege.movableDo(UMT.parseNote(root + '4'), key), '?') : '?'
   return syllable && syllable !== '?' ? t('ex.movableDo', { syllable }) : ''
 }
 

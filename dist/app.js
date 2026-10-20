@@ -4618,7 +4618,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   }
   function movableDo(symbol, key) {
     const root2 = symbol.match(/^[A-G][#b]*/)?.[0];
-    const syllable = root2 ? tryUMT("solfege", () => UMT.Solfege.movableDo(UMT.parseNote(root2 + "4"), key.toLowerCase()), "?") : "?";
+    const syllable = root2 ? tryUMT("solfege", () => UMT.Solfege.movableDo(UMT.parseNote(root2 + "4"), key), "?") : "?";
     return syllable && syllable !== "?" ? t("ex.movableDo", { syllable }) : "";
   }
   function secondaryTarget(target, key) {

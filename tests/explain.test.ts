@@ -3,6 +3,7 @@ import { explainDetection, explainCadence } from '../src/detector/explain'
 import { buildHarmonicAnalysis } from '../src/detector/analyzer'
 import { useLang } from '../src/i18n/i18n'
 import type { ChordResult } from '../src/types'
+import { setPref } from '../src/settings/prefs'
 
 // Runs against the real UMT bundle (tests/setup-umt.ts).
 
@@ -19,6 +20,14 @@ describe('explainDetection', () => {
     expect(out).toContain('G7 is V7 in C Major: the chord on the 5th degree, the dominant.')
     expect(out).toContain('Dominant function')
     expect(out).toContain('Diatonic: every note of G7 is in the scale of C Major.')
+  })
+
+  it('movable do, when asked for: the root\'s syllable in the key (G in G major is do; E in A minor, la-based, is mi)', () => {
+    setPref('movable-do', true)
+    try {
+      expect(text(explain('G', 'G Major', ['G3', 'B3', 'D4']))).toContain('In movable do: do.')
+      expect(text(explain('E7', 'A Minor', ['E3', 'G#3', 'B3', 'D4']))).toContain('In movable do: mi.')
+    } finally { setPref('movable-do', false) }
   })
 
   it('a secondary dominant names the chord it tonicizes', () => {
