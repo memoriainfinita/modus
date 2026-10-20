@@ -27,6 +27,7 @@ describe('explainDetection', () => {
     try {
       expect(text(explain('G', 'G Major', ['G3', 'B3', 'D4']))).toContain('In movable do: do.')
       expect(text(explain('E7', 'A Minor', ['E3', 'G#3', 'B3', 'D4']))).toContain('In movable do: mi.')
+      expect(text(explain('Bb', 'C Major', ['Bb3', 'D4', 'F4']))).toContain('In movable do: te.')
     } finally { setPref('movable-do', false) }
   })
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { analyzeNotes, getAutoKey, buildHarmonicAnalysis, romanInKey } from '../src/detector/analyzer'
+import { analyzeNotes, getAutoKey, buildHarmonicAnalysis, romanInKey, analyzeNoteSet } from '../src/detector/analyzer'
 import type { DetectionResult, ChordResult, IntervalResult, SingleNoteResult } from '../src/types'
 import { slashText } from '../src/detector/analysis-panel'
 
@@ -205,5 +205,13 @@ describe('slash chords (UMT analyzeSlash)', () => {
 describe('slashText', () => {
   it('says the reading in one line', () => {
     expect(slashText({ type: 'upper-structure', upper: 'D', bass: 'C', tensions: ['9', '#11', '13'] })).toBe('D over C · upper structure · 9 #11 13')
+  })
+})
+
+describe('movable do in the note set', () => {
+  it('the notes in the key, ti on the seventh, a chromatic note with its own syllable', () => {
+    expect(analyzeNoteSet(['G3', 'B3', 'D4', 'F4'], 'C Major')?.syllables).toEqual(['sol', 'ti', 're', 'fa'])
+    expect(analyzeNoteSet(['D3', 'F#3', 'A3'], 'C Major')?.syllables).toEqual(['re', 'fi', 'la'])
+    expect(analyzeNoteSet(['C4', 'E4'], null)?.syllables).toBeNull()
   })
 })

@@ -185,10 +185,11 @@ A subdivision of 1–6 clicks a pulse (meters, cycles, Euclidean), softer. The n
 
 ### Ear training
 
-The app plays without showing and the user names what was heard (`ui/ear.ts`). Three kinds of question, each with its own score (right / asked, kept in `ear-score`; the kind in `ear-mode`):
+The app plays without showing and the user names what was heard (`ui/ear.ts`). Four kinds of question, each with its own score (right / asked, kept in `ear-score`; the kind in `ear-mode`):
 - **Intervals:** minor 2nd to octave, from a random note G3–F#4: the two notes one after the other, then together
 - **Chords:** major, minor, diminished, augmented, sus4, dominant 7th, major 7th, minor 7th, half-diminished, diminished 7th, on a random root, as UMT spells it
 - **Cadences:** authentic (V7 I), plagal (IV I), deceptive (V7 vi), half (IV V) in a random major key: the tonic first so the key is heard, then the two chords. Each chord is kept between G3 and F#4 with its root doubled in the bass, read from UMT's `parseRomanProgression`
+- **Degrees:** I IV V7 I in a random major key, then one note of its scale between C4 and B4; answered in movable do (do re mi fa sol la ti, as UMT names the degrees); the note goes to the detector in that key, so the analysis reads it as a degree
 
 New question plays one, ↺ plays it again; answers open only while a question waits. Once answered the panel says right or what it was (and the key, for a cadence), marks the right button and the one picked, and the answer goes to the detector as any chord does: the notes for an interval, the chord for a chord, the last chord compared with the one before it in its key for a cadence (the analysis key is set to it, without storing it in the song).
 

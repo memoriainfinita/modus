@@ -5,6 +5,7 @@ import { normalizeKey } from '../theory/keys'
 import { t, chordLabel, scaleLabel, substitutionTypeLabel } from '../i18n/i18n'
 import { analyzeVoiceLeading, describeVoiceLeading } from './voice-leading'
 import { getPref } from '../settings/prefs'
+import { movableSyllable } from '../theory/solfege'
 
 const intervalName = (n: number) => t(`interval.${n}` as `interval.${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}`)
 
@@ -234,7 +235,9 @@ export function analyzeNoteSet(noteNames: string[], key: string | null, fromMelo
   // The chromatic scale holds every set: it says nothing, so it is left out
   const fits = tryUMT('scales', () => UMT.findScalesForNotes(notes, { tonic, limit: 7 })
     .filter(s => s.notes.length < 12).slice(0, 6).map(s => scaleLabel(s.name)), [] as string[])
-  return { notes: names, fromMelody, forte, fits }
+  // Movable do in the key, each note once, in the order heard; '?' where it has no syllable
+  const syllables = key ? names.map(n => movableSyllable(n, key) ?? '?') : null
+  return { notes: names, fromMelody, forte, fits, syllables }
 }
 
 export function buildHarmonicAnalysis(

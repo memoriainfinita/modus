@@ -60,3 +60,17 @@ describe('answers', () => {
     expect(answerLabel('cadence', 'deceptive')).toBe('Deceptive')
   })
 })
+
+describe('degrees', () => {
+  it('I IV V7 I sets the key, then one note of its scale near middle C; answered in movable do', () => {
+    const q = makeQuestion('degree', seq(4 / 7, 7 / 12))   // the 5th degree, G major
+    expect(q.answer).toBe('5')
+    expect(q.key).toBe('G Major')
+    expect(q.steps).toHaveLength(5)
+    const [note] = midis(q.steps[4])
+    expect(note % 12).toBe(2)   // D, sol in G
+    expect(note).toBeGreaterThanOrEqual(60)
+    expect(note).toBeLessThan(72)
+    expect(EAR_ANSWERS.degree.map(a => answerLabel('degree', a))).toEqual(['do', 're', 'mi', 'fa', 'sol', 'la', 'ti'])
+  })
+})

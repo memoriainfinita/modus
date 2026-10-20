@@ -1,4 +1,4 @@
-// The Ear training panel: the app plays an interval, a chord or a cadence without showing
+// The Ear training panel: the app plays an interval, a chord, a cadence or a degree without showing
 // it, the user names it, and the answer goes to the detector to be seen. Questions are
 // drawn at random over every root; a score is kept per kind of question.
 
@@ -6,13 +6,14 @@ import { playNoteNames } from '../audio/audio'
 import { chordNoteNames, tryUMT } from '../theory/chord'
 import { noteNameToMidi, midiToNoteName } from '../theory/notes'
 import { ALL_KEYS } from '../theory/keys'
+import { movableSyllable } from '../theory/solfege'
 import { loadChoice, loadJSON, save } from './storage'
 import { escapeHtml } from './html'
 import { getPref } from '../settings/prefs'
 import { t, keyLabel, cadenceLabel } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
 
-export const EAR_MODES = ['interval', 'chord', 'cadence'] as const
+export const EAR_MODES = ['interval', 'chord', 'cadence', 'degree'] as const
 export type EarMode = typeof EAR_MODES[number]
 
 /** What each mode asks: interval semitones, chord suffixes, cadences (the numerals that end the phrase). */
@@ -25,8 +26,11 @@ const CADENCES: Record<string, { numerals: string; umt: string }> = {
   half:      { numerals: 'IV V', umt: 'Half Cadence (-> V)' },
 }
 
+// Degrees of the major scale, named in movable do once the key is set by a cadence
+const DEGREES = ['1', '2', '3', '4', '5', '6', '7']
+
 export const EAR_ANSWERS: Record<EarMode, string[]> = {
-  interval: INTERVALS, chord: CHORDS, cadence: Object.keys(CADENCES),
+  interval: INTERVALS, chord: CHORDS, cadence: Object.keys(CADENCES), degree: DEGREES,
 }
 
 /** The answers asked: the chord kinds and cadences chosen in Settings (all, if none is). */
@@ -79,6 +83,20 @@ export function makeQuestion(mode: EarMode, rng: Rng = Math.random): EarQuestion
     const symbol = root + suffix
     return { mode, answer: suffix, steps: [chordNoteNames(symbol)], symbol, prev: null, key: null }
   }
+  if (mode === 'degree') {
+    // I IV V7 I sets the key, then one note of its scale, near middle C
+    const answer = pick(DEGREES, rng)
+    const key = pick(ALL_KEYS.filter(k => k.endsWith('Major')), rng)
+    const chords = tryUMT('roman numerals', () => UMT.parseRomanProgression('I IV V7 I', key), [] as any[])
+    const scale = tryUMT('scale', () => UMT.parseScaleSymbol(key).getNotes().map(n => n.name.replace(/-?\d+$/, '')), [] as string[])
+    const name = scale[Number(answer) - 1]
+    let midi = noteNameToMidi(name + '4') ?? 60
+    while (midi < 60) midi += 12
+    while (midi >= 72) midi -= 12
+    const note = name + (Math.floor(midi / 12) - 1)
+    const steps = [...chords.map(c => voiceNear(chordNoteNames(c.name), c.rootStep + 9)), [note]]
+    return { mode, answer, steps, symbol: null, prev: null, key }
+  }
   const answer = pick(earAnswers('cadence'), rng)
   const key = pick(ALL_KEYS.filter(k => k.endsWith('Major')), rng)
   // The tonic first, so the key is heard, then the two chords of the cadence
@@ -92,10 +110,12 @@ export function makeQuestion(mode: EarMode, rng: Rng = Math.random): EarQuestion
 export function answerLabel(mode: EarMode, answer: string): string {
   if (mode === 'interval') return answer === '12' ? t('interval.octave') : t(`interval.${answer}` as StringKey)
   if (mode === 'chord') return t(`ear.chord.${answer || 'maj'}` as StringKey)
+  // The syllables as UMT names the degrees of C major: do re mi fa sol la ti
+  if (mode === 'degree') return movableSyllable(['C', 'D', 'E', 'F', 'G', 'A', 'B'][Number(answer) - 1], 'C Major') ?? answer
   return cadenceLabel(CADENCES[answer].umt, true)
 }
 
-const STEP_MS = { interval: 700, chord: 0, cadence: 1100 }
+const STEP_MS = { interval: 700, chord: 0, cadence: 1100, degree: 900 }
 
 let timers: ReturnType<typeof setTimeout>[] = []
 function playQuestion(q: EarQuestion) {
@@ -104,7 +124,7 @@ function playQuestion(q: EarQuestion) {
 }
 
 type Score = Record<EarMode, { right: number; total: number }>
-const emptyScore = (): Score => ({ interval: { right: 0, total: 0 }, chord: { right: 0, total: 0 }, cadence: { right: 0, total: 0 } })
+const emptyScore = (): Score => ({ interval: { right: 0, total: 0 }, chord: { right: 0, total: 0 }, cadence: { right: 0, total: 0 }, degree: { right: 0, total: 0 } })
 
 export interface EarHandlers {
   /** Shows the answer in the detector: notes, and the chord (with the one before it for a cadence). */

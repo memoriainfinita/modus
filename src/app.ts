@@ -68,7 +68,8 @@ let cofShow7ths    = loadBool('cof-show-7ths', false)
 let showPrevChord  = loadBool('show-prev-chord', false)
 
 const analysisFieldsVisible = Object.fromEntries(
-  ANALYSIS_FIELD_KEYS.map(f => [f, loadBool(`analysis-field-${f}`, true)])
+  // Every field shown at first but Movable do, for who sings: from the panel's menu
+  ANALYSIS_FIELD_KEYS.map(f => [f, loadBool(`analysis-field-${f}`, f !== 'movable')])
 ) as Record<AnalysisFieldKey, boolean>
 let analysisScale = loadNumber('analysis-scale', 13, 10, 24)
 
@@ -991,6 +992,8 @@ function applyPref(name: PrefName) {
 
 /** An ear-training answer, once given, in the detector: the notes, or the chord (with the one before it for a cadence, in its key). */
 function showEarAnswer(q: EarQuestion) {
+  // A degree is shown in the key its cadence set, so the analysis reads it as one
+  if (!q.symbol && q.key && analysisKey() !== q.key) { progressionsKey = q.key; applyKey(q.key) }
   if (!q.symbol) {
     detectionFromMidi = false
     const notes = q.steps[q.steps.length - 1]

@@ -54,7 +54,7 @@ declare const UMT: {
   spellChord: (chord: any, rootName?: string) => string[]
   spellChordInKey: (chord: any, key: string) => any
   localizeNoteName: (name: string, language: 'en' | 'es', long?: boolean) => string
-  Solfege: { movableDo: (note: any, key: string) => string }
+  Solfege: { movableDo: (note: any, key: string, options?: { syllables?: 'si' | 'ti' }) => string }
   formatChordSymbol: (chord: any, opts?: { style?: 'standard' | 'symbols' | 'short'; roots?: 'letters' | 'solfege' }) => string
   chordLongName: (chord: any, language?: 'en' | 'es') => string
   scaleName: (name: string, language?: 'en' | 'es', options?: { roots?: 'letters' | 'solfege' }) => string
