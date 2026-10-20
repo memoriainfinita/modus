@@ -6,6 +6,7 @@ import { showUndo } from '../ui/undo'
 import { spellChordSymbol } from '../theory/spelling'
 import { t, chordLabel, keyLabel, cadenceLabel, getLang } from '../i18n/i18n'
 import { entrySeconds, harmonicRhythm } from './rhythm'
+import { runningMeter } from '../metronome/engine'
 import { explainCadence } from '../detector/explain'
 import { makeActivatable, onLongPress } from '../ui/a11y'
 import { getPref } from '../settings/prefs'
@@ -246,7 +247,9 @@ const decimal = (n: number) => n.toLocaleString(getLang(), { maximumFractionDigi
 
 /** The history's harmonic rhythm in one line, or null with fewer than two timed chords. */
 export function rhythmText(): string | null {
-  const bpm = getPref('history-bpm'), beats = getPref('history-beats')
+  // The metronome, while it runs, says the tempo and the bar; otherwise the History's own setting
+  const running = runningMeter()
+  const bpm = running?.bpm ?? getPref('history-bpm'), beats = running?.beatsPerBar ?? getPref('history-beats')
   const r = harmonicRhythm(entries, bpm, beats)
   if (!r) return null
   return r.kind === 'per-bar'

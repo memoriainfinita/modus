@@ -152,6 +152,13 @@ export function setVolume(v: number) {
 
 export function getVolume() { return volume }
 
+/** The page's audio context and its master gain, for sounds made here (the metronome's clicks): they follow the volume. */
+export function audioOutput(): { ctx: AudioContext; out: AudioNode } {
+  ensureContext()
+  if (audioCtx!.state === 'suspended') audioCtx!.resume().catch(() => {})
+  return { ctx: audioCtx!, out: masterGain! }
+}
+
 // ─── Playback ────────────────────────────────────────────────────────────────
 
 // Notes requested before the instrument can sound are dropped, not queued (a late note

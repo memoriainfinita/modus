@@ -226,10 +226,15 @@ src/
     fretboard-style.ts    colours of the strings panel's two views
   history/
     history.ts            chord history log
+  metronome/
+    pattern.ts            what a meter, cycle, clave, Euclidean rhythm or polyrhythm plays, from UMT
+    engine.ts             clicks on the audio clock, tap tempo, the tempo trainer
+    panel.ts              the Metronome panel and its necklace
   song/
     model.ts              song structure: pure operations, transpose
     library.ts            saved songs: one localStorage key per song, index, migration
     view.ts               song structure rendering and interaction
+    playback.ts           playing the whole song: its steps in time, and the timer
   view/
     channel.ts            BroadcastChannel to the view windows, view names and backgrounds
     viewer.ts             a view window (?view=): one element filling the window

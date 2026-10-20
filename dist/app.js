@@ -25,9 +25,9 @@
       return fallback;
     }
   }
-  function loadChoice(key, choices, fallback) {
+  function loadChoice(key, choices2, fallback) {
     const v = loadString(key, fallback);
-    return choices.includes(v) ? v : fallback;
+    return choices2.includes(v) ? v : fallback;
   }
   function save(key, value) {
     try {
@@ -561,8 +561,8 @@
     cache2.clear();
   }
   var listeners2 = [];
-  function onThemeChange(onChange3) {
-    listeners2.push(onChange3);
+  function onThemeChange(onChange4) {
+    listeners2.push(onChange4);
   }
   function changed() {
     applyTheme();
@@ -794,6 +794,7 @@
     "module.guitar": "Strings",
     "module.explain": "Explanation",
     "module.next": "Next",
+    "module.metronome": "Metronome",
     "module.progressions": "Progressions",
     "module.ear": "Ear training",
     "module.player": "Player",
@@ -1319,6 +1320,38 @@
     "help.panel.analysis": "Numeral, function, figured bass, voicing, scales, cadence, voice leading\u2026",
     "help.panel.explain": "Each term of the analysis, in words",
     "help.panel.next": "Chords that usually follow, and why",
+    "help.panel.metronome": "Any meter, talas, flamenco comp\xE1s, aksak, claves, Euclidean rhythms and polyrhythms, drawn as a necklace",
+    "metro.start": "Start the metronome",
+    "metro.stop": "Stop the metronome",
+    "metro.tempo": "Tempo",
+    "metro.tap": "Tap",
+    "metro.tap.title": "Tap the beat: the tempo is the mean of the last taps",
+    "metro.kind": "What it counts",
+    "metro.tab.meter": "Meter",
+    "metro.tab.cycle": "Cycle",
+    "metro.tab.clave": "Clave",
+    "metro.tab.euclid": "Euclidean",
+    "metro.tab.poly": "Polyrhythm",
+    "metro.meter": "Meter",
+    "metro.meter.title": "A meter: 4/4, 6/8, or additive as 2+2+3/8; the first pulse of each group is accented",
+    "metro.trad.hindustani": "Hindustani",
+    "metro.trad.carnatic": "Carnatic",
+    "metro.trad.flamenco": "Flamenco",
+    "metro.trad.aksak": "Aksak",
+    "metro.euclid.k": "onsets",
+    "metro.euclid.in": "in",
+    "metro.euclid.n": "steps",
+    "metro.use": "Use",
+    "metro.sub": "Subdivision",
+    "metro.sub.title": "{n} clicks a pulse",
+    "metro.necklace": "The cycle as a necklace: a dot a pulse, the one sounding lit",
+    "metro.trainer": "Tempo trainer",
+    "metro.trainer.title": "Raises the tempo by steps while it plays, up to a limit",
+    "metro.trainer.step": "Raise by",
+    "metro.trainer.every": "Every",
+    "metro.trainer.cycles": "cycles",
+    "metro.trainer.max": "Up to",
+    "metro.trainer.on": "trainer up to {max}",
     "help.panel.cof": "A click plays a chord, two clicks set its key",
     "help.panel.guitar": "Chord shapes or the whole neck, for guitar, bass, ukulele and more",
     "help.panel.key": "The key's chords, negative harmony, parallel modes, Coltrane axis",
@@ -1669,6 +1702,7 @@
     "module.guitar": "Cuerdas",
     "module.explain": "Explicaci\xF3n",
     "module.next": "Siguiente",
+    "module.metronome": "Metr\xF3nomo",
     "module.progressions": "Progresiones",
     "module.ear": "Entrenamiento auditivo",
     "module.player": "Reproductor",
@@ -2188,6 +2222,38 @@
     "help.panel.analysis": "Grado, funci\xF3n, bajo cifrado, disposici\xF3n, escalas, cadencia, conducci\xF3n de voces\u2026",
     "help.panel.explain": "Cada t\xE9rmino del an\xE1lisis, en palabras",
     "help.panel.next": "Los acordes que suelen seguir, y por qu\xE9",
+    "help.panel.metronome": "Cualquier comp\xE1s, talas, comp\xE1s flamenco, aksak, claves, ritmos eucl\xEDdeos y polirritmos, dibujados como un collar",
+    "metro.start": "Arrancar el metr\xF3nomo",
+    "metro.stop": "Parar el metr\xF3nomo",
+    "metro.tempo": "Tempo",
+    "metro.tap": "Tap",
+    "metro.tap.title": "Marca el pulso con toques: el tempo es la media de los \xFAltimos",
+    "metro.kind": "Qu\xE9 cuenta",
+    "metro.tab.meter": "Comp\xE1s",
+    "metro.tab.cycle": "Ciclo",
+    "metro.tab.clave": "Clave",
+    "metro.tab.euclid": "Eucl\xEDdeo",
+    "metro.tab.poly": "Polirritmo",
+    "metro.meter": "Comp\xE1s",
+    "metro.meter.title": "Un comp\xE1s: 4/4, 6/8, o aditivo como 2+2+3/8; se acent\xFAa el primer pulso de cada grupo",
+    "metro.trad.hindustani": "Indost\xE1nica",
+    "metro.trad.carnatic": "Carn\xE1tica",
+    "metro.trad.flamenco": "Flamenco",
+    "metro.trad.aksak": "Aksak",
+    "metro.euclid.k": "golpes",
+    "metro.euclid.in": "en",
+    "metro.euclid.n": "pasos",
+    "metro.use": "Usar",
+    "metro.sub": "Subdivisi\xF3n",
+    "metro.sub.title": "{n} clics por pulso",
+    "metro.necklace": "El ciclo como un collar: un punto por pulso, encendido el que suena",
+    "metro.trainer": "Entrenador de tempo",
+    "metro.trainer.title": "Sube el tempo a pasos mientras suena, hasta un l\xEDmite",
+    "metro.trainer.step": "Subir",
+    "metro.trainer.every": "Cada",
+    "metro.trainer.cycles": "ciclos",
+    "metro.trainer.max": "Hasta",
+    "metro.trainer.on": "entrenador hasta {max}",
     "help.panel.cof": "Un clic toca un acorde, dos clics fijan su tonalidad",
     "help.panel.guitar": "Posiciones del acorde o el m\xE1stil entero, para guitarra, bajo, ukelele y m\xE1s",
     "help.panel.key": "Los acordes de la tonalidad, armon\xEDa negativa, modos paralelos, eje de Coltrane",
@@ -2446,9 +2512,9 @@
     if (naming === "letters" && style === "standard" || !/^[A-G]/.test(symbol)) return symbol;
     return tryUMT("chord names", () => UMT.formatChordSymbol(symbol, { style, roots: naming }), symbol);
   }
-  function localizeDrawnNoteNames(container) {
+  function localizeDrawnNoteNames(container2) {
     if (naming === "letters") return;
-    container.querySelectorAll("text").forEach((el2) => {
+    container2.querySelectorAll("text").forEach((el2) => {
       const s = el2.textContent?.trim() ?? "";
       if (NOTE_RE.test(s)) el2.textContent = noteLabel(s);
     });
@@ -2531,10 +2597,10 @@
     "Doubled Leading Tone": "doubledLeadingTone",
     "7th Unresolved": "seventh"
   };
-  function voiceName(index, count) {
-    if (index === 0) return t("vl.bass");
-    if (index === count - 1) return t("vl.top");
-    return t("vl.voice", { n: index + 1 });
+  function voiceName(index2, count) {
+    if (index2 === 0) return t("vl.bass");
+    if (index2 === count - 1) return t("vl.top");
+    return t("vl.voice", { n: index2 + 1 });
   }
   function ruleIssues(fromNames, toNames, key, fromSymbol, toSymbol) {
     const a = voices(fromNames), b = voices(toNames);
@@ -2922,6 +2988,12 @@
   function getVolume() {
     return volume;
   }
+  function audioOutput() {
+    ensureContext();
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {
+    });
+    return { ctx: audioCtx, out: masterGain };
+  }
   function playableInstrument() {
     initAudioOnGesture();
     const inst = instrument;
@@ -3160,9 +3232,9 @@ ${bar(prev && upper(prev), upper(notes2), empty)}
 V:LH clef=bass
 ${bar(prev && lower(prev), lower(notes2), empty)}`;
   }
-  function renderStaff(container, noteNames, width = 380, keyStr = null, scale = 2, clef = "treble", prevNotes = null) {
-    ABCJS.renderAbc(container, buildStaffAbc(noteNames, keyStr, clef, prevNotes), { staffwidth: width - 20, scale, add_classes: !!prevNotes?.length });
-    if (prevNotes?.length) container.querySelectorAll(".abcjs-note.abcjs-m0").forEach((el2) => el2.classList.add("staff-prev"));
+  function renderStaff(container2, noteNames, width = 380, keyStr = null, scale = 2, clef = "treble", prevNotes = null) {
+    ABCJS.renderAbc(container2, buildStaffAbc(noteNames, keyStr, clef, prevNotes), { staffwidth: width - 20, scale, add_classes: !!prevNotes?.length });
+    if (prevNotes?.length) container2.querySelectorAll(".abcjs-note.abcjs-m0").forEach((el2) => el2.classList.add("staff-prev"));
   }
 
   // src/theory/instruments.ts
@@ -3376,9 +3448,9 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     return `${t(`instrument.${instrument2}`)}, ${tuning.toLowerCase()}`;
   }
   function tabs() {
-    const tab = (v, label, tip) => `<button type="button" class="strings-tab" data-view="${v}" aria-pressed="${stringsView === v}" title="${escapeHtml(tip)}">${escapeHtml(label)}</button>`;
+    const tab2 = (v, label, tip) => `<button type="button" class="strings-tab" data-view="${v}" aria-pressed="${stringsView === v}" title="${escapeHtml(tip)}">${escapeHtml(label)}</button>`;
     return `<div class="strings-tabs guitar-chrome" role="group" aria-label="${escapeHtml(t("strings.view"))}">
-    ${tab("shapes", t("strings.view.shapes"), t("strings.view.shapes.title"))}${tab("neck", t("strings.view.neck"), t("strings.view.neck.title"))}</div>`;
+    ${tab2("shapes", t("strings.view.shapes"), t("strings.view.shapes.title"))}${tab2("neck", t("strings.view.neck"), t("strings.view.neck.title"))}</div>`;
   }
   function stage(drawing, label, total) {
     const nav = (dir, tip) => total > 1 ? `<button type="button" class="guitar-nav guitar-chrome" data-dir="${dir}" title="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">${dir < 0 ? "\u2039" : "\u203A"}</button>` : "";
@@ -3394,18 +3466,18 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   function renderMenu() {
     const menu = document.getElementById("strings-menu");
     if (!menu) return;
-    const chip = (attr, value, label, on) => `<button type="button" class="menu-chip" ${attr}="${value}" data-label="${escapeHtml(label)}" aria-pressed="${on}">${escapeHtml(label)}</button>`;
+    const chip2 = (attr, value, label, on) => `<button type="button" class="menu-chip" ${attr}="${value}" data-label="${escapeHtml(label)}" aria-pressed="${on}">${escapeHtml(label)}</button>`;
     const tunings = Object.keys(INSTRUMENT_TUNINGS[instrument2]);
     const count = guitarStringTuning.length;
     menu.innerHTML = `
     <div class="menu-heading">${t("strings.instrument")}</div>
-    <div class="menu-chips">${INSTRUMENT_IDS.map((id) => chip("data-instrument", id, t(`instrument.${id}`), id === instrument2)).join("")}</div>
+    <div class="menu-chips">${INSTRUMENT_IDS.map((id) => chip2("data-instrument", id, t(`instrument.${id}`), id === instrument2)).join("")}</div>
     <div class="menu-heading">${t("strings.tuning")}</div>
-    <div class="menu-chips">${tunings.map((k) => chip("data-tuning", k, t(`tuning.${k}`), k === guitarTuningKey)).join("")}${guitarTuningKey === "custom" ? chip("data-tuning", "custom", t("guitar.tuning.custom"), true) : ""}</div>
+    <div class="menu-chips">${tunings.map((k) => chip2("data-tuning", k, t(`tuning.${k}`), k === guitarTuningKey)).join("")}${guitarTuningKey === "custom" ? chip2("data-tuning", "custom", t("guitar.tuning.custom"), true) : ""}</div>
     <div class="menu-heading">${t("strings.strings")}</div>
     <div class="strings-inputs" style="grid-template-columns: repeat(${count}, minmax(0, 1fr))">${guitarStringTuning.map((note, i) => `<input class="guitar-string-input" data-string="${i}" value="${escapeHtml(noteLabel(note))}" aria-label="${escapeHtml(t("guitar.string", { n: count - i }))}" maxlength="4" autocomplete="off" spellcheck="false">`).join("")}</div>
     <div class="menu-heading">${t("strings.labels")}</div>
-    <div class="menu-chips">${["none", "tuning", "notes"].map((m) => chip("data-labels", m, t(`strings.labels.${m}`), guitarLabelMode === m)).join("")}</div>`;
+    <div class="menu-chips">${["none", "tuning", "notes"].map((m) => chip2("data-labels", m, t(`strings.labels.${m}`), guitarLabelMode === m)).join("")}</div>`;
     if (menu.dataset.wired) return;
     menu.dataset.wired = "1";
     const redraw = () => {
@@ -3452,34 +3524,34 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       redraw();
     });
   }
-  function redrawFresh(container) {
+  function redrawFresh(container2) {
     const sym = lastGuitarSymbol;
     guitarVoicingIdx = 0;
     lastGuitarSymbol = null;
-    renderGuitar(container, sym, [...lastNoteNames], void 0, lastPreferFlats);
+    renderGuitar(container2, sym, [...lastNoteNames], void 0, lastPreferFlats);
   }
-  function wireChrome(container) {
-    container.querySelectorAll(".strings-tab").forEach((b) => b.addEventListener("click", () => {
+  function wireChrome(container2) {
+    container2.querySelectorAll(".strings-tab").forEach((b) => b.addEventListener("click", () => {
       stringsView = b.dataset.view;
       save("guitar-view", stringsView);
-      renderGuitar(container, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
+      renderGuitar(container2, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
     }));
-    container.querySelector(".strings-caption")?.addEventListener("click", (e) => {
+    container2.querySelector(".strings-caption")?.addEventListener("click", (e) => {
       e.stopPropagation();
       document.querySelector("#mod-guitar .module-more")?.click();
     });
   }
-  var neckVertical = (container) => container.clientHeight > container.clientWidth * 1.15;
+  var neckVertical = (container2) => container2.clientHeight > container2.clientWidth * 1.15;
   var neckDrawnVertical = null;
   var watched = /* @__PURE__ */ new WeakSet();
-  function watchShape(container) {
-    if (watched.has(container) || typeof ResizeObserver === "undefined") return;
-    watched.add(container);
+  function watchShape(container2) {
+    if (watched.has(container2) || typeof ResizeObserver === "undefined") return;
+    watched.add(container2);
     new ResizeObserver(() => {
-      if (stringsView === "neck" && neckDrawnVertical !== null && neckVertical(container) !== neckDrawnVertical) {
-        renderGuitar(container, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
+      if (stringsView === "neck" && neckDrawnVertical !== null && neckVertical(container2) !== neckDrawnVertical) {
+        renderGuitar(container2, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
       }
-    }).observe(container);
+    }).observe(container2);
   }
   function neckSvg(noteNames, open2, preferFlats, vertical) {
     const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
@@ -3489,12 +3561,12 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     });
     return tryUMT("neck", () => Notae.renderFretboard({ name: "", frets, tuning: guitarStringTuning }, neckStyle(preferFlats, vertical)), "");
   }
-  function renderGuitar(container, chordSymbol, noteNames = [], voicingIndex, preferFlats = true) {
+  function renderGuitar(container2, chordSymbol, noteNames = [], voicingIndex, preferFlats = true) {
     lastNoteNames = noteNames;
     lastPreferFlats = preferFlats;
     const open2 = openStrings();
-    container.classList.toggle("strings-bare", !guitarControlsVisible);
-    watchShape(container);
+    container2.classList.toggle("strings-bare", !guitarControlsVisible);
+    watchShape(container2);
     renderMenu();
     if (chordSymbol !== lastGuitarSymbol) {
       guitarVoicingIdx = 0;
@@ -3503,26 +3575,26 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     if (voicingIndex !== void 0) guitarVoicingIdx = voicingIndex;
     const named = chordSymbol ? chordLabel(chordSymbol) : t("a11y.nothing");
     if (stringsView === "neck") {
-      neckDrawnVertical = neckVertical(container);
-      container.innerHTML = tabs() + stage(neckSvg(noteNames, open2, preferFlats, neckDrawnVertical), t("a11y.strings", { chord: named }), 0) + foot("", 0, 0);
-      localizeDrawnNoteNames(container.querySelector(".strings-drawing"));
-      wireChrome(container);
+      neckDrawnVertical = neckVertical(container2);
+      container2.innerHTML = tabs() + stage(neckSvg(noteNames, open2, preferFlats, neckDrawnVertical), t("a11y.strings", { chord: named }), 0) + foot("", 0, 0);
+      localizeDrawnNoteNames(container2.querySelector(".strings-drawing"));
+      wireChrome(container2);
       return;
     }
     neckDrawnVertical = null;
     if (!chordSymbol) {
       const empty = { name: "", frets: open2.map(() => null), tuning: guitarStringTuning };
       const svg2 = tryUMT("fretboard", () => Notae.renderFretboard(empty, shapeStyle()), "");
-      container.innerHTML = tabs() + stage(`<div class="guitar-placeholder">${svg2}</div>`, t("a11y.strings", { chord: named }), 0) + foot("", 0, 0);
-      wireChrome(container);
+      container2.innerHTML = tabs() + stage(`<div class="guitar-placeholder">${svg2}</div>`, t("a11y.strings", { chord: named }), 0) + foot("", 0, 0);
+      wireChrome(container2);
       return;
     }
     const chord = tryParseChord(chordSymbol);
     const bassPc = chord ? (((chord.bassStep ?? chord.rootStep) + 9) % 12 + 12) % 12 : 0;
     const voicings = chord ? playableVoicings(tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, open2.map((m) => m - 69)) ?? [], []), open2, bassPc) : [];
     if (!voicings.length) {
-      container.innerHTML = tabs() + `<div class="no-voicing">${t("guitar.none")}</div>` + foot("", 0, 0);
-      wireChrome(container);
+      container2.innerHTML = tabs() + `<div class="no-voicing">${t("guitar.none")}</div>` + foot("", 0, 0);
+      wireChrome(container2);
       return;
     }
     const total = voicings.length;
@@ -3533,16 +3605,16 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       showChordName ? shapeStyle() : { ...shapeStyle(), chordNameSize: 0, chordNameY: 4, chordNameGapH: 4 }
     ), "");
     const label = t("a11y.strings", { chord: `${chordLabel(chordSymbol)} ${voicing.frets.map((f) => f < 0 ? "x" : f).join(" ")}` });
-    container.innerHTML = tabs() + stage(svg, label, total) + foot(whereLabel(voicing.frets), total, idx);
-    localizeDrawnNoteNames(container.querySelector(".strings-drawing"));
-    container.querySelectorAll(".guitar-nav").forEach((btn) => {
+    container2.innerHTML = tabs() + stage(svg, label, total) + foot(whereLabel(voicing.frets), total, idx);
+    localizeDrawnNoteNames(container2.querySelector(".strings-drawing"));
+    container2.querySelectorAll(".guitar-nav").forEach((btn) => {
       btn.addEventListener("click", () => {
         guitarVoicingIdx = (idx + parseInt(btn.dataset.dir) + total) % total;
-        renderGuitar(container, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
+        renderGuitar(container2, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
         onVoicingChange(guitarVoicingIdx);
       });
     });
-    wireChrome(container);
+    wireChrome(container2);
   }
 
   // src/detector/analysis-panel.ts
@@ -3718,18 +3790,18 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   }
   var LONG_PRESS_MS = 600;
   function onLongPress(el2, fn) {
-    let timer4 = null;
+    let timer5 = null;
     let fired = false;
     const cancel = () => {
-      if (timer4) clearTimeout(timer4);
-      timer4 = null;
+      if (timer5) clearTimeout(timer5);
+      timer5 = null;
     };
     el2.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "mouse") return;
       fired = false;
       cancel();
-      timer4 = setTimeout(() => {
-        timer4 = null;
+      timer5 = setTimeout(() => {
+        timer5 = null;
         fired = true;
         fn();
       }, LONG_PRESS_MS);
@@ -3898,10 +3970,10 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     }
     const cmnd = new Float32Array(maxTau + 1);
     cmnd[0] = 1;
-    let running = 0;
+    let running2 = 0;
     for (let tau2 = 1; tau2 <= maxTau; tau2++) {
-      running += d[tau2];
-      cmnd[tau2] = running > 0 ? d[tau2] * tau2 / running : 1;
+      running2 += d[tau2];
+      cmnd[tau2] = running2 > 0 ? d[tau2] * tau2 / running2 : 1;
     }
     let tau = -1;
     for (let t2 = minTau; t2 <= maxTau; t2++) {
@@ -4270,6 +4342,202 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     return r && r.harmonicRhythmUnit === "per-bar" ? { kind: "per-bar", changes: r.harmonicRhythm, bpm, beatsPerBar } : null;
   }
 
+  // src/metronome/pattern.ts
+  function parseMeter(text) {
+    const m = text.replace(/\s/g, "").match(/^(\d+(?:\+\d+)*)\/(\d+)$/);
+    if (!m) return null;
+    const numerators = m[1].split("+").map(Number);
+    const denominator = Number(m[2]);
+    if (numerators.some((n) => n < 1 || n > 32) || ![1, 2, 4, 8, 16, 32].includes(denominator)) return null;
+    return { numerators, denominator };
+  }
+  var range = (n) => Array.from({ length: n }, (_, i) => i);
+  function subdivide(kinds, sub) {
+    return kinds.flatMap((kind, pulse) => range(sub).map((s) => ({ at: pulse + s / sub, kind: s === 0 ? kind : "sub", voice: 0, pulse })));
+  }
+  function buildPattern(mode4, sub = 1) {
+    if (mode4.kind === "meter") {
+      const total = mode4.numerators.reduce((a2, b2) => a2 + b2, 0);
+      const starts = mode4.numerators.reduce((acc, _n, i) => [...acc, i ? acc[i - 1] + mode4.numerators[i - 1] : 0], []);
+      const kinds = range(total).map((i) => i === 0 ? "strong" : starts.includes(i) ? "accent" : "beat");
+      return { beats: total, pulses: [total], groups: mode4.numerators, counts: range(total).map((i) => i + 1), clicks: subdivide(kinds, sub) };
+    }
+    if (mode4.kind === "cycle") {
+      const cycle = UMT.RHYTHMIC_CYCLES[mode4.id];
+      if (!cycle) return null;
+      const strokes = UMT.cycleStrokes(cycle);
+      const kinds = strokes.map((s) => s === "sam" ? "strong" : s === "tali" || s === "accent" ? "accent" : s === "khali" ? "khali" : "beat");
+      return { beats: cycle.beats, pulses: [cycle.beats], groups: cycle.groups, counts: UMT.cycleCounts(cycle), clicks: subdivide(kinds, sub) };
+    }
+    if (mode4.kind === "clave") {
+      const clave = UMT.CLAVE_PATTERNS[mode4.id];
+      if (!clave) return null;
+      const n = clave.steps.length;
+      const perBeat = n % 4 === 0 ? 4 : 1;
+      const clicks2 = [];
+      clave.steps.forEach((on, i) => {
+        if (on) clicks2.push({ at: i / perBeat, kind: i === 0 ? "strong" : "accent", voice: 0, pulse: i });
+        else if (i % perBeat === 0) clicks2.push({ at: i / perBeat, kind: "sub", voice: 0, pulse: i });
+      });
+      return { beats: n / perBeat, pulses: [n], groups: perBeat === 4 ? [n / 2, n / 2] : [n], counts: range(n).map((i) => i + 1), clicks: clicks2 };
+    }
+    if (mode4.kind === "euclid") {
+      const { pulses, steps: steps2 } = mode4;
+      if (steps2 < 1 || pulses < 0 || pulses > steps2) return null;
+      const onsets = UMT.Polyrhythm.euclidean(pulses, steps2);
+      const kinds = onsets.map((on, i) => on ? i === 0 ? "strong" : "accent" : "sub");
+      return { beats: steps2, pulses: [steps2], groups: [steps2], counts: range(steps2).map((i) => i + 1), clicks: subdivide(kinds, sub) };
+    }
+    const { a, b } = mode4;
+    if (a < 1 || b < 1) return null;
+    const clicks = [
+      ...range(a).map((i) => ({ at: i, kind: i === 0 ? "strong" : "beat", voice: 0, pulse: i })),
+      ...range(b).map((i) => ({ at: i * a / b, kind: "poly", voice: 1, pulse: i }))
+    ].sort((x, y) => x.at - y.at || x.voice - y.voice);
+    return { beats: a, pulses: [a, b], groups: [a], counts: range(a).map((i) => i + 1), clicks };
+  }
+  function tapTempo(taps2, max = 6) {
+    const recent = taps2.slice(-max);
+    if (recent.length < 2) return null;
+    const gaps = recent.slice(1).map((t2, i) => t2 - recent[i]);
+    const mean = gaps.reduce((s, g) => s + g, 0) / gaps.length;
+    return mean > 0 ? Math.round(6e4 / mean) : null;
+  }
+
+  // src/metronome/engine.ts
+  var TEMPO_MIN = 20;
+  var TEMPO_MAX = 300;
+  var DEFAULTS = {
+    mode: { kind: "meter", numerators: [4], denominator: 4 },
+    tempo: 100,
+    sub: 1,
+    trainer: { on: false, step: 2, every: 4, max: 160 }
+  };
+  function loadSettings() {
+    const s = loadJSON("metronome", {});
+    const merged = { ...DEFAULTS, ...s, trainer: { ...DEFAULTS.trainer, ...s.trainer } };
+    return buildPattern(merged.mode, merged.sub) ? merged : DEFAULTS;
+  }
+  var settings = loadSettings();
+  var pattern = buildPattern(settings.mode, settings.sub);
+  var getMetronome = () => settings;
+  var getPattern = () => pattern;
+  var onChange2 = () => {
+  };
+  function setMetronomeChangeCallback(cb) {
+    onChange2 = cb;
+  }
+  function setMetronome(patch) {
+    const next = { ...settings, ...patch, trainer: { ...settings.trainer, ...patch.trainer } };
+    next.tempo = Math.round(Math.min(TEMPO_MAX, Math.max(TEMPO_MIN, next.tempo)));
+    next.sub = Math.min(6, Math.max(1, Math.round(next.sub)));
+    const p = buildPattern(next.mode, next.sub);
+    if (!p) return false;
+    const newPattern = JSON.stringify(next.mode) !== JSON.stringify(settings.mode) || next.sub !== settings.sub;
+    settings = next;
+    if (newPattern) {
+      pattern = p;
+      index = 0;
+      played.length = 0;
+    }
+    save("metronome", settings);
+    onChange2();
+    return true;
+  }
+  var VOICE = {
+    strong: { hz: 1760, gain: 0.9, len: 0.05, type: "sine" },
+    accent: { hz: 1320, gain: 0.7, len: 0.04, type: "sine" },
+    beat: { hz: 880, gain: 0.5, len: 0.035, type: "sine" },
+    khali: { hz: 587, gain: 0.25, len: 0.03, type: "sine" },
+    // the wave of a tala: a soft, low click
+    sub: { hz: 1100, gain: 0.2, len: 0.02, type: "sine" },
+    poly: { hz: 440, gain: 0.6, len: 0.05, type: "triangle" }
+    // the polyrhythm's second voice
+  };
+  function click(ctx2, out, kind, at) {
+    const v = VOICE[kind];
+    const osc = ctx2.createOscillator();
+    const g = ctx2.createGain();
+    osc.type = v.type;
+    osc.frequency.value = v.hz;
+    g.gain.setValueAtTime(v.gain, at);
+    g.gain.exponentialRampToValueAtTime(1e-4, at + v.len);
+    osc.connect(g).connect(out);
+    osc.start(at);
+    osc.stop(at + v.len + 0.01);
+  }
+  var TICK_MS = 25;
+  var AHEAD_S = 0.1;
+  var running = false;
+  var timer2 = null;
+  var index = 0;
+  var nextAt = 0;
+  var cycles = 0;
+  var played = [];
+  var isMetronomeRunning = () => running;
+  function schedule() {
+    const { ctx: ctx2, out } = audioOutput();
+    while (nextAt < ctx2.currentTime + AHEAD_S) {
+      const c = pattern.clicks[index];
+      click(ctx2, out, c.kind, nextAt);
+      played.push({ at: nextAt, click: c, counts: pattern.counts });
+      if (played.length > 64) played.shift();
+      const secPerBeat = 60 / settings.tempo;
+      if (index + 1 < pattern.clicks.length) {
+        nextAt += (pattern.clicks[index + 1].at - c.at) * secPerBeat;
+        index++;
+      } else {
+        nextAt += (pattern.beats - c.at) * secPerBeat;
+        cycles++;
+        index = 0;
+        nextAt += pattern.clicks[0].at * 60 / settings.tempo;
+        const t2 = settings.trainer;
+        if (t2.on && cycles % Math.max(1, t2.every) === 0 && settings.tempo < t2.max) {
+          settings = { ...settings, tempo: Math.min(t2.max, settings.tempo + t2.step) };
+          save("metronome", settings);
+          onChange2();
+        }
+      }
+    }
+  }
+  function startMetronome() {
+    if (running) return;
+    const { ctx: ctx2 } = audioOutput();
+    running = true;
+    index = 0;
+    cycles = 0;
+    played.length = 0;
+    nextAt = ctx2.currentTime + 0.05;
+    schedule();
+    timer2 = setInterval(schedule, TICK_MS);
+    onChange2();
+  }
+  function stopMetronome() {
+    if (!running) return;
+    running = false;
+    if (timer2) clearInterval(timer2);
+    timer2 = null;
+    played.length = 0;
+    onChange2();
+  }
+  function currentClick() {
+    if (!running) return null;
+    const now = audioOutput().ctx.currentTime;
+    let last = null;
+    for (const p of played) if (p.at <= now) last = p.click;
+    return last;
+  }
+  var taps = [];
+  function tap(now = performance.now()) {
+    if (taps.length && now - taps[taps.length - 1] > 2e3) taps = [];
+    taps.push(now);
+    const bpm = tapTempo(taps);
+    if (bpm) setMetronome({ tempo: bpm });
+  }
+  function runningMeter() {
+    return running ? { bpm: settings.tempo, beatsPerBar: pattern.beats } : null;
+  }
+
   // src/theory/key-map.ts
   function keyChord(symbol, key) {
     const a = romanInKey(symbol, key);
@@ -4453,8 +4721,8 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     for (const k of a.voiceRuleKeys) out.push({ term: t(`vl.issue.${k}`, { voices: "" }).replace(/\s*\(\)$/, ""), text: t(`ex.vl.${k}`) });
     return out;
   }
-  function renderExplanation(container, items) {
-    container.innerHTML = items.length ? `<dl class="explain-list">${items.map((i) => `<dt>${escapeHtml(i.term)}</dt><dd>${escapeHtml(i.text)}</dd>`).join("")}</dl>` : `<p class="explain-empty">${escapeHtml(t("ex.empty"))}</p>`;
+  function renderExplanation(container2, items) {
+    container2.innerHTML = items.length ? `<dl class="explain-list">${items.map((i) => `<dt>${escapeHtml(i.term)}</dt><dd>${escapeHtml(i.text)}</dd>`).join("")}</dl>` : `<p class="explain-empty">${escapeHtml(t("ex.empty"))}</p>`;
   }
 
   // src/history/history.ts
@@ -4467,10 +4735,10 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   var entries = [];
   var debounceTimer = null;
   var lastAutoAppended = null;
-  var onChange2 = () => {
+  var onChange3 = () => {
   };
   function setHistoryChangeCallback(cb) {
-    onChange2 = cb;
+    onChange3 = cb;
   }
   var CARRY_KEY = "modus-history-carry";
   function carryHistoryOverReload() {
@@ -4492,17 +4760,17 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   function addEntry(symbol, notes2, time) {
     const entry = { id: crypto.randomUUID(), symbol, notes: notes2, ...time };
     entries = [entry, ...entries].slice(0, getPref("history-max"));
-    onChange2(entries);
+    onChange3(entries);
   }
   function removeEntry(id) {
     entries = entries.filter((e) => e.id !== id);
     lastAutoAppended = entries[0]?.symbol ?? null;
-    onChange2(entries);
+    onChange3(entries);
   }
   function restoreEntries(list) {
     entries = list.slice(0, getPref("history-max"));
     lastAutoAppended = entries[0]?.symbol ?? null;
-    onChange2(entries);
+    onChange3(entries);
   }
   function clearHistoryWithUndo() {
     if (!entries.length) return;
@@ -4513,7 +4781,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   function clearHistory() {
     entries = [];
     lastAutoAppended = null;
-    onChange2(entries);
+    onChange3(entries);
   }
   var pending2 = null;
   function notifyChordDetected(symbol, notes2, at = Date.now()) {
@@ -4534,15 +4802,15 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     const e = entries[0];
     if (e?.at !== void 0 && e.until === void 0 && e.symbol === pending2?.symbol) {
       e.until = at;
-      onChange2(entries);
+      onChange3(entries);
     }
   }
-  function markActiveHistoryEntry(container, entryId) {
-    container.querySelectorAll(".history-chip").forEach((el2) => {
+  function markActiveHistoryEntry(container2, entryId) {
+    container2.querySelectorAll(".history-chip").forEach((el2) => {
       el2.classList.toggle("active-cursor", el2.dataset.id === entryId);
     });
   }
-  function renderHistory(container, activeKey, onChipClick, activeCursorEntryId, onSend) {
+  function renderHistory(container2, activeKey, onChipClick, activeCursorEntryId, onSend) {
     const strip = document.createElement("div");
     strip.className = "history-strip";
     const shown = entries.map((e) => ({ ...e, symbol: spellChordSymbol(e.symbol, activeKey) }));
@@ -4555,16 +4823,16 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       const roman = analysis?.roman ?? "\u2014";
       const fn = analysis?.function ?? "unknown";
       const color2 = FUNCTION_COLORS[fn] ?? FUNCTION_COLORS.unknown;
-      const chip = document.createElement("div");
-      chip.className = "history-chip";
-      chip.dataset.id = entry.id;
-      chip.classList.toggle("active-cursor", activeCursorEntryId === entry.id);
-      chip.style.borderLeft = `3px solid ${color2}`;
-      chip.innerHTML = `
+      const chip2 = document.createElement("div");
+      chip2.className = "history-chip";
+      chip2.dataset.id = entry.id;
+      chip2.classList.toggle("active-cursor", activeCursorEntryId === entry.id);
+      chip2.style.borderLeft = `3px solid ${color2}`;
+      chip2.innerHTML = `
       <span class="history-chip-symbol">${escapeHtml(chordLabel(entry.symbol))}</span>
       <span class="history-chip-roman">${escapeHtml(roman)}</span>
     `;
-      chip.addEventListener("click", () => {
+      chip2.addEventListener("click", () => {
         onChipClick(entry);
         if (entry.notes.length > 0) playNoteNames(entry.notes);
         else playChord(entry.symbol);
@@ -4572,34 +4840,34 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       const inKey = steps2[i].key ? ` (${t("history.chip.inKey", { roman, key: keyLabel(steps2[i].key) })})` : "";
       const secs = entrySeconds(entries, i);
       const lasted = secs !== null ? ` \xB7 ${t("history.chip.duration", { s: decimal(secs) })}` : "";
-      chip.title = `${chordLabel(entry.symbol)}${inKey}${lasted} \u2014 ${t("history.chip.actions")}`;
-      chip.draggable = true;
-      chip.addEventListener("dragstart", (e) => {
+      chip2.title = `${chordLabel(entry.symbol)}${inKey}${lasted} \u2014 ${t("history.chip.actions")}`;
+      chip2.draggable = true;
+      chip2.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("application/x-history-chord", JSON.stringify({ id: entry.id, symbol: entry.symbol, notes: entry.notes }));
         e.dataTransfer.effectAllowed = "copy";
-        chip.style.opacity = "0.5";
+        chip2.style.opacity = "0.5";
       });
-      chip.addEventListener("dragend", () => {
-        chip.style.opacity = "1";
+      chip2.addEventListener("dragend", () => {
+        chip2.style.opacity = "1";
       });
       const remove = () => {
         const before = entries;
         removeEntry(entry.id);
         showUndo(t("history.removed", { chord: chordLabel(entry.symbol) }), () => restoreEntries(before));
       };
-      chip.addEventListener("contextmenu", (e) => {
+      chip2.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         remove();
       });
-      onLongPress(chip, remove);
-      makeActivatable(chip, t("a11y.chip", { chord: chordLabel(entry.symbol), roman }));
-      chip.addEventListener("keydown", (e) => {
+      onLongPress(chip2, remove);
+      makeActivatable(chip2, t("a11y.chip", { chord: chordLabel(entry.symbol), roman }));
+      chip2.addEventListener("keydown", (e) => {
         if (e.key !== "Delete" && e.key !== "Backspace") return;
         e.preventDefault();
         e.stopPropagation();
         remove();
       });
-      strip.appendChild(chip);
+      strip.appendChild(chip2);
       if (modulation) {
         const tag = document.createElement("span");
         tag.className = "history-modulation";
@@ -4633,20 +4901,21 @@ ${explainCadence(cadence)}` : "");
       wrap.appendChild(sendBtn);
     }
     wrap.appendChild(clearBtn);
-    container.innerHTML = "";
-    container.appendChild(wrap);
+    container2.innerHTML = "";
+    container2.appendChild(wrap);
     const rhythm = rhythmText();
     if (rhythm) {
       const line2 = document.createElement("div");
       line2.className = "history-rhythm";
       line2.textContent = rhythm;
       line2.title = t("history.rhythm.title");
-      container.appendChild(line2);
+      container2.appendChild(line2);
     }
   }
   var decimal = (n) => n.toLocaleString(getLang(), { maximumFractionDigits: 1 });
   function rhythmText() {
-    const bpm = getPref("history-bpm"), beats = getPref("history-beats");
+    const running2 = runningMeter();
+    const bpm = running2?.bpm ?? getPref("history-bpm"), beats = running2?.beatsPerBar ?? getPref("history-beats");
     const r = harmonicRhythm(entries, bpm, beats);
     if (!r) return null;
     return r.kind === "per-bar" ? t("history.rhythm.perBar", { n: decimal(r.changes), bpm: r.bpm, beats: r.beatsPerBar }) : t("history.rhythm.seconds", { s: decimal(r.secondsPerChange) });
@@ -5243,11 +5512,11 @@ ${explainCadence(cadence)}` : "");
       replaceSettings(next, "set.data.imported");
     });
     el2.querySelector("[data-reset-settings]").addEventListener("click", () => replaceSettings({}, "set.data.wasReset"));
-    function rewireGeneral(container) {
-      container.querySelector("#help-theme").addEventListener("change", (e) => saveThemeChoice(e.target.value));
-      container.querySelector("#help-lang").addEventListener("change", (e) => reloadWith(() => saveLang(e.target.value)));
-      container.querySelector("#help-note-names").addEventListener("change", (e) => reloadWith(() => saveNoteNaming(e.target.value)));
-      container.querySelector("#set-tour").addEventListener("click", () => {
+    function rewireGeneral(container2) {
+      container2.querySelector("#help-theme").addEventListener("change", (e) => saveThemeChoice(e.target.value));
+      container2.querySelector("#help-lang").addEventListener("change", (e) => reloadWith(() => saveLang(e.target.value)));
+      container2.querySelector("#help-note-names").addEventListener("change", (e) => reloadWith(() => saveNoteNaming(e.target.value)));
+      container2.querySelector("#set-tour").addEventListener("click", () => {
         closeSettings();
         startTour();
       });
@@ -5649,6 +5918,7 @@ ${explainCadence(cadence)}` : "");
     "ear",
     "player",
     "tuner",
+    "metronome",
     "history",
     "song"
   ];
@@ -5667,6 +5937,7 @@ ${explainCadence(cadence)}` : "");
     ear: { w: 6, h: 5 },
     player: { w: 6, h: 5 },
     tuner: { w: 3, h: 5 },
+    metronome: { w: 6, h: 10 },
     history: { w: 12, h: 3 },
     song: { w: 12, h: 12 }
   };
@@ -5688,8 +5959,9 @@ ${explainCadence(cadence)}` : "");
       ["ear", 0, 35, 4, 5],
       ["tuner", 4, 35, 3, 5],
       ["player", 7, 35, 5, 5],
-      ["history", 0, 40, 12, 3],
-      ["song", 0, 43, 12, 12]
+      ["metronome", 0, 40, 12, 9],
+      ["history", 0, 49, 12, 3],
+      ["song", 0, 52, 12, 12]
     ]),
     // Harmony at the desk: the key and the analysis large, what is played next to them
     study: grid([
@@ -5703,7 +5975,8 @@ ${explainCadence(cadence)}` : "");
       ["piano", 0, 24, 12, 5],
       ["progressions", 0, 29, 12, 4],
       ["ear", 0, 33, 6, 5],
-      ["next", 6, 33, 6, 5]
+      ["next", 6, 33, 6, 5],
+      ["metronome", 0, 38, 6, 10]
     ]),
     // Teaching on a projector (made to be presented with P): few panels, large; the history
     // under the chord shows where it came from, Next where it can go
@@ -5736,6 +6009,178 @@ ${explainCadence(cadence)}` : "");
       ["piano", 0, 13, 12, 6]
     ])
   };
+
+  // src/metronome/panel.ts
+  var TABS = ["meter", "cycle", "clave", "euclid", "poly"];
+  var METERS = ["2/4", "3/4", "4/4", "5/4", "6/8", "7/8", "2+2+3/8", "3+3+2/8", "9/8", "2+2+2+3/8", "12/8"];
+  var POLYS = [[3, 2], [2, 3], [4, 3], [3, 4], [5, 4], [5, 3]];
+  var TRADITIONS = ["hindustani", "carnatic", "flamenco", "aksak"];
+  var tab = getMetronome().mode.kind;
+  var meterText = (m) => m.kind === "meter" ? `${m.numerators.join("+")}/${m.denominator}` : "";
+  function modeLabel(m) {
+    switch (m.kind) {
+      case "meter":
+        return meterText(m);
+      case "cycle":
+        return UMT.RHYTHMIC_CYCLES[m.id]?.name ?? m.id;
+      case "clave":
+        return UMT.CLAVE_PATTERNS[m.id]?.name ?? m.id;
+      case "euclid":
+        return `E(${m.pulses}, ${m.steps})`;
+      case "poly":
+        return `${m.a}:${m.b}`;
+    }
+  }
+  var chip = (attrs, label, on, title = "") => `<button type="button" class="menu-chip" ${attrs} aria-pressed="${on}"${title ? ` title="${escapeHtml(title)}"` : ""}>${escapeHtml(label)}</button>`;
+  var num2 = (field, value, min, max, label) => `<input type="number" class="metro-num" data-field="${field}" min="${min}" max="${max}" step="1" value="${value}" aria-label="${escapeHtml(label)}">`;
+  function choices() {
+    const m = getMetronome().mode;
+    switch (tab) {
+      case "meter":
+        return `<div class="metro-choices">
+        <input type="text" class="metro-meter" value="${escapeHtml(meterText(m) || "4/4")}" aria-label="${escapeHtml(t("metro.meter"))}" title="${escapeHtml(t("metro.meter.title"))}" spellcheck="false">
+        ${METERS.map((s) => chip(`data-meter="${s}"`, s, meterText(m) === s)).join("")}</div>`;
+      case "cycle":
+        return TRADITIONS.map((tr) => {
+          const ids = Object.keys(UMT.RHYTHMIC_CYCLES).filter((id) => UMT.RHYTHMIC_CYCLES[id].tradition === tr);
+          return `<div class="metro-choices"><span class="metro-label">${escapeHtml(t(`metro.trad.${tr}`))}</span>${ids.map((id) => {
+            const c = UMT.RHYTHMIC_CYCLES[id];
+            return chip(`data-cycle="${id}"`, c.name, m.kind === "cycle" && m.id === id, `${c.beats} \xB7 ${c.groups.join("+")} \u2014 ${c.source}`);
+          }).join("")}</div>`;
+        }).join("");
+      case "clave":
+        return `<div class="metro-choices">${Object.keys(UMT.CLAVE_PATTERNS).map((id) => chip(`data-clave="${id}"`, UMT.CLAVE_PATTERNS[id].name, m.kind === "clave" && m.id === id, UMT.CLAVE_PATTERNS[id].description)).join("")}</div>`;
+      case "euclid": {
+        const e = m.kind === "euclid" ? m : { pulses: 3, steps: 8 };
+        return `<div class="metro-choices">
+        ${num2("pulses", e.pulses, 0, 32, t("metro.euclid.k"))}<span class="metro-label">${escapeHtml(t("metro.euclid.k"))} ${escapeHtml(t("metro.euclid.in"))}</span>
+        ${num2("steps", e.steps, 1, 32, t("metro.euclid.n"))}<span class="metro-label">${escapeHtml(t("metro.euclid.n"))}</span>
+        <button type="button" class="menu-chip" data-euclid aria-pressed="${m.kind === "euclid"}">${escapeHtml(t("metro.use"))}</button></div>`;
+      }
+      case "poly":
+        return `<div class="metro-choices">${POLYS.map(([a, b]) => chip(`data-poly="${a}:${b}"`, `${a}:${b}`, m.kind === "poly" && m.a === a && m.b === b)).join("")}</div>`;
+    }
+  }
+  function necklace(p) {
+    const C = 120, R = [84, 52], arcR = 96, labelR = 108;
+    const pos = (i, n, r) => {
+      const a = (-90 + 360 * i / n) * Math.PI / 180;
+      return [C + r * Math.cos(a), C + r * Math.sin(a)];
+    };
+    let svg = "";
+    let start = 0;
+    const n0 = p.pulses[0];
+    if (p.groups.length > 1) for (const g of p.groups) {
+      const [x1, y1] = pos(start + 0.15, n0, arcR), [x2, y2] = pos(start + g - 0.15, n0, arcR);
+      const large = g / n0 > 0.5 ? 1 : 0;
+      svg += `<path class="metro-arc" d="M${x1.toFixed(1)},${y1.toFixed(1)} A${arcR},${arcR} 0 ${large} 1 ${x2.toFixed(1)},${y2.toFixed(1)}"/>`;
+      start += g;
+    }
+    p.pulses.forEach((n, v) => {
+      for (let i = 0; i < n; i++) {
+        const head = p.clicks.find((c) => c.voice === v && c.pulse === i && c.kind !== "sub");
+        const kind = head?.kind ?? "rest";
+        const [x, y] = pos(i, n, R[v]);
+        const r = kind === "strong" ? 7 : kind === "accent" || kind === "poly" ? 6 : kind === "rest" ? 3 : 5;
+        svg += `<circle class="metro-dot metro-${kind}" data-v="${v}" data-p="${i}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}"/>`;
+        if (v === 0 && n <= 24) {
+          const [lx, ly] = pos(i, n, labelR);
+          svg += `<text class="metro-count" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}">${p.counts[i]}</text>`;
+        }
+      }
+    });
+    return `<svg class="metro-necklace" viewBox="0 0 240 240" role="img" aria-label="${escapeHtml(t("metro.necklace"))}">${svg}</svg>`;
+  }
+  var container = null;
+  var frame = 0;
+  function light() {
+    cancelAnimationFrame(frame);
+    if (!container) return;
+    const c = currentClick();
+    container.querySelectorAll(".metro-dot.lit").forEach((d) => d.classList.remove("lit"));
+    if (c) container.querySelector(`.metro-dot[data-v="${c.voice}"][data-p="${c.pulse}"]`)?.classList.add("lit");
+    if (isMetronomeRunning()) frame = requestAnimationFrame(light);
+  }
+  function renderMetronome(el2) {
+    container = el2;
+    const s = getMetronome();
+    const running2 = isMetronomeRunning();
+    const splits = tab === "meter" || tab === "cycle" || tab === "euclid";
+    el2.innerHTML = `
+    <div class="metro-head">
+      <button type="button" class="ctrl-btn metro-play" title="${escapeHtml(t(running2 ? "metro.stop" : "metro.start"))}" aria-label="${escapeHtml(t(running2 ? "metro.stop" : "metro.start"))}">${running2 ? "\u25A0" : "\u25B6"}</button>
+      <span class="metro-tempo" role="group" aria-label="${escapeHtml(t("metro.tempo"))}">
+        <button type="button" class="size-ctrl-btn" data-tempo="-1" aria-label="${escapeHtml(t("ctrl.smaller"))}">\u2212</button>
+        ${num2("tempo", s.tempo, TEMPO_MIN, TEMPO_MAX, t("metro.tempo"))}<span class="metro-label">bpm</span>
+        <button type="button" class="size-ctrl-btn" data-tempo="1" aria-label="${escapeHtml(t("ctrl.larger"))}">+</button>
+      </span>
+      <button type="button" class="ctrl-btn metro-tap" title="${escapeHtml(t("metro.tap.title"))}">${escapeHtml(t("metro.tap"))}</button>
+      <span class="metro-now">${escapeHtml(modeLabel(s.mode))}${s.trainer.on ? ` \xB7 ${escapeHtml(t("metro.trainer.on", { max: s.trainer.max }))}` : ""}</span>
+    </div>
+    <span class="strings-tabs metro-tabs" role="group" aria-label="${escapeHtml(t("metro.kind"))}">${TABS.map((k) => `<button type="button" class="strings-tab" data-tab="${k}" aria-pressed="${k === tab}">${escapeHtml(t(`metro.tab.${k}`))}</button>`).join("")}</span>
+    ${choices()}
+    ${splits ? `<div class="metro-choices"><span class="metro-label">${escapeHtml(t("metro.sub"))}</span>${[1, 2, 3, 4, 5, 6].map((n) => chip(`data-sub="${n}"`, String(n), s.sub === n, t("metro.sub.title", { n }))).join("")}</div>` : ""}
+    ${necklace(getPattern())}`;
+    const set = (mode4) => {
+      setMetronome({ mode: mode4 });
+    };
+    el2.querySelector(".metro-play").addEventListener("click", () => isMetronomeRunning() ? stopMetronome() : startMetronome());
+    el2.querySelector(".metro-tap").addEventListener("click", () => tap());
+    el2.querySelectorAll("[data-tempo]").forEach((b) => b.addEventListener("click", () => setMetronome({ tempo: getMetronome().tempo + Number(b.dataset.tempo) })));
+    el2.querySelector('.metro-num[data-field="tempo"]').addEventListener("change", (e) => setMetronome({ tempo: Number(e.target.value) || getMetronome().tempo }));
+    el2.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => {
+      tab = b.dataset.tab;
+      renderMetronome(el2);
+    }));
+    el2.querySelectorAll("[data-meter]").forEach((b) => b.addEventListener("click", () => {
+      const m = parseMeter(b.dataset.meter);
+      if (m) set({ kind: "meter", ...m });
+    }));
+    el2.querySelector(".metro-meter")?.addEventListener("change", (e) => {
+      const input = e.target;
+      const m = parseMeter(input.value);
+      input.classList.toggle("invalid", !m);
+      if (m) set({ kind: "meter", ...m });
+    });
+    el2.querySelectorAll("[data-cycle]").forEach((b) => b.addEventListener("click", () => set({ kind: "cycle", id: b.dataset.cycle })));
+    el2.querySelectorAll("[data-clave]").forEach((b) => b.addEventListener("click", () => set({ kind: "clave", id: b.dataset.clave })));
+    el2.querySelectorAll("[data-poly]").forEach((b) => b.addEventListener("click", () => {
+      const [a, c] = b.dataset.poly.split(":").map(Number);
+      set({ kind: "poly", a, b: c });
+    }));
+    el2.querySelector("[data-euclid]")?.addEventListener("click", () => {
+      const v = (f) => Number(el2.querySelector(`.metro-num[data-field="${f}"]`).value);
+      set({ kind: "euclid", pulses: v("pulses"), steps: v("steps") });
+    });
+    el2.querySelectorAll("[data-sub]").forEach((b) => b.addEventListener("click", () => setMetronome({ sub: Number(b.dataset.sub) })));
+    wireTrainer();
+    light();
+  }
+  function wireTrainer() {
+    const menu = document.getElementById("menu-metronome");
+    if (!menu || menu.dataset.wired) return;
+    menu.dataset.wired = "1";
+    const tr = getMetronome().trainer;
+    const on = menu.querySelector("#btn-metro-trainer");
+    on?.setAttribute("aria-pressed", String(tr.on));
+    on?.addEventListener("click", () => {
+      const now = !getMetronome().trainer.on;
+      setMetronome({ trainer: { ...getMetronome().trainer, on: now } });
+      on.setAttribute("aria-pressed", String(now));
+    });
+    menu.querySelectorAll("input[data-trainer]").forEach((i) => {
+      i.value = String(tr[i.dataset.trainer]);
+      i.addEventListener("change", () => setMetronome({ trainer: { ...getMetronome().trainer, [i.dataset.trainer]: Math.max(1, Number(i.value) || 1) } }));
+    });
+  }
+  function metronomeMenuHtml() {
+    const row2 = (field, label, unit) => `<label class="menu-row metro-trainer-row"><span class="menu-label">${escapeHtml(label)}</span><input type="number" class="metro-num" data-trainer="${field}" min="1" max="${TEMPO_MAX}" step="1"><span class="metro-label">${escapeHtml(unit)}</span></label>`;
+    return `<button type="button" id="btn-metro-trainer" class="menu-item" aria-pressed="false" title="${escapeHtml(t("metro.trainer.title"))}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(t("metro.trainer"))}</span></button>
+    ${row2("step", t("metro.trainer.step"), "bpm")}${row2("every", t("metro.trainer.every"), t("metro.trainer.cycles"))}${row2("max", t("metro.trainer.max"), "bpm")}`;
+  }
+  setMetronomeChangeCallback(() => {
+    if (container?.isConnected) renderMetronome(container);
+  });
 
   // src/ui/layout.ts
   var viewLabel = (v) => t(`view.${v}`);
@@ -5989,6 +6434,8 @@ ${explainCadence(cadence)}` : "");
       ${item("btn-key-neg", t("menu.negative"), t("keyPanel.neg.title"))}
       ${item("btn-key-par", t("menu.parallel"), t("keyPanel.par.title"))}
       ${item("btn-key-colt", t("menu.coltrane"), t("keyPanel.colt.title"))}`;
+      case "metronome":
+        return metronomeMenuHtml();
       case "guitar":
         return `<div id="strings-menu"></div><div class="menu-sep"></div><button type="button" class="menu-item" data-panel="guitarControls"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t("menu.controls")}</span></button>`;
       default:
@@ -6013,6 +6460,8 @@ ${explainCadence(cadence)}` : "");
         return '<div id="explain-container"></div>';
       case "next":
         return '<div id="next-container"></div>';
+      case "metronome":
+        return '<div id="metronome-container"></div>';
       case "progressions":
         return '<div id="progressions-container"></div>';
       case "ear":
@@ -6284,22 +6733,22 @@ ${explainCadence(cadence)}` : "");
   }
   function pianoRange(noteNames, octaves) {
     const from = 4 - Math.floor(octaves / 2), to = from + octaves - 1;
-    const played = noteNames.map(noteNameToMidi).filter((m) => m !== null).map((m) => Math.floor(m / 12) - 1);
-    const low = Math.min(from, ...played), high = Math.max(to, ...played);
+    const played2 = noteNames.map(noteNameToMidi).filter((m) => m !== null).map((m) => Math.floor(m / 12) - 1);
+    const low = Math.min(from, ...played2), high = Math.max(to, ...played2);
     return { from: `C${Math.max(0, low)}`, to: `B${Math.min(8, high)}` };
   }
   var containerOctaves = (el2) => pianoOctaves(el2.clientWidth, el2.clientHeight, isNarrow());
-  function renderPiano(container, noteNames, fn, onPress, prevNotes = null) {
+  function renderPiano(container2, noteNames, fn, onPress, prevNotes = null) {
     const color2 = functionColor(fn);
     const now = new Set(noteNames.map(noteNameToMidi));
     const before = (prevNotes ?? []).filter((n) => !now.has(noteNameToMidi(n)));
     const keys = [...noteNames, ...before];
     const colors = [...noteNames.map(() => color2), ...before.map(() => neutralColor())];
-    container.innerHTML = Notae.renderPiano({
+    container2.innerHTML = Notae.renderPiano({
       name: "",
       keys,
       colors,
-      range: pianoRange([...noteNames, ...before], containerOctaves(container))
+      range: pianoRange([...noteNames, ...before], containerOctaves(container2))
     }, {
       pianoWhiteKeyColor: color("piano-white"),
       pianoWhiteKeyStrokeColor: color("piano-white-stroke"),
@@ -6308,8 +6757,8 @@ ${explainCadence(cadence)}` : "");
       stringLabelColor: color("piano-label"),
       pianoBlackKeyLabelColor: color("piano-black-label")
     });
-    localizeDrawnNoteNames(container);
-    container.querySelectorAll("rect[data-note]").forEach((el2) => {
+    localizeDrawnNoteNames(container2);
+    container2.querySelectorAll("rect[data-note]").forEach((el2) => {
       const midi = noteNameToMidi(el2.dataset.note);
       if (midi === null) return;
       el2.style.cursor = "pointer";
@@ -6322,13 +6771,13 @@ ${explainCadence(cadence)}` : "");
   }
 
   // src/diagrams/velocity.ts
-  function renderVelocity(container, notes2) {
+  function renderVelocity(container2, notes2) {
     if (!notes2.length) {
-      container.innerHTML = `<div class="vel-empty">${escapeHtml(t("velocity.empty"))}</div>`;
+      container2.innerHTML = `<div class="vel-empty">${escapeHtml(t("velocity.empty"))}</div>`;
       return;
     }
     const sorted = [...notes2].sort((a, b) => b.midi - a.midi);
-    container.innerHTML = sorted.map((n) => `
+    container2.innerHTML = sorted.map((n) => `
     <div class="vel-row" title="${escapeHtml(t("velocity.bar", { note: noteLabel(n.name), v: n.velocity }))}">
       <span class="vel-note">${escapeHtml(noteLabel(n.name))}</span>
       <span class="vel-bar"><span style="width:${(n.velocity / 127 * 100).toFixed(1)}%"></span></span>
@@ -6347,7 +6796,7 @@ ${explainCadence(cadence)}` : "");
   function cofAccidentalFor(key, chosen) {
     return key ? keyPrefersSharps(key) ? "sharp" : "flat" : chosen;
   }
-  function renderCircleOfFifths(container, activeKey, activeChord, onSegmentClick, size = 160, opts = { accidental: "flat", showMinor: true, showDegrees: false, show7ths: false }) {
+  function renderCircleOfFifths(container2, activeKey, activeChord, onSegmentClick, size = 160, opts = { accidental: "flat", showMinor: true, showDegrees: false, show7ths: false }) {
     const keys = opts.accidental === "sharp" ? CIRCLE_KEYS_SHARP : CIRCLE_KEYS_FLAT;
     const minorKeys = opts.accidental === "sharp" ? CIRCLE_KEYS_MINOR_SHARP : CIRCLE_KEYS_MINOR_FLAT;
     const [keyRoot, keyMode] = activeKey?.split(" ") ?? [];
@@ -6463,13 +6912,13 @@ ${explainCadence(cadence)}` : "");
       );
     });
     svg += "</svg>";
-    container.innerHTML = svg;
-    container.querySelectorAll("[data-chord]").forEach((el2) => {
+    container2.innerHTML = svg;
+    container2.querySelectorAll("[data-chord]").forEach((el2) => {
       el2.addEventListener("click", () => onSegmentClick(el2.dataset.chord, el2.dataset.key ?? null));
       makeActivatable(el2, chordLabel(el2.dataset.chord));
     });
-    container.querySelector("svg")?.setAttribute("aria-label", t("a11y.cof"));
-    container.querySelector("svg")?.setAttribute("role", "group");
+    container2.querySelector("svg")?.setAttribute("aria-label", t("a11y.cof"));
+    container2.querySelector("svg")?.setAttribute("role", "group");
   }
 
   // src/view/viewer.ts
@@ -6606,10 +7055,10 @@ ${explainCadence(cadence)}` : "");
   // src/diagrams/key-explorer.ts
   var functionName = (fn) => fn === "unknown" ? t("fn.unknownLong") : t(`fn.${fn}`);
   var describe = (c) => [c.roman, c.secondary && t("keyPanel.also", { roman: c.secondary }), functionName(c.function)].filter(Boolean).join(" \xB7 ");
-  function renderKeyExplorer(container, map, keyLabel3, activeChord, onChordClick, opts) {
-    container.style.fontSize = opts.fontScale + "px";
+  function renderKeyExplorer(container2, map, keyLabel3, activeChord, onChordClick, opts) {
+    container2.style.fontSize = opts.fontScale + "px";
     if (!map) {
-      container.innerHTML = `<div class="key-empty">${escapeHtml(t("keyPanel.empty"))}</div>`;
+      container2.innerHTML = `<div class="key-empty">${escapeHtml(t("keyPanel.empty"))}</div>`;
       return;
     }
     const button = (symbol, cls, title) => `<button class="key-chord ${cls}${sameChord(symbol, activeChord) ? " active" : ""}" data-chord="${escapeHtml(symbol)}"
@@ -6647,8 +7096,8 @@ ${explainCadence(cadence)}` : "");
         </div>
       </div>`).join("") + "</div></div>";
     }
-    container.innerHTML = html;
-    container.querySelectorAll(".key-chord").forEach((btn) => {
+    container2.innerHTML = html;
+    container2.querySelectorAll(".key-chord").forEach((btn) => {
       btn.addEventListener("click", () => onChordClick(btn.dataset.chord));
     });
   }
@@ -6953,13 +7402,13 @@ ${explainCadence(cadence)}` : "");
       if (!map.has(key)) map.set(key, String.fromCharCode(letter++));
       return map.get(key);
     });
-    const pattern = letters.join("");
-    if (/^(AB)+$/.test(pattern)) return t("form.verseChorus", { p: pattern });
-    if (/^AABA/.test(pattern)) return `AABA (${pattern})`;
-    if (/^(A+B+A+)$/.test(pattern)) return t("form.ternary", { p: pattern });
-    if (pattern === "A") return t("form.single");
-    if (/^A+$/.test(pattern)) return t("form.strophic", { p: pattern });
-    return `${pattern}`;
+    const pattern2 = letters.join("");
+    if (/^(AB)+$/.test(pattern2)) return t("form.verseChorus", { p: pattern2 });
+    if (/^AABA/.test(pattern2)) return `AABA (${pattern2})`;
+    if (/^(A+B+A+)$/.test(pattern2)) return t("form.ternary", { p: pattern2 });
+    if (pattern2 === "A") return t("form.single");
+    if (/^A+$/.test(pattern2)) return t("form.strophic", { p: pattern2 });
+    return `${pattern2}`;
   }
 
   // src/song/library.ts
@@ -6998,8 +7447,8 @@ ${explainCadence(cadence)}` : "");
     return withoutEmptyChords({ ...createSong(), title: legacy.title ?? createSong().title, key, sections: legacy.sections });
   }
   function ensureIndex() {
-    const index = readIndex();
-    if (index) return index;
+    const index2 = readIndex();
+    if (index2) return index2;
     const song = migrateLegacySong();
     write(songKey(song.id), song);
     const created = { activeId: song.id, songs: [metaOf(song)] };
@@ -7015,10 +7464,10 @@ ${explainCadence(cadence)}` : "");
   function saveSong(song) {
     const stored = { ...withoutEmptyChords(song), updatedAt: Date.now() };
     write(songKey(stored.id), stored);
-    const index = ensureIndex();
-    const at = index.songs.findIndex((m) => m.id === stored.id);
-    const songs = at < 0 ? [...index.songs, metaOf(stored)] : index.songs.map((m, i) => i === at ? metaOf(stored) : m);
-    write(INDEX_KEY, { ...index, songs });
+    const index2 = ensureIndex();
+    const at = index2.songs.findIndex((m) => m.id === stored.id);
+    const songs = at < 0 ? [...index2.songs, metaOf(stored)] : index2.songs.map((m, i) => i === at ? metaOf(stored) : m);
+    write(INDEX_KEY, { ...index2, songs });
     if (!isBlankSong(stored)) requestPersistence();
   }
   var PERSIST_ASKED_KEY = "storage-persist-asked";
@@ -7036,10 +7485,10 @@ ${explainCadence(cadence)}` : "");
     write(INDEX_KEY, { ...ensureIndex(), activeId: id });
   }
   function loadActiveSong() {
-    const index = ensureIndex();
-    const song = readSong(index.activeId) ?? listSongs().map((m) => readSong(m.id)).find((s) => s !== null);
+    const index2 = ensureIndex();
+    const song = readSong(index2.activeId) ?? listSongs().map((m) => readSong(m.id)).find((s) => s !== null);
     if (song) {
-      if (song.id !== index.activeId) setActive(song.id);
+      if (song.id !== index2.activeId) setActive(song.id);
       return song;
     }
     return newSong();
@@ -7057,12 +7506,12 @@ ${explainCadence(cadence)}` : "");
   }
   function deleteSong(id) {
     const deleted = readSong(id);
-    const index = ensureIndex();
+    const index2 = ensureIndex();
     try {
       localStorage.removeItem(songKey(id));
     } catch {
     }
-    write(INDEX_KEY, { ...index, songs: index.songs.filter((m) => m.id !== id) });
+    write(INDEX_KEY, { ...index2, songs: index2.songs.filter((m) => m.id !== id) });
     return { deleted, open: loadActiveSong() };
   }
   function restoreSong(song) {
@@ -7103,9 +7552,9 @@ ${explainCadence(cadence)}` : "");
     const offset = steps2[from].start;
     return steps2.slice(from).map((s) => ({ ...s, start: s.start - offset }));
   }
-  var timer2 = null;
+  var timer3 = null;
   var onEnd = null;
-  var isSongPlaying = () => timer2 !== null;
+  var isSongPlaying = () => timer3 !== null;
   function playSchedule(steps2, tempo, h) {
     stopSong();
     if (!steps2.length) {
@@ -7125,13 +7574,13 @@ ${explainCadence(cadence)}` : "");
       h.step(s, previous, s.beats * beatMs / 1e3);
       if (s.symbol) previous = s;
       const next = i + 1 < steps2.length ? steps2[i + 1].start : s.start + s.beats;
-      timer2 = setTimeout(() => run(i + 1), Math.max(0, t0 + next * beatMs - performance.now()));
+      timer3 = setTimeout(() => run(i + 1), Math.max(0, t0 + next * beatMs - performance.now()));
     };
-    timer2 = setTimeout(() => run(0), 0);
+    timer3 = setTimeout(() => run(0), 0);
   }
   function stopSong() {
-    if (timer2) clearTimeout(timer2);
-    timer2 = null;
+    if (timer3) clearTimeout(timer3);
+    timer3 = null;
     const end = onEnd;
     onEnd = null;
     end?.();
@@ -7184,11 +7633,11 @@ ${explainCadence(cadence)}` : "");
     const chord = _song.sections.flatMap((s) => s.measures.flatMap((m) => m.chords)).find((c) => c.id === chordId);
     if (chord) applyWithUndo(removeChord(_song, chordId), t("chord.removed", { chord: chord.symbol ? chordLabel(chord.symbol) : t("chord.generic") }));
   }
-  function mountSong(container, song, handlers) {
+  function mountSong(container2, song, handlers) {
     if (song.id !== _song.id && isSongPlaying()) stopSong();
     _song = song;
     _handlers = handlers;
-    _container = container;
+    _container = container2;
     rerender();
   }
   function markActiveChord(chordId) {
@@ -7271,18 +7720,18 @@ ${explainCadence(cadence)}` : "");
     tabs2.setAttribute("aria-label", t("song.list"));
     const metas = h.songs.some((m) => m.id === song.id) ? h.songs : [...h.songs, { id: song.id, title: song.title, updatedAt: song.updatedAt }];
     for (const m of metas) {
-      const tab = el("button", "song-tab", (m.id === song.id ? song.title : m.title) || t("song.untitled"));
-      tab.setAttribute("role", "tab");
-      tab.setAttribute("aria-selected", String(m.id === song.id));
-      tab.dataset.songId = m.id;
-      tab.addEventListener("click", () => {
+      const tab2 = el("button", "song-tab", (m.id === song.id ? song.title : m.title) || t("song.untitled"));
+      tab2.setAttribute("role", "tab");
+      tab2.setAttribute("aria-selected", String(m.id === song.id));
+      tab2.dataset.songId = m.id;
+      tab2.addEventListener("click", () => {
         if (m.id !== _song.id) h.onOpenSong(m.id);
       });
-      tab.addEventListener("dblclick", () => {
+      tab2.addEventListener("dblclick", () => {
         titleInput.focus();
         titleInput.select();
       });
-      tabs2.appendChild(tab);
+      tabs2.appendChild(tab2);
     }
     const newTab = el("button", "song-tab song-tab-new", "+");
     newTab.title = t("song.new.title");
@@ -7923,8 +8372,8 @@ ${explainCadence(cadence)}` : "");
     for (const section2 of song.sections) {
       html += `<div class="section"><div class="section-name">${escapeHtml(section2.name)}${section2.repeatCount > 1 ? ` \xD7${section2.repeatCount}` : ""}</div><div class="measures">`;
       for (const measure of section2.measures) {
-        const num2 = measureNums.get(measure.id) ?? "";
-        html += `<div class="measure"><div class="bar-num">${num2}</div>`;
+        const num3 = measureNums.get(measure.id) ?? "";
+        html += `<div class="measure"><div class="bar-num">${num3}</div>`;
         for (const chord of measure.chords) {
           const degree = activeKey ? computeDegree(chord.symbol, activeKey) : "\u2014";
           html += `<div class="chord">${escapeHtml(chordLabel(chord.symbol))}</div><div class="degree">${degree}</div>`;
@@ -8142,11 +8591,11 @@ ${explainCadence(cadence)}` : "");
     unknown: "var(--text-dim)"
   };
   var current3 = loadChoice("progression", PROGRESSION_IDS, "ii-V-I");
-  var timer3 = null;
+  var timer4 = null;
   var playing = -1;
   function stopProgression() {
-    if (timer3) clearTimeout(timer3);
-    timer3 = null;
+    if (timer4) clearTimeout(timer4);
+    timer4 = null;
     playing = -1;
     document.querySelectorAll(".prog-chip.playing").forEach((c) => c.classList.remove("playing"));
     const btn = document.getElementById("prog-play");
@@ -8155,7 +8604,7 @@ ${explainCadence(cadence)}` : "");
       btn.title = t("prog.play.title");
     }
   }
-  function renderProgressions(container, analysisKey2, handlers) {
+  function renderProgressions(container2, analysisKey2, handlers) {
     stopProgression();
     const key = progressionKey(current3, analysisKey2);
     const chords = realizeProgression(current3, key);
@@ -8175,7 +8624,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       <span class="prog-chip-symbol">${escapeHtml(chordLabel(c.symbol))}</span>
       <span class="prog-chip-roman">${escapeHtml(c.roman)}</span></button>`;
     });
-    container.innerHTML = `
+    container2.innerHTML = `
     <div class="prog-head">
       <div class="seg" role="group" aria-label="${escapeHtml(t("prog.select.title"))}">${groups}</div>
       <div class="prog-picks" role="group" aria-label="${escapeHtml(t("prog.select.title"))}">${picks}</div>
@@ -8187,24 +8636,24 @@ ${explainCadence(c.cadence)}` : ""}`;
     const pick2 = (id) => {
       current3 = id;
       save("progression", current3);
-      renderProgressions(container, analysisKey2, handlers);
+      renderProgressions(container2, analysisKey2, handlers);
     };
-    container.querySelectorAll("[data-group]").forEach((b) => b.addEventListener("click", () => {
+    container2.querySelectorAll("[data-group]").forEach((b) => b.addEventListener("click", () => {
       const g = b.dataset.group;
       if (g !== group) pick2(GROUPS[g][0]);
     }));
-    container.querySelectorAll("[data-prog]").forEach((b) => b.addEventListener("click", () => pick2(b.dataset.prog)));
-    const chips = [...container.querySelectorAll(".prog-chip")];
+    container2.querySelectorAll("[data-prog]").forEach((b) => b.addEventListener("click", () => pick2(b.dataset.prog)));
+    const chips = [...container2.querySelectorAll(".prog-chip")];
     const mark = (i) => chips.forEach((c, j) => c.classList.toggle("playing", i === j));
     const show = (i) => {
       mark(i);
       handlers.play(chords[i].symbol, i > 0 ? chords[i - 1].symbol : null, key);
     };
-    chips.forEach((chip, i) => chip.addEventListener("click", () => {
+    chips.forEach((chip2, i) => chip2.addEventListener("click", () => {
       stopProgression();
       show(i);
     }));
-    const playBtn = container.querySelector("#prog-play");
+    const playBtn = container2.querySelector("#prog-play");
     playBtn.addEventListener("click", () => {
       if (playing >= 0) {
         stopProgression();
@@ -8220,7 +8669,7 @@ ${explainCadence(c.cadence)}` : ""}`;
         playing = i;
         show(i);
         const inBar = chords.filter((c) => c.bar === chords[i].bar).length;
-        timer3 = setTimeout(() => step2(i + 1), barMs() / inBar);
+        timer4 = setTimeout(() => step2(i + 1), barMs() / inBar);
       };
       step2(0);
     });
@@ -8284,13 +8733,13 @@ ${explainCadence(c.cadence)}` : ""}`;
     matches.sort((a, b) => b.length - a.length).forEach((m) => entry(m.symbol)?.progressions.push(m.id));
     return out;
   }
-  function renderNext(container, current4, key, items, onPick) {
+  function renderNext(container2, current4, key, items, onPick) {
     if (!current4 || !items.length) {
-      container.innerHTML = `<p class="next-empty">${escapeHtml(t(current4 && !key ? "next.noKey" : current4 ? "next.none" : "next.empty"))}</p>`;
+      container2.innerHTML = `<p class="next-empty">${escapeHtml(t(current4 && !key ? "next.noKey" : current4 ? "next.none" : "next.empty"))}</p>`;
       return;
     }
     const progression = (id) => `<span class="next-reason" title="${escapeHtml(t(`prog.${id}.about`))}">${escapeHtml(t(`prog.${id}`))}</span>`;
-    container.innerHTML = `<ul class="next-list">${items.map((s) => `
+    container2.innerHTML = `<ul class="next-list">${items.map((s) => `
     <li class="next-row">
       <button type="button" class="key-chord key-fnb-${s.function}" data-chord="${escapeHtml(s.symbol)}"
         title="${escapeHtml(t("next.play", { chord: chordLabel(s.symbol) }))}">${escapeHtml(chordLabel(s.symbol))}</button>
@@ -8301,7 +8750,7 @@ ${explainCadence(c.cadence)}` : ""}`;
         ${s.progressions.length ? `<span>${escapeHtml(t("next.inProgressions"))} ${s.progressions.map(progression).join(", ")}</span>` : ""}
       </span>
     </li>`).join("")}</ul>`;
-    container.querySelectorAll(".key-chord").forEach((btn) => btn.addEventListener("click", () => onPick(btn.dataset.chord)));
+    container2.querySelectorAll(".key-chord").forEach((btn) => btn.addEventListener("click", () => onPick(btn.dataset.chord)));
   }
 
   // src/ui/ear.ts
@@ -8376,9 +8825,9 @@ ${explainCadence(c.cadence)}` : ""}`;
     save("ear-score", score);
   }
   var answered = false;
-  function renderEar(container, handlers) {
+  function renderEar(container2, handlers) {
     const tally = score[mode3];
-    container.innerHTML = `
+    container2.innerHTML = `
     <div class="ear-head">
       <span class="strings-tabs" role="group" aria-label="${escapeHtml(t("ear.kind"))}">${EAR_MODES.map((m) => `<button type="button" class="strings-tab ear-mode" data-mode="${m}" aria-pressed="${m === mode3}">${escapeHtml(t(`ear.mode.${m}`))}</button>`).join("")}</span>
       <span class="ear-score" title="${escapeHtml(t("ear.score.title"))}">${escapeHtml(t("ear.score", { right: tally.right, total: tally.total }))}</span>
@@ -8392,22 +8841,22 @@ ${explainCadence(c.cadence)}` : ""}`;
       ${earAnswers(mode3).map((a) => `<button class="ear-answer" data-answer="${escapeHtml(a)}"${question && !answered ? "" : " disabled"}>${escapeHtml(answerLabel(mode3, a))}</button>`).join("")}
     </div>
     <p class="ear-feedback" aria-live="polite"></p>`;
-    container.querySelectorAll(".ear-mode").forEach((b) => b.addEventListener("click", () => {
+    container2.querySelectorAll(".ear-mode").forEach((b) => b.addEventListener("click", () => {
       mode3 = b.dataset.mode;
       save("ear-mode", mode3);
       question = null;
-      renderEar(container, handlers);
+      renderEar(container2, handlers);
     }));
-    container.querySelector("#ear-new").addEventListener("click", () => {
+    container2.querySelector("#ear-new").addEventListener("click", () => {
       question = makeQuestion(mode3);
       answered = false;
-      renderEar(container, handlers);
+      renderEar(container2, handlers);
       playQuestion(question);
     });
-    container.querySelector("#ear-again").addEventListener("click", () => {
+    container2.querySelector("#ear-again").addEventListener("click", () => {
       if (question) playQuestion(question);
     });
-    container.querySelectorAll(".ear-answer").forEach((b) => b.addEventListener("click", () => {
+    container2.querySelectorAll(".ear-answer").forEach((b) => b.addEventListener("click", () => {
       if (!question || answered) return;
       answered = true;
       const given = b.dataset.answer;
@@ -8416,13 +8865,13 @@ ${explainCadence(c.cadence)}` : ""}`;
       if (right) score[mode3].right++;
       save("ear-score", score);
       const q = question;
-      renderEar(container, handlers);
+      renderEar(container2, handlers);
       const correct = answerLabel(q.mode, q.answer);
-      const feedback = container.querySelector(".ear-feedback");
+      const feedback = container2.querySelector(".ear-feedback");
       feedback.className = `ear-feedback ${right ? "ear-right" : "ear-wrong"}`;
       const where = q.key ? ` \xB7 ${keyLabel(q.key)}` : "";
       feedback.textContent = (right ? t("ear.right", { answer: correct }) : t("ear.wrong", { answer: correct })) + where;
-      const button = (a) => container.querySelector(`.ear-answer[data-answer="${CSS.escape(a)}"]`);
+      const button = (a) => container2.querySelector(`.ear-answer[data-answer="${CSS.escape(a)}"]`);
       button(q.answer)?.classList.add("ear-correct");
       if (!right) button(given)?.classList.add("ear-missed");
       handlers.show(q);
@@ -8463,7 +8912,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   var loopA = null;
   var loopB = null;
   var speed = loadChoice("player-speed", SPEEDS, "1");
-  var frame = 0;
+  var frame2 = 0;
   var notes = null;
   var reading2 = null;
   var readFailed = false;
@@ -8482,16 +8931,16 @@ ${explainCadence(c.cadence)}` : ""}`;
     sentNotes = key;
     onNotes(midis);
   }
-  async function readChords(source, rate, container) {
+  async function readChords(source, rate, container2) {
     const token = ++readToken;
     reading2 = 0;
     readFailed = false;
-    showReading(container);
+    showReading(container2);
     try {
       const found = await transcribe(await toModelRate(source, rate), (p) => {
         if (token !== readToken) return;
         reading2 = p;
-        showReading(container);
+        showReading(container2);
       });
       if (token !== readToken) return;
       notes = found;
@@ -8500,11 +8949,11 @@ ${explainCadence(c.cadence)}` : ""}`;
     }
     if (token !== readToken) return;
     reading2 = null;
-    showReading(container);
+    showReading(container2);
     sendPlayheadNotes();
   }
-  function showReading(container) {
-    const el2 = container.querySelector(".player-reading");
+  function showReading(container2) {
+    const el2 = container2.querySelector(".player-reading");
     if (el2) el2.textContent = readingText();
   }
   var readingText = () => reading2 !== null ? t("player.reading", { p: Math.round(reading2 * 100) }) : readFailed ? t("player.readFailed") : "";
@@ -8512,7 +8961,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     audio.preload = "auto";
     audio.preservesPitch = true;
   }
-  async function openFile(file, container) {
+  async function openFile(file, container2) {
     if (!audio) return;
     if (audio.src) URL.revokeObjectURL(audio.src);
     audio.src = URL.createObjectURL(file);
@@ -8525,7 +8974,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     reading2 = null;
     readFailed = false;
     sendPlayheadNotes();
-    renderPlayer(container);
+    renderPlayer(container2);
     let rate = 44100;
     try {
       const ctx2 = new OfflineAudioContext(1, 1, 44100);
@@ -8535,11 +8984,11 @@ ${explainCadence(c.cadence)}` : ""}`;
     } catch {
       samples = null;
     }
-    drawWave(container);
-    if (samples) readChords(samples, rate, container);
+    drawWave(container2);
+    if (samples) readChords(samples, rate, container2);
   }
-  function drawWave(container) {
-    const canvas = container.querySelector(".player-wave");
+  function drawWave(container2) {
+    const canvas = container2.querySelector(".player-wave");
     if (!canvas || !audio) return;
     const dpr = window.devicePixelRatio || 1;
     const w = Math.max(1, Math.round(canvas.clientWidth * dpr)), h = Math.max(1, Math.round(canvas.clientHeight * dpr));
@@ -8570,22 +9019,22 @@ ${explainCadence(c.cadence)}` : ""}`;
     g.fillStyle = color("cursor");
     g.fillRect(Math.round(x(audio.currentTime)), 0, Math.max(1, dpr), h);
   }
-  function tick(container) {
-    cancelAnimationFrame(frame);
+  function tick(container2) {
+    cancelAnimationFrame(frame2);
     if (!audio || audio.paused) return;
     const back = loopTarget(audio.currentTime, loopA, loopB, audio.duration);
     if (back !== null) audio.currentTime = back;
-    const time = container.querySelector(".player-time");
+    const time = container2.querySelector(".player-time");
     if (time) time.textContent = `${formatTime(audio.currentTime, true)} / ${formatTime(audio.duration)}`;
-    drawWave(container);
+    drawWave(container2);
     sendPlayheadNotes();
-    frame = requestAnimationFrame(() => tick(container));
+    frame2 = requestAnimationFrame(() => tick(container2));
   }
-  function renderPlayer(container) {
+  function renderPlayer(container2) {
     const loaded = !!audio?.src;
     const dis = loaded ? "" : " disabled";
     const mark = (s) => s === null ? "" : ` ${formatTime(s, true)}`;
-    container.innerHTML = `
+    container2.innerHTML = `
     <div class="player-head">
       <label class="ctrl-btn player-open" title="${escapeHtml(t("player.open.title"))}">${escapeHtml(t("player.open"))}<input type="file" accept="audio/*" hidden></label>
       <span class="player-name">${escapeHtml(fileName2 || t("player.none"))}</span>
@@ -8606,40 +9055,40 @@ ${explainCadence(c.cadence)}` : ""}`;
       <button class="size-ctrl-btn" data-act="clear" title="${escapeHtml(t("player.clear.title"))}"${loopA === null ? " disabled" : ""}>\xD7</button>
       <button class="size-ctrl-btn${followChords ? " active" : ""}" data-act="chords" aria-pressed="${followChords}" title="${escapeHtml(t("player.chords.title"))}">${escapeHtml(t("player.chords"))}</button>
     </div>`;
-    const input = container.querySelector("input[type=file]");
+    const input = container2.querySelector("input[type=file]");
     input.addEventListener("change", () => {
       const f = input.files?.[0];
-      if (f) openFile(f, container);
+      if (f) openFile(f, container2);
     });
-    container.ondragover = (e) => {
+    container2.ondragover = (e) => {
       e.preventDefault();
     };
-    container.ondrop = (e) => {
+    container2.ondrop = (e) => {
       const f = e.dataTransfer?.files?.[0];
       if (!f || !f.type.startsWith("audio")) return;
       e.preventDefault();
-      openFile(f, container);
+      openFile(f, container2);
     };
-    container.querySelectorAll("[data-speed]").forEach((b) => b.addEventListener("click", () => {
+    container2.querySelectorAll("[data-speed]").forEach((b) => b.addEventListener("click", () => {
       const i = SPEEDS.indexOf(speed) + Number(b.dataset.speed);
       if (i < 0 || i >= SPEEDS.length) return;
       speed = SPEEDS[i];
       save("player-speed", speed);
       if (audio) audio.playbackRate = Number(speed);
-      renderPlayer(container);
+      renderPlayer(container2);
     }));
-    container.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => {
+    container2.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => {
       const act = b.dataset.act;
       if (act === "chords") {
         followChords = !followChords;
         save("player-chords", followChords);
         sendPlayheadNotes();
-        renderPlayer(container);
+        renderPlayer(container2);
         return;
       }
       if (!audio?.src) return;
       if (act === "play") {
-        if (audio.paused) audio.play().then(() => tick(container)).catch(() => {
+        if (audio.paused) audio.play().then(() => tick(container2)).catch(() => {
         });
         else audio.pause();
       } else if (act === "back") audio.currentTime = Math.max(loopA ?? 0, audio.currentTime - 5);
@@ -8650,23 +9099,23 @@ ${explainCadence(c.cadence)}` : ""}`;
         if (loopA === null) loopA = 0;
         loopB = audio.currentTime > loopA ? audio.currentTime : null;
       } else if (act === "clear") loopA = loopB = null;
-      renderPlayer(container);
+      renderPlayer(container2);
     }));
-    const canvas = container.querySelector(".player-wave");
+    const canvas = container2.querySelector(".player-wave");
     canvas.addEventListener("click", (e) => {
       if (!audio?.src || !isFinite(audio.duration)) return;
       const r = canvas.getBoundingClientRect();
       audio.currentTime = Math.max(0, Math.min(audio.duration, (e.clientX - r.left) / r.width * audio.duration));
-      renderPlayer(container);
+      renderPlayer(container2);
     });
     if (audio) {
       audio.onseeked = () => sendPlayheadNotes();
     }
     if (audio) {
-      audio.onloadedmetadata = () => renderPlayer(container);
+      audio.onloadedmetadata = () => renderPlayer(container2);
       audio.onpause = () => {
-        cancelAnimationFrame(frame);
-        renderPlayer(container);
+        cancelAnimationFrame(frame2);
+        renderPlayer(container2);
       };
       audio.onended = () => {
         if (loopA !== null) {
@@ -8675,24 +9124,24 @@ ${explainCadence(c.cadence)}` : ""}`;
           });
           return;
         }
-        cancelAnimationFrame(frame);
-        renderPlayer(container);
+        cancelAnimationFrame(frame2);
+        renderPlayer(container2);
       };
-      audio.onplay = () => tick(container);
+      audio.onplay = () => tick(container2);
     }
-    requestAnimationFrame(() => drawWave(container));
-    if (observed !== container && typeof ResizeObserver !== "undefined") {
-      observed = container;
-      new ResizeObserver(() => drawWave(container)).observe(container);
+    requestAnimationFrame(() => drawWave(container2));
+    if (observed !== container2 && typeof ResizeObserver !== "undefined") {
+      observed = container2;
+      new ResizeObserver(() => drawWave(container2)).observe(container2);
     }
   }
   var observed = null;
 
   // src/ui/tuner.ts
-  function renderTuner(container, handlers, error) {
+  function renderTuner(container2, handlers, error) {
     const on = isMicOn();
     const mode4 = getMicMode();
-    container.innerHTML = `
+    container2.innerHTML = `
     <div class="tuner-head">
       <button id="tuner-mic" class="ctrl-btn${on ? " active-mode" : ""}" title="${escapeHtml(t("mic.title"))}">${ICONS.mic}${escapeHtml(t(on ? "mic.on" : "mic.off"))}</button>
       ${MIC_MODES.map((m) => `<button class="size-ctrl-btn tuner-mode${m === mode4 ? " active" : ""}" data-mode="${m}" title="${escapeHtml(t(`mic.mode.${m}.title`))}">${escapeHtml(t(`mic.mode.${m}`))}</button>`).join("")}
@@ -8700,16 +9149,16 @@ ${explainCadence(c.cadence)}` : ""}`;
     <div class="tuner-note">\u2014</div>
     <div class="tuner-meter"><span class="tuner-zero"></span><span class="tuner-needle"></span></div>
     <div class="tuner-detail">${escapeHtml(error ? t("mic.error", { error }) : on ? t("mic.listening") : t("mic.hint"))}</div>`;
-    container.querySelector("#tuner-mic").addEventListener("click", () => handlers.toggle());
-    container.querySelectorAll(".tuner-mode").forEach((b) => b.addEventListener("click", () => {
+    container2.querySelector("#tuner-mic").addEventListener("click", () => handlers.toggle());
+    container2.querySelectorAll(".tuner-mode").forEach((b) => b.addEventListener("click", () => {
       setMicMode(b.dataset.mode);
-      renderTuner(container, handlers);
+      renderTuner(container2, handlers);
     }));
   }
-  function updateTuner(container, heard) {
-    const note = container.querySelector(".tuner-note");
-    const needle = container.querySelector(".tuner-needle");
-    const detail = container.querySelector(".tuner-detail");
+  function updateTuner(container2, heard) {
+    const note = container2.querySelector(".tuner-note");
+    const needle = container2.querySelector(".tuner-needle");
+    const detail = container2.querySelector(".tuner-detail");
     if (!note || !needle || !detail) return;
     if (!heard) {
       note.textContent = "\u2014";
@@ -8906,6 +9355,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     const player = document.getElementById("player-container");
     if (player) renderPlayer(player);
     setPlayerNotesCallback((midis) => setHeardNotes(midis, 80, "player"));
+    const metronome = document.getElementById("metronome-container");
+    if (metronome) renderMetronome(metronome);
     drawTuner();
     maybeStartTour();
     initMidi().then((result) => {

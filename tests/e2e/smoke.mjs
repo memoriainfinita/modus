@@ -1190,6 +1190,32 @@ await check('song playback: ▶ plays the song at its tempo, the chart and the d
   assert(await text('#mod-song .song-play') === '▶', 'did not stop')
 })
 
+await check('metronome: 4/4 at 240 runs round the necklace; bulerías counts from 12; 2+2+3/8 typed', async () => {
+  const m = '#metronome-container'
+  await page.fill(`${m} .metro-num[data-field="tempo"]`, '240')
+  await page.locator(`${m} .metro-num[data-field="tempo"]`).evaluate(i => i.dispatchEvent(new Event('change')))
+  await page.click(`${m} .metro-play`)
+  // Four pulses a second: the lit dot moves round
+  const seen = new Set()
+  for (let i = 0; i < 12; i++) {
+    const p = await page.locator(`${m} .metro-dot.lit`).getAttribute('data-p').catch(() => null)
+    if (p !== null) seen.add(p)
+    await page.waitForTimeout(90)
+  }
+  assert(seen.size >= 3, `pulses lit: ${[...seen].join(',')}`)
+  assert(await text(`${m} .metro-play`) === '■', 'not running')
+  await page.click(`${m} .strings-tab[data-tab="cycle"]`)
+  await page.click(`${m} [data-cycle="bulerias"]`)
+  const counts = await page.locator(`${m} .metro-count`).allTextContents()
+  assert(counts.length === 12 && counts[0] === '12' && counts[1] === '1', `counts: ${counts.join(' ')}`)
+  await page.click(`${m} .strings-tab[data-tab="meter"]`)
+  await page.fill(`${m} .metro-meter`, '2+2+3/8')
+  await page.locator(`${m} .metro-meter`).evaluate(i => i.dispatchEvent(new Event('change')))
+  assert(await page.locator(`${m} .metro-arc`).count() === 3, 'three groups')
+  await page.click(`${m} .metro-play`)
+  assert(await text(`${m} .metro-play`) === '▶', 'did not stop')
+})
+
 await check('no errors after the walk', async () => {
   assert(page.errors.length === 0, page.errors.join(' | '))
 })

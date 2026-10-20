@@ -4,7 +4,7 @@
 import type { Grid } from './grid'
 
 export const MODULE_IDS = [
-  'chord', 'staff', 'analysis', 'explain', 'next', 'cof', 'guitar', 'key', 'piano', 'velocity', 'progressions', 'ear', 'player', 'tuner', 'history', 'song',
+  'chord', 'staff', 'analysis', 'explain', 'next', 'cof', 'guitar', 'key', 'piano', 'velocity', 'progressions', 'ear', 'player', 'tuner', 'metronome', 'history', 'song',
 ] as const
 export type ModuleId = typeof MODULE_IDS[number]
 
@@ -12,7 +12,7 @@ export type ModuleId = typeof MODULE_IDS[number]
 export const MODULE_SIZE: Record<ModuleId, { w: number; h: number }> = {
   chord: { w: 4, h: 3 }, staff: { w: 4, h: 8 }, analysis: { w: 3, h: 11 }, explain: { w: 4, h: 11 }, next: { w: 4, h: 8 }, cof: { w: 3, h: 7 },
   guitar: { w: 3, h: 9 }, key: { w: 12, h: 11 }, piano: { w: 7, h: 5 },
-  velocity: { w: 2, h: 5 }, progressions: { w: 12, h: 4 }, ear: { w: 6, h: 5 }, player: { w: 6, h: 5 }, tuner: { w: 3, h: 5 }, history: { w: 12, h: 3 }, song: { w: 12, h: 12 },
+  velocity: { w: 2, h: 5 }, progressions: { w: 12, h: 4 }, ear: { w: 6, h: 5 }, player: { w: 6, h: 5 }, tuner: { w: 3, h: 5 }, metronome: { w: 6, h: 10 }, history: { w: 12, h: 3 }, song: { w: 12, h: 12 },
 }
 
 export const PRESET_IDS = ['standard', 'study', 'class', 'transcription', 'recording'] as const
@@ -29,7 +29,8 @@ export const PRESETS: Record<PresetId, Grid> = {
     ['staff', 0, 3, 3, 11], ['analysis', 3, 3, 3, 11], ['cof', 6, 3, 3, 11], ['guitar', 9, 3, 3, 11],
     ['key', 0, 14, 8, 12], ['explain', 8, 14, 4, 12],
     ['piano', 0, 26, 12, 5],
-    ['progressions', 0, 31, 12, 4], ['ear', 0, 35, 4, 5], ['tuner', 4, 35, 3, 5], ['player', 7, 35, 5, 5], ['history', 0, 40, 12, 3], ['song', 0, 43, 12, 12],
+    ['progressions', 0, 31, 12, 4], ['ear', 0, 35, 4, 5], ['tuner', 4, 35, 3, 5], ['player', 7, 35, 5, 5],
+    ['metronome', 0, 40, 12, 9], ['history', 0, 49, 12, 3], ['song', 0, 52, 12, 12],
   ]),
   // Harmony at the desk: the key and the analysis large, what is played next to them
   study: grid([
@@ -39,6 +40,7 @@ export const PRESETS: Record<PresetId, Grid> = {
     ['piano', 0, 24, 12, 5],
     ['progressions', 0, 29, 12, 4],
     ['ear', 0, 33, 6, 5], ['next', 6, 33, 6, 5],
+    ['metronome', 0, 38, 6, 10],
   ]),
   // Teaching on a projector (made to be presented with P): few panels, large; the history
   // under the chord shows where it came from, Next where it can go
