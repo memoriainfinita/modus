@@ -26,6 +26,7 @@ import { COLS, placeCell, addCell, removeCell, parseGrid } from '../layout/grid'
 import type { Cell, Grid } from '../layout/grid'
 import { MODULE_IDS, MODULE_SIZE, PRESETS, PRESET_IDS } from '../layout/presets'
 import type { ModuleId, PresetId } from '../layout/presets'
+import { metronomeMenuHtml } from '../metronome/panel'
 
 export type Panels = AppState['panels']
 
@@ -308,6 +309,7 @@ function ownMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>)
       ${item('btn-key-neg', t('menu.negative'), t('keyPanel.neg.title'))}
       ${item('btn-key-par', t('menu.parallel'), t('keyPanel.par.title'))}
       ${item('btn-key-colt', t('menu.coltrane'), t('keyPanel.colt.title'))}`
+    case 'metronome': return metronomeMenuHtml()
     case 'guitar': return `<div id="strings-menu"></div><div class="menu-sep"></div><button type="button" class="menu-item" data-panel="guitarControls"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t('menu.controls')}</span></button>`
     default: return ''
   }
@@ -323,6 +325,7 @@ function moduleBody(id: ModuleId): string {
     case 'key': return '<div id="key-container"></div>'
     case 'explain': return '<div id="explain-container"></div>'
     case 'next': return '<div id="next-container"></div>'
+    case 'metronome': return '<div id="metronome-container"></div>'
     case 'progressions': return '<div id="progressions-container"></div>'
     case 'ear': return '<div id="ear-container"></div>'
     case 'player': return '<div id="player-container"></div>'

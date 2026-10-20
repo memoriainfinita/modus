@@ -172,6 +172,17 @@ Nothing heard is sounded, sent to MIDI out or played back: the microphone would 
 
 A recording being transcribed, from a local file opened with Open… or dropped on the panel (`ui/player.ts`). It is played by an `<audio>` element, apart from the instrument sound, and is not stored: it stays on the computer and is opened again after a reload. Its waveform (the first channel, decoded once, the loudest sample per pixel column) fills the panel; a click goes to that point, the playhead moves while it plays. Speed 50 %–125 % in steps (− and +) without changing the pitch (`preservesPitch`), remembered (`player-speed`). A sets the loop start where the playhead is, B its end; from B (or the end of the file with no B) it goes back to A; × removes the loop; the loop is drawn on the waveform. ⟲5 goes back 5 seconds, not before A. The time shows tenths, so a loop can be set to a beat. Opened, the recording is read once by the notes worker (the same Basic Pitch as the microphone's chords; its progress next to the name); with Chords on (on by default, remembered: `player-chords`) the notes sounding at the playhead go to the detector as heard notes, never sounded, while it plays, where it jumps to and paused. Off lets them go. The Player's notes and the microphone's are held apart: one stopping does not let go of the other's
 
+### Metronome
+
+A panel (`metronome/`): ▶ / ■, the tempo (20–300 bpm, − and +, typed, or tapped: the mean of the last taps, a pause of 2 s starts over) and what it counts, as tabs:
+- **Meter:** any, typed as 4/4, 6/8 or additive (2+2+3/8), or picked from a row; the first pulse is strong, the first of each other group accented
+- **Cycle:** UMT's `RHYTHMIC_CYCLES` by tradition (Hindustani and Carnatic talas, flamenco compás, aksak), each pulse struck as `cycleStrokes` says (sam strong, tali accented, khali a soft low click, flamenco accents) and counted as `cycleCounts` (bulerías from 12)
+- **Clave:** UMT's `CLAVE_PATTERNS`, its onsets over a bar of four beats, each beat a soft tick under it
+- **Euclidean:** k onsets in n steps (UMT `Polyrhythm.euclidean`)
+- **Polyrhythm:** a:b, the second voice in its own sound
+
+A subdivision of 1–6 clicks a pulse (meters, cycles, Euclidean), softer. The necklace: a dot a pulse round a circle, groups as arcs outside it, the counts beside, the dot sounding lit; a polyrhythm's second voice as an inner ring. Clicks are made with Web Audio through the master volume, scheduled ahead on the audio clock (`metronome/engine.ts`). A new mode or subdivision starts its cycle at the next click; a new tempo goes on without a break. The tempo trainer in the ⋯ menu raises the tempo by N bpm every M cycles up to a limit. Settings kept (`metronome`). While it runs, the history's harmonic rhythm is read at its tempo and over its cycle.
+
 ### Ear training
 
 The app plays without showing and the user names what was heard (`ui/ear.ts`). Three kinds of question, each with its own score (right / asked, kept in `ear-score`; the kind in `ear-mode`):

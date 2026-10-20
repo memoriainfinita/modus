@@ -37,6 +37,11 @@ declare const UMT: {
     doubled: string[]; omitted: string[]; added: string[]
   }
   findScalesForNotes: (notes: any[], opts?: { tonic?: string; tonicOnly?: boolean; limit?: number }) => { name: string; root: string; type: string; notes: string[]; extra: string[]; tier: number }[]
+  RHYTHMIC_CYCLES: Record<string, { name: string; tradition: 'hindustani' | 'carnatic' | 'flamenco' | 'aksak'; beats: number; groups: number[]; source: string }>
+  cycleStrokes: (cycle: any) => ('sam' | 'tali' | 'khali' | 'accent' | 'beat')[]
+  cycleCounts: (cycle: any) => number[]
+  CLAVE_PATTERNS: Record<string, { name: string; steps: readonly boolean[]; description: string }>
+  Polyrhythm: { euclidean: (pulses: number, steps: number) => boolean[] }
   getUpperStructures: (dominantChord: any) => { triad: { name: string; getNotes: () => { name: string }[] }; tensions: string[]; label: string }[]
   NeoRiemannian: { P: (chord: any) => any | null; L: (chord: any) => any | null; R: (chord: any) => any | null }
   SetTheory: {

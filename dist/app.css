@@ -3074,6 +3074,107 @@ body.view-mode .guitar-chrome {
   font-size: 12px;
   white-space: nowrap;
 }
+#metronome-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+.metro-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.metro-tempo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.metro-now {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.metro-label {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.metro-choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.metro-choices .menu-chip:not([aria-pressed=true]) {
+  background: var(--surface);
+}
+.metro-num,
+.metro-meter {
+  font: inherit;
+  width: 4em;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.metro-meter {
+  width: 7em;
+}
+.metro-meter.invalid {
+  border-color: var(--danger);
+}
+.metro-num:focus,
+.metro-meter:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.metro-trainer-row {
+  gap: 6px;
+}
+.metro-necklace {
+  flex: 1;
+  min-height: 120px;
+  max-height: 320px;
+  width: 100%;
+}
+.metro-arc {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.metro-dot {
+  fill: var(--text-dim);
+  transition: fill 60ms;
+}
+.metro-strong {
+  fill: var(--accent);
+}
+.metro-accent {
+  fill: var(--text);
+}
+.metro-khali {
+  fill: none;
+  stroke: var(--text-dim);
+  stroke-width: 1.5;
+}
+.metro-poly {
+  fill: var(--fn-s);
+}
+.metro-rest {
+  fill: var(--border);
+}
+.metro-dot.lit {
+  fill: var(--cursor);
+  stroke: var(--cursor);
+}
+.metro-count {
+  fill: var(--text-muted);
+  font-size: 9px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
 .player-wave {
   width: 100%;
   flex: 1;
