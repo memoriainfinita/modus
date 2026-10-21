@@ -15,7 +15,7 @@ const STEPS: { id: string; target: string | null }[] = [
   { id: 'explain', target: '#mod-explain' },
   { id: 'cof', target: '#mod-cof' },
   { id: 'history', target: '#mod-history' },
-  { id: 'layout', target: '#btn-layout' },
+  { id: 'layout', target: '#btn-layout, #tab-layout' },   // the rail's, or the bottom bar's on a phone
   { id: 'practice', target: '#mod-progressions' },
   { id: 'help', target: '#btn-help' },
 ]
@@ -61,13 +61,14 @@ function onKey(e: KeyboardEvent) {
   else if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); go(step - 1) }
 }
 
-/** The target if it is on the page and shown. */
+/** The first of the targets that is on the page and shown. */
 function visibleTarget(selector: string | null): HTMLElement | null {
   if (!selector) return null
-  const el = document.querySelector<HTMLElement>(selector)
-  if (!el || el.closest('.module-hidden')) return null
-  const r = el.getBoundingClientRect()
-  return r.width && r.height ? el : null
+  return [...document.querySelectorAll<HTMLElement>(selector)].find(el => {
+    if (el.closest('.module-hidden')) return false
+    const r = el.getBoundingClientRect()
+    return r.width && r.height
+  }) ?? null
 }
 
 function draw() {
@@ -89,7 +90,7 @@ function draw() {
     <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" tabindex="-1">
       <div class="tour-count">${step + 1} / ${STEPS.length}</div>
       <h2 id="tour-title" class="tour-title">${escapeHtml(t(`tour.${s.id}.title` as StringKey))}</h2>
-      <p class="tour-text">${escapeHtml(t(`tour.${s.id}` as StringKey))}</p>
+      <p class="tour-text">${escapeHtml(t((target?.closest('#tabbar') ? `tour.${s.id}.touch` : `tour.${s.id}`) as StringKey))}</p>
       <div class="tour-buttons">
         <button class="ctrl-btn" data-tour="skip">${escapeHtml(t(last ? 'tour.close' : 'tour.skip'))}</button>
         <span class="tour-gap"></span>

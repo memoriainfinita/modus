@@ -1375,6 +1375,7 @@
     "tour.history.title": "History",
     "tour.history": "Every chord you hold is logged here with its numeral, and the cadences and modulations between them. Click a chip to see it again, drag it to the song, right-click or long-press to remove it.",
     "tour.layout.title": "Your layout",
+    "tour.layout.touch": "Every element is a panel: hide it with \xD7; its options are in its \u22EF menu. Here, in Panels: ready-made layouts for study, class, transcription or recording, and which panels show. More presents the layout full screen.",
     "tour.layout": "Every element is a panel: drag it by its title, resize it from its corner, hide it with \xD7; its options are in its \u22EF menu. Here, in the rail (hide it with the button by the logo): ready-made layouts for study, class, transcription or recording, and your own. P presents the layout full screen.",
     "tour.practice.title": "Practice",
     "tour.practice": "Progressions plays the classic progressions in your key; Ear training plays without showing and you name what you heard; the Player loops and slows down a recording to transcribe it.",
@@ -1655,7 +1656,21 @@
     "gesture.fill": "\u2299 on a song chord arms MIDI fill: each chord you play fills a slot and arms the next, until the song ends or Esc.",
     "gesture.remove": "Right-click a history chip to remove it. Removals and Clear can be undone from the toast.",
     "gesture.piano": "Click the on-screen piano to play: in Hold each click adds or removes a note of the chord.",
-    "gesture.layout": "Drag a panel by its title to move it, by its corner to resize it; \xD7 hides it, the \u25A6 menu shows it again."
+    "gesture.layout": "Drag a panel by its title to move it, by its corner to resize it; \xD7 hides it, the \u25A6 menu shows it again.",
+    "help.touch": "Gestures",
+    "a11y.tabbar": "Input, sound, panels",
+    "tab.input": "Input",
+    "tab.sound": "Sound",
+    "tab.mic": "Mic",
+    "tab.panels": "Panels",
+    "tab.more": "More",
+    "tab.present": "Presentation",
+    "gesture.touch.tap": "Tap a chord in the history, the song or the circle to hear it and see it in the detector.",
+    "gesture.touch.doubleTap": "Double-tap a major or minor sector of the circle to make it the key.",
+    "gesture.touch.song": "Tap a chord of the song to show its buttons: edit, duplicate, MIDI fill, remove.",
+    "gesture.touch.remove": "Press and hold a chord in the history to remove it. What is removed or cleared comes back from the notice.",
+    "gesture.touch.piano": "Touch the on-screen piano with several fingers at once to make a chord; in Hold each tap adds or removes a note.",
+    "gesture.touch.layout": "\xD7 hides a panel; Panels, in the bar at the bottom, shows it again."
   };
 
   // src/i18n/es.ts
@@ -2313,6 +2328,7 @@
     "tour.history.title": "Historial",
     "tour.history": "Cada acorde que mantienes queda aqu\xED con su grado, y las cadencias y modulaciones entre ellos. Haz clic en una ficha para volver a verla, arr\xE1strala a la canci\xF3n, clic derecho o pulsaci\xF3n larga para quitarla.",
     "tour.layout.title": "Tu disposici\xF3n",
+    "tour.layout.touch": "Cada elemento es un panel: oc\xFAltalo con \xD7; sus opciones est\xE1n en su men\xFA \u22EF. Aqu\xED, en Paneles: disposiciones para estudiar, dar clase, transcribir o grabar, y qu\xE9 paneles se ven. M\xE1s presenta la disposici\xF3n a pantalla completa.",
     "tour.layout": "Cada elemento es un panel: arr\xE1stralo por el t\xEDtulo, cambia su tama\xF1o desde la esquina, oc\xFAltalo con \xD7; sus opciones est\xE1n en su men\xFA \u22EF. Aqu\xED, en el riel (se oculta con el bot\xF3n junto al logo): disposiciones para estudiar, dar clase, transcribir o grabar, y las tuyas. P presenta la disposici\xF3n a pantalla completa.",
     "tour.practice.title": "Practica",
     "tour.practice": "Progresiones toca las progresiones cl\xE1sicas en tu tonalidad; Entrenamiento auditivo toca sin ense\xF1ar y t\xFA dices lo que has o\xEDdo; el Reproductor repite y ralentiza una grabaci\xF3n para transcribirla.",
@@ -2586,7 +2602,21 @@
     "gesture.fill": "\u2299 en un acorde de la canci\xF3n activa el relleno MIDI: cada acorde que tocas ocupa un hueco y pasa al siguiente, hasta el final o Esc.",
     "gesture.remove": "Clic derecho en un acorde del historial para quitarlo. Lo quitado y el borrado se deshacen desde el aviso.",
     "gesture.piano": "Clic en el piano de la pantalla para tocar: en Mantener cada clic a\xF1ade o quita una nota del acorde.",
-    "gesture.layout": "Arrastra un panel por su t\xEDtulo para moverlo y por la esquina para cambiar su tama\xF1o; \xD7 lo oculta y el men\xFA \u25A6 lo vuelve a mostrar."
+    "gesture.layout": "Arrastra un panel por su t\xEDtulo para moverlo y por la esquina para cambiar su tama\xF1o; \xD7 lo oculta y el men\xFA \u25A6 lo vuelve a mostrar.",
+    "help.touch": "Gestos",
+    "a11y.tabbar": "Entrada, sonido, paneles",
+    "tab.input": "Entrada",
+    "tab.sound": "Sonido",
+    "tab.mic": "Micr\xF3fono",
+    "tab.panels": "Paneles",
+    "tab.more": "M\xE1s",
+    "tab.present": "Presentaci\xF3n",
+    "gesture.touch.tap": "Toca un acorde del historial, de la canci\xF3n o del c\xEDrculo para o\xEDrlo y verlo en el detector.",
+    "gesture.touch.doubleTap": "Toca dos veces un sector mayor o menor del c\xEDrculo para usarlo como tonalidad.",
+    "gesture.touch.song": "Toca un acorde de la canci\xF3n para ver sus botones: editar, duplicar, relleno MIDI, quitar.",
+    "gesture.touch.remove": "Mant\xE9n pulsado un acorde del historial para quitarlo. Lo quitado y el borrado se deshacen desde el aviso.",
+    "gesture.touch.piano": "Toca el piano de la pantalla con varios dedos a la vez para formar un acorde; en Mantener cada toque a\xF1ade o quita una nota.",
+    "gesture.touch.layout": "\xD7 oculta un panel; Paneles, en la barra de abajo, lo vuelve a mostrar."
   };
 
   // src/i18n/i18n.ts
@@ -4292,7 +4322,8 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     { id: "explain", target: "#mod-explain" },
     { id: "cof", target: "#mod-cof" },
     { id: "history", target: "#mod-history" },
-    { id: "layout", target: "#btn-layout" },
+    { id: "layout", target: "#btn-layout, #tab-layout" },
+    // the rail's, or the bottom bar's on a phone
     { id: "practice", target: "#mod-progressions" },
     { id: "help", target: "#btn-help" }
   ];
@@ -4345,10 +4376,11 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   }
   function visibleTarget(selector) {
     if (!selector) return null;
-    const el2 = document.querySelector(selector);
-    if (!el2 || el2.closest(".module-hidden")) return null;
-    const r = el2.getBoundingClientRect();
-    return r.width && r.height ? el2 : null;
+    return [...document.querySelectorAll(selector)].find((el2) => {
+      if (el2.closest(".module-hidden")) return false;
+      const r = el2.getBoundingClientRect();
+      return r.width && r.height;
+    }) ?? null;
   }
   function draw() {
     if (step < 0) return;
@@ -4369,7 +4401,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" tabindex="-1">
       <div class="tour-count">${step + 1} / ${STEPS.length}</div>
       <h2 id="tour-title" class="tour-title">${escapeHtml(t(`tour.${s.id}.title`))}</h2>
-      <p class="tour-text">${escapeHtml(t(`tour.${s.id}`))}</p>
+      <p class="tour-text">${escapeHtml(t(target?.closest("#tabbar") ? `tour.${s.id}.touch` : `tour.${s.id}`))}</p>
       <div class="tour-buttons">
         <button class="ctrl-btn" data-tour="skip">${escapeHtml(t(last ? "tour.close" : "tour.skip"))}</button>
         <span class="tour-gap"></span>
@@ -5835,14 +5867,23 @@ ${explainCadence(cadence)}` : "");
       });
     }
   }
+  var SHEETS = /* @__PURE__ */ new Set(["input-menu", "sound-menu", "layout-menu", "more-menu"]);
+  var phone2 = () => matchMedia("(max-width: 720px)").matches;
   function openPopover(pop, trigger) {
     closePopover();
-    const rail = trigger.closest("#rail");
-    const anchor = rail ?? trigger.closest(".pop-anchor") ?? trigger.parentElement;
+    const sheet = phone2() && SHEETS.has(pop.menu.id);
+    const rail = sheet ? null : trigger.closest("#rail");
+    const anchor = sheet ? document.body : rail ?? trigger.closest(".pop-anchor") ?? trigger.parentElement;
     anchor.appendChild(pop.menu);
     pop.menu.classList.toggle("pop-side", !!rail);
+    pop.menu.classList.toggle("pop-sheet", sheet);
     pop.menu.classList.add("open");
     pop.menu.style.top = "";
+    pop.menu.style.transform = "";
+    if (sheet) {
+      pop.menu.scrollTop = 0;
+      if (!pop.menu.querySelector(":scope > .pop-handle")) pop.menu.insertAdjacentHTML("afterbegin", '<div class="pop-handle" aria-hidden="true"></div>');
+    }
     if (rail) {
       const top = Math.min(trigger.offsetTop, rail.clientHeight - pop.menu.offsetHeight - 8);
       pop.menu.style.top = `${Math.max(8, top)}px`;
@@ -5860,6 +5901,30 @@ ${explainCadence(cadence)}` : "");
   function isPopoverOpen(menu) {
     return current2?.pop.menu === menu;
   }
+  var pull = null;
+  document.addEventListener("pointerdown", (e) => {
+    const handle = e.target.closest?.(".pop-handle");
+    const menu = handle?.closest(".pop-sheet.open");
+    if (!menu) return;
+    pull = { menu, y: e.clientY, id: e.pointerId };
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {
+    }
+  });
+  document.addEventListener("pointermove", (e) => {
+    if (!pull || e.pointerId !== pull.id) return;
+    pull.menu.style.transform = `translateY(${Math.max(0, e.clientY - pull.y)}px)`;
+  });
+  var release = (e) => {
+    if (!pull || e.pointerId !== pull.id) return;
+    const { menu, y } = pull;
+    pull = null;
+    menu.style.transform = "";
+    if (e.clientY - y > 80 && current2?.pop.menu === menu) closePopover();
+  };
+  document.addEventListener("pointerup", release);
+  document.addEventListener("pointercancel", release);
   document.addEventListener("pointerdown", (e) => {
     if (!current2) return;
     const target = e.target;
@@ -6644,7 +6709,7 @@ ${explainCadence(cadence)}` : "");
     setGrid(shown ? addCell(grid2, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid2, id));
   }
   function renderLayout(_panels, fieldsVisible) {
-    $("app").innerHTML = buildToolbar() + '<div class="workspace">' + buildRail() + `<div class="work-main"><div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, fieldsVisible)).join("")}</main></div></div>` + buildSettings();
+    $("app").innerHTML = buildToolbar() + '<div class="workspace">' + buildRail() + `<div class="work-main"><div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, fieldsVisible)).join("")}</main></div></div>` + buildTabbar() + buildSettings();
     applyGrid();
     wireGrid();
     wireLayoutMenu();
@@ -6743,6 +6808,17 @@ ${explainCadence(cadence)}` : "");
       </nav>
     </div>`;
   }
+  function buildTabbar() {
+    const tab = (id, icon, label, attrs = "") => `<button id="${id}" class="tab-btn"${attrs}>${icon}<span class="tab-label">${escapeHtml(label)}</span></button>`;
+    return `
+    <nav id="tabbar" class="tabbar" aria-label="${t("a11y.tabbar")}">
+      ${tab("tab-input", ICONS.midi, t("tab.input"))}
+      ${tab("tab-sound", ICONS.sound, t("tab.sound"))}
+      ${tab("tab-mic", ICONS.mic, t("tab.mic"), ' data-act="mic"')}
+      ${tab("tab-layout", ICONS.layout, t("tab.panels"))}
+      ${tab("tab-more", ICONS.more, t("tab.more"))}
+    </nav>`;
+  }
   function buildMenus() {
     return `
     <div id="input-menu" class="view-menu pop-menu" role="group" aria-label="${t("a11y.group.input")}">
@@ -6799,6 +6875,11 @@ ${explainCadence(cadence)}` : "");
       <div class="view-menu-hint">${t("key.menu.hint")}</div>
     </div>
     <div id="layout-menu" class="view-menu pop-menu"></div>
+    <div id="more-menu" class="view-menu pop-menu">
+      <button id="more-present" class="choice-row">${ICONS.present}<span>${t("tab.present")}</span></button>
+      <div class="view-menu-title">${t("views.save")}</div>
+      ${exportRows()}
+    </div>
     <div id="view-menu" class="view-menu pop-menu">
       <div class="view-menu-title">${t("views.open")}</div>
       ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join("")}
@@ -6809,13 +6890,14 @@ ${explainCadence(cadence)}` : "");
       </label>
       <div class="view-menu-hint">${t("views.hint")}</div>
       <div class="view-menu-title">${t("views.save")}</div>
-      ${["staff", "cof", "guitar", "piano"].map((v) => `
-        <div class="view-menu-export"><span>${viewLabel(v)}</span>
-          <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
-          <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
-        </div>`).join("")}
+      ${exportRows()}
     </div>`;
   }
+  var exportRows = () => ["staff", "cof", "guitar", "piano"].map((v) => `
+  <div class="view-menu-export"><span>${viewLabel(v)}</span>
+    <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
+    <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
+  </div>`).join("");
   var item = (id, label, title = "", on) => `<button type="button" id="${id}" class="menu-item"${on !== void 0 ? ` aria-pressed="${on}"` : ""}${title ? ` title="${escapeHtml(title)}"` : ""}><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(label)}</span></button>`;
   var steps = (minus, plus) => `<div class="menu-row"><span class="menu-label">${t("menu.size")}</span>
     <button type="button" id="${minus}" class="menu-step" title="${t("ctrl.smaller")}">\u2212</button>
@@ -7096,7 +7178,7 @@ ${explainCadence(cadence)}` : "");
   }
   function wireLayoutMenu() {
     const menu = $("layout-menu");
-    wirePopover(menu, [$("btn-layout")]);
+    wirePopover(menu, [$("btn-layout"), $("tab-layout")]);
     menu.addEventListener("click", (e) => {
       e.stopPropagation();
       const el2 = e.target;
@@ -8889,6 +8971,18 @@ ${explainCadence(cadence)}` : "");
     "gesture.piano",
     "gesture.layout"
   ];
+  var TOUCH_GESTURES = [
+    "gesture.touch.tap",
+    "gesture.touch.doubleTap",
+    "gesture.logged",
+    "gesture.touch.song",
+    "gesture.fill",
+    "gesture.touch.remove",
+    "gesture.touch.piano",
+    "gesture.touch.layout"
+  ];
+  var hasKeyboard = () => matchMedia("(any-pointer: fine)").matches;
+  var hasTouch = () => matchMedia("(any-pointer: coarse)").matches;
   var helpVisible = false;
   var returnFocus3 = null;
   function closeHelp() {
@@ -8912,11 +9006,17 @@ ${explainCadence(cadence)}` : "");
     popup.setAttribute("role", "dialog");
     popup.setAttribute("aria-label", t("help.heading"));
     returnFocus3 = document.activeElement;
+    const keyboard = hasKeyboard();
+    const touch = hasTouch() ? `
+    <div class="shortcut-section">${t("help.touch")}</div>
+    ${TOUCH_GESTURES.map((g) => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join("")}` : "";
     popup.innerHTML = `
     <div class="shortcut-help-header">
       <span>${t("help.heading")}</span>
       <button class="shortcut-help-close" aria-label="${t("help.close")}">\xD7</button>
     </div>
+    ${keyboard ? "" : touch}
+    ${keyboard ? `
     <div class="shortcut-section">${t("help.keys")}</div>
     ${ACTIONS.map((a) => `
       <div class="shortcut-row">
@@ -8931,6 +9031,7 @@ ${explainCadence(cadence)}` : "");
     <div class="help-setting"><button id="help-keys" class="ctrl-btn">${escapeHtml(t("help.changeKeys"))}</button></div>
     <div class="shortcut-section">${t("help.mouse")}</div>
     ${GESTURES.map((g) => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join("")}
+    ${touch}` : ""}
     <div class="shortcut-section">${t("help.panels")}</div>
     ${MODULE_IDS.map((id) => `<div class="gesture-row"><b>${escapeHtml(t(`module.${id}`))}</b> \u2014 ${escapeHtml(t(`help.panel.${id}`))}</div>`).join("")}
     <div class="help-setting"><button id="help-tour" class="ctrl-btn" title="${escapeHtml(t("tour.start.title"))}">${escapeHtml(t("tour.start"))}</button></div>`;
@@ -8940,7 +9041,7 @@ ${explainCadence(cadence)}` : "");
       closeHelp();
       startTour();
     });
-    popup.querySelector("#help-keys").addEventListener("click", () => {
+    popup.querySelector("#help-keys")?.addEventListener("click", () => {
       closeHelp();
       openSettings("shortcuts");
     });
@@ -10340,7 +10441,12 @@ ${explainCadence(c.cadence)}` : ""}`;
         closePopover();
       });
     });
-    menu.querySelectorAll("[data-export]").forEach((btn) => {
+    wirePopover($2("more-menu"), [$2("tab-more")]);
+    $2("more-present").addEventListener("click", (e) => {
+      e.stopPropagation();
+      togglePresentation();
+    });
+    document.querySelectorAll("[data-export]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const ok = await exportDiagram(btn.dataset.export, btn.dataset.format, selectedSymbol() ?? analysisKey());
         if (!ok) btn.classList.add("invalid");
@@ -10857,8 +10963,8 @@ ${explainCadence(c.cadence)}` : ""}`;
   var FIFTHS_MAJOR = [6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11];
   var keyMenuMode = "Major";
   function wireBar() {
-    wirePopover($2("input-menu"), [$2("rail-input"), $2("btn-input-status")]);
-    wirePopover($2("sound-menu"), [$2("rail-sound"), $2("btn-sound-status")], () => {
+    wirePopover($2("input-menu"), [$2("rail-input"), $2("btn-input-status"), $2("tab-input")]);
+    wirePopover($2("sound-menu"), [$2("rail-sound"), $2("btn-sound-status"), $2("tab-sound")], () => {
       const filter2 = $2("instrument-filter");
       filter2.value = "";
       renderChoices($2("audio-instrument"), $2("instrument-list"), "");

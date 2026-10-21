@@ -1533,6 +1533,44 @@ await check('settings on a phone: full screen, the sections with their values, a
   assert(themeSummary.includes('Temperley'), `theory's summary: ${themeSummary}`)
 })
 
+await check('a phone: the bar at the bottom opens its menus as sheets; Help is full screen, with gestures and no keys', async () => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: 'en-US' })
+  await context.addInitScript(FAKE_MIDI)
+  const p = await context.newPage()
+  await p.goto(URL_)
+  await p.waitForFunction(() => window.UMT && window.Notae)
+  assert(await p.locator('#tabbar').isVisible() && await p.locator('.rail-col').isHidden() && await p.locator('#btn-rail').isHidden(), 'no bottom bar in place of the rail')
+  const sheet = () => p.evaluate(() => { const m = document.querySelector('.pop-menu.open'); if (!m) return null; const r = m.getBoundingClientRect(); return { id: m.id, sheet: m.classList.contains('pop-sheet'), left: r.left, width: r.width, bottom: Math.round(r.bottom) } })
+  const opened = []
+  for (const tab of ['tab-input', 'tab-sound', 'tab-layout', 'tab-more']) {
+    await p.tap('#' + tab)
+    opened.push(await sheet())
+    await p.touchscreen.tap(195, 30)   // over the dimmed page: closes it
+  }
+  const closed = await p.locator('.pop-menu.open').count()
+  await p.tap('#btn-input-status')
+  const fromTop = await sheet()
+  await p.touchscreen.tap(195, 30)
+  const keyboardRow = await p.locator('#tab-input').tap().then(() => p.locator('#menu-keyboard').isVisible())
+  await p.touchscreen.tap(195, 30)
+  await p.tap('#tab-layout')
+  await p.tap('.pop-sheet input[data-module="staff"]')
+  const staffHidden = await p.locator('#mod-staff').evaluate(e => e.classList.contains('module-hidden'))
+  await p.tap('.pop-sheet input[data-module="staff"]')
+  await p.touchscreen.tap(195, 30)
+  await p.tap('#btn-help')
+  const help = await p.evaluate(() => { const h = document.getElementById('shortcut-help'); const r = h.getBoundingClientRect(); return { w: r.width, h: r.height, sections: [...h.querySelectorAll('.shortcut-section')].map(s => s.textContent), keys: h.querySelectorAll('.shortcut-row').length } })
+  await context.close()
+  const bad = opened.filter(o => !o?.sheet || o.left !== 0 || o.width !== 390 || o.bottom !== 844 - 60)
+  assert(bad.length === 0, `not sheets above the bar: ${JSON.stringify(opened)}`)
+  assert(closed === 0, 'a tap outside did not close the sheet')
+  assert(fromTop?.id === 'input-menu' && fromTop.sheet, `the bar's input status: ${JSON.stringify(fromTop)}`)
+  assert(!keyboardRow, 'the computer keyboard is offered on a phone')
+  assert(staffHidden, 'Panels did not hide the staff')
+  assert(help.w === 390 && help.h === 844, `help not full screen: ${help.w}×${help.h}`)
+  assert(help.keys === 0 && help.sections[0] === 'Gestures' && !help.sections.includes('Mouse'), `help: ${JSON.stringify(help)}`)
+})
+
 await check('offline: once opened, the app loads and plays without a network', async () => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'en-US' })
   await context.addInitScript(FAKE_MIDI)
