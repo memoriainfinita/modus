@@ -10,6 +10,7 @@ import { runningMeter } from '../metronome/engine'
 import { explainCadence } from '../detector/explain'
 import { makeActivatable, onLongPress } from '../ui/a11y'
 import { getPref } from '../settings/prefs'
+import { newId } from '../id'
 
 // Chip accent by harmonic function (T/S/D), not by chord quality: the key panel's colours
 const FUNCTION_COLORS: Record<string, string> = {
@@ -46,7 +47,7 @@ export function restoreCarriedHistory() {
 }
 
 export function addEntry(symbol: string, notes: string[], time?: { at: number; until?: number }) {
-  const entry: HistoryEntry = { id: crypto.randomUUID(), symbol, notes, ...time }
+  const entry: HistoryEntry = { id: newId(), symbol, notes, ...time }
   entries = [entry, ...entries].slice(0, getPref('history-max'))
   onChange(entries)
 }

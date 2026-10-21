@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url'
 const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.map': 'application/json' }
 
-export async function serve(port = 0) {
+// `host` '0.0.0.0' serves the local network too, to try the app on a phone on the same wifi
+export async function serve(port = 0, host = '127.0.0.1') {
   const server = createServer(async (req, res) => {
     const path = normalize(join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname)))
     if (!path.startsWith(ROOT)) { res.writeHead(403).end(); return }
@@ -17,6 +18,6 @@ export async function serve(port = 0) {
       res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' }).end(body)
     } catch { res.writeHead(404).end() }
   })
-  await new Promise(r => server.listen(port, '127.0.0.1', r))
+  await new Promise(r => server.listen(port, host, r))
   return { server, url: `http://127.0.0.1:${server.address().port}/` }
 }

@@ -6,6 +6,7 @@ import { keyPrefersSharps } from '../theory/keys'
 import { t } from '../i18n/i18n'
 import { en } from '../i18n/en'
 import { es } from '../i18n/es'
+import { newId } from '../id'
 export { transposeKey } from '../theory/keys'
 
 export function createSong(): Song {
@@ -20,7 +21,6 @@ export function isBlankSong(song: Song): boolean {
   return !song.sections.length && UNTITLED.has(song.title)
 }
 
-function newId(): string { return crypto.randomUUID() }
 
 function newMeasure(): Measure { return { id: newId(), chords: [] } }
 

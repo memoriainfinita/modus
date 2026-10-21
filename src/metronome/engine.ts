@@ -150,12 +150,12 @@ export function stopMetronome() {
   onChange()
 }
 
-/** The click sounding now (the last whose time has come), for the necklace; null when stopped. */
-export function currentClick(): Click | null {
+/** The click sounding now (the last whose time has come) and when it struck, for the drawing; null when stopped. */
+export function currentClick(): { click: Click; at: number } | null {
   if (!running) return null
   const now = audioOutput().ctx.currentTime
-  let last: Click | null = null
-  for (const p of played) if (p.at <= now) last = p.click
+  let last: { click: Click; at: number } | null = null
+  for (const p of played) if (p.at <= now) last = { click: p.click, at: p.at }
   return last
 }
 

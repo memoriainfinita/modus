@@ -117,6 +117,11 @@ function hear(analyser: AnalyserNode, time: Float32Array<ArrayBuffer>, rate: num
 export async function startMic(cb: MicCallbacks): Promise<void> {
   if (timer) return
   callbacks = cb
+  // Outside a secure context (plain http on the network) the browser offers no microphone at all
+  if (!navigator.mediaDevices?.getUserMedia) {
+    cb.state(false, window.isSecureContext ? 'NotSupportedError' : 'InsecureContext')
+    return
+  }
   try {
     // The raw signal: echo cancelling, noise suppression and gain control bend a sung note
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })

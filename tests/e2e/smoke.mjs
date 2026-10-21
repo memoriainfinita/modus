@@ -1200,7 +1200,7 @@ await check('song playback: ▶ plays the song at its tempo, the chart and the d
   assert(await text('#mod-song .song-play') === '▶', 'did not stop')
 })
 
-await check('metronome: 4/4 at 240 runs round the necklace; bulerías counts from 12; 2+2+3/8 typed', async () => {
+await check('metronome: 4/4 at 240 runs round the necklace with its count in the middle; bulerías counts from 12; 2+2+3/8 typed; the pulses view; the mode menu', async () => {
   const m = '#metronome-container'
   await page.fill(`${m} .metro-num[data-field="tempo"]`, '240')
   await page.locator(`${m} .metro-num[data-field="tempo"]`).evaluate(i => i.dispatchEvent(new Event('change')))
@@ -1213,15 +1213,42 @@ await check('metronome: 4/4 at 240 runs round the necklace; bulerías counts fro
     await page.waitForTimeout(90)
   }
   assert(seen.size >= 3, `pulses lit: ${[...seen].join(',')}`)
+  const big = await page.locator(`${m} .metro-big`).textContent()
+  assert(['1', '2', '3', '4'].includes(big), `count in the middle: ${big}`)
   assert(await text(`${m} .metro-play`) === '■', 'not running')
-  await page.click(`${m} .strings-tab[data-tab="cycle"]`)
+  // What it counts is in the menu the mode's button opens, over the drawing; a kind keeps it open, a choice closes it
+  await page.click(`${m} .metro-mode`)
+  await page.click(`${m} [data-kind="cycle"]`)
+  assert(await page.locator(`${m} .metro-pop.open`).count() === 1, 'menu closed on a kind')
   await page.click(`${m} [data-cycle="bulerias"]`)
+  assert(await page.locator(`${m} .metro-pop.open`).count() === 0, 'menu still open')
   const counts = await page.locator(`${m} .metro-count`).allTextContents()
   assert(counts.length === 12 && counts[0] === '12' && counts[1] === '1', `counts: ${counts.join(' ')}`)
-  await page.click(`${m} .strings-tab[data-tab="meter"]`)
+  await page.click(`${m} .metro-mode`)
+  await page.click(`${m} [data-kind="meter"]`)
   await page.fill(`${m} .metro-meter`, '2+2+3/8')
   await page.locator(`${m} .metro-meter`).evaluate(i => i.dispatchEvent(new Event('change')))
   assert(await page.locator(`${m} .metro-arc`).count() === 3, 'three groups')
+  await page.click(`${m} .strings-tab[data-view="pulses"]`)
+  assert(await page.locator(`${m} .metro-group`).count() === 3 && await page.locator(`${m} .metro-block`).count() === 7, 'pulses view: 3 groups, 7 blocks')
+  await page.waitForFunction(() => document.querySelector('#metronome-container .metro-block.lit') !== null, null, { timeout: 2000 })
+  await page.click(`${m} .strings-tab[data-view="necklace"]`)
+  // Euclidean: the draft by − and +, applied by Use; bulerías among the recent modes
+  await page.click(`${m} .metro-mode`)
+  assert((await page.locator(`${m} .metro-recent`).innerText()).includes('Bulerías'), 'recent modes')
+  await page.click(`${m} [data-kind="euclid"]`)
+  await page.click(`${m} [data-step="pulses"][data-dir="1"]`)
+  await page.click(`${m} [data-use="euclid"]`)
+  assert((await text(`${m} .metro-mode`)).includes('E(4, 8)'), `euclid: ${await text(`${m} .metro-mode`)}`)
+  // The large count, off and on from the ⋯ menu
+  await option('metronome', '#btn-metro-count')
+  assert(await page.locator(`${m} .metro-big`).count() === 0, 'large count still shown')
+  await option('metronome', '#btn-metro-count')
+  assert(await page.locator(`${m} .metro-big`).count() === 1, 'large count not back')
+  // The subdivision from its own button
+  await page.click(`${m} .metro-sub`)
+  await page.click(`${m} .metro-sub-pop [data-sub="2"]`)
+  assert((await text(`${m} .metro-sub`)).includes('2'), 'subdivision')
   await page.click(`${m} .metro-play`)
   assert(await text(`${m} .metro-play`) === '▶', 'did not stop')
 })

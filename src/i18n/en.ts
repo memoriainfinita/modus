@@ -4,6 +4,7 @@
 export const en = {
   // Page
   'page.noMidi': 'This browser has no Web MIDI, so a controller cannot connect (Chrome, Edge and Firefox have it). Everything else — song builder, circle of fifths, history — still works.',
+  'page.insecure': 'Opened over plain http on the network, the browser hides MIDI and the microphone: open Modus from this computer (localhost) or over https to use them. Everything else works.',
   'page.cdnError': 'A file of the app did not load. Reload the page; if it keeps failing, the copy you have is incomplete.',
 
   // Toolbar: MIDI
@@ -473,6 +474,7 @@ export const en = {
   'mic.hint': 'Turn the microphone on and sing or play.',
   'mic.listening': 'Listening…',
   'mic.error': 'No microphone ({error}): allow it in the browser and try again.',
+  'mic.insecure': 'No microphone over plain http on the network: the browser offers it only on this computer (localhost) or over https.',
   'help.close': 'Close',
   'help.keys': 'Keys',
   'help.changeKeys': 'Change the shortcuts…',
@@ -700,9 +702,20 @@ export const en = {
   'metro.euclid.in': 'in',
   'metro.euclid.n': 'steps',
   'metro.use': 'Use',
+  'metro.recent': 'Recent',
+  'metro.poly.a': 'Beats of the first voice',
+  'metro.poly.b': 'Beats of the second voice',
   'metro.sub': 'Subdivision',
   'metro.sub.title': '{n} clicks a pulse',
   'metro.necklace': 'The cycle as a necklace: a dot a pulse, the one sounding lit',
+  'metro.view': 'View',
+  'metro.view.necklace': 'Necklace',
+  'metro.view.pulses': 'Pulses',
+  'metro.pulsesView': 'The cycle as a row of pulses: accented ones taller, the one sounding lit',
+  'metro.flash': 'Flash on the accents',
+  'metro.flash.title': 'The drawing lights up on the first pulse, and softer on each accent: to follow it from the corner of the eye',
+  'metro.count': 'Large count',
+  'metro.count.title': 'The count sounding, large, in the middle of the drawing',
   'metro.trainer': 'Tempo trainer',
   'metro.trainer.title': 'Raises the tempo by steps while it plays, up to a limit',
   'metro.trainer.step': 'Raise by',

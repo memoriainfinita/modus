@@ -19,7 +19,7 @@ export function renderTuner(container: HTMLElement, handlers: TunerHandlers, err
     </div>
     <div class="tuner-note">—</div>
     <div class="tuner-meter"><span class="tuner-zero"></span><span class="tuner-needle"></span></div>
-    <div class="tuner-detail">${escapeHtml(error ? t('mic.error', { error }) : on ? t('mic.listening') : t('mic.hint'))}</div>`
+    <div class="tuner-detail">${escapeHtml(error === 'InsecureContext' ? t('mic.insecure') : error ? t('mic.error', { error }) : on ? t('mic.listening') : t('mic.hint'))}</div>`
   container.querySelector('#tuner-mic')!.addEventListener('click', () => handlers.toggle())
   container.querySelectorAll<HTMLButtonElement>('.tuner-mode').forEach(b => b.addEventListener('click', () => {
     setMicMode(b.dataset.mode as typeof mode)
