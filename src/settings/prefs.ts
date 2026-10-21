@@ -23,6 +23,7 @@ export const PREFS = {
   'key-profile':     choice(['krumhansl', 'temperley', 'aarden', 'bellman', 'simple'], 'krumhansl'),
   'voice-rules':     choice(['strict', 'contemporary', 'species'], 'strict'),
   'movable-do':      { kind: 'bool', default: false } as Bool,
+  'auto-modes':      { kind: 'bool', default: true } as Bool,     // Auto reads church modes too (UMT 0.10)
   // Detector and history
   'history-hold-ms': num(300, 2000, 100, 800, 'ms'),
   'history-max':     num(20, 1000, 10, 200),

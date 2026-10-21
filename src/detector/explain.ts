@@ -10,6 +10,7 @@ import { chordNoteNames, tryParseChord, tryUMT } from '../theory/chord'
 import { pitchClassOf } from '../theory/notes'
 import { buildKeyMap } from '../theory/key-map'
 import { movableSyllable } from '../theory/solfege'
+import { hasLeadingTone } from '../theory/keys'
 import { escapeHtml } from '../ui/html'
 import { getPref } from '../settings/prefs'
 
@@ -39,9 +40,8 @@ function romanEntry(symbol: string, key: string, a: HarmonicAnalysis): Explanati
     const flat = acc === 'b' || acc === '♭'
     return withDo(t('ex.romanAltered', { ...vars, dir: t(flat ? 'ex.lowered' : 'ex.raised'), acc: flat ? '♭' : '♯', n }))
   }
-  // The 7th degree of a minor key is the subtonic, a whole step below; raised, the leading tone
-  const minor = /minor$/i.test(key)
-  const subtonic = n === 7 && minor && /^VII/.test(roman)
+  // The 7th degree a whole step under the tonic is the subtonic (minor, dorian, mixolydian…); a semitone, the leading tone
+  const subtonic = n === 7 && !hasLeadingTone(key) && /^VII/.test(roman)
   const name = subtonic ? t('ex.deg.subtonic') : t(`ex.deg.${n as Degree}`)
   return withDo(t('ex.roman', { ...vars, name }))
 }

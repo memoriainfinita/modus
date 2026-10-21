@@ -48,6 +48,8 @@
     "key-profile": choice(["krumhansl", "temperley", "aarden", "bellman", "simple"], "krumhansl"),
     "voice-rules": choice(["strict", "contemporary", "species"], "strict"),
     "movable-do": { kind: "bool", default: false },
+    "auto-modes": { kind: "bool", default: true },
+    // Auto reads church modes too (UMT 0.10)
     // Detector and history
     "history-hold-ms": num(300, 2e3, 100, 800, "ms"),
     "history-max": num(20, 1e3, 10, 200),
@@ -626,27 +628,67 @@
   }
 
   // src/theory/keys.ts
+  var KEY_MODES = ["Major", "Minor", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Locrian"];
+  var CHURCH_MODES = ["Dorian", "Phrygian", "Lydian", "Mixolydian", "Locrian"];
   var MAJOR_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
   var MINOR_ROOTS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
-  var ALL_KEYS = MAJOR_ROOTS.flatMap((root2, pc3) => [`${root2} Major`, `${MINOR_ROOTS[pc3]} Minor`]);
+  var DEGREE_OF = {
+    Major: { semitones: 0, degree: 0 },
+    Minor: { semitones: 9, degree: 5 },
+    Dorian: { semitones: 2, degree: 1 },
+    Phrygian: { semitones: 4, degree: 2 },
+    Lydian: { semitones: 5, degree: 3 },
+    Mixolydian: { semitones: 7, degree: 4 },
+    Locrian: { semitones: 11, degree: 6 }
+  };
+  var ALL_KEYS = MAJOR_ROOTS.flatMap((_, pc3) => KEY_MODES.map((m) => keyName(pc3, m)));
   function parseKey(key) {
-    const [root2, mode4] = key.split(" ");
+    const [root2, raw] = key.split(" ");
     const pc3 = pitchClassOf(root2 ?? "");
-    if (pc3 === -1) return null;
-    return { pc: pc3, minor: mode4?.toLowerCase() === "minor" };
+    const mode4 = KEY_MODES.find((m) => m.toLowerCase() === (raw ?? "major").toLowerCase());
+    if (pc3 === -1 || !mode4) return null;
+    return { pc: pc3, mode: mode4 };
   }
-  function keyName(pc3, minor) {
+  function keyName(pc3, mode4) {
     const p = (pc3 % 12 + 12) % 12;
-    return minor ? `${MINOR_ROOTS[p]} Minor` : `${MAJOR_ROOTS[p]} Major`;
+    if (mode4 === "Major") return `${MAJOR_ROOTS[p]} Major`;
+    if (mode4 === "Minor") return `${MINOR_ROOTS[p]} Minor`;
+    const { semitones, degree } = DEGREE_OF[mode4];
+    const parent = MAJOR_ROOTS[(p - semitones + 12) % 12];
+    let root2 = MAJOR_ROOTS[p];
+    try {
+      root2 = UMT.parseScaleSymbol(`${parent} Major`).getNotes()[degree].name.replace(/-?\d+$/, "");
+    } catch {
+    }
+    return `${root2} ${mode4}`;
+  }
+  function keyOnParent(parentPc, mode4) {
+    return keyName(parentPc + DEGREE_OF[mode4].semitones, mode4);
+  }
+  function parentMajorPc(key) {
+    const k = key ? parseKey(key) : null;
+    return k ? (k.pc - DEGREE_OF[k.mode].semitones + 12) % 12 : -1;
+  }
+  function keyMode(key) {
+    return key ? parseKey(key)?.mode ?? null : null;
+  }
+  function isMinorKey(key) {
+    const m = keyMode(key);
+    return m === "Minor" || m === "Dorian" || m === "Phrygian" || m === "Locrian";
+  }
+  function hasLeadingTone(key) {
+    const m = keyMode(key);
+    return m === "Major" || m === "Lydian";
   }
   function normalizeKey(key) {
     const k = key ? parseKey(key) : null;
-    return k ? keyName(k.pc, k.minor) : null;
+    return k ? keyName(k.pc, k.mode) : null;
   }
   function transposeKey(key, semitones) {
     const k = parseKey(key);
-    return k ? keyName(k.pc + semitones, k.minor) : key;
+    return k ? keyName(k.pc + semitones, k.mode) : key;
   }
+  var ABC_MODE = { Major: "", Minor: "m", Dorian: "dor", Phrygian: "phr", Lydian: "lyd", Mixolydian: "mix", Locrian: "loc" };
   function keySignature(key) {
     const name = normalizeKey(key);
     let degrees = [];
@@ -660,8 +702,8 @@
       const m = n.match(/^([A-G])([#b])/);
       if (m) accidentals[m[1]] = m[2];
     }
-    const [root2, mode4] = name.split(" ");
-    return { abcKey: root2 + (mode4 === "Minor" ? "m" : ""), accidentals };
+    const [root2] = name.split(" ");
+    return { abcKey: root2 + ABC_MODE[keyMode(name)], accidentals };
   }
   function keyPrefersSharps(key) {
     return Object.values(keySignature(key ?? null).accidentals).includes("#");
@@ -740,6 +782,13 @@
     "key.autoShort": "Auto",
     "key.majorCap": "Major",
     "key.minorCap": "Minor",
+    "key.modes": "Modes",
+    "key.mode.title": "A {mode} key: its tonic and its chords read as the mode's own",
+    "key.mode.dorian": "Dorian",
+    "key.mode.phrygian": "Phrygian",
+    "key.mode.lydian": "Lydian",
+    "key.mode.mixolydian": "Mixolydian",
+    "key.mode.locrian": "Locrian",
     "key.none": "Key",
     // Toolbar: audio
     "audio.title": "Soundfont status",
@@ -820,6 +869,7 @@
     "menu.sevenths": "Seventh chords",
     "menu.negative": "Negative harmony",
     "menu.parallel": "Parallel modes",
+    "menu.usualBorrowings": "Usual borrowings only",
     "menu.coltrane": "Coltrane axis",
     "menu.controls": "Controls",
     "a11y.group.input": "Input",
@@ -1236,6 +1286,8 @@
     "pref.voice-rules.species": "Species",
     "pref.movable-do": "Movable do in the explanations",
     "pref.movable-do.hint": "The tonic is do: in G major, G is called do",
+    "pref.auto-modes": "Auto finds modes",
+    "pref.auto-modes.hint": "Auto may read a dorian, lydian\u2026 key, not only major and minor. With little music or no clear tonic it can miss",
     "pref.history-hold-ms": "Hold a chord to log it",
     "pref.history-hold-ms.hint": "How long a chord holds before it goes to the history",
     "pref.history-max": "Chips the history keeps",
@@ -1406,6 +1458,7 @@
     "keyPanel.neg.title": "Show/hide negative harmony",
     "keyPanel.par": "Par",
     "keyPanel.par.title": "Show/hide parallel modes",
+    "keyPanel.usual.title": "Of the parallel modes, only the usual borrowings: in major, the parallel minor's chords; in minor, the Picardy third and the dorian IV. A church mode has no such list: all are shown",
     "keyPanel.colt": "Colt",
     "keyPanel.colt.title": "Show/hide Coltrane axis",
     "keyPanel.empty": "Pick a key, or play: on Auto the detected key shows here.",
@@ -1655,6 +1708,13 @@
     "key.autoShort": "Auto",
     "key.majorCap": "Mayor",
     "key.minorCap": "Menor",
+    "key.modes": "Modos",
+    "key.mode.title": "Una tonalidad en {mode}: su t\xF3nica y sus acordes le\xEDdos como propios del modo",
+    "key.mode.dorian": "D\xF3rico",
+    "key.mode.phrygian": "Frigio",
+    "key.mode.lydian": "Lidio",
+    "key.mode.mixolydian": "Mixolidio",
+    "key.mode.locrian": "Locrio",
     "key.none": "Tonalidad",
     "audio.title": "Estado del soundfont",
     "audio.idle": "\u266A en espera",
@@ -1733,6 +1793,7 @@
     "menu.sevenths": "Cuatr\xEDadas",
     "menu.negative": "Armon\xEDa negativa",
     "menu.parallel": "Modos paralelos",
+    "menu.usualBorrowings": "Solo pr\xE9stamos habituales",
     "menu.coltrane": "Eje de Coltrane",
     "menu.controls": "Controles",
     "a11y.group.input": "Entrada",
@@ -2143,6 +2204,8 @@
     "pref.voice-rules.species": "Especies",
     "pref.movable-do": "Solfeo m\xF3vil en las explicaciones",
     "pref.movable-do.hint": "La t\xF3nica es do: en Sol mayor, Sol se llama do",
+    "pref.auto-modes": "Auto detecta modos",
+    "pref.auto-modes.hint": "Auto puede leer una tonalidad d\xF3rica, lidia\u2026, no solo mayor y menor. Con poca m\xFAsica o sin t\xF3nica clara puede fallar",
     "pref.history-hold-ms": "Mantener un acorde para registrarlo",
     "pref.history-hold-ms.hint": "Cu\xE1nto se mantiene un acorde antes de pasar al historial",
     "pref.history-max": "Fichas que guarda el historial",
@@ -2312,6 +2375,7 @@
     "keyPanel.neg.title": "Mostrar u ocultar la armon\xEDa negativa",
     "keyPanel.par": "Par",
     "keyPanel.par.title": "Mostrar u ocultar los modos paralelos",
+    "keyPanel.usual.title": "De los modos paralelos, solo los pr\xE9stamos habituales: en mayor, los acordes del menor paralelo; en menor, la picarda y el IV d\xF3rico. Un modo no tiene esa lista: se muestran todos",
     "keyPanel.colt": "Colt",
     "keyPanel.colt.title": "Mostrar u ocultar el eje de Coltrane",
     "keyPanel.empty": "Elige una tonalidad o toca: en auto aparece aqu\xED la tonalidad detectada.",
@@ -2533,8 +2597,9 @@
     const [root2, mode4] = key.split(" ");
     if (!mode4) return noteLabel(key);
     const m = mode4.toLowerCase();
-    const modeName = m === "major" ? t("key.major") : m === "minor" ? t("key.minor") : mode4;
-    return `${noteLabel(root2)} ${modeName}`;
+    if (m === "major") return `${noteLabel(root2)} ${t("key.major")}`;
+    if (m === "minor") return `${noteLabel(root2)} ${t("key.minor")}`;
+    return scaleLabel(`${root2} ${m}`);
   }
   function scaleLabel(name) {
     return UMT.scaleName(name, lang, { roots: naming });
@@ -2886,7 +2951,7 @@
   function getAutoKey(history) {
     const noteNames = history.flatMap((e) => e.notes);
     if (noteNames.length === 0) return null;
-    return normalizeKey(tryUMT("key detection", () => UMT.KeyDetection.detect(noteNames.map((n) => UMT.parseNote(n)), void 0, { profile: getPref("key-profile") })[0]?.key ?? null, null));
+    return normalizeKey(tryUMT("key detection", () => UMT.KeyDetection.detect(noteNames.map((n) => UMT.parseNote(n)), void 0, { profile: getPref("key-profile"), modes: getPref("auto-modes") })[0]?.key ?? null, null));
   }
 
   // src/audio/audio.ts
@@ -4573,7 +4638,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       return null;
     }
     const diatonic = chords.map((c) => keyChord(c.name, key));
-    if (/ minor$/i.test(key)) {
+    if (keyMode(key) === "Minor") {
       const harmonic = tryUMT(
         "diatonic chords",
         () => UMT.parseScaleSymbol(key.replace(/ minor$/i, " Harmonic Minor")).getDiatonicChords(sevenths ? "seventh" : "triad"),
@@ -4594,7 +4659,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       if (!name || !tryParseChord(name)) continue;
       let row2 = byMode.get(b.sourceMode);
       if (!row2) byMode.set(b.sourceMode, row2 = { mode: b.sourceMode, brightness: b.brightness ?? 0, chords: [] });
-      row2.chords.push({ ...keyChord(name, key), characteristic: !!b.characteristic });
+      row2.chords.push({ ...keyChord(name, key), characteristic: !!b.characteristic, common: !!b.common });
     }
     const parallel = [...byMode.values()].sort((a, b) => b.brightness - a.brightness);
     const axis = tryUMT("coltrane axis", () => UMT.Harmony.getColtraneAxis(key).majorThirds, null);
@@ -4630,8 +4695,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       const flat = acc === "b" || acc === "\u266D";
       return withDo(t("ex.romanAltered", { ...vars, dir: t(flat ? "ex.lowered" : "ex.raised"), acc: flat ? "\u266D" : "\u266F", n }));
     }
-    const minor = /minor$/i.test(key);
-    const subtonic = n === 7 && minor && /^VII/.test(roman);
+    const subtonic = n === 7 && !hasLeadingTone(key) && /^VII/.test(roman);
     const name = subtonic ? t("ex.deg.subtonic") : t(`ex.deg.${n}`);
     return withDo(t("ex.roman", { ...vars, name }));
   }
@@ -4945,7 +5009,7 @@ ${explainCadence(cadence)}` : "");
   var SECTION_PREFS = {
     general: ["ui-zoom"],
     sound: ["preview-s", "piano-velocity"],
-    theory: ["chord-style", "key-profile", "voice-rules", "movable-do"],
+    theory: ["chord-style", "key-profile", "auto-modes", "voice-rules", "movable-do"],
     detector: ["history-hold-ms", "history-max", "history-bpm", "history-beats", "arpeggio-ms", "melody-gap-s", "capture-ms"],
     practice: ["progression-bpm", "ear-interval-play", "ear-chords", "ear-cadences"],
     mic: ["a4-hz", "mic-sensitivity", "mic-response"]
@@ -6391,6 +6455,9 @@ ${explainCadence(cadence)}` : "");
         <button class="mode-btn" data-keymode="major">${t("key.majorCap")}</button>
         <button class="mode-btn" data-keymode="minor">${t("key.minorCap")}</button>
       </div>
+      <div class="key-modes" role="group" aria-label="${t("key.modes")}">
+        ${CHURCH_MODES.map((m) => `<button class="choice-chip" data-keymode="${m.toLowerCase()}" title="${escapeHtml(t("key.mode.title", { mode: t(`key.mode.${m.toLowerCase()}`) }))}">${t(`key.mode.${m.toLowerCase()}`)}</button>`).join("")}
+      </div>
       <div id="key-grid" class="key-pick-grid"></div>
       <div class="view-menu-hint">${t("key.menu.hint")}</div>
     </div>
@@ -6452,6 +6519,7 @@ ${explainCadence(cadence)}` : "");
       ${item("btn-key-7", t("menu.sevenths"), t("keyPanel.sevenths.title"))}
       ${item("btn-key-neg", t("menu.negative"), t("keyPanel.neg.title"))}
       ${item("btn-key-par", t("menu.parallel"), t("keyPanel.par.title"))}
+      ${item("btn-key-usual", t("menu.usualBorrowings"), t("keyPanel.usual.title"))}
       ${item("btn-key-colt", t("menu.coltrane"), t("keyPanel.colt.title"))}`;
       case "metronome":
         return metronomeMenuHtml();
@@ -6818,10 +6886,12 @@ ${explainCadence(cadence)}` : "");
   function renderCircleOfFifths(container2, activeKey, activeChord, onSegmentClick, size = 160, opts = { accidental: "flat", showMinor: true, showDegrees: false, show7ths: false }) {
     const keys = opts.accidental === "sharp" ? CIRCLE_KEYS_SHARP : CIRCLE_KEYS_FLAT;
     const minorKeys = opts.accidental === "sharp" ? CIRCLE_KEYS_MINOR_SHARP : CIRCLE_KEYS_MINOR_FLAT;
-    const [keyRoot, keyMode] = activeKey?.split(" ") ?? [];
-    const keyIsMinor = keyMode?.toLowerCase() === "minor";
-    const tonicPc = keyRoot ? pitchClass(keyRoot) : -1;
-    const activePos = tonicPc === -1 ? -1 : keyIsMinor ? minorKeys.findIndex((m) => pitchClass(rootOf(m)) === tonicPc) : keys.findIndex((k) => pitchClass(k) === tonicPc);
+    const mode4 = keyMode(activeKey);
+    const tonicPc = activeKey ? pitchClass(activeKey.split(" ")[0]) : -1;
+    const parentPc = parentMajorPc(activeKey);
+    const activePos = parentPc === -1 ? -1 : keys.findIndex((k) => pitchClass(k) === parentPc);
+    const tonicMajorPos = mode4 === "Major" || mode4 === "Lydian" || mode4 === "Mixolydian" ? keys.findIndex((k) => pitchClass(k) === tonicPc) : -1;
+    const tonicMinorPos = mode4 === "Minor" || mode4 === "Dorian" || mode4 === "Phrygian" ? minorKeys.findIndex((m) => pitchClass(rootOf(m)) === tonicPc) : -1;
     const degreeOf = (chord) => (romanInKey(chord, activeKey)?.degree ?? "").replace(/^([b#]+)/, (acc) => acc.replace(/b/g, "\u266D").replace(/#/g, "\u266F"));
     const chordRootPc = activeChord ? pitchClass(rootOf(activeChord)) : -1;
     const isDimActiveChord = activeChord ? /^[A-G][b#]*(dim|°|m7b5|ø)/.test(activeChord) : false;
@@ -6877,7 +6947,7 @@ ${explainCadence(cadence)}` : "");
       const relPos = activePos !== -1 ? (i - activePos + 12) % 12 : -1;
       const isDiatonic = diatonicPos.has(i);
       const showDeg = opts.showDegrees && activePos !== -1;
-      const isTonic = activePos === i && !keyIsMinor;
+      const isTonic = i === tonicMajorPos;
       const isChordRoot = !isMinorActiveChord && !isDimActiveChord && chordRootPc === pitchClass(key);
       const fill = isTonic ? c.tonic : isChordRoot ? c.chord : isDiatonic ? c.diatonic : c.segment;
       const stroke = isChordRoot ? c.chord : isDiatonic ? c.diatonicStroke : c.stroke;
@@ -6895,7 +6965,7 @@ ${explainCadence(cadence)}` : "");
       );
       if (!opts.showMinor) return;
       const minorRoot = rootOf(minorKeys[i]);
-      const isMinorTonic = activePos === i && keyIsMinor;
+      const isMinorTonic = i === tonicMinorPos;
       const isMinorChordHere = isMinorActiveChord && chordRootPc === pitchClass(minorRoot);
       const minorChord = minorKeys[i] + (opts.show7ths ? "7" : "");
       const minorSegFill = isMinorTonic ? c.tonic : isMinorChordHere ? c.chord : isDiatonic ? c.diatonic : "transparent";
@@ -7102,9 +7172,11 @@ ${explainCadence(cadence)}` : "");
       <span class="key-section-label">${t("keyPanel.coltrane")}</span> ${map.coltraneAxis.map((n) => escapeHtml(noteLabel(n))).join(" \xB7 ")}</div>`;
     }
     html += "</div>";
-    if (opts.showParallel && map.parallel.length) {
+    const anyCommon = map.parallel.some((r) => r.chords.some((c) => c.common));
+    const rows = opts.usualOnly && anyCommon ? map.parallel.map((r) => ({ ...r, chords: r.chords.filter((c) => c.common) })).filter((r) => r.chords.length) : map.parallel;
+    if (opts.showParallel && rows.length) {
       html += `<div class="key-parallel"><div class="key-section-label" title="${t("keyPanel.parallel.title")}">${t("keyPanel.parallel")}</div><div class="key-mode-grid">`;
-      html += map.parallel.map((row2) => `
+      html += rows.map((row2) => `
       <div class="key-mode-row">
         <span class="key-mode-name">${escapeHtml(scaleLabel(row2.mode))}</span>
         <div class="key-mode-chords">${row2.chords.map((c) => `
@@ -8732,11 +8804,11 @@ ${explainCadence(c.cadence)}` : ""}`;
       const s = entry(symbol);
       if (s) s.cadence = { name: cadenceLabel(cad), about: explainCadence(cad) };
     }
-    const minorKey = / minor$/i.test(key);
+    const minorKey = isMinorKey(key);
     const matches = [];
     for (const id of PROGRESSION_IDS) {
       if (MINOR_PROGRESSIONS.includes(id) !== minorKey) continue;
-      const chords = realizeProgression(id, key).map((c) => c.symbol);
+      const chords = realizeProgression(id, progressionKey(id, key)).map((c) => c.symbol);
       let best = null;
       chords.forEach((c, i) => {
         if (!sameChord(c, current4)) return;
@@ -9323,6 +9395,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   var keySevenths = loadBool("key-sevenths", false);
   var keyShowNegative = loadBool("key-show-negative", true);
   var keyShowParallel = loadBool("key-show-parallel", true);
+  var keyUsualOnly = loadBool("key-usual-borrowings", true);
   var keyShowColtrane = loadBool("key-show-coltrane", true);
   var initialSong = loadActiveSong();
   var state = {
@@ -9615,6 +9688,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       pressed("btn-key-7", keySevenths);
       pressed("btn-key-neg", keyShowNegative);
       pressed("btn-key-par", keyShowParallel);
+      pressed("btn-key-usual", keyUsualOnly);
       pressed("btn-key-colt", keyShowColtrane);
     };
     updateKeyButtons();
@@ -9644,6 +9718,10 @@ ${explainCadence(c.cadence)}` : ""}`;
     onKeyControl("btn-key-par", () => {
       keyShowParallel = !keyShowParallel;
       save("key-show-parallel", keyShowParallel);
+    });
+    onKeyControl("btn-key-usual", () => {
+      keyUsualOnly = !keyUsualOnly;
+      save("key-usual-borrowings", keyUsualOnly);
     });
     onKeyControl("btn-key-colt", () => {
       keyShowColtrane = !keyShowColtrane;
@@ -10080,7 +10158,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     setGuitarShowsName(named);
     renderIfChanged("guitar", `${chordSymbol}|${neck}|${named}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames, void 0, !keyPrefersSharps(key)));
     renderIfChanged("cof", `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, COF_SIZE, cofOpts));
-    const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale };
+    const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, usualOnly: keyUsualOnly, fontScale: keyScale };
     const keyTitle = key ? state.activeKey ? keyLabel(key) : t("keyPanel.auto", { key: keyLabel(key) }) : "";
     renderIfChanged("key", `${keyTitle}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () => renderKeyExplorer($2("key-container"), key ? buildKeyMap(key, keySevenths) : null, keyTitle, chordSymbol, onKeyChordClick, keyOpts));
   }
@@ -10138,7 +10216,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       drawEar();
       return;
     }
-    if (name === "key-profile") {
+    if (name === "key-profile" || name === "auto-modes") {
       autoKey = void 0;
       onHistoryChange(state.history);
     }
@@ -10382,7 +10460,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     $2("mode-hint").textContent = t(`mode.${mode4}.title`);
   }
   var FIFTHS_MAJOR = [6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11];
-  var keyMenuMinor = false;
+  var keyMenuMode = "Major";
   function wireBar() {
     wirePopover($2("input-menu"), [$2("rail-input"), $2("btn-input-status")]);
     wirePopover($2("sound-menu"), [$2("rail-sound"), $2("btn-sound-status")], () => {
@@ -10392,7 +10470,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       $2("instrument-list").querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "center" });
     });
     wirePopover($2("key-menu"), [$2("btn-key")], () => {
-      keyMenuMinor = !!state.activeKey?.endsWith("Minor");
+      keyMenuMode = keyMode(state.activeKey) ?? "Major";
       renderKeyGrid();
     });
     mirrorChoices($2("midi-device"), $2("midi-device-list"));
@@ -10401,7 +10479,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     filter.addEventListener("input", () => renderChoices($2("audio-instrument"), $2("instrument-list"), filter.value));
     $2("key-auto").addEventListener("click", () => pickKey(""));
     document.querySelectorAll("[data-keymode]").forEach((b) => b.addEventListener("click", () => {
-      keyMenuMinor = b.dataset.keymode === "minor";
+      keyMenuMode = KEY_MODES.find((m) => m.toLowerCase() === b.dataset.keymode) ?? "Major";
       renderKeyGrid();
     }));
     railOpen = loadBool("rail-open", true) && !isNarrow();
@@ -10445,9 +10523,9 @@ ${explainCadence(c.cadence)}` : ""}`;
     sel.dispatchEvent(new Event("change"));
   }
   function renderKeyGrid() {
-    document.querySelectorAll("[data-keymode]").forEach((b) => b.classList.toggle("active-mode", b.dataset.keymode === "minor" === keyMenuMinor));
+    document.querySelectorAll("[data-keymode]").forEach((b) => b.classList.toggle("active-mode", b.dataset.keymode === keyMenuMode.toLowerCase()));
     $2("key-auto").classList.toggle("active-mode", !state.activeKey);
-    const keys = FIFTHS_MAJOR.map((pc3) => keyMenuMinor ? `${MINOR_ROOTS[(pc3 + 9) % 12]} Minor` : `${MAJOR_ROOTS[pc3]} Major`);
+    const keys = FIFTHS_MAJOR.map((pc3) => keyOnParent(pc3, keyMenuMode));
     $2("key-grid").innerHTML = keys.map((k) => `<button class="choice-chip${k === state.activeKey ? " active-mode" : ""}" data-key="${k}" title="${escapeHtml(keyLabel(k))}">${escapeHtml(noteLabel(k.split(" ")[0]))}</button>`).join("");
     $2("key-grid").querySelectorAll("[data-key]").forEach((b) => b.addEventListener("click", () => pickKey(b.dataset.key)));
   }
@@ -10513,7 +10591,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       } },
       { label: t("input.mic"), hint: isMicOn() ? t("cmd.on") : input, run: toggleMic },
       { label: t("cmd.keyAuto"), hint: t("a11y.key"), run: () => pickKey("") },
-      ...FIFTHS_MAJOR.flatMap((pc3) => [`${MAJOR_ROOTS[pc3]} Major`, `${MINOR_ROOTS[(pc3 + 9) % 12]} Minor`]).map((k) => ({ label: t("cmd.key", { key: keyLabel(k) }), run: () => pickKey(k) })),
+      ...FIFTHS_MAJOR.flatMap((pc3) => KEY_MODES.map((m) => keyOnParent(pc3, m))).map((k) => ({ label: t("cmd.key", { key: keyLabel(k) }), run: () => pickKey(k) })),
       ...layoutCommands(),
       { label: t("cmd.playCurrent"), hint: t("kbd.space"), run: playCurrent },
       { label: t("cmd.send"), hint: "S", run: sendActiveToSong },

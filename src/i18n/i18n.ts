@@ -73,13 +73,14 @@ export function localizeDrawnNoteNames(container: Element) {
   })
 }
 
-/** "C Major" → "C Major" / "Do mayor" / "C mayor". */
+/** "C Major" → "C Major" / "Do mayor" / "C mayor"; a church mode as UMT names it: "D Dorian" → "Re dórico". */
 export function keyLabel(key: string): string {
   const [root, mode] = key.split(' ')
   if (!mode) return noteLabel(key)
   const m = mode.toLowerCase()
-  const modeName = m === 'major' ? t('key.major') : m === 'minor' ? t('key.minor') : mode
-  return `${noteLabel(root)} ${modeName}`
+  if (m === 'major') return `${noteLabel(root)} ${t('key.major')}`
+  if (m === 'minor') return `${noteLabel(root)} ${t('key.minor')}`
+  return scaleLabel(`${root} ${m}`)
 }
 
 /** A scale or mode as UMT names it ("D dorian"), in the language and with the root as notes are named: "Re dórico". */

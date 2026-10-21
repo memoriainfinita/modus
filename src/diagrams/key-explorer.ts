@@ -13,6 +13,7 @@ export type KeyExplorerOptions = {
   showNegative: boolean
   showParallel: boolean
   showColtrane: boolean
+  usualOnly: boolean           // only the usual borrowings, where UMT marks any (not in a church mode)
   fontScale: number
 }
 
@@ -64,9 +65,14 @@ export function renderKeyExplorer(
 
   html += '</div>'
 
-  if (opts.showParallel && map.parallel.length) {
+  // The usual borrowings only, when asked and when the key has any: a church mode has no such list
+  const anyCommon = map.parallel.some(r => r.chords.some(c => c.common))
+  const rows = opts.usualOnly && anyCommon
+    ? map.parallel.map(r => ({ ...r, chords: r.chords.filter(c => c.common) })).filter(r => r.chords.length)
+    : map.parallel
+  if (opts.showParallel && rows.length) {
     html += `<div class="key-parallel"><div class="key-section-label" title="${t('keyPanel.parallel.title')}">${t('keyPanel.parallel')}</div><div class="key-mode-grid">`
-    html += map.parallel.map(row => `
+    html += rows.map(row => `
       <div class="key-mode-row">
         <span class="key-mode-name">${escapeHtml(scaleLabel(row.mode))}</span>
         <div class="key-mode-chords">${row.chords.map(c => `

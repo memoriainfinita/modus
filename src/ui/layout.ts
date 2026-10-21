@@ -3,7 +3,8 @@
 // snap to the grid. Behaviour inside the panels is wired in app.ts.
 
 import type { AppState } from '../types'
-import { ALL_KEYS } from '../theory/keys'
+import { ALL_KEYS, CHURCH_MODES } from '../theory/keys'
+import type { StringKey } from '../i18n/en'
 import { GM_INSTRUMENT_GROUPS, getCurrentInstrument, getVolume } from '../audio/audio'
 import { setGuitarControlsVisible } from '../diagrams/guitar'
 import { ANALYSIS_FIELD_KEYS, fieldTooltip, fieldLabel } from '../detector/analysis-panel'
@@ -242,6 +243,9 @@ function buildMenus(): string {
         <button class="mode-btn" data-keymode="major">${t('key.majorCap')}</button>
         <button class="mode-btn" data-keymode="minor">${t('key.minorCap')}</button>
       </div>
+      <div class="key-modes" role="group" aria-label="${t('key.modes')}">
+        ${CHURCH_MODES.map(m => `<button class="choice-chip" data-keymode="${m.toLowerCase()}" title="${escapeHtml(t('key.mode.title', { mode: t(`key.mode.${m.toLowerCase()}` as StringKey) }))}">${t(`key.mode.${m.toLowerCase()}` as StringKey)}</button>`).join('')}
+      </div>
       <div id="key-grid" class="key-pick-grid"></div>
       <div class="view-menu-hint">${t('key.menu.hint')}</div>
     </div>
@@ -308,6 +312,7 @@ function ownMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>)
       ${item('btn-key-7', t('menu.sevenths'), t('keyPanel.sevenths.title'))}
       ${item('btn-key-neg', t('menu.negative'), t('keyPanel.neg.title'))}
       ${item('btn-key-par', t('menu.parallel'), t('keyPanel.par.title'))}
+      ${item('btn-key-usual', t('menu.usualBorrowings'), t('keyPanel.usual.title'))}
       ${item('btn-key-colt', t('menu.coltrane'), t('keyPanel.colt.title'))}`
     case 'metronome': return metronomeMenuHtml()
     case 'guitar': return `<div id="strings-menu"></div><div class="menu-sep"></div><button type="button" class="menu-item" data-panel="guitarControls"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${t('menu.controls')}</span></button>`
