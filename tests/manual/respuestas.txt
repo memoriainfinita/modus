@@ -1,0 +1,13 @@
+Grabaciones de prueba: guitarra FluidR3, posiciones reales de guitarra. Acorde y segundo en que empieza.
+
+1-acordes-lentos.wav (acero, 60 bpm, un rasgueo cada 2 s)
+  0.2 s C · 2.2 s G · 4.2 s Am · 6.2 s F · 8.2 s D7
+
+2-cancion-100bpm.wav (nylon, 100 bpm, 4/4, un acorde por compás)
+  0.2 s Am · 2.6 s F · 5.0 s C · 7.4 s G · 9.8 s Dm7 · 12.2 s G7 · 14.6 s Cmaj7 · 17.0 s E7 · 19.4 s Am
+
+3-cambios-rapidos.wav (acero, 120 bpm, 4/4, dos acordes por compás)
+  0.2 s C · 1.2 s Am · 2.2 s F · 3.2 s G · 4.2 s C · 5.2 s Am · 6.2 s Dm7 · 7.2 s G7 · 8.2 s C
+
+4-vamp-dorico.wav (acero, 90 bpm, 4/4: Dm7 G7, un vamp en Re dórico)
+  0.2 s Dm7 · 2.9 s G7 · 5.5 s Dm7 · 8.2 s G7 · 10.9 s Dm7 · 13.5 s G7 · 16.2 s Dm7 · 18.9 s G7
