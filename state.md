@@ -1,6 +1,6 @@
 ---
 created: 2026-05-20
-last_updated: 2026-10-19
+last_updated: 2026-10-21
 ---
 
 # Modus — state
@@ -18,12 +18,13 @@ What is true now. What already happened lives in `state-history.md`.
 
 - Working: detector, analysis with voice leading, explanation, key panel (diatonic chords, negative harmony, parallel modes, Coltrane axis), history, song builder with several saved songs (each with its own key), audio, CoF, strings panel (any fretted instrument, shapes or neck), piano, velocity, grand staff, progressions, ear training, player, microphone and tuner, metronome, modular layout and presentation, view windows for OBS and export, MIDI out, input channel filter, offline and installable, keyboard and screen reader, touch, guided tour. The roadmap in TODO is open: the app is not complete
 - Audio: controller notes follow velocity, note-off and sustain pedal; previews cut the previous one; master volume; the app starts without the soundfont-player script
-- Tests 2026-10-21: TSC clean, 433 unit tests against the real UMT bundle, `pnpm test:e2e` 90 checks, last whole run 89/90 on 2026-10-21 (player chords: the test clicked before the reading began; fixed, 5/5 on its own) (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 on 2026-10-13, before the song tabs and the panel menus (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
+- Tests 2026-10-21: TSC clean, 433 unit tests against the real UMT bundle, `pnpm test:e2e` 90/90 (installed Chrome + fake Web MIDI, Chrome-style and Firefox-style hot-plug), `pnpm test:e2e:midi` 12/12 on 2026-10-13, before the song tabs and the panel menus (real Web MIDI through loopMIDI in Chrome and Firefox, MIDI out included: it needs a second input, such as the MPK, and is skipped without one). Firefox and a real controller checked by hand, including hot-plug with loopMIDI present. Key panel checked in headless Firefox
 - UMT output reviewed 2026-10-10 (every call Modus makes, 24 keys × 24 chords): no throws, shapes as `docs/umt-contract.md`. Pin raised to `v0.4.0` on 2026-10-11, when the UMT audit ended (all tests passed unchanged), and to `v0.4.1` and `v0.5.0` (theory names in Spanish) the same day; to `v0.6.0` on 2026-10-12 (P/L/R on triads only, turnarounds as tonicizations, the blues style the Progressions panel passes); to `v0.7.1` on 2026-10-19 (`analyzeSlash` on played notes, asked from Modus; v0.7.0 changes only other tunings); to `v0.8.0` on 2026-10-20 (movable do with ti and the chromatic syllables, asked from Modus); to `v0.10.0` on 2026-10-21 (church modes as keys, usual borrowings, mode detection; 0.9's breaking changes left Modus' tests unchanged). The theory criteria UMT applies (functions, harmonic minor, secondary leading-tone chords, substitutions) are in UMT's `state.md` Patterns
 - Numerals follow the letter written (`analyzeProgression` with `spelling: 'written'`): Gb in C is ♭V, F# is ♯IV. CoF degrees come from the same call
 - Scope: Modus is the detector and its analysis, and the song builder, reopened 2026-10-13 at the user's request (chart, form strip, sections as text, songs as tabs, playing the song)
 - Flaky e2e checks, each failed once and passed on the next run (2026-10-13): Hold with real MIDI in Firefox, the circle's flats and sharps; 2026-10-19, MIDI input written in the key, twice (the key menu did not open on a click on its button: its Major/Minor button never showed; may be the menu, not the test); P presents, after the whole walk with the 10 s action timeout (a click timed out; alone, with the checks before it and on the next whole run it passed). Not investigated
 - Publication: when the app is complete. Until then no remote; then public repo and Pages, like `2_finished`
+- On a phone over the local network (`http://192.168.1.34:5180`, `tests/e2e/serve.mjs` with host 0.0.0.0, the `modus` launch config): not a secure context, so the browser offers no Web MIDI, microphone or service worker; Modus says so (2026-10-21) instead of blaming the browser, and makes its ids without `crypto.randomUUID` (`src/id.ts`), which is missing there and left the page blank. HTTPS for the phone would be Tailscale Serve, not enabled on the tailnet
 - Interface languages: English and Spanish, with note names in letters or Do Re Mi (spec → Language). Docs, code and commits stay in English
 
 ## Patterns
@@ -100,11 +101,19 @@ Ordered by what each one makes cheaper or depends on: strings, colours and the m
 
 17. [x] Interface redesign (2026-10-12), design A ("Refinado") with the system of C, canvas `Modus · Diseño` (claude.ai artifact CG3J79w1). From B ("Escenario") the Class layout took the history under the chord, growing with its panel; the rest of B is left to the user, who can arrange and save any layout to present. Open: the user judges the icon within the new design
 
+### Next session, approved 2026-10-21 (build all, no mock-up first)
+
+Found 2026-10-21 trying the app on a phone: Settings and Help are floating dialogs that read badly there (Settings: ten tabs over three rows, each setting's explanation squeezed beside it; Help: mostly keyboard shortcuts, a gap in the middle); and on a desktop, in Standard with a chord on screen, panels empty for what they show: Key 92 % (no key chosen: only its notice), Explanation 72 %, an empty Song 68 %, an empty History 100 %, Tuner 29 %.
+
+22. [ ] Settings like Android's on a phone: full screen; first level the search and the sections, a row each with icon, name and a summary of its values ("Español · Do Re Mi · Como el sistema"); a section opens its page, ← to go back, a row per setting with its name and its value under it; switches on the right, choices open a list to pick one, numbers a slider in the row; Reset this section in the page's ⋮ menu; each setting's explanation behind an ⓘ. On a desktop the two-column dialog stays, with the same rows: no explanation in view, the value under the name
+23. [ ] Help on a phone, full screen too: Gestures (tap, long press, drag) instead of the keyboard shortcuts, which show only on a device with a keyboard
+24. [ ] Panels that fit what they show: the text and list panels (Key, Explanation, History, Song, Tuner, Progressions, Ear training, Next) take the height of their content, at least three rows and at most their size in the layout; empty they stay small, filled they grow and the panels under them move. Diagrams and the metronome keep their size
+
 ### Unblocked by UMT v0.4.0, to place in the order
 
 The UMT audit ended 2026-10-11 (`umt/docs/auditoria-2026-10.md`).
 
-- [x] Metronome, 2026-10-20 (`metronome/`): meters including additive ones, UMT's cycles (talas, flamenco compás, aksak), claves, Euclidean rhythms, polyrhythms a:b, subdivision 1–6, tap tempo, tempo trainer in the ⋯ menu; the necklace (dots, group arcs, counts, the pulse sounding lit, a second voice inside); clicks by Web Audio on the audio clock through the master volume. In Standard and Study. While it runs the history's harmonic rhythm uses its tempo and cycle. Not yet: a click under the song playing, takes recorded into bars, metric modulation
+- [x] Metronome, 2026-10-20 (`metronome/`): meters including additive ones, UMT's cycles (talas, flamenco compás, aksak), claves, Euclidean rhythms, polyrhythms a:b, subdivision 1–6, tap tempo, tempo trainer in the ⋯ menu; the necklace (dots, group arcs, counts, the pulse sounding lit, a second voice inside); 2026-10-21, the drawing leads: the mode in a menu over the drawing (recent modes, kinds on the left, choices on the right), the subdivision in its own small menu, the count sounding large, a flash on the accents, a second view of pulses as blocks (from how metronome apps cue the beat: Click, Pro Metronome, Metronome: Tempo), the large count optional; clicks by Web Audio on the audio clock through the master volume. In Standard and Study. While it runs the history's harmonic rhythm uses its tempo and cycle. Not yet: a click under the song playing, takes recorded into bars, metric modulation
 - [x] Movable do for didactics, 2026-10-20 (`theory/solfege.ts`, UMT `Solfege.movableDo` with `syllables: 'ti'` in every language: ti on the seventh, di ri fi si li / ra me se le te outside the scale): the Explanation's degree, a Mov. do field in Analysis (the notes on screen or the melody; hidden by default), the Degrees tab of ear training
 
 ### Waiting on UMT

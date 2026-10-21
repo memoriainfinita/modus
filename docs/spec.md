@@ -174,14 +174,14 @@ A recording being transcribed, from a local file opened with Open… or dropped 
 
 ### Metronome
 
-A panel (`metronome/`): ▶ / ■, the tempo (20–300 bpm, − and +, typed, or tapped: the mean of the last taps, a pause of 2 s starts over) and what it counts, as tabs:
-- **Meter:** any, typed as 4/4, 6/8 or additive (2+2+3/8), or picked from a row; the first pulse is strong, the first of each other group accented
+A panel (`metronome/`) where the drawing leads. Its head holds ▶ / ■, the tempo (20–300 bpm, − and +, typed, or tapped: the mean of the last taps, a pause of 2 s starts over), the mode in force as a button ("2+2+3/8 ▾"), the subdivision as another ("♪ 2 ▾", 1–6, for meters, cycles and Euclidean rhythms) and the view (Necklace or Pulses). The mode's button opens a menu over the drawing: the recent modes on top (the last four chosen, kept as `metronome-recent`), the kinds on the left, the choices of the kind picked on the right; a kind keeps it open, a choice closes it, as do Esc and a press outside:
+- **Meter:** any, typed as 4/4, 6/8 or additive (2+2+3/8), or one of the six most played; the first pulse is strong, the first of each other group accented
 - **Cycle:** UMT's `RHYTHMIC_CYCLES` by tradition (Hindustani and Carnatic talas, flamenco compás, aksak), each pulse struck as `cycleStrokes` says (sam strong, tali accented, khali a soft low click, flamenco accents) and counted as `cycleCounts` (bulerías from 12)
 - **Clave:** UMT's `CLAVE_PATTERNS`, its onsets over a bar of four beats, each beat a soft tick under it
-- **Euclidean:** k onsets in n steps (UMT `Polyrhythm.euclidean`)
-- **Polyrhythm:** a:b, the second voice in its own sound
+- **Euclidean:** k onsets in n steps (UMT `Polyrhythm.euclidean`), set with − and + and applied with Use
+- **Polyrhythm:** a:b, set with − and + and applied with Use, the second voice in its own sound
 
-A subdivision of 1–6 clicks a pulse (meters, cycles, Euclidean), softer. The necklace: a dot a pulse round a circle, groups as arcs outside it, the counts beside, the dot sounding lit; a polyrhythm's second voice as an inner ring. Clicks are made with Web Audio through the master volume, scheduled ahead on the audio clock (`metronome/engine.ts`). A new mode or subdivision starts its cycle at the next click; a new tempo goes on without a break. The tempo trainer in the ⋯ menu raises the tempo by N bpm every M cycles up to a limit. Settings kept (`metronome`). While it runs, the history's harmonic rhythm is read at its tempo and over its cycle.
+The subdivision's clicks are softer. Two views, each with the count sounding large (the cycle's own count; in the accent colour on an accent; Large count in the ⋯ menu, on by default, kept as `metronome-count`), as metronome apps show the beat: the necklace, a dot a pulse round a circle, groups as arcs outside it, the counts beside, the count in the middle, a polyrhythm's second voice as an inner ring; and the pulses, a block a pulse in a row, groups apart, the first pulse and the accents taller, a khali hollow, a polyrhythm as two rows. While it runs the pulses wait dimmed and the one sounding is lit and larger; the drawing flashes on the first pulse, softer on each accent (Flash on the accents in the ⋯ menu, on by default; the view and the flash kept as `metronome-view`, `metronome-flash`). Clicks are made with Web Audio through the master volume, scheduled ahead on the audio clock (`metronome/engine.ts`). A new mode or subdivision starts its cycle at the next click; a new tempo goes on without a break. The tempo trainer in the ⋯ menu raises the tempo by N bpm every M cycles up to a limit. Settings kept (`metronome`). While it runs, the history's harmonic rhythm is read at its tempo and over its cycle.
 
 ### Ear training
 

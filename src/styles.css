@@ -1276,13 +1276,11 @@ body.view-mode .guitar-chrome { display: none; }
 .player-reading { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
 
 /* Metronome: the head, the tabs, the choices and the necklace */
-#metronome-container { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+#metronome-container { flex: 1; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
 .metro-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .metro-tempo { display: inline-flex; align-items: center; gap: 4px; }
 .metro-now { color: var(--text-muted); font-size: 12px; }
 .metro-label { color: var(--text-muted); font-size: 12px; }
-.metro-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
-.metro-choices .menu-chip:not([aria-pressed="true"]) { background: var(--surface); }
 .metro-num, .metro-meter {
   font: inherit; width: 4em; color: var(--text); background: var(--surface);
   border: 1px solid var(--border-soft); border-radius: 6px; padding: 2px 6px;
@@ -1291,7 +1289,46 @@ body.view-mode .guitar-chrome { display: none; }
 .metro-meter.invalid { border-color: var(--danger); }
 .metro-num:focus, .metro-meter:focus { border-color: var(--accent); outline: none; }
 .metro-trainer-row { gap: 6px; }
-.metro-necklace { flex: 1; min-height: 120px; max-height: 320px; width: 100%; }
+/* The mode's menu, over the drawing: the recent modes, then the kinds and the choices of the one picked */
+.view-menu.metro-pop { width: min(460px, 86vw); gap: 8px; }
+.metro-recent { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-bottom: 6px; border-bottom: 1px solid var(--border-soft); }
+.metro-pop-cols { display: grid; grid-template-columns: 9.5em 1fr; gap: 8px; min-height: 0; }
+.metro-kinds { display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border-soft); padding-right: 8px; }
+.metro-options { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
+.metro-options .metro-meter { width: 100%; }
+.metro-draft { display: flex; align-items: center; gap: 4px; white-space: nowrap; padding: 4px 0; }
+.metro-stepper { display: inline-flex; align-items: center; gap: 4px; }
+.metro-step-value { min-width: 1.8em; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+.view-menu.metro-sub-pop { width: auto; }
+.metro-sub-pop .menu-chips { flex-wrap: nowrap; }
+.metro-mode { white-space: nowrap; }
+.metro-views { margin-left: auto; }
+/* The drawing takes what is left of the panel */
+.metro-viz { flex: 1; min-height: 140px; display: flex; align-items: center; justify-content: center; border-radius: 10px; transition: background-color 160ms ease-out; container-type: size; }
+.metro-viz.flash-strong { background: color-mix(in srgb, var(--accent) 28%, transparent); transition: none; }
+.metro-viz.flash-accent { background: color-mix(in srgb, var(--accent) 12%, transparent); transition: none; }
+.metro-necklace { width: 100%; height: 100%; max-height: 100%; }
+.metro-halo { fill: none; stroke: transparent; stroke-width: 4; }
+.flash-strong .metro-halo { stroke: var(--accent); }
+.metro-big { fill: var(--text-strong); font-weight: 700; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.metro-big.accent { fill: var(--accent); }
+/* Pulses: a block a pulse, the count above */
+.metro-pulses { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.metro-big-html { font-size: clamp(32px, 38cqh, 140px); font-weight: 700; line-height: 1; color: var(--text-strong); font-variant-numeric: tabular-nums; }
+.metro-big-html.accent { color: var(--accent); }
+.metro-row { display: flex; align-items: flex-end; justify-content: center; gap: 14px; width: 100%; height: clamp(28px, 22cqh, 90px); }
+.metro-group { display: flex; align-items: flex-end; gap: 4px; height: 100%; flex: 0 1 auto; }
+.metro-block { width: clamp(10px, 4cqw, 34px); height: 50%; border-radius: 4px; background: var(--text-dim); transition: background-color 60ms; }
+.metro-block.metro-strong { height: 100%; background: var(--accent); }
+.metro-block.metro-accent { height: 78%; background: var(--text); }
+.metro-block.metro-khali { height: 40%; background: none; border: 2px solid var(--text-dim); }
+.metro-block.metro-poly { height: 70%; background: var(--fn-s); }
+.metro-block.metro-rest { height: 18%; background: var(--border); }
+/* Running: the pulses wait dimmed, the one sounding at full strength and larger */
+.metro-viz.running :is(.metro-dot, .metro-block) { opacity: .35; transition: opacity 80ms; }
+.metro-viz.running :is(.metro-dot, .metro-block).lit { opacity: 1; transition: none; }
+.metro-dot.lit { transform-box: fill-box; transform-origin: center; transform: scale(1.6); }
+.metro-block.lit { background: var(--cursor); border-color: var(--cursor); transform: scaleY(1.12); transform-origin: bottom; }
 .metro-arc { fill: none; stroke: var(--border); stroke-width: 3; stroke-linecap: round; }
 .metro-dot { fill: var(--text-dim); transition: fill 60ms; }
 .metro-strong { fill: var(--accent); }

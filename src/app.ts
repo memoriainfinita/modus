@@ -104,7 +104,8 @@ const $ = (id: string) => document.getElementById(id)!
 function translatePage() {
   applyDocumentLang()
   const warning = $('browser-warning')
-  warning.firstChild!.textContent = t('page.noMidi') + ' '
+  // Over plain http on the network the browser hides MIDI and the microphone: say that, not that it lacks them
+  warning.firstChild!.textContent = t(window.isSecureContext ? 'page.noMidi' : 'page.insecure') + ' '
   $('cdn-error-banner').textContent = t('page.cdnError')
 }
 
