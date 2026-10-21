@@ -18,14 +18,14 @@ declare const UMT: {
     getSuggestedScales: (chord: any) => { scale: string; hint?: string }[]
     getColtraneAxis: (key: string) => { root: string; majorThirds: [string, string, string] }
     getNegativeHarmony: (chord: any, key: string) => any
-    getBorrowedChords: (key: string, opts?: { type?: 'triad' | 'seventh' }) => { chord: any; sourceMode: string; brightness: number; function: string; characteristic: boolean }[]
+    getBorrowedChords: (key: string, opts?: { type?: 'triad' | 'seventh' }) => { chord: any; sourceMode: string; brightness: number; function: string; characteristic: boolean; common?: boolean }[]
     checkVoiceLeading: (chordA: any[], chordB: any[], ruleset?: 'strict' | 'contemporary' | 'species', context?: { keySymbol?: string; chordA?: any; chordB?: any }) => { type: string; voices: number[]; message: string }[]
   }
   FiguredBass: {
     fromChord: (chord: any, bassNote: any) => string
   }
   KeyDetection: {
-    detect: (notes: any[], durations?: readonly number[], options?: { profile?: string }) => { key: string; confidence: number }[]
+    detect: (notes: any[], durations?: readonly number[], options?: { profile?: string; modes?: boolean }) => { key: string; confidence: number }[]
   }
   getSubstitutions: (chord: any, key: string) => any[]
   PROGRESSIONS: Record<string, { name: string; romanNumerals: string[]; description: string; style: string; defaultKey?: string }>

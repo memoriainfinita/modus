@@ -7,6 +7,7 @@ import type { HarmonicAnalysis } from '../types'
 import { romanInKey } from '../detector/analyzer'
 import { tryParseChord, tryUMT } from './chord'
 import { spellChordSymbol, spellPitchClassInKey } from './spelling'
+import { keyMode } from './keys'
 
 export interface KeyChord {
   symbol: string
@@ -14,6 +15,7 @@ export interface KeyChord {
   secondary?: string           // the reading the analysis panel shows when it differs (V7/III)
   function: HarmonicAnalysis['function']
   characteristic?: boolean     // parallel modes: carries the note that sets the mode apart (UMT)
+  common?: boolean             // parallel modes: one of the usual borrowings (UMT; none in a church mode)
   alternative?: KeyChord       // minor keys: the harmonic-minor V and vii° UMT also counts as diatonic
 }
 
@@ -50,7 +52,7 @@ export function buildKeyMap(key: string, sevenths: boolean): KeyMap | null {
   const diatonic = chords.map(c => keyChord(c.name, key))
   // In minor, UMT counts V(7) and vii°(7) of harmonic minor as diatonic: shown under the
   // natural-minor chord of the same degree (Em7 / E7 in A minor)
-  if (/ minor$/i.test(key)) {
+  if (keyMode(key) === 'Minor') {
     const harmonic = tryUMT<any[]>('diatonic chords',
       () => UMT.parseScaleSymbol(key.replace(/ minor$/i, ' Harmonic Minor')).getDiatonicChords(sevenths ? 'seventh' : 'triad'), [])
     harmonic.forEach((c, i) => {
@@ -70,7 +72,7 @@ export function buildKeyMap(key: string, sevenths: boolean): KeyMap | null {
     if (!name || !tryParseChord(name)) continue
     let row = byMode.get(b.sourceMode)
     if (!row) byMode.set(b.sourceMode, row = { mode: b.sourceMode, brightness: b.brightness ?? 0, chords: [] })
-    row.chords.push({ ...keyChord(name, key), characteristic: !!b.characteristic })
+    row.chords.push({ ...keyChord(name, key), characteristic: !!b.characteristic, common: !!b.common })
   }
   // Brightest first, as the modes are usually taught (lydian → locrian).
   const parallel = [...byMode.values()].sort((a, b) => b.brightness - a.brightness)

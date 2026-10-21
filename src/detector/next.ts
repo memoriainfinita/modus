@@ -9,7 +9,8 @@ import { romanInKey } from './analyzer'
 import { explainCadence } from './explain'
 import { buildKeyMap, sameChord } from '../theory/key-map'
 import { tryParseChord, tryUMT } from '../theory/chord'
-import { MINOR_PROGRESSIONS, PROGRESSION_IDS, realizeProgression, type ProgressionId } from '../ui/progressions'
+import { MINOR_PROGRESSIONS, PROGRESSION_IDS, realizeProgression, progressionKey, type ProgressionId } from '../ui/progressions'
+import { isMinorKey } from '../theory/keys'
 import { t, chordLabel, cadenceLabel } from '../i18n/i18n'
 import { escapeHtml } from '../ui/html'
 
@@ -42,7 +43,7 @@ function resolutionTarget(target: string, key: string, sevenths: boolean): strin
  * What usually follows `current` in `key`, `previous` being the chord before it (a named
  * progression where both match ranks first). Resolutions first, then cadences, then
  * progressions; a chord reached more than one way is listed once with every reason.
- * Only the progressions written in the key's mode are read: major ones in a major key.
+ * Only the progressions written in the key's mode are read: major ones in a major key; in a church mode, those of its third.
  */
 export function suggestNext(current: string, key: string | null, previous: string | null = null): NextSuggestion[] {
   const chord = tryParseChord(current)
@@ -78,11 +79,12 @@ export function suggestNext(current: string, key: string | null, previous: strin
   }
 
   // 3. The named progressions it is part of: the next different chord after it there
-  const minorKey = / minor$/i.test(key)
+  // A minor third over the tonic (minor, dorian, phrygian, locrian) takes the minor progressions
+  const minorKey = isMinorKey(key)
   const matches: { id: ProgressionId; symbol: string; length: number }[] = []
   for (const id of PROGRESSION_IDS) {
     if (MINOR_PROGRESSIONS.includes(id) !== minorKey) continue
-    const chords = realizeProgression(id, key).map(c => c.symbol)
+    const chords = realizeProgression(id, progressionKey(id, key)).map(c => c.symbol)
     let best: { symbol: string; length: number } | null = null
     chords.forEach((c, i) => {
       if (!sameChord(c, current)) return

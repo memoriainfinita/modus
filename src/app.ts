@@ -48,7 +48,7 @@ import { chordNoteNames, isKnownChord, readTypedChord, tryParseChord, tryUMT } f
 import { spellDetection, spellVoicing } from './theory/spelling'
 import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
 import { escapeHtml } from './ui/html'
-import { normalizeKey, keyPrefersSharps, MAJOR_ROOTS, MINOR_ROOTS } from './theory/keys'
+import { normalizeKey, keyPrefersSharps, keyMode, keyOnParent, KEY_MODES, type KeyMode } from './theory/keys'
 import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands, panelMenuCommands, isModuleShown } from './ui/layout'
 import { applyTheme, onThemeChange, followSystemTheme } from './ui/theme'
 import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang, getLang } from './i18n/i18n'
@@ -77,6 +77,7 @@ let keyScale = loadNumber('key-scale', 12, 10, 24)
 let keySevenths = loadBool('key-sevenths', false)
 let keyShowNegative = loadBool('key-show-negative', true)
 let keyShowParallel = loadBool('key-show-parallel', true)
+let keyUsualOnly = loadBool('key-usual-borrowings', true)
 let keyShowColtrane = loadBool('key-show-coltrane', true)
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -369,6 +370,7 @@ function wireLayoutEvents() {
     pressed('btn-key-7', keySevenths)
     pressed('btn-key-neg', keyShowNegative)
     pressed('btn-key-par', keyShowParallel)
+    pressed('btn-key-usual', keyUsualOnly)
     pressed('btn-key-colt', keyShowColtrane)
   }
   updateKeyButtons()
@@ -380,6 +382,7 @@ function wireLayoutEvents() {
   onKeyControl('btn-key-7',     () => { keySevenths = !keySevenths;         save('key-sevenths', keySevenths) })
   onKeyControl('btn-key-neg',   () => { keyShowNegative = !keyShowNegative; save('key-show-negative', keyShowNegative) })
   onKeyControl('btn-key-par',   () => { keyShowParallel = !keyShowParallel; save('key-show-parallel', keyShowParallel) })
+  onKeyControl('btn-key-usual', () => { keyUsualOnly = !keyUsualOnly; save('key-usual-borrowings', keyUsualOnly) })
   onKeyControl('btn-key-colt',  () => { keyShowColtrane = !keyShowColtrane; save('key-show-coltrane', keyShowColtrane) })
 
   wirePanelToggles(state.panels)
@@ -912,7 +915,7 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
     renderGuitar($('guitar-container'), chordSymbol, noteNames, undefined, !keyPrefersSharps(key)))
   renderIfChanged('cof', `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () =>
     renderCircleOfFifths($('cof-container'), key, chordSymbol, onCofClick, COF_SIZE, cofOpts))
-  const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, fontScale: keyScale }
+  const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, usualOnly: keyUsualOnly, fontScale: keyScale }
   const keyTitle = key ? (state.activeKey ? keyLabel(key) : t('keyPanel.auto', { key: keyLabel(key) })) : ''
   renderIfChanged('key', `${keyTitle}|${chordSymbol}|${JSON.stringify(keyOpts)}`, () =>
     renderKeyExplorer($('key-container'), key ? buildKeyMap(key, keySevenths) : null, keyTitle, chordSymbol, onKeyChordClick, keyOpts))
@@ -979,7 +982,7 @@ function applyZoom() {
 function applyPref(name: PrefName) {
   if (name === 'ui-zoom') { applyZoom(); return }
   if (name.startsWith('ear-')) { drawEar(); return }
-  if (name === 'key-profile') { autoKey = undefined as unknown as string | null; onHistoryChange(state.history) }
+  if (name === 'key-profile' || name === 'auto-modes') { autoKey = undefined as unknown as string | null; onHistoryChange(state.history) }
   // Chord names, readings and explanations: everything drawn from the analysis
   lastAnalysisSig = ''
   for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k]
@@ -1249,7 +1252,8 @@ function setModeBtn(mode: MidiMode) {
 
 // Keys in the order of the circle of fifths, by pitch class: Gb Db Ab … B, and their relative minors
 const FIFTHS_MAJOR = [6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11]
-let keyMenuMinor = false
+// The mode the key menu lists tonics for: the active key's, or major
+let keyMenuMode: KeyMode = 'Major'
 
 function wireBar() {
   wirePopover($('input-menu'), [$('rail-input'), $('btn-input-status')])
@@ -1259,7 +1263,7 @@ function wireBar() {
     renderChoices($('audio-instrument') as HTMLSelectElement, $('instrument-list'), '')
     $('instrument-list').querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'center' })
   })
-  wirePopover($('key-menu'), [$('btn-key')], () => { keyMenuMinor = !!state.activeKey?.endsWith('Minor'); renderKeyGrid() })
+  wirePopover($('key-menu'), [$('btn-key')], () => { keyMenuMode = keyMode(state.activeKey) ?? 'Major'; renderKeyGrid() })
 
   // The selects hold the values; a list of buttons stands for each
   mirrorChoices($('midi-device') as HTMLSelectElement, $('midi-device-list'))
@@ -1269,7 +1273,7 @@ function wireBar() {
 
   $('key-auto').addEventListener('click', () => pickKey(''))
   document.querySelectorAll<HTMLElement>('[data-keymode]').forEach(b => b.addEventListener('click', () => {
-    keyMenuMinor = b.dataset.keymode === 'minor'
+    keyMenuMode = KEY_MODES.find(m => m.toLowerCase() === b.dataset.keymode) ?? 'Major'
     renderKeyGrid()
   }))
 
@@ -1313,9 +1317,10 @@ function pickKey(key: string) {
 }
 
 function renderKeyGrid() {
-  document.querySelectorAll<HTMLElement>('[data-keymode]').forEach(b => b.classList.toggle('active-mode', (b.dataset.keymode === 'minor') === keyMenuMinor))
+  document.querySelectorAll<HTMLElement>('[data-keymode]').forEach(b => b.classList.toggle('active-mode', b.dataset.keymode === keyMenuMode.toLowerCase()))
   $('key-auto').classList.toggle('active-mode', !state.activeKey)
-  const keys = FIFTHS_MAJOR.map(pc => keyMenuMinor ? `${MINOR_ROOTS[(pc + 9) % 12]} Minor` : `${MAJOR_ROOTS[pc]} Major`)
+  // In the order of their signatures, flats to sharps: each tonic on the major that shares its signature
+  const keys = FIFTHS_MAJOR.map(pc => keyOnParent(pc, keyMenuMode))
   $('key-grid').innerHTML = keys.map(k =>
     `<button class="choice-chip${k === state.activeKey ? ' active-mode' : ''}" data-key="${k}" title="${escapeHtml(keyLabel(k))}">${escapeHtml(noteLabel(k.split(' ')[0]))}</button>`).join('')
   $('key-grid').querySelectorAll<HTMLElement>('[data-key]').forEach(b => b.addEventListener('click', () => pickKey(b.dataset.key!)))
@@ -1391,7 +1396,7 @@ function barCommands(): Command[] {
     { label: t('input.keyboard'), hint: keyboardOn ? t('cmd.on') : input, run: () => { initAudioOnGesture(); toggleComputerKeyboard() } },
     { label: t('input.mic'), hint: isMicOn() ? t('cmd.on') : input, run: toggleMic },
     { label: t('cmd.keyAuto'), hint: t('a11y.key'), run: () => pickKey('') },
-    ...FIFTHS_MAJOR.flatMap(pc => [`${MAJOR_ROOTS[pc]} Major`, `${MINOR_ROOTS[(pc + 9) % 12]} Minor`])
+    ...FIFTHS_MAJOR.flatMap(pc => KEY_MODES.map(m => keyOnParent(pc, m)))
       .map(k => ({ label: t('cmd.key', { key: keyLabel(k) }), run: () => pickKey(k) })),
     ...layoutCommands(),
     { label: t('cmd.playCurrent'), hint: t('kbd.space'), run: playCurrent },

@@ -298,5 +298,5 @@ export function getAutoKey(history: HistoryEntry[]): string | null {
   const noteNames = history.flatMap(e => e.notes)
   if (noteNames.length === 0) return null
   // Spelled as the key selector does ("Gb Major" → "F# Major").
-  return normalizeKey(tryUMT('key detection', () => UMT.KeyDetection.detect(noteNames.map(n => UMT.parseNote(n)), undefined, { profile: getPref('key-profile') })[0]?.key ?? null, null))
+  return normalizeKey(tryUMT('key detection', () => UMT.KeyDetection.detect(noteNames.map(n => UMT.parseNote(n)), undefined, { profile: getPref('key-profile'), modes: getPref('auto-modes') })[0]?.key ?? null, null))
 }

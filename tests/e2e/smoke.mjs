@@ -373,6 +373,8 @@ await check('player chords: a recorded C chord is read, and the playhead shows i
   await page.setInputFiles('#player-container input[type=file]', { name: 'chord.wav', mimeType: 'audio/wav', buffer: chordWav([48, 52, 55, 60, 64], 3) })
   // The model loads and reads the 3 s in the worker
   await page.waitForFunction(() => document.querySelector('.player-name')?.textContent === 'chord.wav')
+  // The reading line is empty before the reading starts too: first it starts (a % shows), then it ends
+  await page.waitForFunction(() => /%/.test(document.querySelector('.player-reading')?.textContent ?? ''), null, { timeout: 10000 })
   await page.waitForFunction(() => document.querySelector('.player-reading')?.textContent === '', null, { timeout: 30000 })
     .catch(async () => { throw new Error(`reading: "${await text('.player-reading')}" errors: ${page.errors.join(' | ')}`) })
   // On the waveform itself (scrolled into view), a third of the way: 1 s into the chord
@@ -1222,6 +1224,29 @@ await check('metronome: 4/4 at 240 runs round the necklace; bulerías counts fro
   assert(await page.locator(`${m} .metro-arc`).count() === 3, 'three groups')
   await page.click(`${m} .metro-play`)
   assert(await text(`${m} .metro-play`) === '▶', 'did not stop')
+})
+
+await check('modal keys: D Dorian from the key menu reads G7 as IV7; Auto finds a Dm7 G7 vamp dorian', async () => {
+  await page.click('#btn-key')
+  await page.click('#key-menu [data-keymode="dorian"]')
+  await page.click('#key-grid [data-key="D Dorian"]')
+  await page.keyboard.press('Escape')
+  assert(/dorian/i.test(await page.locator('#btn-key').innerText()), `key: ${await page.locator('#btn-key').innerText()}`)
+  await play([55, 59, 62, 65])
+  const a = await text('#analysis-content')
+  assert(a.includes('IV7'), `analysis: ${a}`)
+  await off([55, 59, 62, 65])
+  // Auto, an empty history, then the vamp held long enough to be logged
+  await setKey('')
+  await page.click('.history-clear-btn').catch(() => {})
+  for (let i = 0; i < 4; i++) {
+    const chord = i % 2 ? [55, 59, 62, 65] : [50, 53, 57, 60]
+    await on(chord)
+    await page.waitForTimeout(1000)
+    await off(chord)
+  }
+  await page.waitForFunction(() => /dorian/i.test(document.getElementById('btn-key')?.innerText ?? ''), null, { timeout: 3000 })
+    .catch(async () => { throw new Error(`auto key: ${await page.locator('#btn-key').innerText()}`) })
 })
 
 await check('no errors after the walk', async () => {

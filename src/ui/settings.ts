@@ -26,7 +26,7 @@ export type Section = typeof SECTIONS[number]
 const SECTION_PREFS: Partial<Record<Section, PrefName[]>> = {
   general: ['ui-zoom'],
   sound: ['preview-s', 'piano-velocity'],
-  theory: ['chord-style', 'key-profile', 'voice-rules', 'movable-do'],
+  theory: ['chord-style', 'key-profile', 'auto-modes', 'voice-rules', 'movable-do'],
   detector: ['history-hold-ms', 'history-max', 'history-bpm', 'history-beats', 'arpeggio-ms', 'melody-gap-s', 'capture-ms'],
   practice: ['progression-bpm', 'ear-interval-play', 'ear-chords', 'ear-cadences'],
   mic: ['a4-hz', 'mic-sensitivity', 'mic-response'],

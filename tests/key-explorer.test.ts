@@ -5,7 +5,7 @@ import { buildKeyMap, sameChord } from '../src/theory/key-map'
 import { renderKeyExplorer } from '../src/diagrams/key-explorer'
 import type { KeyExplorerOptions } from '../src/diagrams/key-explorer'
 
-const OPTS: KeyExplorerOptions = { sevenths: false, showNegative: true, showParallel: true, showColtrane: true, fontScale: 11 }
+const OPTS: KeyExplorerOptions = { sevenths: false, showNegative: true, showParallel: true, showColtrane: true, usualOnly: false, fontScale: 11 }
 
 describe('buildKeyMap: diatonic chords', () => {
   it('C major triads with degree and function', () => {

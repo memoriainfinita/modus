@@ -1,6 +1,6 @@
 import { pitchClassOf } from '../theory/notes'
 import { romanInKey } from '../detector/analyzer'
-import { keyPrefersSharps } from '../theory/keys'
+import { keyPrefersSharps, keyMode, parentMajorPc } from '../theory/keys'
 import { t, chordLabel, noteLabel } from '../i18n/i18n'
 import { color } from '../ui/theme'
 import { functionColor } from '../theory/chord'
@@ -43,14 +43,16 @@ export function renderCircleOfFifths(
   const keys = opts.accidental === 'sharp' ? CIRCLE_KEYS_SHARP : CIRCLE_KEYS_FLAT
   const minorKeys = opts.accidental === 'sharp' ? CIRCLE_KEYS_MINOR_SHARP : CIRCLE_KEYS_MINOR_FLAT
 
-  // The active key sits on its relative major's segment; a minor key's tonic is the minor
-  // segment there. Matching is by pitch class, so F# Major finds Gb in flat mode.
-  const [keyRoot, keyMode] = activeKey?.split(' ') ?? []
-  const keyIsMinor = keyMode?.toLowerCase() === 'minor'
-  const tonicPc = keyRoot ? pitchClass(keyRoot) : -1
-  const activePos = tonicPc === -1 ? -1
-    : keyIsMinor ? minorKeys.findIndex(m => pitchClass(rootOf(m)) === tonicPc)
-    : keys.findIndex(k => pitchClass(k) === tonicPc)
+  // The active key's notes are those of a major scale: its segment, with the ones beside it, is
+  // the diatonic block. The tonic is marked on its ring: major for major, lydian and mixolydian,
+  // minor for minor, dorian and phrygian; locrian's is that block's diminished chord. Matching
+  // is by pitch class, so F# Major finds Gb in flat mode.
+  const mode = keyMode(activeKey)
+  const tonicPc = activeKey ? pitchClass(activeKey.split(' ')[0]) : -1
+  const parentPc = parentMajorPc(activeKey)
+  const activePos = parentPc === -1 ? -1 : keys.findIndex(k => pitchClass(k) === parentPc)
+  const tonicMajorPos = mode === 'Major' || mode === 'Lydian' || mode === 'Mixolydian' ? keys.findIndex(k => pitchClass(k) === tonicPc) : -1
+  const tonicMinorPos = mode === 'Minor' || mode === 'Dorian' || mode === 'Phrygian' ? minorKeys.findIndex(m => pitchClass(rootOf(m)) === tonicPc) : -1
   // Degrees as the analysis panel reads them (UMT, by letter: F#° in C is #iv°), drawn with ♭ ♯.
   const degreeOf = (chord: string) =>
     (romanInKey(chord, activeKey)?.degree ?? '').replace(/^([b#]+)/, acc => acc.replace(/b/g, '♭').replace(/#/g, '♯'))
@@ -112,7 +114,7 @@ export function renderCircleOfFifths(
     const showDeg = opts.showDegrees && activePos !== -1
 
     // Major ring
-    const isTonic = activePos === i && !keyIsMinor
+    const isTonic = i === tonicMajorPos
     const isChordRoot = !isMinorActiveChord && !isDimActiveChord && chordRootPc === pitchClass(key)
     const fill = isTonic ? c.tonic : isChordRoot ? c.chord : isDiatonic ? c.diatonic : c.segment
     const stroke = isChordRoot ? c.chord : isDiatonic ? c.diatonicStroke : c.stroke
@@ -127,7 +129,7 @@ export function renderCircleOfFifths(
 
     // Minor ring
     const minorRoot = rootOf(minorKeys[i])
-    const isMinorTonic = activePos === i && keyIsMinor
+    const isMinorTonic = i === tonicMinorPos
     const isMinorChordHere = isMinorActiveChord && chordRootPc === pitchClass(minorRoot)
     const minorChord = minorKeys[i] + (opts.show7ths ? '7' : '')
     const minorSegFill   = isMinorTonic ? c.tonic : isMinorChordHere ? c.chord : isDiatonic ? c.diatonic : 'transparent'
