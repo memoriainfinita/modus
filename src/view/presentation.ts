@@ -2,7 +2,7 @@
 // headers or controls, its rows stretched to fill the window (full screen when the browser
 // allows it). The Class preset is made for it. MIDI, audio and shortcuts keep working.
 
-import { currentGrid, onLayoutChange } from '../ui/layout'
+import { currentGrid, onLayoutChange, refreshLayout } from '../ui/layout'
 import { gridRows } from '../layout/grid'
 
 let presenting = false
@@ -31,6 +31,7 @@ export function openPresentation(close: () => void) {
   presenting = true
   onClose = close
   document.body.classList.add('presenting')
+  refreshLayout()   // the layout at its own sizes, not fitted to content
   fitRows()
   document.addEventListener('fullscreenchange', onFullscreenChange)
   // Full screen needs the click or key that opened it; refused, the page still fills the window.
@@ -41,6 +42,7 @@ export function closePresentation() {
   if (!presenting) return
   presenting = false
   document.body.classList.remove('presenting')
+  refreshLayout()
   fitRows()
   document.removeEventListener('fullscreenchange', onFullscreenChange)
   if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})

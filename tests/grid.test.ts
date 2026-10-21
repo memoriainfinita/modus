@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { compact, placeCell, addCell, removeCell, parseGrid, overlaps, clampCell, gridRows, COLS } from '../src/layout/grid'
+import { compact, placeCell, addCell, removeCell, parseGrid, overlaps, clampCell, gridRows, fitGrid, FIT_MIN_H, COLS } from '../src/layout/grid'
 import type { Grid } from '../src/layout/grid'
 import { PRESETS, PRESET_IDS, MODULE_IDS } from '../src/layout/presets'
 
@@ -53,6 +53,18 @@ describe('grid', () => {
     expect(g).toEqual([{ id: 'chord', x: 0, y: 0, w: 3, h: 3 }])
     expect(parseGrid('x', MODULE_IDS)).toBeNull()
     expect(parseGrid([], MODULE_IDS)).toBeNull()
+  })
+
+  it('a panel fitted to its content takes its rows, at least three, at most its own, and the panels below rise', () => {
+    const g: Grid = [{ id: 'a', x: 0, y: 0, w: 8, h: 12 }, { id: 'b', x: 8, y: 0, w: 4, h: 12 }, { id: 'c', x: 0, y: 12, w: 12, h: 5 }]
+    const fitted = fitGrid(g, { a: 1.2, b: 7.4 })
+    expect(at(fitted, 'a').h).toBe(FIT_MIN_H)
+    expect(at(fitted, 'b').h).toBe(8)
+    expect(at(fitted, 'c').y).toBe(8)
+    expect(at(fitGrid(g, { a: 40 }), 'a').h).toBe(12)
+    expect(at(fitGrid([{ id: 'a', x: 0, y: 0, w: 4, h: 2 }], { a: 1 }), 'a').h).toBe(2)
+    expect(g[0].h).toBe(12)
+    expect(fitGrid(g, {})).toBe(g)
   })
 })
 
