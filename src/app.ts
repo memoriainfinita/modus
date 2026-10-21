@@ -1154,13 +1154,13 @@ function wireMidiOut() {
   const thruBtn = $('btn-thru')
   const { channel, thru } = getOutputSettings()
   ch.value = String(channel)
-  thruBtn.classList.toggle('active-mode', thru)
+  thruBtn.setAttribute('aria-checked', String(thru))
   sel.addEventListener('change', () => { chooseOutput(sel.value || null); refreshOutputDropdown() })
   ch.addEventListener('change', () => setOutputChannel(parseInt(ch.value)))
   thruBtn.addEventListener('click', () => {
     const on = !getOutputSettings().thru
     setThru(on)
-    thruBtn.classList.toggle('active-mode', on)
+    thruBtn.setAttribute('aria-checked', String(on))
   })
   // The input device decides whether the output loops back
   $('midi-device').addEventListener('change', () => setTimeout(refreshOutputDropdown))   // after the input switches

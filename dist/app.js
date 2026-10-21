@@ -722,15 +722,15 @@
     "midi.noDeviceOption": "No MIDI devices",
     "midi.denied": "MIDI access denied. Grant permission in browser settings to use a controller.",
     "midi.inChannel.title": "Input channel: only notes on this channel are read (a keyboard split, or one track of a DAW)",
-    "midi.inChannel.all": "in: all ch",
-    "midi.inChannel.one": "in: ch {n}",
+    "midi.inChannel.all": "All channels",
+    "midi.inChannel.one": "Channel {n}",
     "midi.out.title": "MIDI out: what sounds goes to this port",
     "midi.out.loops": "Same port as the input: nothing is sent, it would come back as input",
-    "midi.out.off": "Out: off",
-    "midi.out.port": "Out: {name}",
-    "midi.out.absent": "Out: {name} (absent)",
+    "midi.out.off": "None",
+    "midi.out.port": "{name}",
+    "midi.out.absent": "{name} (absent)",
     "midi.outChannel.title": "MIDI out channel",
-    "midi.outChannel.one": "ch {n}",
+    "midi.outChannel.one": "Channel {n}",
     "midi.thru": "Thru",
     "midi.thru.title": "Thru: also send the controller's notes (off: the DAW usually hears the controller itself)",
     // Toolbar: modes and input
@@ -1186,6 +1186,12 @@
     "set.nothing": "No setting matches.",
     "set.footnote": "Esc closes \xB7 changes are kept as you make them",
     "set.resetSection": "Reset this section",
+    "set.back": "Back to the sections",
+    "set.pick.done": "Done",
+    "set.summary.on": "{n} of {total} on",
+    "set.summary.keys.default": "As they came",
+    "set.summary.keys.changed": "{n} changed",
+    "set.summary.data": "Export, import, reset",
     "set.reloads": "Changing it reloads the page; history and songs stay",
     "set.noteNames.hint": "Everywhere: detector, staff, piano, circle, history. Reloads the page",
     "set.section.general": "General",
@@ -1222,6 +1228,7 @@
     "set.panels.keyParallel": "Key: parallel modes",
     "set.panels.keyColtrane": "Key: Coltrane axis",
     "set.ear.reset": "Reset the ear-training score",
+    "set.ear.reset.button": "Reset",
     "set.ear.reset.hint": "Every kind back to 0 / 0",
     "set.mic.mode": "What the microphone hears",
     "set.mic.mode.hint": "One note at a time, or chords",
@@ -1662,15 +1669,15 @@
     "midi.noDeviceOption": "Sin dispositivos MIDI",
     "midi.denied": "Acceso MIDI denegado. Da permiso en los ajustes del navegador para usar un controlador.",
     "midi.inChannel.title": "Canal de entrada: solo se leen las notas de este canal (un teclado dividido o una pista del DAW)",
-    "midi.inChannel.all": "ent: todos",
-    "midi.inChannel.one": "ent: c{n}",
+    "midi.inChannel.all": "Todos los canales",
+    "midi.inChannel.one": "Canal {n}",
     "midi.out.title": "Salida MIDI: lo que suena se env\xEDa a este puerto",
     "midi.out.loops": "Es el mismo puerto que la entrada: no se env\xEDa nada, volver\xEDa como entrada",
-    "midi.out.off": "Sal: no",
-    "midi.out.port": "Sal: {name}",
-    "midi.out.absent": "Sal: {name} (ausente)",
+    "midi.out.off": "Ninguna",
+    "midi.out.port": "{name}",
+    "midi.out.absent": "{name} (ausente)",
     "midi.outChannel.title": "Canal de salida MIDI",
-    "midi.outChannel.one": "c{n}",
+    "midi.outChannel.one": "Canal {n}",
     "midi.thru": "Thru",
     "midi.thru.title": "Thru: env\xEDa tambi\xE9n las notas del controlador (apagado: el DAW suele o\xEDr el controlador directamente)",
     "mode.normal": "Normal",
@@ -2117,6 +2124,12 @@
     "set.nothing": "Ning\xFAn ajuste coincide.",
     "set.footnote": "Esc cierra \xB7 los cambios se guardan solos",
     "set.resetSection": "Restablecer esta secci\xF3n",
+    "set.back": "Volver a las secciones",
+    "set.pick.done": "Hecho",
+    "set.summary.on": "{n} de {total} activadas",
+    "set.summary.keys.default": "Como ven\xEDan",
+    "set.summary.keys.changed": "{n} cambiadas",
+    "set.summary.data": "Exportar, importar, restablecer",
     "set.reloads": "Cambiarlo recarga la p\xE1gina; el historial y las canciones se quedan",
     "set.noteNames.hint": "En todo: detector, pentagrama, piano, c\xEDrculo, historial. Recarga la p\xE1gina",
     "set.section.general": "General",
@@ -2153,6 +2166,7 @@
     "set.panels.keyParallel": "Tonalidad: modos paralelos",
     "set.panels.keyColtrane": "Tonalidad: eje de Coltrane",
     "set.ear.reset": "Poner a cero el marcador del entrenamiento",
+    "set.ear.reset.button": "A cero",
     "set.ear.reset.hint": "Cada tipo vuelve a 0 / 0",
     "set.mic.mode": "Qu\xE9 escucha el micr\xF3fono",
     "set.mic.mode.hint": "Una nota cada vez, o acordes",
@@ -2807,9 +2821,9 @@
     if (romanCache.has(cacheKey)) return romanCache.get(cacheKey);
     const chord = tryParseChord(chordSymbol);
     const a = chord ? tryUMT("progression", () => UMT.Harmony.analyzeProgression([chord], key, WRITTEN).analysis[0], null) : null;
-    const info = a ? toRomanInfo(a) : null;
-    romanCache.set(cacheKey, info);
-    return info;
+    const info2 = a ? toRomanInfo(a) : null;
+    romanCache.set(cacheKey, info2);
+    return info2;
   }
   var WRITTEN = { spelling: "written" };
   function toRomanInfo(a) {
@@ -5044,6 +5058,30 @@ ${explainCadence(cadence)}` : "");
     return r.kind === "per-bar" ? t("history.rhythm.perBar", { n: decimal(r.changes), bpm: r.bpm, beats: r.beatsPerBar }) : t("history.rhythm.seconds", { s: decimal(r.secondsPerChange) });
   }
 
+  // src/ui/icons.ts
+  var line = (body) => `<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  var ICONS = {
+    keyboard: line('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h1M10 10h1M14 10h1M18 10h0M7 14h10"/>'),
+    mic: line('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'),
+    play: '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>',
+    layout: line('<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>'),
+    present: line('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
+    views: line('<rect x="3" y="7" width="14" height="13" rx="1.5"/><path d="M7 4h14v13"/>'),
+    settings: line('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+    rail: line('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>'),
+    midi: line('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 6v7M12 6v7M17 6v7"/>'),
+    sound: line('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>'),
+    search: line('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),
+    // Settings sections
+    sliders: line('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'),
+    note: line('<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>'),
+    clock: line('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    ear: line('<path d="M7 9a5 5 0 0 1 10 0c0 3-2.5 4-3.5 6s-1 4-3.5 4a2.5 2.5 0 0 1-2.5-2.5"/><path d="M10 10a2 2 0 0 1 4 0"/>'),
+    file: line('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/>'),
+    more: '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>'
+  };
+  var LOGO = `<svg class="logo-mark" width="26" height="26" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="124" fill="var(--logo-bg)"/><g fill="var(--logo-ink)"><path d="M146 206 Q272 152 398 142 L398 93.1 Q272 101.6 146 154 Z"/><path d="M155 186.6 L155 376.2 M273 147.1 L273 338.2 M389 127.2 L389 302.2" fill="none" stroke="var(--logo-ink)" stroke-width="18" stroke-linecap="round"/><path d="M94 384 C94 367.1 110.1 358 130 358 C153.5 358 166 369.6 166 384 C166 395.8 149.9 411.9 130 410 C106.5 410 94 398.4 94 384 Z" transform="rotate(-24 130 384)"/><path d="M212 346 C212 329.1 228.1 320 248 320 C271.5 320 284 331.6 284 346 C284 357.8 267.9 373.9 248 372 C224.5 372 212 360.4 212 346 Z" transform="rotate(-24 248 346)"/><path d="M328 310 C328 293.1 344.1 284 364 284 C387.5 284 400 295.6 400 310 C400 321.8 383.9 337.9 364 336 C340.5 336 328 324.4 328 310 Z" transform="rotate(-24 364 310)"/></g></svg>`;
+
   // src/ui/settings.ts
   var SECTIONS = ["general", "io", "sound", "theory", "detector", "panels", "practice", "mic", "shortcuts", "data"];
   var SECTION_PREFS = {
@@ -5086,13 +5124,23 @@ ${explainCadence(cadence)}` : "");
     if (def.unit === "ms") return `${n(v / 1e3)} s`;
     return def.unit ? `${n(v)} ${def.unit}` : n(v);
   }
-  var row = (labelHtml, hintText, control, search, wide = false) => `
-  <div class="set-row${wide ? " set-row-wide" : ""}" data-search="${escapeHtml(search.toLowerCase())}">
-    <div class="set-text">${labelHtml}${hintText ? `<div class="set-hint">${escapeHtml(hintText)}</div>` : ""}</div>
-    <div class="set-control">${control}</div>
+  var info = (hintText) => hintText ? `<button type="button" class="set-info" title="${escapeHtml(hintText)}" aria-label="${escapeHtml(hintText)}" aria-expanded="false">\u24D8</button>` : "";
+  var row = (labelHtml, hintText, control, search, extra = "") => `
+  <div class="set-row" data-search="${escapeHtml(search.toLowerCase())}">
+    <div class="set-text">${labelHtml}</div>${info(hintText)}
+    ${control ? `<div class="set-control">${control}</div>` : ""}${extra}
+    ${hintText ? `<div class="set-hint" hidden>${escapeHtml(hintText)}</div>` : ""}
   </div>`;
-  function segmented(group, options2, attrs) {
-    return `<div class="set-seg" role="group" aria-label="${escapeHtml(group)}">${options2.map((o) => `<button type="button" ${attrs} data-value="${escapeHtml(o.value)}" aria-pressed="${o.on}">${escapeHtml(o.label)}</button>`).join("")}</div>`;
+  var pickRow = (holder, label, value, hintText, search, holderHtml) => `
+  <div class="set-row" data-search="${escapeHtml(search.toLowerCase())}">
+    <button type="button" class="set-text set-pick" data-pick="${holder}" aria-haspopup="dialog">
+      <span class="set-label">${escapeHtml(label)}</span><span class="set-value" data-shows="${holder}">${escapeHtml(value)}</span>
+    </button>${info(hintText)}${holderHtml}
+    ${hintText ? `<div class="set-hint" hidden>${escapeHtml(hintText)}</div>` : ""}
+  </div>`;
+  function selectRow(id, label, options2, value, hintText, search, attrs = "") {
+    const select = `<select id="${id}" class="set-holder" hidden${attrs}>${options2.map((o) => `<option value="${escapeHtml(o.value)}"${o.value === value ? " selected" : ""}>${escapeHtml(o.label)}</option>`).join("")}</select>`;
+    return pickRow(id, label, options2.find((o) => o.value === value)?.label ?? "", hintText, search, select);
   }
   function prefRow(name) {
     const def = PREFS[name];
@@ -5100,36 +5148,50 @@ ${explainCadence(cadence)}` : "");
     const v = getPref(name);
     const search = `${lbl(name)} ${hint(name)}`;
     switch (def.kind) {
-      case "choice": {
-        const opts = def.options.map((o) => ({ value: o, label: optionLabel(name, o), on: v === o }));
-        const control = def.options.length <= 3 ? segmented(lbl(name), opts, `data-pref="${name}"`) : `<select id="${id}" class="ctrl-select set-select" data-pref="${name}">${opts.map((o) => `<option value="${o.value}"${o.on ? " selected" : ""}>${escapeHtml(o.label)}</option>`).join("")}</select>`;
-        const label = def.options.length <= 3 ? `<div class="set-label">${escapeHtml(lbl(name))}</div>` : `<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label>`;
-        return row(label, hint(name), control, search);
-      }
+      case "choice":
+        return selectRow(id, lbl(name), def.options.map((o) => ({ value: o, label: optionLabel(name, o) })), v, hint(name), search, ` data-pref="${name}"`);
       case "bool":
         return row(
           `<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label>`,
           hint(name),
-          `<input type="checkbox" id="${id}" class="set-check" data-pref="${name}"${v ? " checked" : ""}>`,
+          `<input type="checkbox" id="${id}" class="set-check" role="switch" data-pref="${name}"${v ? " checked" : ""}>`,
           search
         );
       case "number":
         return row(
-          `<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label>`,
+          `<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label><output class="set-value" for="${id}">${escapeHtml(formatPrefValue(def, v))}</output>`,
           hint(name),
-          `<input type="range" id="${id}" class="set-range" data-pref="${name}" min="${def.min}" max="${def.max}" step="${def.step}" value="${v}">
-         <output class="set-value" for="${id}">${escapeHtml(formatPrefValue(def, v))}</output>`,
+          `<input type="range" id="${id}" class="set-range" data-pref="${name}" min="${def.min}" max="${def.max}" step="${def.step}" value="${v}">`,
           search
         );
-      case "set":
-        return row(
-          `<div class="set-label">${escapeHtml(lbl(name))}</div>`,
+      case "set": {
+        const holder = `pref-set-${name}`;
+        const boxes = `<div id="${holder}" class="set-holder" hidden aria-label="${escapeHtml(lbl(name))}">${def.options.map((o) => `<input type="checkbox" data-pref-set="${name}" value="${escapeHtml(o)}" data-label="${escapeHtml(optionLabel(name, o))}"${v.includes(o) ? " checked" : ""}>`).join("")}</div>`;
+        return pickRow(
+          holder,
+          lbl(name),
+          setSummary(name, v),
           hint(name),
-          `<div class="set-checks">${def.options.map((o) => `<label class="set-check-label"><input type="checkbox" data-pref-set="${name}" value="${escapeHtml(o)}"${v.includes(o) ? " checked" : ""}> ${escapeHtml(optionLabel(name, o))}</label>`).join("")}</div>`,
           search + " " + def.options.map((o) => optionLabel(name, o)).join(" "),
-          true
+          boxes
         );
+      }
     }
+  }
+  function setSummary(name, chosen) {
+    return chosen.length ? chosen.map((o) => optionLabel(name, o)).join(", ") : "\u2014";
+  }
+  function holderValue(holder) {
+    if (holder instanceof HTMLSelectElement) return (holder.selectedOptions[0]?.textContent ?? "") + (holder.classList.contains("invalid") ? ` \xB7 ${holder.title}` : "");
+    const on = [...holder.querySelectorAll("input:checked")].map((b) => b.dataset.label ?? b.value);
+    return on.length ? on.join(", ") : "\u2014";
+  }
+  function refreshValues() {
+    root()?.querySelectorAll("[data-shows]").forEach((out) => {
+      const holder = document.getElementById(out.dataset.shows);
+      if (holder) out.textContent = holderValue(holder);
+    });
+    refreshSummaries();
   }
   function syncPrefControl(name) {
     const el2 = root();
@@ -5143,11 +5205,11 @@ ${explainCadence(cadence)}` : "");
         if (out) out.textContent = formatPrefValue(def, v);
       } else if (c instanceof HTMLInputElement && c.type === "checkbox") c.checked = v;
       else if (c instanceof HTMLSelectElement) c.value = v;
-      else if (c.dataset.value !== void 0) c.setAttribute("aria-pressed", String(c.dataset.value === v));
     });
     el2.querySelectorAll(`input[data-pref-set="${name}"]`).forEach((box) => {
       box.checked = v.includes(box.value);
     });
+    refreshValues();
   }
   function keyLabel2(key) {
     const named = { Space: "kbd.space", Delete: "kbd.del", Escape: "kbd.esc" };
@@ -5284,24 +5346,9 @@ ${explainCadence(cadence)}` : "");
     switch (s) {
       case "general":
         return `
-      ${row(
-          `<label class="set-label" for="help-lang">${escapeHtml(t("help.language"))}</label>`,
-          t("set.reloads"),
-          `<select id="help-lang" class="ctrl-select set-select">${LANGS.map((l) => `<option value="${l}"${l === getLang() ? " selected" : ""}>${LANG_NAMES[l]}</option>`).join("")}</select>`,
-          `${t("help.language")} idioma language`
-        )}
-      ${row(
-          `<label class="set-label" for="help-note-names">${escapeHtml(t("help.noteNames"))}</label>`,
-          t("set.noteNames.hint"),
-          `<select id="help-note-names" class="ctrl-select set-select">${NOTE_NAMINGS.map((n) => `<option value="${n}"${n === getNoteNaming() ? " selected" : ""}>${t(`help.noteNames.${n}`)}</option>`).join("")}</select>`,
-          `${t("help.noteNames")} solfeo solf\xE8ge`
-        )}
-      ${row(
-          `<label class="set-label" for="help-theme">${escapeHtml(t("help.theme"))}</label>`,
-          "",
-          `<select id="help-theme" class="ctrl-select set-select">${THEME_CHOICES.map((c) => `<option value="${c}"${c === getThemeChoice() ? " selected" : ""}>${t(`help.theme.${c}`)}</option>`).join("")}</select>`,
-          `${t("help.theme")} theme`
-        )}
+      ${selectRow("help-lang", t("help.language"), LANGS.map((l) => ({ value: l, label: LANG_NAMES[l] })), getLang(), t("set.reloads"), `${t("help.language")} idioma language`)}
+      ${selectRow("help-note-names", t("help.noteNames"), NOTE_NAMINGS.map((n) => ({ value: n, label: t(`help.noteNames.${n}`) })), getNoteNaming(), t("set.noteNames.hint"), `${t("help.noteNames")} solfeo solf\xE8ge`)}
+      ${selectRow("help-theme", t("help.theme"), THEME_CHOICES.map((c) => ({ value: c, label: t(`help.theme.${c}`) })), getThemeChoice(), "", `${t("help.theme")} theme`)}
       ${prefs}
       ${row(
           `<div class="set-label">${escapeHtml(t("tour.start"))}</div>`,
@@ -5311,60 +5358,36 @@ ${explainCadence(cadence)}` : "");
         )}`;
       case "io":
         return `
-      ${row(
-          `<label class="set-label" for="midi-in-ch">${escapeHtml(t("set.io.inChannel"))}</label>`,
-          t("midi.inChannel.title"),
-          `<select id="midi-in-ch" class="ctrl-select set-select"><option value="0">${t("midi.inChannel.all")}</option>${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.inChannel.one", { n: i + 1 })}</option>`).join("")}</select>`,
-          `${t("set.io.inChannel")} midi`
-        )}
-      ${row(
-          `<label class="set-label" for="midi-out">${escapeHtml(t("set.io.out"))}</label>`,
-          t("midi.out.title"),
-          `<select id="midi-out" class="ctrl-select set-select"><option value="">${t("midi.out.off")}</option></select>`,
-          `${t("set.io.out")} midi daw`
-        )}
-      ${row(
-          `<label class="set-label" for="midi-out-ch">${escapeHtml(t("set.io.outChannel"))}</label>`,
-          t("midi.outChannel.title"),
-          `<select id="midi-out-ch" class="ctrl-select set-select">${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t("midi.outChannel.one", { n: i + 1 })}</option>`).join("")}</select>`,
-          `${t("set.io.outChannel")} midi`
-        )}
+      ${selectRow("midi-in-ch", t("set.io.inChannel"), [{ value: "0", label: t("midi.inChannel.all") }, ...Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: t("midi.inChannel.one", { n: i + 1 }) }))], "0", t("midi.inChannel.title"), `${t("set.io.inChannel")} midi`)}
+      ${selectRow("midi-out", t("set.io.out"), [{ value: "", label: t("midi.out.off") }], "", t("midi.out.title"), `${t("set.io.out")} midi daw`)}
+      ${selectRow("midi-out-ch", t("set.io.outChannel"), Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: t("midi.outChannel.one", { n: i + 1 }) })), "1", t("midi.outChannel.title"), `${t("set.io.outChannel")} midi`)}
       ${row(
           `<div class="set-label">${escapeHtml(t("set.io.thru"))}</div>`,
           t("midi.thru.title"),
-          `<button type="button" id="btn-thru" class="mode-btn">${t("midi.thru")}</button>`,
+          `<button type="button" id="btn-thru" class="set-switch" role="switch" aria-checked="false" aria-label="${escapeHtml(t("set.io.thru"))}"></button>`,
           `${t("set.io.thru")} thru midi`
         )}`;
       case "panels":
-        return `
-      <p class="set-intro">${escapeHtml(t("set.panels.intro"))}</p>
-      ${PANEL_BUTTONS.map((b) => row(
+        return PANEL_BUTTONS.map((b) => row(
           `<label class="set-label" for="mirror-${b.id}">${escapeHtml(t(b.label))}</label>`,
           "",
-          `<input type="checkbox" id="mirror-${b.id}" class="set-check" data-mirror="${b.id}">`,
+          `<input type="checkbox" id="mirror-${b.id}" class="set-check" role="switch" data-mirror="${b.id}">`,
           t(b.label)
-        )).join("")}`;
+        )).join("");
       case "practice":
         return `${prefs}
       ${row(
           `<div class="set-label">${escapeHtml(t("set.ear.reset"))}</div>`,
           t("set.ear.reset.hint"),
-          `<button type="button" class="ctrl-btn" data-ear-reset>${escapeHtml(t("set.ear.reset"))}</button>`,
+          `<button type="button" class="ctrl-btn" data-ear-reset>${escapeHtml(t("set.ear.reset.button"))}</button>`,
           `${t("set.ear.reset")}`
         )}`;
       case "mic":
         return `
-      ${row(
-          `<div class="set-label">${escapeHtml(t("set.mic.mode"))}</div>`,
-          t("set.mic.mode.hint"),
-          segmented(t("set.mic.mode"), MIC_MODES.map((m) => ({ value: m, label: t(`mic.mode.${m}`), on: getMicMode() === m })), "data-mic-mode"),
-          `${t("set.mic.mode")} micr\xF3fono microphone`
-        )}
+      ${selectRow("set-mic-mode", t("set.mic.mode"), MIC_MODES.map((m) => ({ value: m, label: t(`mic.mode.${m}`) })), getMicMode(), t("set.mic.mode.hint"), `${t("set.mic.mode")} micr\xF3fono microphone`)}
       ${prefs}`;
       case "shortcuts":
-        return `
-      <div class="set-section-actions"><p class="set-intro">${escapeHtml(t("set.keys.intro"))}</p></div>
-      <div id="set-shortcuts">${shortcutsHtml()}</div>`;
+        return `<div id="set-shortcuts">${shortcutsHtml()}</div>`;
       case "data":
         return `
       ${row(
@@ -5390,42 +5413,117 @@ ${explainCadence(cadence)}` : "");
         return prefs;
     }
   }
+  var SECTION_ICONS = {
+    general: ICONS.sliders,
+    io: ICONS.midi,
+    sound: ICONS.sound,
+    theory: ICONS.note,
+    detector: ICONS.clock,
+    panels: ICONS.layout,
+    practice: ICONS.ear,
+    mic: ICONS.mic,
+    shortcuts: ICONS.keyboard,
+    data: ICONS.file
+  };
+  var resettable = (s) => s !== "panels" && s !== "data" && s !== "io";
+  function sectionHead(s) {
+    const intro = s === "panels" ? t("set.panels.intro") : s === "shortcuts" ? t("set.keys.intro") : "";
+    return `<div class="set-section-head">
+    <button type="button" class="set-back" aria-label="${escapeHtml(t("set.back"))}">\u2190</button>
+    <h2 class="set-section-title">${escapeHtml(t(`set.section.${s}`))}</h2>
+    ${info([t(`set.section.${s}.hint`), intro].filter(Boolean).join(". "))}
+    <span class="set-gap"></span>
+    ${resettable(s) ? `<div class="set-more-wrap">
+      <button type="button" class="set-more" aria-haspopup="true" aria-expanded="false" aria-label="${escapeHtml(t("menu.options"))}">\u22EE</button>
+      <div class="set-more-menu" hidden><button type="button" class="menu-item" data-reset-section><span class="menu-label">${escapeHtml(t("set.resetSection"))}</span></button></div>
+    </div>` : ""}
+    <div class="set-hint" hidden>${escapeHtml([t(`set.section.${s}.hint`), intro].filter(Boolean).join(". "))}</div>
+  </div>`;
+  }
   function buildSettings() {
     return `
   <div id="settings" class="set-backdrop" hidden>
     <section class="set-dialog" role="dialog" aria-modal="true" aria-labelledby="set-title">
       <header class="set-header">
-        <h1 id="set-title" class="set-title">${escapeHtml(t("set.title"))}</h1>
-        <label for="set-search" class="set-search-label">${escapeHtml(t("set.search"))}</label>
-        <input id="set-search" class="set-search" type="search" placeholder="${escapeHtml(t("set.search.placeholder"))}" autocomplete="off">
+        <h1 id="set-title" class="set-title" title="${escapeHtml(t("set.footnote"))}">${escapeHtml(t("set.title"))}</h1>
+        <input id="set-search" class="set-search" type="search" placeholder="${escapeHtml(t("set.search.placeholder"))}" aria-label="${escapeHtml(t("set.search"))}" autocomplete="off">
         <span class="set-gap"></span>
         <button type="button" class="set-close" aria-label="${escapeHtml(t("help.close"))}">\xD7</button>
       </header>
       <div class="set-main">
         <nav class="set-nav" aria-label="${escapeHtml(t("set.sections"))}">
-          ${SECTIONS.map((s) => `<button type="button" class="set-nav-item" data-section="${s}">${escapeHtml(t(`set.section.${s}`))}</button>`).join("")}
+          ${SECTIONS.map((s) => `<button type="button" class="set-nav-item" data-section="${s}">
+            <span class="set-nav-icon">${SECTION_ICONS[s]}</span>
+            <span class="set-nav-text"><span class="set-nav-name">${escapeHtml(t(`set.section.${s}`))}</span><span class="set-nav-sum" data-summary="${s}"></span></span>
+          </button>`).join("")}
         </nav>
         <div class="set-content">
           ${SECTIONS.map((s) => `<div class="set-section" data-section="${s}" hidden>
-            <h2 class="set-section-title">${escapeHtml(t(`set.section.${s}`))}</h2>
-            <p class="set-section-hint">${escapeHtml(t(`set.section.${s}.hint`))}</p>
+            ${sectionHead(s)}
             ${sectionBody(s)}
           </div>`).join("")}
           <p class="set-nothing" hidden>${escapeHtml(t("set.nothing"))}</p>
         </div>
       </div>
-      <footer class="set-footer">
-        <span class="set-footnote">${escapeHtml(t("set.footnote"))}</span>
-        <span class="set-gap"></span>
-        <button type="button" class="ctrl-btn" data-reset-section>${escapeHtml(t("set.resetSection"))}</button>
-      </footer>
+      <div class="set-pick-layer" hidden>
+        <div class="set-pick-card" role="dialog" aria-modal="true" aria-labelledby="set-pick-title">
+          <h3 id="set-pick-title" class="set-pick-title"></h3>
+          <div class="set-pick-list"></div>
+          <div class="set-pick-foot"><button type="button" class="ctrl-btn" data-pick-done>${escapeHtml(t("set.pick.done"))}</button></div>
+        </div>
+      </div>
     </section>
   </div>`;
+  }
+  function sectionSummary(s) {
+    const el2 = root();
+    const sec = el2.querySelector(`.set-section[data-section="${s}"]`);
+    if (s === "panels") {
+      const boxes = [...sec.querySelectorAll("[data-mirror]")];
+      return t("set.summary.on", { n: boxes.filter((b) => b.checked).length, total: boxes.length });
+    }
+    if (s === "shortcuts") {
+      const changed2 = ACTIONS.filter((a) => !isDefaultBinding(a)).length;
+      return changed2 ? t("set.summary.keys.changed", { n: changed2 }) : t("set.summary.keys.default");
+    }
+    if (s === "data") return t("set.summary.data");
+    return [...sec.querySelectorAll(".set-row .set-value")].slice(0, 3).map((v) => v.textContent ?? "").join(" \xB7 ");
+  }
+  function refreshSummaries() {
+    root()?.querySelectorAll("[data-summary]").forEach((el2) => {
+      el2.textContent = sectionSummary(el2.dataset.summary);
+    });
+  }
+  var picking = null;
+  function openPicker(from) {
+    const holder = document.getElementById(from.dataset.pick);
+    const layer = root().querySelector(".set-pick-layer");
+    if (!holder) return;
+    picking = { holder, from };
+    layer.querySelector(".set-pick-title").textContent = from.querySelector(".set-label")?.textContent ?? "";
+    const list = layer.querySelector(".set-pick-list");
+    const single = holder instanceof HTMLSelectElement;
+    list.setAttribute("role", single ? "radiogroup" : "group");
+    list.innerHTML = single ? [...holder.options].map((o) => `<button type="button" class="set-pick-option" role="radio" aria-checked="${o.selected}" data-pick-value="${escapeHtml(o.value)}"${o.disabled ? " disabled" : ""}><span class="set-radio" aria-hidden="true"></span>${escapeHtml(o.textContent ?? "")}</button>`).join("") : [...holder.querySelectorAll("input")].map((b) => `<label class="set-pick-option"><input type="checkbox" data-pick-check="${escapeHtml(b.value)}"${b.checked ? " checked" : ""}>${escapeHtml(b.dataset.label ?? b.value)}</label>`).join("");
+    layer.querySelector(".set-pick-foot").hidden = single;
+    layer.hidden = false;
+    (list.querySelector('[aria-checked="true"], input') ?? list.querySelector("button"))?.focus();
+  }
+  function closePicker() {
+    if (!picking) return false;
+    root().querySelector(".set-pick-layer").hidden = true;
+    picking.from.focus();
+    picking = null;
+    refreshValues();
+    return true;
   }
   var section = loadChoice("settings-section", SECTIONS, "general");
   var returnFocus2 = null;
   var root = () => document.getElementById("settings");
-  function showSection(s) {
+  var phone = () => matchMedia("(max-width: 720px)").matches;
+  var dialog = () => root().querySelector(".set-dialog");
+  var isPaged = () => dialog().classList.contains("set-paged");
+  function showSection(s, paged = true) {
     section = s;
     save("settings-section", s);
     const el2 = root();
@@ -5433,17 +5531,29 @@ ${explainCadence(cadence)}` : "");
     el2.querySelectorAll(".set-section").forEach((sec) => {
       sec.hidden = sec.dataset.section !== s;
     });
-    el2.querySelector("[data-reset-section]").hidden = s === "panels" || s === "data" || s === "io";
+    dialog().classList.toggle("set-paged", paged);
+    closeMoreMenus();
+  }
+  function backToList() {
+    dialog().classList.remove("set-paged");
+    root().querySelector(`.set-nav-item[data-section="${section}"]`)?.focus();
+  }
+  function closeMoreMenus() {
+    root()?.querySelectorAll(".set-more-menu").forEach((m) => {
+      m.hidden = true;
+    });
+    root()?.querySelectorAll(".set-more").forEach((b) => b.setAttribute("aria-expanded", "false"));
   }
   function applySearch(q) {
     const el2 = root();
     const query = q.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+    dialog().classList.toggle("set-searching", !!query);
     if (!query) {
       el2.querySelectorAll(".set-row").forEach((r) => {
         r.hidden = false;
       });
       el2.querySelector(".set-nothing").hidden = true;
-      showSection(section);
+      showSection(section, isPaged());
       return;
     }
     let any = false;
@@ -5473,10 +5583,13 @@ ${explainCadence(cadence)}` : "");
     returnFocus2 = document.activeElement;
     el2.hidden = false;
     syncMirrors();
-    showSection(at ?? section);
+    const paged = !!at || !phone();
     el2.querySelector("#set-search").value = "";
+    showSection(at ?? section, paged);
     applySearch("");
-    el2.querySelector(`.set-nav-item[data-section="${section}"]`)?.focus();
+    refreshValues();
+    if (paged && phone()) el2.querySelector(`.set-section[data-section="${section}"] .set-back`)?.focus();
+    else el2.querySelector(`.set-nav-item[data-section="${section}"]`)?.focus();
   }
   function openSettingsAt(query) {
     openSettings();
@@ -5503,6 +5616,15 @@ ${explainCadence(cadence)}` : "");
       redrawShortcuts();
       return true;
     }
+    if (closePicker()) return true;
+    if (el2.querySelector(".set-more-menu:not([hidden])")) {
+      closeMoreMenus();
+      return true;
+    }
+    if (phone() && isPaged() && !dialog().classList.contains("set-searching")) {
+      backToList();
+      return true;
+    }
     el2.hidden = true;
     pendingConflict = null;
     returnFocus2?.focus();
@@ -5525,19 +5647,73 @@ ${explainCadence(cadence)}` : "");
       showSection(b.dataset.section);
     }));
     el2.querySelector("#set-search").addEventListener("input", (e) => applySearch(e.target.value));
+    const holders = new MutationObserver(() => refreshValues());
+    el2.querySelectorAll("select.set-holder").forEach((s) => holders.observe(s, { childList: true, attributes: true }));
     el2.addEventListener("click", (e) => {
       const target = e.target;
-      const seg = target.closest("[data-pref][data-value]");
-      if (seg) {
-        setPref(seg.dataset.pref, seg.dataset.value);
-        seg.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === seg)));
+      const infoBtn = target.closest(".set-info");
+      if (infoBtn) {
+        const hintEl = infoBtn.parentElement.querySelector(":scope > .set-hint");
+        if (hintEl) {
+          hintEl.hidden = !hintEl.hidden;
+          infoBtn.setAttribute("aria-expanded", String(!hintEl.hidden));
+        }
+        return;
       }
+      const pick2 = target.closest("[data-pick]");
+      if (pick2) {
+        openPicker(pick2);
+        return;
+      }
+      if (target.closest(".set-back")) {
+        backToList();
+        return;
+      }
+      const more = target.closest(".set-more");
+      if (more) {
+        const menu = more.parentElement.querySelector(".set-more-menu");
+        const open2 = menu.hidden;
+        closeMoreMenus();
+        menu.hidden = !open2;
+        more.setAttribute("aria-expanded", String(open2));
+        return;
+      }
+      if (!target.closest(".set-more-menu")) closeMoreMenus();
       if (target.closest("[data-ear-reset]")) opts.resetEarScore();
-      const mic = target.closest("[data-mic-mode]");
-      if (mic) {
-        setMicMode(mic.dataset.value);
-        mic.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === mic)));
+    });
+    const layer = el2.querySelector(".set-pick-layer");
+    layer.addEventListener("click", (e) => {
+      const target = e.target;
+      e.stopPropagation();
+      if (target === layer || target.closest("[data-pick-done]")) {
+        closePicker();
+        return;
       }
+      const option = target.closest("[data-pick-value]");
+      if (option && picking?.holder instanceof HTMLSelectElement) {
+        const sel = picking.holder;
+        sel.value = option.dataset.pickValue;
+        closePicker();
+        sel.dispatchEvent(new Event("input", { bubbles: true }));
+        sel.dispatchEvent(new Event("change", { bubbles: true }));
+        refreshValues();
+      }
+    });
+    layer.addEventListener("change", (e) => {
+      const box = e.target.closest("[data-pick-check]");
+      if (!box || !picking) return;
+      const holderBox = [...picking.holder.querySelectorAll("input")].find((b) => b.value === box.dataset.pickCheck);
+      if (!holderBox) return;
+      holderBox.checked = box.checked;
+      holderBox.dispatchEvent(new Event("input", { bubbles: true }));
+      refreshValues();
+    });
+    layer.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      const items = [...layer.querySelectorAll(".set-pick-option:not([disabled]), .set-pick-option input")].filter((i2) => i2.tagName !== "LABEL");
+      const i = items.indexOf(document.activeElement);
+      items[(i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
+      e.preventDefault();
     });
     el2.addEventListener("input", (e) => {
       const input = e.target;
@@ -5551,32 +5727,36 @@ ${explainCadence(cadence)}` : "");
       if (!name) return;
       const def = PREFS[name];
       if (def.kind === "number") {
-        const out = input.parentElement.querySelector("output");
+        const out = el2.querySelector(`output[for="${input.id}"]`);
         if (out) out.textContent = formatPrefValue(def, Number(input.value));
         if (name !== "ui-zoom") setPref(name, Number(input.value));
       } else if (def.kind === "bool") setPref(name, input.checked);
       else if (def.kind === "choice") setPref(name, input.value);
     });
-    el2.addEventListener("change", (e) => {
-      const input = e.target;
-      if (input.dataset.pref === "ui-zoom") setPref("ui-zoom", Number(input.value));
-    });
-    el2.querySelector("#help-theme").addEventListener("change", (e) => saveThemeChoice(e.target.value));
     const reloadWith = (apply) => {
       apply();
       carryHistoryOverReload();
       location.reload();
     };
-    el2.querySelector("#help-lang").addEventListener("change", (e) => reloadWith(() => saveLang(e.target.value)));
-    el2.querySelector("#help-note-names").addEventListener("change", (e) => reloadWith(() => saveNoteNaming(e.target.value)));
-    el2.querySelector("#set-tour").addEventListener("click", () => {
-      closeSettings();
-      startTour();
+    el2.addEventListener("change", (e) => {
+      const input = e.target;
+      if (input.dataset.pref === "ui-zoom") setPref("ui-zoom", Number(input.value));
+      else if (input.id === "help-theme") saveThemeChoice(input.value);
+      else if (input.id === "help-lang") reloadWith(() => saveLang(input.value));
+      else if (input.id === "help-note-names") reloadWith(() => saveNoteNaming(input.value));
+      else if (input.id === "set-mic-mode") setMicMode(input.value);
+      else if (input.dataset.mirror) {
+        document.getElementById(input.dataset.mirror)?.click();
+        syncMirrors();
+      }
+      refreshSummaries();
     });
-    el2.querySelectorAll("[data-mirror]").forEach((box) => box.addEventListener("change", () => {
-      document.getElementById(box.dataset.mirror)?.click();
-      syncMirrors();
-    }));
+    el2.addEventListener("click", (e) => {
+      if (e.target.closest("#set-tour")) {
+        closeSettings();
+        startTour();
+      }
+    });
     el2.querySelector("#set-shortcuts").addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
@@ -5603,12 +5783,15 @@ ${explainCadence(cadence)}` : "");
         startCapture(c.action, c.slot);
       }
     });
-    el2.querySelector("[data-reset-section]").addEventListener("click", () => {
+    el2.addEventListener("click", (e) => {
+      if (!e.target.closest("[data-reset-section]")) return;
+      closeMoreMenus();
       if (section === "shortcuts") {
         resetAllKeys();
         capturing = null;
         pendingConflict = null;
         redrawShortcuts();
+        refreshSummaries();
         return;
       }
       if (section === "general") saveThemeChoice("system");
@@ -5619,7 +5802,8 @@ ${explainCadence(cadence)}` : "");
       tmp.innerHTML = buildSettings();
       const fresh = tmp.querySelector(`.set-section[data-section="${section}"]`);
       if (fresh) sec.innerHTML = fresh.innerHTML;
-      if (section === "general") rewireGeneral(el2);
+      refreshValues();
+      sec.querySelector(".set-more")?.focus();
     });
     const error = el2.querySelector(".set-error");
     el2.querySelector("[data-export-settings]").addEventListener("click", exportSettings);
@@ -5635,34 +5819,7 @@ ${explainCadence(cadence)}` : "");
       replaceSettings(next, "set.data.imported");
     });
     el2.querySelector("[data-reset-settings]").addEventListener("click", () => replaceSettings({}, "set.data.wasReset"));
-    function rewireGeneral(container2) {
-      container2.querySelector("#help-theme").addEventListener("change", (e) => saveThemeChoice(e.target.value));
-      container2.querySelector("#help-lang").addEventListener("change", (e) => reloadWith(() => saveLang(e.target.value)));
-      container2.querySelector("#help-note-names").addEventListener("change", (e) => reloadWith(() => saveNoteNaming(e.target.value)));
-      container2.querySelector("#set-tour").addEventListener("click", () => {
-        closeSettings();
-        startTour();
-      });
-    }
   }
-
-  // src/ui/icons.ts
-  var line = (body) => `<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
-  var ICONS = {
-    keyboard: line('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h1M10 10h1M14 10h1M18 10h0M7 14h10"/>'),
-    mic: line('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'),
-    play: '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>',
-    layout: line('<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>'),
-    present: line('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
-    views: line('<rect x="3" y="7" width="14" height="13" rx="1.5"/><path d="M7 4h14v13"/>'),
-    settings: line('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
-    rail: line('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>'),
-    midi: line('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 6v7M12 6v7M17 6v7"/>'),
-    sound: line('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>'),
-    search: line('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),
-    more: '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>'
-  };
-  var LOGO = `<svg class="logo-mark" width="26" height="26" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="124" fill="var(--logo-bg)"/><g fill="var(--logo-ink)"><path d="M146 206 Q272 152 398 142 L398 93.1 Q272 101.6 146 154 Z"/><path d="M155 186.6 L155 376.2 M273 147.1 L273 338.2 M389 127.2 L389 302.2" fill="none" stroke="var(--logo-ink)" stroke-width="18" stroke-linecap="round"/><path d="M94 384 C94 367.1 110.1 358 130 358 C153.5 358 166 369.6 166 384 C166 395.8 149.9 411.9 130 410 C106.5 410 94 398.4 94 384 Z" transform="rotate(-24 130 384)"/><path d="M212 346 C212 329.1 228.1 320 248 320 C271.5 320 284 331.6 284 346 C284 357.8 267.9 373.9 248 372 C224.5 372 212 360.4 212 346 Z" transform="rotate(-24 248 346)"/><path d="M328 310 C328 293.1 344.1 284 364 284 C387.5 284 400 295.6 400 310 C400 321.8 383.9 337.9 364 336 C340.5 336 328 324.4 328 310 Z" transform="rotate(-24 364 310)"/></g></svg>`;
 
   // src/ui/popover.ts
   var current2 = null;
@@ -9023,17 +9180,17 @@ ${explainCadence(c.cadence)}` : ""}`;
       if (sameChord(symbol, current4)) return null;
       let s = out.find((o) => sameChord(o.symbol, symbol));
       if (!s) {
-        const info2 = romanInKey(symbol, key);
-        out.push(s = { symbol, roman: info2?.roman ?? null, function: info2?.function ?? "unknown", resolution: null, cadence: null, progressions: [] });
+        const info3 = romanInKey(symbol, key);
+        out.push(s = { symbol, roman: info3?.roman ?? null, function: info3?.function ?? "unknown", resolution: null, cadence: null, progressions: [] });
       }
       return s;
     };
-    const info = romanInKey(current4, key);
-    if (info?.isSecondary && info.secondaryTarget) {
-      const target = info.secondaryTarget.split("/")[1];
+    const info2 = romanInKey(current4, key);
+    if (info2?.isSecondary && info2.secondaryTarget) {
+      const target = info2.secondaryTarget.split("/")[1];
       const to = target ? resolutionTarget(target, key, sevenths) : null;
       const s = to ? entry(to) : null;
-      if (s) s.resolution = t("next.resolves", { chord: chordLabel(current4), roman: info.secondaryTarget, target: chordLabel(s.symbol) });
+      if (s) s.resolution = t("next.resolves", { chord: chordLabel(current4), roman: info2.secondaryTarget, target: chordLabel(s.symbol) });
     }
     for (const symbol of keyChords(key, sevenths)) {
       const next = tryParseChord(symbol);
@@ -10072,7 +10229,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function renderAnalysisPanel() {
     const from = selectedSymbol() ? cadencePrev : null;
-    const info = from ? romanInKey(from, analysisKey()) : null;
+    const info2 = from ? romanInKey(from, analysisKey()) : null;
     renderZone1Analysis(
       state.detection,
       state.analysis,
@@ -10080,7 +10237,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       analysisFieldsVisible,
       analysisScale,
       onAltSelect,
-      { from, fromRoman: info?.roman ?? null, fromFunction: info?.function ?? null }
+      { from, fromRoman: info2?.roman ?? null, fromFunction: info2?.function ?? null }
     );
   }
   function renderDiagrams() {
@@ -10609,7 +10766,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const thruBtn = $2("btn-thru");
     const { channel: channel2, thru: thru2 } = getOutputSettings();
     ch.value = String(channel2);
-    thruBtn.classList.toggle("active-mode", thru2);
+    thruBtn.setAttribute("aria-checked", String(thru2));
     sel.addEventListener("change", () => {
       chooseOutput(sel.value || null);
       refreshOutputDropdown();
@@ -10618,7 +10775,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     thruBtn.addEventListener("click", () => {
       const on = !getOutputSettings().thru;
       setThru(on);
-      thruBtn.classList.toggle("active-mode", on);
+      thruBtn.setAttribute("aria-checked", String(on));
     });
     $2("midi-device").addEventListener("change", () => setTimeout(refreshOutputDropdown));
   }

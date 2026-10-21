@@ -18,6 +18,7 @@ import { ACTIONS, DEFAULT_KEYS, MAX_KEYS, RESERVED, keysOf, isDefaultBinding, ke
 import { MIC_MODES, getMicMode, setMicMode } from '../input/mic'
 import { startTour } from './tour'
 import { carryHistoryOverReload } from '../history/history'
+import { ICONS } from './icons'
 
 export const SECTIONS = ['general', 'io', 'sound', 'theory', 'detector', 'panels', 'practice', 'mic', 'shortcuts', 'data'] as const
 export type Section = typeof SECTIONS[number]
@@ -69,15 +70,35 @@ export function formatPrefValue(def: { unit: string }, v: number): string {
   return def.unit ? `${n(v)} ${def.unit}` : n(v)
 }
 
-const row = (labelHtml: string, hintText: string, control: string, search: string, wide = false) => `
-  <div class="set-row${wide ? ' set-row-wide' : ''}" data-search="${escapeHtml(search.toLowerCase())}">
-    <div class="set-text">${labelHtml}${hintText ? `<div class="set-hint">${escapeHtml(hintText)}</div>` : ''}</div>
-    <div class="set-control">${control}</div>
+// A row: the setting's name with its value under it, its explanation behind ⓘ (a tooltip, or
+// shown under the row when pressed), and its control on the right. A choice is the row itself:
+// it opens a list to pick from (the picker below), its select hidden as the holder of the value.
+
+const info = (hintText: string) => hintText
+  ? `<button type="button" class="set-info" title="${escapeHtml(hintText)}" aria-label="${escapeHtml(hintText)}" aria-expanded="false">ⓘ</button>`
+  : ''
+
+const row = (labelHtml: string, hintText: string, control: string, search: string, extra = '') => `
+  <div class="set-row" data-search="${escapeHtml(search.toLowerCase())}">
+    <div class="set-text">${labelHtml}</div>${info(hintText)}
+    ${control ? `<div class="set-control">${control}</div>` : ''}${extra}
+    ${hintText ? `<div class="set-hint" hidden>${escapeHtml(hintText)}</div>` : ''}
   </div>`
 
-function segmented(group: string, options: { value: string; label: string; on: boolean }[], attrs: string): string {
-  return `<div class="set-seg" role="group" aria-label="${escapeHtml(group)}">${options.map(o =>
-    `<button type="button" ${attrs} data-value="${escapeHtml(o.value)}" aria-pressed="${o.on}">${escapeHtml(o.label)}</button>`).join('')}</div>`
+/** A row that opens the picker on `holder` (a select's id, or a group of hidden checkboxes). */
+const pickRow = (holder: string, label: string, value: string, hintText: string, search: string, holderHtml: string) => `
+  <div class="set-row" data-search="${escapeHtml(search.toLowerCase())}">
+    <button type="button" class="set-text set-pick" data-pick="${holder}" aria-haspopup="dialog">
+      <span class="set-label">${escapeHtml(label)}</span><span class="set-value" data-shows="${holder}">${escapeHtml(value)}</span>
+    </button>${info(hintText)}${holderHtml}
+    ${hintText ? `<div class="set-hint" hidden>${escapeHtml(hintText)}</div>` : ''}
+  </div>`
+
+/** A choice as a picker row over its hidden select. */
+function selectRow(id: string, label: string, options: { value: string; label: string }[], value: string, hintText: string, search: string, attrs = ''): string {
+  const select = `<select id="${id}" class="set-holder" hidden${attrs}>${options.map(o =>
+    `<option value="${escapeHtml(o.value)}"${o.value === value ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('')}</select>`
+  return pickRow(id, label, options.find(o => o.value === value)?.label ?? '', hintText, search, select)
 }
 
 function prefRow(name: PrefName): string {
@@ -86,26 +107,43 @@ function prefRow(name: PrefName): string {
   const v = getPref(name)
   const search = `${lbl(name)} ${hint(name)}`
   switch (def.kind) {
-    case 'choice': {
-      const opts = def.options.map(o => ({ value: o, label: optionLabel(name, o), on: v === o }))
-      const control = def.options.length <= 3
-        ? segmented(lbl(name), opts, `data-pref="${name}"`)
-        : `<select id="${id}" class="ctrl-select set-select" data-pref="${name}">${opts.map(o => `<option value="${o.value}"${o.on ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('')}</select>`
-      const label = def.options.length <= 3 ? `<div class="set-label">${escapeHtml(lbl(name))}</div>` : `<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label>`
-      return row(label, hint(name), control, search)
-    }
+    case 'choice':
+      return selectRow(id, lbl(name), def.options.map(o => ({ value: o, label: optionLabel(name, o) })), v as string, hint(name), search, ` data-pref="${name}"`)
     case 'bool':
       return row(`<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label>`, hint(name),
-        `<input type="checkbox" id="${id}" class="set-check" data-pref="${name}"${v ? ' checked' : ''}>`, search)
+        `<input type="checkbox" id="${id}" class="set-check" role="switch" data-pref="${name}"${v ? ' checked' : ''}>`, search)
     case 'number':
-      return row(`<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label>`, hint(name),
-        `<input type="range" id="${id}" class="set-range" data-pref="${name}" min="${def.min}" max="${def.max}" step="${def.step}" value="${v}">
-         <output class="set-value" for="${id}">${escapeHtml(formatPrefValue(def, v as number))}</output>`, search)
-    case 'set':
-      return row(`<div class="set-label">${escapeHtml(lbl(name))}</div>`, hint(name),
-        `<div class="set-checks">${def.options.map(o => `<label class="set-check-label"><input type="checkbox" data-pref-set="${name}" value="${escapeHtml(o)}"${(v as string[]).includes(o) ? ' checked' : ''}> ${escapeHtml(optionLabel(name, o))}</label>`).join('')}</div>`,
-        search + ' ' + def.options.map(o => optionLabel(name, o)).join(' '), true)
+      return row(`<label class="set-label" for="${id}">${escapeHtml(lbl(name))}</label><output class="set-value" for="${id}">${escapeHtml(formatPrefValue(def, v as number))}</output>`, hint(name),
+        `<input type="range" id="${id}" class="set-range" data-pref="${name}" min="${def.min}" max="${def.max}" step="${def.step}" value="${v}">`, search)
+    case 'set': {
+      const holder = `pref-set-${name}`
+      const boxes = `<div id="${holder}" class="set-holder" hidden aria-label="${escapeHtml(lbl(name))}">${def.options.map(o =>
+        `<input type="checkbox" data-pref-set="${name}" value="${escapeHtml(o)}" data-label="${escapeHtml(optionLabel(name, o))}"${(v as string[]).includes(o) ? ' checked' : ''}>`).join('')}</div>`
+      return pickRow(holder, lbl(name), setSummary(name, v as string[]), hint(name),
+        search + ' ' + def.options.map(o => optionLabel(name, o)).join(' '), boxes)
+    }
   }
+}
+
+function setSummary(name: PrefName, chosen: string[]): string {
+  return chosen.length ? chosen.map(o => optionLabel(name, o)).join(', ') : '—'
+}
+
+/** What a picker row shows under its name: the option chosen, or the boxes ticked. */
+function holderValue(holder: HTMLElement): string {
+  // A port that would loop back to the input says so (app.ts marks its select)
+  if (holder instanceof HTMLSelectElement) return (holder.selectedOptions[0]?.textContent ?? '') + (holder.classList.contains('invalid') ? ` · ${holder.title}` : '')
+  const on = [...holder.querySelectorAll<HTMLInputElement>('input:checked')].map(b => b.dataset.label ?? b.value)
+  return on.length ? on.join(', ') : '—'
+}
+
+/** Every picker row shows its holder's value again: a select may be changed by the app without an event. */
+function refreshValues() {
+  root()?.querySelectorAll<HTMLElement>('[data-shows]').forEach(out => {
+    const holder = document.getElementById(out.dataset.shows!)
+    if (holder) out.textContent = holderValue(holder)
+  })
+  refreshSummaries()
 }
 
 /** A preference changed elsewhere (a panel's ⋯ menu): its control here shows the new value. */
@@ -121,9 +159,9 @@ function syncPrefControl(name: PrefName) {
       if (out) out.textContent = formatPrefValue(def as { unit: string }, v as number)
     } else if (c instanceof HTMLInputElement && c.type === 'checkbox') c.checked = v as boolean
     else if (c instanceof HTMLSelectElement) c.value = v as string
-    else if (c.dataset.value !== undefined) c.setAttribute('aria-pressed', String(c.dataset.value === v))
   })
   el.querySelectorAll<HTMLInputElement>(`input[data-pref-set="${name}"]`).forEach(box => { box.checked = (v as string[]).includes(box.value) })
+  refreshValues()
 }
 
 // ─── Shortcuts ───────────────────────────────────────────────────────────────
@@ -276,38 +314,27 @@ function sectionBody(s: Section): string {
   const prefs = (SECTION_PREFS[s] ?? []).map(prefRow).join('')
   switch (s) {
     case 'general': return `
-      ${row(`<label class="set-label" for="help-lang">${escapeHtml(t('help.language'))}</label>`, t('set.reloads'),
-        `<select id="help-lang" class="ctrl-select set-select">${LANGS.map(l => `<option value="${l}"${l === getLang() ? ' selected' : ''}>${LANG_NAMES[l]}</option>`).join('')}</select>`, `${t('help.language')} idioma language`)}
-      ${row(`<label class="set-label" for="help-note-names">${escapeHtml(t('help.noteNames'))}</label>`, t('set.noteNames.hint'),
-        `<select id="help-note-names" class="ctrl-select set-select">${NOTE_NAMINGS.map(n => `<option value="${n}"${n === getNoteNaming() ? ' selected' : ''}>${t(`help.noteNames.${n}`)}</option>`).join('')}</select>`, `${t('help.noteNames')} solfeo solfège`)}
-      ${row(`<label class="set-label" for="help-theme">${escapeHtml(t('help.theme'))}</label>`, '',
-        `<select id="help-theme" class="ctrl-select set-select">${THEME_CHOICES.map(c => `<option value="${c}"${c === getThemeChoice() ? ' selected' : ''}>${t(`help.theme.${c}`)}</option>`).join('')}</select>`, `${t('help.theme')} theme`)}
+      ${selectRow('help-lang', t('help.language'), LANGS.map(l => ({ value: l, label: LANG_NAMES[l] })), getLang(), t('set.reloads'), `${t('help.language')} idioma language`)}
+      ${selectRow('help-note-names', t('help.noteNames'), NOTE_NAMINGS.map(n => ({ value: n, label: t(`help.noteNames.${n}`) })), getNoteNaming(), t('set.noteNames.hint'), `${t('help.noteNames')} solfeo solfège`)}
+      ${selectRow('help-theme', t('help.theme'), THEME_CHOICES.map(c => ({ value: c, label: t(`help.theme.${c}`) })), getThemeChoice(), '', `${t('help.theme')} theme`)}
       ${prefs}
       ${row(`<div class="set-label">${escapeHtml(t('tour.start'))}</div>`, t('tour.start.title'),
         `<button type="button" id="set-tour" class="ctrl-btn">${escapeHtml(t('tour.start'))}</button>`, `${t('tour.start')} tour`)}`
     case 'io': return `
-      ${row(`<label class="set-label" for="midi-in-ch">${escapeHtml(t('set.io.inChannel'))}</label>`, t('midi.inChannel.title'),
-        `<select id="midi-in-ch" class="ctrl-select set-select"><option value="0">${t('midi.inChannel.all')}</option>${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t('midi.inChannel.one', { n: i + 1 })}</option>`).join('')}</select>`, `${t('set.io.inChannel')} midi`)}
-      ${row(`<label class="set-label" for="midi-out">${escapeHtml(t('set.io.out'))}</label>`, t('midi.out.title'),
-        `<select id="midi-out" class="ctrl-select set-select"><option value="">${t('midi.out.off')}</option></select>`, `${t('set.io.out')} midi daw`)}
-      ${row(`<label class="set-label" for="midi-out-ch">${escapeHtml(t('set.io.outChannel'))}</label>`, t('midi.outChannel.title'),
-        `<select id="midi-out-ch" class="ctrl-select set-select">${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${t('midi.outChannel.one', { n: i + 1 })}</option>`).join('')}</select>`, `${t('set.io.outChannel')} midi`)}
+      ${selectRow('midi-in-ch', t('set.io.inChannel'), [{ value: '0', label: t('midi.inChannel.all') }, ...Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: t('midi.inChannel.one', { n: i + 1 }) }))], '0', t('midi.inChannel.title'), `${t('set.io.inChannel')} midi`)}
+      ${selectRow('midi-out', t('set.io.out'), [{ value: '', label: t('midi.out.off') }], '', t('midi.out.title'), `${t('set.io.out')} midi daw`)}
+      ${selectRow('midi-out-ch', t('set.io.outChannel'), Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: t('midi.outChannel.one', { n: i + 1 }) })), '1', t('midi.outChannel.title'), `${t('set.io.outChannel')} midi`)}
       ${row(`<div class="set-label">${escapeHtml(t('set.io.thru'))}</div>`, t('midi.thru.title'),
-        `<button type="button" id="btn-thru" class="mode-btn">${t('midi.thru')}</button>`, `${t('set.io.thru')} thru midi`)}`
-    case 'panels': return `
-      <p class="set-intro">${escapeHtml(t('set.panels.intro'))}</p>
-      ${PANEL_BUTTONS.map(b => row(`<label class="set-label" for="mirror-${b.id}">${escapeHtml(t(b.label))}</label>`, '',
-        `<input type="checkbox" id="mirror-${b.id}" class="set-check" data-mirror="${b.id}">`, t(b.label))).join('')}`
+        `<button type="button" id="btn-thru" class="set-switch" role="switch" aria-checked="false" aria-label="${escapeHtml(t('set.io.thru'))}"></button>`, `${t('set.io.thru')} thru midi`)}`
+    case 'panels': return PANEL_BUTTONS.map(b => row(`<label class="set-label" for="mirror-${b.id}">${escapeHtml(t(b.label))}</label>`, '',
+        `<input type="checkbox" id="mirror-${b.id}" class="set-check" role="switch" data-mirror="${b.id}">`, t(b.label))).join('')
     case 'practice': return `${prefs}
       ${row(`<div class="set-label">${escapeHtml(t('set.ear.reset'))}</div>`, t('set.ear.reset.hint'),
-        `<button type="button" class="ctrl-btn" data-ear-reset>${escapeHtml(t('set.ear.reset'))}</button>`, `${t('set.ear.reset')}`)}`
+        `<button type="button" class="ctrl-btn" data-ear-reset>${escapeHtml(t('set.ear.reset.button'))}</button>`, `${t('set.ear.reset')}`)}`
     case 'mic': return `
-      ${row(`<div class="set-label">${escapeHtml(t('set.mic.mode'))}</div>`, t('set.mic.mode.hint'),
-        segmented(t('set.mic.mode'), MIC_MODES.map(m => ({ value: m, label: t(`mic.mode.${m}`), on: getMicMode() === m })), 'data-mic-mode'), `${t('set.mic.mode')} micrófono microphone`)}
+      ${selectRow('set-mic-mode', t('set.mic.mode'), MIC_MODES.map(m => ({ value: m, label: t(`mic.mode.${m}`) })), getMicMode(), t('set.mic.mode.hint'), `${t('set.mic.mode')} micrófono microphone`)}
       ${prefs}`
-    case 'shortcuts': return `
-      <div class="set-section-actions"><p class="set-intro">${escapeHtml(t('set.keys.intro'))}</p></div>
-      <div id="set-shortcuts">${shortcutsHtml()}</div>`
+    case 'shortcuts': return `<div id="set-shortcuts">${shortcutsHtml()}</div>`
     case 'data': return `
       ${row(`<div class="set-label">${escapeHtml(t('set.data.export'))}</div>`, t('set.data.export.hint'),
         `<button type="button" class="ctrl-btn" data-export-settings>${escapeHtml(t('set.data.export.button'))}</button>`, t('set.data.export'))}
@@ -320,38 +347,116 @@ function sectionBody(s: Section): string {
   }
 }
 
+const SECTION_ICONS: Record<Section, string> = {
+  general: ICONS.sliders, io: ICONS.midi, sound: ICONS.sound, theory: ICONS.note, detector: ICONS.clock,
+  panels: ICONS.layout, practice: ICONS.ear, mic: ICONS.mic, shortcuts: ICONS.keyboard, data: ICONS.file,
+}
+
+/** Sections whose ⋮ menu offers to put their settings back. */
+const resettable = (s: Section) => s !== 'panels' && s !== 'data' && s !== 'io'
+
+/** A section's head: ← back to the list (on a phone), its name, ⓘ, and ⋮ with Reset this section. */
+function sectionHead(s: Section): string {
+  const intro = s === 'panels' ? t('set.panels.intro') : s === 'shortcuts' ? t('set.keys.intro') : ''
+  return `<div class="set-section-head">
+    <button type="button" class="set-back" aria-label="${escapeHtml(t('set.back'))}">←</button>
+    <h2 class="set-section-title">${escapeHtml(t(`set.section.${s}`))}</h2>
+    ${info([t(`set.section.${s}.hint` as StringKey), intro].filter(Boolean).join('. '))}
+    <span class="set-gap"></span>
+    ${resettable(s) ? `<div class="set-more-wrap">
+      <button type="button" class="set-more" aria-haspopup="true" aria-expanded="false" aria-label="${escapeHtml(t('menu.options'))}">⋮</button>
+      <div class="set-more-menu" hidden><button type="button" class="menu-item" data-reset-section><span class="menu-label">${escapeHtml(t('set.resetSection'))}</span></button></div>
+    </div>` : ''}
+    <div class="set-hint" hidden>${escapeHtml([t(`set.section.${s}.hint` as StringKey), intro].filter(Boolean).join('. '))}</div>
+  </div>`
+}
+
 /** The dialog's markup: built with the page, hidden until opened (its MIDI controls are wired at start). */
 export function buildSettings(): string {
   return `
   <div id="settings" class="set-backdrop" hidden>
     <section class="set-dialog" role="dialog" aria-modal="true" aria-labelledby="set-title">
       <header class="set-header">
-        <h1 id="set-title" class="set-title">${escapeHtml(t('set.title'))}</h1>
-        <label for="set-search" class="set-search-label">${escapeHtml(t('set.search'))}</label>
-        <input id="set-search" class="set-search" type="search" placeholder="${escapeHtml(t('set.search.placeholder'))}" autocomplete="off">
+        <h1 id="set-title" class="set-title" title="${escapeHtml(t('set.footnote'))}">${escapeHtml(t('set.title'))}</h1>
+        <input id="set-search" class="set-search" type="search" placeholder="${escapeHtml(t('set.search.placeholder'))}" aria-label="${escapeHtml(t('set.search'))}" autocomplete="off">
         <span class="set-gap"></span>
         <button type="button" class="set-close" aria-label="${escapeHtml(t('help.close'))}">×</button>
       </header>
       <div class="set-main">
         <nav class="set-nav" aria-label="${escapeHtml(t('set.sections'))}">
-          ${SECTIONS.map(s => `<button type="button" class="set-nav-item" data-section="${s}">${escapeHtml(t(`set.section.${s}`))}</button>`).join('')}
+          ${SECTIONS.map(s => `<button type="button" class="set-nav-item" data-section="${s}">
+            <span class="set-nav-icon">${SECTION_ICONS[s]}</span>
+            <span class="set-nav-text"><span class="set-nav-name">${escapeHtml(t(`set.section.${s}`))}</span><span class="set-nav-sum" data-summary="${s}"></span></span>
+          </button>`).join('')}
         </nav>
         <div class="set-content">
           ${SECTIONS.map(s => `<div class="set-section" data-section="${s}" hidden>
-            <h2 class="set-section-title">${escapeHtml(t(`set.section.${s}`))}</h2>
-            <p class="set-section-hint">${escapeHtml(t(`set.section.${s}.hint`))}</p>
+            ${sectionHead(s)}
             ${sectionBody(s)}
           </div>`).join('')}
           <p class="set-nothing" hidden>${escapeHtml(t('set.nothing'))}</p>
         </div>
       </div>
-      <footer class="set-footer">
-        <span class="set-footnote">${escapeHtml(t('set.footnote'))}</span>
-        <span class="set-gap"></span>
-        <button type="button" class="ctrl-btn" data-reset-section>${escapeHtml(t('set.resetSection'))}</button>
-      </footer>
+      <div class="set-pick-layer" hidden>
+        <div class="set-pick-card" role="dialog" aria-modal="true" aria-labelledby="set-pick-title">
+          <h3 id="set-pick-title" class="set-pick-title"></h3>
+          <div class="set-pick-list"></div>
+          <div class="set-pick-foot"><button type="button" class="ctrl-btn" data-pick-done>${escapeHtml(t('set.pick.done'))}</button></div>
+        </div>
+      </div>
     </section>
   </div>`
+}
+
+/** Under each section's name in the list (on a phone): the values of its first settings. */
+function sectionSummary(s: Section): string {
+  const el = root()!
+  const sec = el.querySelector<HTMLElement>(`.set-section[data-section="${s}"]`)!
+  if (s === 'panels') {
+    const boxes = [...sec.querySelectorAll<HTMLInputElement>('[data-mirror]')]
+    return t('set.summary.on', { n: boxes.filter(b => b.checked).length, total: boxes.length })
+  }
+  if (s === 'shortcuts') {
+    const changed = ACTIONS.filter(a => !isDefaultBinding(a)).length
+    return changed ? t('set.summary.keys.changed', { n: changed }) : t('set.summary.keys.default')
+  }
+  if (s === 'data') return t('set.summary.data')
+  return [...sec.querySelectorAll<HTMLElement>('.set-row .set-value')].slice(0, 3).map(v => v.textContent ?? '').join(' · ')
+}
+
+function refreshSummaries() {
+  root()?.querySelectorAll<HTMLElement>('[data-summary]').forEach(el => { el.textContent = sectionSummary(el.dataset.summary as Section) })
+}
+
+// ─── The picker ──────────────────────────────────────────────────────────────
+
+let picking: { holder: HTMLElement; from: HTMLElement } | null = null
+
+/** A list over Settings to pick one option of a select, or tick the boxes of a group. */
+function openPicker(from: HTMLElement) {
+  const holder = document.getElementById(from.dataset.pick!)
+  const layer = root()!.querySelector<HTMLElement>('.set-pick-layer')!
+  if (!holder) return
+  picking = { holder, from }
+  layer.querySelector('.set-pick-title')!.textContent = from.querySelector('.set-label')?.textContent ?? ''
+  const list = layer.querySelector<HTMLElement>('.set-pick-list')!
+  const single = holder instanceof HTMLSelectElement
+  list.setAttribute('role', single ? 'radiogroup' : 'group')
+  list.innerHTML = single
+    ? [...holder.options].map(o => `<button type="button" class="set-pick-option" role="radio" aria-checked="${o.selected}" data-pick-value="${escapeHtml(o.value)}"${o.disabled ? ' disabled' : ''}><span class="set-radio" aria-hidden="true"></span>${escapeHtml(o.textContent ?? '')}</button>`).join('')
+    : [...holder.querySelectorAll<HTMLInputElement>('input')].map(b => `<label class="set-pick-option"><input type="checkbox" data-pick-check="${escapeHtml(b.value)}"${b.checked ? ' checked' : ''}>${escapeHtml(b.dataset.label ?? b.value)}</label>`).join('')
+  layer.querySelector<HTMLElement>('.set-pick-foot')!.hidden = single
+  layer.hidden = false
+  ;(list.querySelector<HTMLElement>('[aria-checked="true"], input') ?? list.querySelector<HTMLElement>('button'))?.focus()
+}
+
+function closePicker(): boolean {
+  if (!picking) return false
+  root()!.querySelector<HTMLElement>('.set-pick-layer')!.hidden = true
+  picking.from.focus()
+  picking = null
+  refreshValues()
+  return true
 }
 
 let section = loadChoice<Section>('settings-section', SECTIONS, 'general')
@@ -360,23 +465,42 @@ const root = () => document.getElementById('settings')
 
 export function isSettingsOpen(): boolean { return !!root() && !root()!.hidden }
 
-function showSection(s: Section) {
+// On a phone Settings fills the screen: first the search and the list of sections, then a
+// section's page with ← back. On a wider screen both show side by side.
+const phone = () => matchMedia('(max-width: 720px)').matches
+const dialog = () => root()!.querySelector<HTMLElement>('.set-dialog')!
+const isPaged = () => dialog().classList.contains('set-paged')
+
+function showSection(s: Section, paged = true) {
   section = s
   save('settings-section', s)
   const el = root()!
   el.querySelectorAll<HTMLElement>('.set-nav-item').forEach(b => b.setAttribute('aria-current', String(b.dataset.section === s)))
   el.querySelectorAll<HTMLElement>('.set-section').forEach(sec => { sec.hidden = sec.dataset.section !== s })
-  ;(el.querySelector('[data-reset-section]') as HTMLElement).hidden = s === 'panels' || s === 'data' || s === 'io'
+  dialog().classList.toggle('set-paged', paged)
+  closeMoreMenus()
+}
+
+/** From a section's page back to the list of sections (a phone's ←, Esc). */
+function backToList() {
+  dialog().classList.remove('set-paged')
+  root()!.querySelector<HTMLElement>(`.set-nav-item[data-section="${section}"]`)?.focus()
+}
+
+function closeMoreMenus() {
+  root()?.querySelectorAll<HTMLElement>('.set-more-menu').forEach(m => { m.hidden = true })
+  root()?.querySelectorAll<HTMLElement>('.set-more').forEach(b => b.setAttribute('aria-expanded', 'false'))
 }
 
 /** Search: every row whose words match, in every section; empty shows the section picked. */
 function applySearch(q: string) {
   const el = root()!
   const query = q.trim().toLowerCase().normalize('NFD').replace(/\p{M}/gu, '')
+  dialog().classList.toggle('set-searching', !!query)
   if (!query) {
     el.querySelectorAll<HTMLElement>('.set-row').forEach(r => { r.hidden = false })
     ;(el.querySelector('.set-nothing') as HTMLElement).hidden = true
-    showSection(section)
+    showSection(section, isPaged())
     return
   }
   let any = false
@@ -408,10 +532,14 @@ export function openSettings(at?: Section) {
   returnFocus = document.activeElement as HTMLElement | null
   el.hidden = false
   syncMirrors()
-  showSection(at ?? section)
+  // A phone opens on the list of sections, unless a section was asked for
+  const paged = !!at || !phone()
   ;(el.querySelector('#set-search') as HTMLInputElement).value = ''
+  showSection(at ?? section, paged)
   applySearch('')
-  el.querySelector<HTMLElement>(`.set-nav-item[data-section="${section}"]`)?.focus()
+  refreshValues()
+  if (paged && phone()) el.querySelector<HTMLElement>(`.set-section[data-section="${section}"] .set-back`)?.focus()
+  else el.querySelector<HTMLElement>(`.set-nav-item[data-section="${section}"]`)?.focus()
 }
 
 /** Settings opened on what a search finds: the row asked for, and any other that matches. */
@@ -439,6 +567,10 @@ export function closeSettings(): boolean {
   const el = root()
   if (!el || el.hidden) return false
   if (capturing) { capturing = null; redrawShortcuts(); return true }
+  if (closePicker()) return true
+  if (el.querySelector('.set-more-menu:not([hidden])')) { closeMoreMenus(); return true }
+  // On a phone Esc (or the system's back) leaves the page for the list first
+  if (phone() && isPaged() && !dialog().classList.contains('set-searching')) { backToList(); return true }
   el.hidden = true
   pendingConflict = null
   returnFocus?.focus()
@@ -460,21 +592,70 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
     showSection(b.dataset.section as Section)
   }))
   el.querySelector('#set-search')!.addEventListener('input', e => applySearch((e.target as HTMLInputElement).value))
+  // The MIDI ports come and go while Settings may be open: their rows follow
+  const holders = new MutationObserver(() => refreshValues())
+  el.querySelectorAll('select.set-holder').forEach(s => holders.observe(s, { childList: true, attributes: true }))
 
-  // Preferences
+  // Rows: ⓘ, the pickers, ← and ⋮
   el.addEventListener('click', e => {
     const target = e.target as HTMLElement
-    const seg = target.closest<HTMLElement>('[data-pref][data-value]')
-    if (seg) {
-      setPref(seg.dataset.pref as PrefName, seg.dataset.value as never)
-      seg.parentElement!.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === seg)))
+    const infoBtn = target.closest<HTMLElement>('.set-info')
+    if (infoBtn) {
+      const hintEl = infoBtn.parentElement!.querySelector<HTMLElement>(':scope > .set-hint')
+      if (hintEl) {
+        hintEl.hidden = !hintEl.hidden
+        infoBtn.setAttribute('aria-expanded', String(!hintEl.hidden))
+      }
+      return
     }
+    const pick = target.closest<HTMLElement>('[data-pick]')
+    if (pick) { openPicker(pick); return }
+    if (target.closest('.set-back')) { backToList(); return }
+    const more = target.closest<HTMLElement>('.set-more')
+    if (more) {
+      const menu = more.parentElement!.querySelector<HTMLElement>('.set-more-menu')!
+      const open = menu.hidden
+      closeMoreMenus()
+      menu.hidden = !open
+      more.setAttribute('aria-expanded', String(open))
+      return
+    }
+    if (!target.closest('.set-more-menu')) closeMoreMenus()
     if (target.closest('[data-ear-reset]')) opts.resetEarScore()
-    const mic = target.closest<HTMLElement>('[data-mic-mode]')
-    if (mic) {
-      setMicMode(mic.dataset.value as typeof MIC_MODES[number])
-      mic.parentElement!.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === mic)))
+  })
+
+  // The picker: a choice is set at once and closes the list; boxes stay until Done
+  const layer = el.querySelector<HTMLElement>('.set-pick-layer')!
+  layer.addEventListener('click', e => {
+    const target = e.target as HTMLElement
+    e.stopPropagation()
+    if (target === layer || target.closest('[data-pick-done]')) { closePicker(); return }
+    const option = target.closest<HTMLElement>('[data-pick-value]')
+    if (option && picking?.holder instanceof HTMLSelectElement) {
+      const sel = picking.holder
+      sel.value = option.dataset.pickValue!
+      closePicker()
+      sel.dispatchEvent(new Event('input', { bubbles: true }))
+      sel.dispatchEvent(new Event('change', { bubbles: true }))
+      refreshValues()
     }
+  })
+  layer.addEventListener('change', e => {
+    const box = (e.target as HTMLElement).closest<HTMLInputElement>('[data-pick-check]')
+    if (!box || !picking) return
+    const holderBox = [...picking.holder.querySelectorAll<HTMLInputElement>('input')].find(b => b.value === box.dataset.pickCheck)
+    if (!holderBox) return
+    holderBox.checked = box.checked
+    holderBox.dispatchEvent(new Event('input', { bubbles: true }))
+    refreshValues()
+  })
+  // Arrows move through the options of a list
+  layer.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+    const items = [...layer.querySelectorAll<HTMLElement>('.set-pick-option:not([disabled]), .set-pick-option input')].filter(i => i.tagName !== 'LABEL')
+    const i = items.indexOf(document.activeElement as HTMLElement)
+    items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus()
+    e.preventDefault()
   })
   el.addEventListener('input', e => {
     const input = e.target as HTMLInputElement
@@ -488,7 +669,7 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
     if (!name) return
     const def = PREFS[name] as PrefDef
     if (def.kind === 'number') {
-      const out = input.parentElement!.querySelector('output')
+      const out = el.querySelector(`output[for="${input.id}"]`)
       if (out) out.textContent = formatPrefValue(def, Number(input.value))
       // Rescaling the page while dragging moves the slider under the pointer: on release only
       if (name !== 'ui-zoom') setPref(name, Number(input.value) as never)
@@ -496,23 +677,23 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
     else if (def.kind === 'choice') setPref(name, input.value as never)
   })
 
+  // Language, note names, theme and the microphone's mode, by their holders' change (they are
+  // drawn again by Reset this section); a panel's switch presses the panel's own button
+  const reloadWith = (apply: () => void) => { apply(); carryHistoryOverReload(); location.reload() }
   el.addEventListener('change', e => {
     const input = e.target as HTMLInputElement
     if (input.dataset.pref === 'ui-zoom') setPref('ui-zoom', Number(input.value))
+    else if (input.id === 'help-theme') saveThemeChoice(input.value as ThemeChoice)
+    else if (input.id === 'help-lang') reloadWith(() => saveLang(input.value as Lang))
+    else if (input.id === 'help-note-names') reloadWith(() => saveNoteNaming(input.value as NoteNaming))
+    else if (input.id === 'set-mic-mode') setMicMode(input.value as typeof MIC_MODES[number])
+    else if (input.dataset.mirror) {
+      document.getElementById(input.dataset.mirror)?.click()
+      syncMirrors()
+    }
+    refreshSummaries()
   })
-
-  // Language, note names, theme, tour
-  el.querySelector<HTMLSelectElement>('#help-theme')!.addEventListener('change', e => saveThemeChoice((e.target as HTMLSelectElement).value as ThemeChoice))
-  const reloadWith = (apply: () => void) => { apply(); carryHistoryOverReload(); location.reload() }
-  el.querySelector<HTMLSelectElement>('#help-lang')!.addEventListener('change', e => reloadWith(() => saveLang((e.target as HTMLSelectElement).value as Lang)))
-  el.querySelector<HTMLSelectElement>('#help-note-names')!.addEventListener('change', e => reloadWith(() => saveNoteNaming((e.target as HTMLSelectElement).value as NoteNaming)))
-  el.querySelector('#set-tour')!.addEventListener('click', () => { closeSettings(); startTour() })
-
-  // Panels: the checkbox presses the panel's own button
-  el.querySelectorAll<HTMLInputElement>('[data-mirror]').forEach(box => box.addEventListener('change', () => {
-    document.getElementById(box.dataset.mirror!)?.click()
-    syncMirrors()
-  }))
+  el.addEventListener('click', e => { if ((e.target as HTMLElement).closest('#set-tour')) { closeSettings(); startTour() } })
 
 
   // Shortcuts
@@ -536,9 +717,11 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
     }
   })
 
-  // Reset this section
-  el.querySelector('[data-reset-section]')!.addEventListener('click', () => {
-    if (section === 'shortcuts') { resetAllKeys(); capturing = null; pendingConflict = null; redrawShortcuts(); return }
+  // Reset this section, from its ⋮ menu
+  el.addEventListener('click', e => {
+    if (!(e.target as HTMLElement).closest('[data-reset-section]')) return
+    closeMoreMenus()
+    if (section === 'shortcuts') { resetAllKeys(); capturing = null; pendingConflict = null; redrawShortcuts(); refreshSummaries(); return }
     if (section === 'general') saveThemeChoice('system')
     for (const name of SECTION_PREFS[section] ?? []) resetPref(name)
     if (section === 'mic') setMicMode('notes')
@@ -548,7 +731,8 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
     tmp.innerHTML = buildSettings()
     const fresh = tmp.querySelector<HTMLElement>(`.set-section[data-section="${section}"]`)
     if (fresh) sec.innerHTML = fresh.innerHTML
-    if (section === 'general') rewireGeneral(el)
+    refreshValues()
+    sec.querySelector<HTMLElement>('.set-more')?.focus()
   })
 
   // Data
@@ -562,11 +746,4 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
     replaceSettings(next, 'set.data.imported')
   })
   el.querySelector('[data-reset-settings]')!.addEventListener('click', () => replaceSettings({}, 'set.data.wasReset'))
-
-  function rewireGeneral(container: HTMLElement) {
-    container.querySelector<HTMLSelectElement>('#help-theme')!.addEventListener('change', e => saveThemeChoice((e.target as HTMLSelectElement).value as ThemeChoice))
-    container.querySelector<HTMLSelectElement>('#help-lang')!.addEventListener('change', e => reloadWith(() => saveLang((e.target as HTMLSelectElement).value as Lang)))
-    container.querySelector<HTMLSelectElement>('#help-note-names')!.addEventListener('change', e => reloadWith(() => saveNoteNaming((e.target as HTMLSelectElement).value as NoteNaming)))
-    container.querySelector('#set-tour')!.addEventListener('click', () => { closeSettings(); startTour() })
-  }
 }
