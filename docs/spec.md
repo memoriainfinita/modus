@@ -367,7 +367,11 @@ The tour (`ui/tour.ts`) runs by itself on the first visit: ten steps, each dimmi
 
 ## Settings
 
-⚙ in the bar, or its shortcut (`,`), opens a dialog (`ui/settings.ts`): an index of sections on the left, a search across every section at the top, and per section a "Reset this section". Changes apply at once and are kept; Esc or × closes it, and the focus goes back where it was. On a phone the index goes on top.
+⚙ in the bar, or its shortcut (`,`), opens a dialog (`ui/settings.ts`): an index of sections on the left, a search across every section at the top. Changes apply at once and are kept; Esc or × closes it, and the focus goes back where it was.
+
+Each setting is a row: its name with its value under it, its explanation behind ⓘ (a tooltip, or shown under the row when pressed), a switch on the right for on/off, a slider in the row for a number. A choice is the row itself: it opens a list to pick one (the select stays hidden as the holder of the value); a set of options opens the list with boxes, closed with Done. A section's ⋮ menu holds "Reset this section".
+
+On a phone, as Android's settings: full screen; first the search and the sections, a row each with its icon, name and the values of its first settings ("Español · Do Re Mi · Como el sistema"); a section opens its page, with ← back to the list. Esc closes the list or the ⋮ menu first, then leaves the page for the list, then closes Settings.
 
 - **General:** interface language and note names (both reload the page; history and songs stay), theme (in place), interface size (80–150 %, applied when the slider is let go: rescaling while dragging moves the slider under the pointer), the guided tour
 - **Input and output:** input channel (only notes and pedal on that channel are read; a note let in is always let out on its own channel, and a pedal held is released when the filter changes), MIDI out port, output channel, Thru (see MIDI out). The input device and mode are in the input menu
