@@ -63,6 +63,23 @@ export function removeCell(grid: Grid, id: string): Grid {
   return compact(grid.filter(c => c.id !== id))
 }
 
+/** Fewest rows a panel fitted to its content keeps, empty or not. */
+export const FIT_MIN_H = 3
+
+/**
+ * The grid as shown when some panels take the height of their content: each id in `rows`
+ * gets those rows, at least FIT_MIN_H and at most its height in the layout, and the panels
+ * under it close up. The layout itself keeps the heights it was given.
+ */
+export function fitGrid(grid: Grid, rows: Readonly<Record<string, number>>): Grid {
+  const fitted = grid.map(c => {
+    const want = rows[c.id]
+    if (want === undefined) return c
+    return { ...c, h: Math.min(c.h, Math.max(FIT_MIN_H, Math.ceil(want))) }
+  })
+  return fitted.every((c, i) => c.h === grid[i].h) ? grid : compact(fitted)
+}
+
 /** Rows the grid takes. */
 export function gridRows(grid: Grid): number {
   return grid.reduce((m, c) => Math.max(m, c.y + c.h), 0)

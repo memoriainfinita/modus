@@ -6011,6 +6011,15 @@ ${explainCadence(cadence)}` : "");
   function removeCell(grid3, id) {
     return compact(grid3.filter((c) => c.id !== id));
   }
+  var FIT_MIN_H = 3;
+  function fitGrid(grid3, rows) {
+    const fitted = grid3.map((c) => {
+      const want = rows[c.id];
+      if (want === void 0) return c;
+      return { ...c, h: Math.min(c.h, Math.max(FIT_MIN_H, Math.ceil(want))) };
+    });
+    return fitted.every((c, i) => c.h === grid3[i].h) ? grid3 : compact(fitted);
+  }
   function gridRows(grid3) {
     return grid3.reduce((m, c) => Math.max(m, c.y + c.h), 0);
   }
@@ -6484,6 +6493,7 @@ ${explainCadence(cadence)}` : "");
     wireLayoutMenu();
     wirePanelMenus();
     watchFittedDiagrams();
+    watchFittedPanels();
   }
   function wirePanelToggles(panels) {
     document.querySelectorAll(".menu-item[data-panel]").forEach((btn) => {
@@ -6752,12 +6762,22 @@ ${explainCadence(cadence)}` : "");
     </section>`;
   }
   var byPosition2 = (a, b) => a.y - b.y || a.x - b.x;
+  var FITTED = ["key", "explain", "history", "song", "tuner", "progressions", "ear", "next"];
+  var contentRows = {};
+  var dragging = false;
+  function shownGrid() {
+    return dragging || document.body.classList.contains("presenting") ? grid2 : fitGrid(grid2, contentRows);
+  }
+  function refreshLayout() {
+    applyGrid();
+  }
   function applyGrid() {
-    const order = [...grid2].sort(byPosition2).map((c) => c.id);
+    const shown = shownGrid();
+    const order = [...shown].sort(byPosition2).map((c) => c.id);
     for (const id of MODULE_IDS) {
       const el2 = document.getElementById(`mod-${id}`);
       if (!el2) continue;
-      const c = grid2.find((cell) => cell.id === id);
+      const c = shown.find((cell) => cell.id === id);
       el2.classList.toggle("module-hidden", !c);
       if (!c) continue;
       el2.style.gridColumn = `${c.x + 1} / span ${c.w}`;
@@ -6806,7 +6826,7 @@ ${explainCadence(cadence)}` : "");
       const stepX = (inner - gap * (COLS - 1)) / COLS + gap;
       const stepY = (parseFloat(cs.gridAutoRows) || 30) + (parseFloat(cs.rowGap) || 0);
       const base = grid2;
-      let last = "";
+      let last = `${start.x},${start.y},${start.w},${start.h}`;
       el2.classList.add("module-moving");
       const move = (ev) => {
         const dx = Math.round((ev.clientX - e.clientX) / stepX);
@@ -6815,6 +6835,7 @@ ${explainCadence(cadence)}` : "");
         const sig = `${cell.x},${cell.y},${cell.w},${cell.h}`;
         if (sig === last) return;
         last = sig;
+        dragging = true;
         setGrid(placeCell(base, cell), false);
       };
       const up = () => {
@@ -6822,7 +6843,11 @@ ${explainCadence(cadence)}` : "");
         handle.removeEventListener("pointerup", up);
         handle.removeEventListener("pointercancel", up);
         el2.classList.remove("module-moving");
-        save("layout", grid2);
+        if (dragging) {
+          dragging = false;
+          applyGrid();
+          save("layout", grid2);
+        }
       };
       handle.addEventListener("pointermove", move);
       handle.addEventListener("pointerup", up);
@@ -6841,6 +6866,50 @@ ${explainCadence(cadence)}` : "");
       touched.forEach((el2) => el2 && fitAll(el2));
     });
     containers.forEach((el2) => observer.observe(el2, { childList: true, subtree: true }));
+  }
+  function measureContentRows() {
+    const cs = getComputedStyle($("grid"));
+    const row3 = parseFloat(cs.gridAutoRows) || 30;
+    const gap = parseFloat(cs.rowGap) || 0;
+    const out = {};
+    for (const id of FITTED) {
+      const el2 = document.getElementById(`mod-${id}`);
+      if (!el2 || el2.classList.contains("module-hidden")) continue;
+      const body = el2.querySelector(".module-body");
+      const bs = getComputedStyle(body);
+      const kids = [...body.children];
+      const content = kids.reduce((s, k) => s + k.scrollHeight, 0) + (parseFloat(bs.rowGap) || 0) * Math.max(0, kids.length - 1);
+      const px = el2.querySelector(".module-header").offsetHeight + parseFloat(bs.paddingTop) + parseFloat(bs.paddingBottom) + content;
+      out[id] = (px + gap) / (row3 + gap);
+    }
+    return out;
+  }
+  function watchFittedPanels() {
+    let queued = false;
+    const refit = () => {
+      queued = false;
+      if (dragging || document.body.classList.contains("presenting")) return;
+      const before = fitGrid(grid2, contentRows);
+      contentRows = measureContentRows();
+      const after = fitGrid(grid2, contentRows);
+      if (after.some((c, i) => c.y !== before[i]?.y || c.h !== before[i]?.h) || after.length !== before.length) applyGrid();
+    };
+    const schedule2 = () => {
+      if (!queued) {
+        queued = true;
+        setTimeout(refit);
+      }
+    };
+    const mutations = new MutationObserver(schedule2);
+    const sizes = new ResizeObserver(schedule2);
+    for (const id of FITTED) {
+      const body = document.querySelector(`#mod-${id} .module-body`);
+      if (!body) continue;
+      mutations.observe(body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "hidden", "style"] });
+      sizes.observe(body);
+    }
+    onLayoutChange(schedule2);
+    schedule2();
   }
   function renderLayoutMenu() {
     const menu = document.getElementById("layout-menu");
@@ -6955,6 +7024,7 @@ ${explainCadence(cadence)}` : "");
     presenting = true;
     onClose = close;
     document.body.classList.add("presenting");
+    refreshLayout();
     fitRows();
     document.addEventListener("fullscreenchange", onFullscreenChange);
     document.documentElement.requestFullscreen?.().then(fitRows, () => {
@@ -6964,6 +7034,7 @@ ${explainCadence(cadence)}` : "");
     if (!presenting) return;
     presenting = false;
     document.body.classList.remove("presenting");
+    refreshLayout();
     fitRows();
     document.removeEventListener("fullscreenchange", onFullscreenChange);
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {

@@ -23,7 +23,7 @@ import { instrumentLabel } from '../i18n/instruments'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
 import type { ViewName, ViewBackground } from '../view/channel'
 import { t, keyLabel } from '../i18n/i18n'
-import { COLS, placeCell, addCell, removeCell, parseGrid } from '../layout/grid'
+import { COLS, placeCell, addCell, removeCell, parseGrid, fitGrid } from '../layout/grid'
 import type { Cell, Grid } from '../layout/grid'
 import { MODULE_IDS, MODULE_SIZE, PRESETS, PRESET_IDS } from '../layout/presets'
 import type { ModuleId, PresetId } from '../layout/presets'
@@ -93,6 +93,7 @@ export function renderLayout(_panels: Panels, fieldsVisible: Record<AnalysisFiel
   wireLayoutMenu()
   wirePanelMenus()
   watchFittedDiagrams()
+  watchFittedPanels()
 }
 
 /** The Strings menu's Controls item flips its flag, persists it and re-applies visibility. */
@@ -359,13 +360,28 @@ function moduleFrame(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boole
 
 const byPosition = (a: Cell, b: Cell) => a.y - b.y || a.x - b.x
 
+// Text and list panels take the height of their content, at most their size in the layout;
+// diagrams, the player and the metronome keep their size. Rows measured, by panel.
+const FITTED: readonly ModuleId[] = ['key', 'explain', 'history', 'song', 'tuner', 'progressions', 'ear', 'next']
+let contentRows: Record<string, number> = {}
+let dragging = false
+
+/** The grid as drawn: fitted to content, except while a panel is dragged or the layout presented. */
+function shownGrid(): Grid {
+  return dragging || document.body.classList.contains('presenting') ? grid : fitGrid(grid, contentRows)
+}
+
+/** Draws the layout again, as after presentation starts or ends. */
+export function refreshLayout() { applyGrid() }
+
 /** Puts each panel in its cells; on a narrow screen they stack in the same order. */
 function applyGrid() {
-  const order = [...grid].sort(byPosition).map(c => c.id)
+  const shown = shownGrid()
+  const order = [...shown].sort(byPosition).map(c => c.id)
   for (const id of MODULE_IDS) {
     const el = document.getElementById(`mod-${id}`)
     if (!el) continue
-    const c = grid.find(cell => cell.id === id)
+    const c = shown.find(cell => cell.id === id)
     el.classList.toggle('module-hidden', !c)
     if (!c) continue
     el.style.gridColumn = `${c.x + 1} / span ${c.w}`
@@ -419,7 +435,7 @@ function wireGrid() {
     const stepX = (inner - gap * (COLS - 1)) / COLS + gap
     const stepY = (parseFloat(cs.gridAutoRows) || 30) + (parseFloat(cs.rowGap) || 0)
     const base = grid
-    let last = ''
+    let last = `${start.x},${start.y},${start.w},${start.h}`
     el.classList.add('module-moving')
     const move = (ev: PointerEvent) => {
       const dx = Math.round((ev.clientX - e.clientX) / stepX)
@@ -428,6 +444,8 @@ function wireGrid() {
       const sig = `${cell.x},${cell.y},${cell.w},${cell.h}`
       if (sig === last) return
       last = sig
+      // Once it moves, the layout is drawn at its own sizes, the ones being arranged
+      dragging = true
       setGrid(placeCell(base, cell), false)
     }
     const up = () => {
@@ -435,7 +453,11 @@ function wireGrid() {
       handle.removeEventListener('pointerup', up)
       handle.removeEventListener('pointercancel', up)
       el.classList.remove('module-moving')
-      save('layout', grid)
+      if (dragging) {
+        dragging = false
+        applyGrid()
+        save('layout', grid)
+      }
     }
     handle.addEventListener('pointermove', move)
     handle.addEventListener('pointerup', up)
@@ -457,6 +479,52 @@ function watchFittedDiagrams() {
     touched.forEach(el => el && fitAll(el))
   })
   containers.forEach(el => observer.observe(el, { childList: true, subtree: true }))
+}
+
+/** Rows each fitted panel needs for its header and all its content, at the grid's row height. */
+function measureContentRows(): Record<string, number> {
+  const cs = getComputedStyle($('grid'))
+  const row = parseFloat(cs.gridAutoRows) || 30
+  const gap = parseFloat(cs.rowGap) || 0
+  const out: Record<string, number> = {}
+  for (const id of FITTED) {
+    const el = document.getElementById(`mod-${id}`)
+    if (!el || el.classList.contains('module-hidden')) continue
+    const body = el.querySelector<HTMLElement>('.module-body')!
+    const bs = getComputedStyle(body)
+    const kids = [...body.children] as HTMLElement[]
+    // scrollHeight: a child that scrolls (Explanation) is as tall as the body, its content is not
+    const content = kids.reduce((s, k) => s + k.scrollHeight, 0) + (parseFloat(bs.rowGap) || 0) * Math.max(0, kids.length - 1)
+    const px = el.querySelector<HTMLElement>('.module-header')!.offsetHeight + parseFloat(bs.paddingTop) + parseFloat(bs.paddingBottom) + content
+    out[id] = (px + gap) / (row + gap)
+  }
+  return out
+}
+
+// Content changes (a chord, a key chosen, the song filled) and width changes redraw the layout
+// when a fitted panel needs other rows; once drawn, the same rows come back and it stops.
+function watchFittedPanels() {
+  let queued = false
+  const refit = () => {
+    queued = false
+    if (dragging || document.body.classList.contains('presenting')) return
+    const before = fitGrid(grid, contentRows)
+    contentRows = measureContentRows()
+    const after = fitGrid(grid, contentRows)
+    if (after.some((c, i) => c.y !== before[i]?.y || c.h !== before[i]?.h) || after.length !== before.length) applyGrid()
+  }
+  // A timer, not a frame: a page out of sight gets no frames and would keep the old rows
+  const schedule = () => { if (!queued) { queued = true; setTimeout(refit) } }
+  const mutations = new MutationObserver(schedule)
+  const sizes = new ResizeObserver(schedule)
+  for (const id of FITTED) {
+    const body = document.querySelector<HTMLElement>(`#mod-${id} .module-body`)
+    if (!body) continue
+    mutations.observe(body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'hidden', 'style'] })
+    sizes.observe(body)
+  }
+  onLayoutChange(schedule)
+  schedule()
 }
 
 // ─── Layout menu ─────────────────────────────────────────────────────────────
