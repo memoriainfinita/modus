@@ -676,6 +676,7 @@ export const en = {
   'tour.history.title': 'History',
   'tour.history': 'Every chord you hold is logged here with its numeral, and the cadences and modulations between them. Click a chip to see it again, drag it to the song, right-click or long-press to remove it.',
   'tour.layout.title': 'Your layout',
+  'tour.layout.touch': 'Every element is a panel: hide it with ×; its options are in its ⋯ menu. Here, in Panels: ready-made layouts for study, class, transcription or recording, and which panels show. More presents the layout full screen.',
   'tour.layout': 'Every element is a panel: drag it by its title, resize it from its corner, hide it with ×; its options are in its ⋯ menu. Here, in the rail (hide it with the button by the logo): ready-made layouts for study, class, transcription or recording, and your own. P presents the layout full screen.',
   'tour.practice.title': 'Practice',
   'tour.practice': 'Progressions plays the classic progressions in your key; Ear training plays without showing and you name what you heard; the Player loops and slows down a recording to transcribe it.',
@@ -964,6 +965,20 @@ export const en = {
   'gesture.remove': 'Right-click a history chip to remove it. Removals and Clear can be undone from the toast.',
   'gesture.piano': 'Click the on-screen piano to play: in Hold each click adds or removes a note of the chord.',
   'gesture.layout': 'Drag a panel by its title to move it, by its corner to resize it; × hides it, the ▦ menu shows it again.',
+  'help.touch': 'Gestures',
+  'a11y.tabbar': 'Input, sound, panels',
+  'tab.input': 'Input',
+  'tab.sound': 'Sound',
+  'tab.mic': 'Mic',
+  'tab.panels': 'Panels',
+  'tab.more': 'More',
+  'tab.present': 'Presentation',
+  'gesture.touch.tap': 'Tap a chord in the history, the song or the circle to hear it and see it in the detector.',
+  'gesture.touch.doubleTap': 'Double-tap a major or minor sector of the circle to make it the key.',
+  'gesture.touch.song': 'Tap a chord of the song to show its buttons: edit, duplicate, MIDI fill, remove.',
+  'gesture.touch.remove': 'Press and hold a chord in the history to remove it. What is removed or cleared comes back from the notice.',
+  'gesture.touch.piano': 'Touch the on-screen piano with several fingers at once to make a chord; in Hold each tap adds or removes a note.',
+  'gesture.touch.layout': '× hides a panel; Panels, in the bar at the bottom, shows it again.',
 }
 
 export type StringKey = keyof typeof en

@@ -16,6 +16,15 @@ const FIXED_KEYS: [string, StringKey][] = [
 const GESTURES: StringKey[] = [
   'gesture.click', 'gesture.doubleClick', 'gesture.logged', 'gesture.drag', 'gesture.fill', 'gesture.remove', 'gesture.piano', 'gesture.layout',
 ]
+// The same on a touch screen: no hover, no right click, no dragging of panels.
+const TOUCH_GESTURES: StringKey[] = [
+  'gesture.touch.tap', 'gesture.touch.doubleTap', 'gesture.logged', 'gesture.touch.song', 'gesture.fill', 'gesture.touch.remove', 'gesture.touch.piano', 'gesture.touch.layout',
+]
+
+// No API says whether a keyboard is attached: a fine pointer (mouse, trackpad) is taken to
+// come with one; a finger alone (a phone, a tablet without its keyboard) is not.
+const hasKeyboard = () => matchMedia('(any-pointer: fine)').matches
+const hasTouch = () => matchMedia('(any-pointer: coarse)').matches
 
 let helpVisible = false
 let returnFocus: HTMLElement | null = null
@@ -39,11 +48,18 @@ export function toggleHelp() {
   popup.setAttribute('role', 'dialog')
   popup.setAttribute('aria-label', t('help.heading'))
   returnFocus = document.activeElement as HTMLElement | null
+  const keyboard = hasKeyboard()
+  // Touch first on a touch screen; the keys and the mouse only where there is a keyboard
+  const touch = hasTouch() ? `
+    <div class="shortcut-section">${t('help.touch')}</div>
+    ${TOUCH_GESTURES.map(g => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join('')}` : ''
   popup.innerHTML = `
     <div class="shortcut-help-header">
       <span>${t('help.heading')}</span>
       <button class="shortcut-help-close" aria-label="${t('help.close')}">×</button>
     </div>
+    ${keyboard ? '' : touch}
+    ${keyboard ? `
     <div class="shortcut-section">${t('help.keys')}</div>
     ${ACTIONS.map(a => `
       <div class="shortcut-row">
@@ -58,13 +74,14 @@ export function toggleHelp() {
     <div class="help-setting"><button id="help-keys" class="ctrl-btn">${escapeHtml(t('help.changeKeys'))}</button></div>
     <div class="shortcut-section">${t('help.mouse')}</div>
     ${GESTURES.map(g => `<div class="gesture-row">${escapeHtml(t(g))}</div>`).join('')}
+    ${touch}` : ''}
     <div class="shortcut-section">${t('help.panels')}</div>
     ${MODULE_IDS.map(id => `<div class="gesture-row"><b>${escapeHtml(t(`module.${id}`))}</b> — ${escapeHtml(t(`help.panel.${id}`))}</div>`).join('')}
     <div class="help-setting"><button id="help-tour" class="ctrl-btn" title="${escapeHtml(t('tour.start.title'))}">${escapeHtml(t('tour.start'))}</button></div>`
   document.body.appendChild(popup)
   popup.querySelector('.shortcut-help-close')!.addEventListener('click', closeHelp)
   popup.querySelector('#help-tour')!.addEventListener('click', () => { closeHelp(); startTour() })
-  popup.querySelector('#help-keys')!.addEventListener('click', () => { closeHelp(); openSettings('shortcuts') })
+  popup.querySelector('#help-keys')?.addEventListener('click', () => { closeHelp(); openSettings('shortcuts') })
   document.addEventListener('mousedown', closeHelpOnOutsideClick)
 }
 

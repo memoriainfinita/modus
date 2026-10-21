@@ -639,7 +639,10 @@ function wireViewMenu() {
       closePopover()
     })
   })
-  menu.querySelectorAll<HTMLButtonElement>('[data-export]').forEach(btn => {
+  // On a phone, More: presentation and the diagrams to a file
+  wirePopover($('more-menu'), [$('tab-more')])
+  $('more-present').addEventListener('click', e => { e.stopPropagation(); togglePresentation() })
+  document.querySelectorAll<HTMLButtonElement>('[data-export]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const ok = await exportDiagram(btn.dataset.export as ExportTarget, btn.dataset.format as 'svg' | 'png', selectedSymbol() ?? analysisKey())
       if (!ok) btn.classList.add('invalid')
@@ -1257,8 +1260,8 @@ const FIFTHS_MAJOR = [6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11]
 let keyMenuMode: KeyMode = 'Major'
 
 function wireBar() {
-  wirePopover($('input-menu'), [$('rail-input'), $('btn-input-status')])
-  wirePopover($('sound-menu'), [$('rail-sound'), $('btn-sound-status')], () => {
+  wirePopover($('input-menu'), [$('rail-input'), $('btn-input-status'), $('tab-input')])
+  wirePopover($('sound-menu'), [$('rail-sound'), $('btn-sound-status'), $('tab-sound')], () => {
     const filter = $('instrument-filter') as HTMLInputElement
     filter.value = ''
     renderChoices($('audio-instrument') as HTMLSelectElement, $('instrument-list'), '')

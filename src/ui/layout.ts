@@ -87,6 +87,7 @@ export function renderLayout(_panels: Panels, fieldsVisible: Record<AnalysisFiel
     '<div class="work-main"><div id="midi-banner"></div>' +
     `<main id="grid" class="grid" aria-label="${t('a11y.panels')}">${MODULE_IDS.map(id => moduleFrame(id, fieldsVisible)).join('')}</main>` +
     '</div></div>' +
+    buildTabbar() +
     buildSettings()
   applyGrid()
   wireGrid()
@@ -193,6 +194,22 @@ function buildRail(): string {
     </div>`
 }
 
+// On a phone the rail gives way to a bar along the bottom, in reach of the thumb, each icon
+// with its name; its menus rise from the bottom as sheets (ui/popover.ts). What a phone has no
+// use for stays out: the computer keyboard and the view windows for OBS.
+function buildTabbar(): string {
+  const tab = (id: string, icon: string, label: string, attrs = '') =>
+    `<button id="${id}" class="tab-btn"${attrs}>${icon}<span class="tab-label">${escapeHtml(label)}</span></button>`
+  return `
+    <nav id="tabbar" class="tabbar" aria-label="${t('a11y.tabbar')}">
+      ${tab('tab-input', ICONS.midi, t('tab.input'))}
+      ${tab('tab-sound', ICONS.sound, t('tab.sound'))}
+      ${tab('tab-mic', ICONS.mic, t('tab.mic'), ' data-act="mic"')}
+      ${tab('tab-layout', ICONS.layout, t('tab.panels'))}
+      ${tab('tab-more', ICONS.more, t('tab.more'))}
+    </nav>`
+}
+
 // The menus start in the rail, closed; each opens next to the button pressed (ui/popover.ts).
 // A list of choices stands for each select, which stays hidden as the value's holder.
 function buildMenus(): string {
@@ -251,6 +268,11 @@ function buildMenus(): string {
       <div class="view-menu-hint">${t('key.menu.hint')}</div>
     </div>
     <div id="layout-menu" class="view-menu pop-menu"></div>
+    <div id="more-menu" class="view-menu pop-menu">
+      <button id="more-present" class="choice-row">${ICONS.present}<span>${t('tab.present')}</span></button>
+      <div class="view-menu-title">${t('views.save')}</div>
+      ${exportRows()}
+    </div>
     <div id="view-menu" class="view-menu pop-menu">
       <div class="view-menu-title">${t('views.open')}</div>
       ${VIEW_NAMES.map(v => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join('')}
@@ -261,13 +283,16 @@ function buildMenus(): string {
       </label>
       <div class="view-menu-hint">${t('views.hint')}</div>
       <div class="view-menu-title">${t('views.save')}</div>
-      ${(['staff', 'cof', 'guitar', 'piano'] as const).map(v => `
-        <div class="view-menu-export"><span>${viewLabel(v)}</span>
-          <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
-          <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
-        </div>`).join('')}
+      ${exportRows()}
     </div>`
 }
+
+/** A diagram saved as SVG or PNG: in the view menu, and in More on a phone. */
+const exportRows = () => (['staff', 'cof', 'guitar', 'piano'] as const).map(v => `
+  <div class="view-menu-export"><span>${viewLabel(v)}</span>
+    <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
+    <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
+  </div>`).join('')
 
 // ─── Panels ──────────────────────────────────────────────────────────────────
 
@@ -558,7 +583,7 @@ function renderLayoutMenu() {
 
 function wireLayoutMenu() {
   const menu = $('layout-menu')
-  wirePopover(menu, [$('btn-layout')])
+  wirePopover(menu, [$('btn-layout'), $('tab-layout')])
   menu.addEventListener('click', e => {
     e.stopPropagation()
     const el = e.target as HTMLElement
