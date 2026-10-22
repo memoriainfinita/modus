@@ -1119,6 +1119,8 @@
     "prog.group.jazz": "Jazz",
     "prog.group.blues": "Blues",
     "prog.group.pop": "Pop and classical",
+    "prog.group.cadence": "Cadences",
+    "prog.group.mixture": "Modal mixture",
     "prog.select.title": "A named progression, written in the key",
     "prog.play.title": "Play the progression, a bar every 2.4 s",
     "prog.stop.title": "Stop",
@@ -1473,6 +1475,22 @@
     "prog.pachelbel.about": "The bass of Pachelbel's Canon, falling a fourth and rising a step in its first six chords; much used again in pop.",
     "prog.andalusian": "Andalusian cadence",
     "prog.andalusian.about": "i VII VI V in a minor key: a bass falling by step from the tonic to the dominant, the sound of flamenco. Heard on its last chord as the tonic, it is phrygian.",
+    "prog.authentic-cadence": "Authentic cadence",
+    "prog.authentic-cadence.about": "V7 to I: the dominant, its leading tone a semitone under the tonic, resolves to it. The cadence that closes a piece.",
+    "prog.plagal-cadence": "Plagal cadence",
+    "prog.plagal-cadence.about": 'IV to I, the "Amen" sung at the end of hymns: the tonic reached from the subdominant, without a leading tone.',
+    "prog.deceptive-cadence": "Deceptive cadence",
+    "prog.deceptive-cadence.about": "V7 to vi instead of I: the leading tone rises to the tonic as expected, but the bass rises a step to the relative minor under it.",
+    "prog.half-cadence": "Half cadence",
+    "prog.half-cadence.about": "The phrase stops on V, open, waiting for the tonic that follows.",
+    "prog.phrygian-half-cadence": "Phrygian half cadence",
+    "prog.phrygian-half-cadence.about": "In a minor key, iv in first inversion to V: the bass falls a semitone, from the sixth degree to the fifth.",
+    "prog.minor-plagal-cadence": "Minor plagal cadence",
+    "prog.minor-plagal-cadence.about": "IV turns minor, iv borrowed from the parallel minor, before the major tonic: its \u266D6 falls a semitone to the fifth of I.",
+    "prog.bVI-bVII-I": "\u266DVI-\u266DVII-I",
+    "prog.bVI-bVII-I.about": "\u266DVI and \u266DVII, borrowed from the parallel minor, rise by whole steps to the major tonic.",
+    "prog.picardy-third": "Picardy third",
+    "prog.picardy-third.about": "A piece in a minor key ends on the major tonic: the third of i raised a semitone in the last chord.",
     // Key panel
     "keyPanel.sevenths.title": "Seventh chords instead of triads",
     "keyPanel.neg": "Neg",
@@ -2072,6 +2090,8 @@
     "prog.group.jazz": "Jazz",
     "prog.group.blues": "Blues",
     "prog.group.pop": "Pop y cl\xE1sicas",
+    "prog.group.cadence": "Cadencias",
+    "prog.group.mixture": "Pr\xE9stamos",
     "prog.select.title": "Una progresi\xF3n con nombre, escrita en la tonalidad",
     "prog.play.title": "Tocar la progresi\xF3n, un comp\xE1s cada 2,4 s",
     "prog.stop.title": "Parar",
@@ -2426,6 +2446,22 @@
     "prog.pachelbel.about": "El bajo del Canon de Pachelbel, que baja una cuarta y sube un grado en sus seis primeros acordes; muy usado de nuevo en el pop.",
     "prog.andalusian": "Cadencia andaluza",
     "prog.andalusian.about": "i VII VI V en tonalidad menor: un bajo que baja por grados de la t\xF3nica a la dominante, el sonido del flamenco. O\xEDda con su \xFAltimo acorde como t\xF3nica, es frigia.",
+    "prog.authentic-cadence": "Cadencia aut\xE9ntica",
+    "prog.authentic-cadence.about": "V7 a I: la dominante, con la sensible un semitono por debajo de la t\xF3nica, resuelve en ella. La cadencia que cierra una obra.",
+    "prog.plagal-cadence": "Cadencia plagal",
+    "prog.plagal-cadence.about": 'IV a I, el "Am\xE9n" que se canta al final de los himnos: la t\xF3nica desde la subdominante, sin sensible.',
+    "prog.deceptive-cadence": "Cadencia rota",
+    "prog.deceptive-cadence.about": "V7 a vi en lugar de I: la sensible sube a la t\xF3nica como se espera, pero debajo el bajo sube un grado al relativo menor.",
+    "prog.half-cadence": "Semicadencia",
+    "prog.half-cadence.about": "La frase se detiene en V, abierta, a la espera de la t\xF3nica que sigue.",
+    "prog.phrygian-half-cadence": "Semicadencia frigia",
+    "prog.phrygian-half-cadence.about": "En tonalidad menor, iv en primera inversi\xF3n a V: el bajo baja un semitono, del sexto grado al quinto.",
+    "prog.minor-plagal-cadence": "Cadencia plagal menor",
+    "prog.minor-plagal-cadence.about": "El IV se vuelve menor, iv prestado del menor paralelo, antes de la t\xF3nica mayor: su \u266D6 baja un semitono a la quinta de I.",
+    "prog.bVI-bVII-I": "\u266DVI-\u266DVII-I",
+    "prog.bVI-bVII-I.about": "\u266DVI y \u266DVII, prestados del menor paralelo, suben por tonos hasta la t\xF3nica mayor.",
+    "prog.picardy-third": "Tercera de picard\xEDa",
+    "prog.picardy-third.about": "Una obra en tonalidad menor acaba en la t\xF3nica mayor: la tercera de i sube un semitono en el \xFAltimo acorde.",
     "keyPanel.sevenths.title": "Cuatr\xEDadas en lugar de tr\xEDadas",
     "keyPanel.neg": "Neg",
     "keyPanel.neg.title": "Mostrar u ocultar la armon\xEDa negativa",
@@ -9135,19 +9171,30 @@ ${explainCadence(cadence)}` : "");
     "I-vi-IV-V",
     "I-IV-V",
     "pachelbel",
-    "andalusian"
+    "andalusian",
+    "authentic-cadence",
+    "plagal-cadence",
+    "deceptive-cadence",
+    "half-cadence",
+    "phrygian-half-cadence",
+    "minor-plagal-cadence",
+    "bVI-bVII-I",
+    "picardy-third"
   ];
   var GROUPS = {
     jazz: ["ii-V-I", "ii-V-i", "turnaround-jazz", "backdoor-ii-V", "rhythm-changes", "coltrane-changes", "giant-steps-cycle"],
     blues: ["blues-12", "blues-minor", "blues-jazz", "bird-blues"],
-    pop: ["I-V-vi-IV", "I-vi-IV-V", "I-IV-V", "pachelbel", "andalusian"]
+    pop: ["I-V-vi-IV", "I-vi-IV-V", "I-IV-V", "pachelbel", "andalusian"],
+    cadence: ["authentic-cadence", "plagal-cadence", "deceptive-cadence", "half-cadence", "phrygian-half-cadence", "minor-plagal-cadence"],
+    mixture: ["bVI-bVII-I", "picardy-third"]
   };
   var groupOf = (id) => Object.keys(GROUPS).find((g) => GROUPS[g].includes(id));
-  var MINOR_PROGRESSIONS = ["ii-V-i", "blues-minor", "andalusian"];
+  var MINOR_UNMARKED = ["ii-V-i", "blues-minor", "andalusian"];
+  var isMinorProgression = (id) => UMT.PROGRESSIONS[id]?.mode === "minor" || MINOR_UNMARKED.includes(id);
   var barMs = () => 4 * 6e4 / getPref("progression-bpm");
   var BLUES = ["blues-12", "blues-jazz", "bird-blues"];
   function progressionKey(id, key) {
-    const minor = MINOR_PROGRESSIONS.includes(id);
+    const minor = isMinorProgression(id);
     if (key) {
       const root2 = key.split(" ")[0];
       return normalizeKey(`${root2} ${minor ? "Minor" : "Major"}`) ?? key;
@@ -9303,7 +9350,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const minorKey = isMinorKey(key);
     const matches = [];
     for (const id of PROGRESSION_IDS) {
-      if (MINOR_PROGRESSIONS.includes(id) !== minorKey) continue;
+      if (isMinorProgression(id) !== minorKey) continue;
       const chords = realizeProgression(id, progressionKey(id, key)).map((c) => c.symbol);
       let best = null;
       chords.forEach((c, i) => {

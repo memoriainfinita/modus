@@ -16,6 +16,8 @@ export const PROGRESSION_IDS = [
   'ii-V-I', 'ii-V-i', 'turnaround-jazz', 'backdoor-ii-V', 'rhythm-changes', 'coltrane-changes', 'giant-steps-cycle',
   'blues-12', 'blues-minor', 'blues-jazz', 'bird-blues',
   'I-V-vi-IV', 'I-vi-IV-V', 'I-IV-V', 'pachelbel', 'andalusian',
+  'authentic-cadence', 'plagal-cadence', 'deceptive-cadence', 'half-cadence', 'phrygian-half-cadence', 'minor-plagal-cadence',
+  'bVI-bVII-I', 'picardy-third',
 ] as const
 export type ProgressionId = typeof PROGRESSION_IDS[number]
 
@@ -24,12 +26,17 @@ const GROUPS = {
   jazz: ['ii-V-I', 'ii-V-i', 'turnaround-jazz', 'backdoor-ii-V', 'rhythm-changes', 'coltrane-changes', 'giant-steps-cycle'],
   blues: ['blues-12', 'blues-minor', 'blues-jazz', 'bird-blues'],
   pop: ['I-V-vi-IV', 'I-vi-IV-V', 'I-IV-V', 'pachelbel', 'andalusian'],
+  cadence: ['authentic-cadence', 'plagal-cadence', 'deceptive-cadence', 'half-cadence', 'phrygian-half-cadence', 'minor-plagal-cadence'],
+  mixture: ['bVI-bVII-I', 'picardy-third'],
 } as const satisfies Record<string, readonly ProgressionId[]>
 type Group = keyof typeof GROUPS
 const groupOf = (id: ProgressionId) => (Object.keys(GROUPS) as Group[]).find(g => (GROUPS[g] as readonly string[]).includes(id))!
 
-/** Progressions written in a minor key: in a major key they are played in its parallel minor. */
-export const MINOR_PROGRESSIONS: readonly ProgressionId[] = ['ii-V-i', 'blues-minor', 'andalusian']
+/** Progressions written in a minor key: in a major key they are played in its parallel minor.
+ *  UMT marks the examples of cadences and mixture with their `mode`; the older entries carry none. */
+const MINOR_UNMARKED: readonly ProgressionId[] = ['ii-V-i', 'blues-minor', 'andalusian']
+export const isMinorProgression = (id: ProgressionId) =>
+  UMT.PROGRESSIONS[id]?.mode === 'minor' || MINOR_UNMARKED.includes(id)
 
 /** A bar of 4/4 at the tempo chosen in Settings (100 bpm: 2.4 s). */
 const barMs = () => 4 * 60000 / getPref('progression-bpm')
@@ -42,7 +49,7 @@ export interface ProgressionChord { symbol: string; bar: number; roman: string; 
 
 /** The key a progression is written in: the one given, in the progression's mode; its own key; or C major / A minor. */
 export function progressionKey(id: ProgressionId, key: string | null): string {
-  const minor = MINOR_PROGRESSIONS.includes(id)
+  const minor = isMinorProgression(id)
   if (key) {
     const root = key.split(' ')[0]
     return normalizeKey(`${root} ${minor ? 'Minor' : 'Major'}`) ?? key
