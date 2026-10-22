@@ -9,7 +9,7 @@ import { romanInKey } from './analyzer'
 import { explainCadence } from './explain'
 import { buildKeyMap, sameChord } from '../theory/key-map'
 import { tryParseChord, tryUMT } from '../theory/chord'
-import { MINOR_PROGRESSIONS, PROGRESSION_IDS, realizeProgression, progressionKey, type ProgressionId } from '../ui/progressions'
+import { isMinorProgression, PROGRESSION_IDS, realizeProgression, progressionKey, type ProgressionId } from '../ui/progressions'
 import { isMinorKey } from '../theory/keys'
 import { t, chordLabel, cadenceLabel } from '../i18n/i18n'
 import { escapeHtml } from '../ui/html'
@@ -83,7 +83,7 @@ export function suggestNext(current: string, key: string | null, previous: strin
   const minorKey = isMinorKey(key)
   const matches: { id: ProgressionId; symbol: string; length: number }[] = []
   for (const id of PROGRESSION_IDS) {
-    if (MINOR_PROGRESSIONS.includes(id) !== minorKey) continue
+    if (isMinorProgression(id) !== minorKey) continue
     const chords = realizeProgression(id, progressionKey(id, key)).map(c => c.symbol)
     let best: { symbol: string; length: number } | null = null
     chords.forEach((c, i) => {

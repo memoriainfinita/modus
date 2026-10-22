@@ -28,7 +28,7 @@ declare const UMT: {
     detect: (notes: any[], durations?: readonly number[], options?: { profile?: string; modes?: boolean }) => { key: string; confidence: number }[]
   }
   getSubstitutions: (chord: any, key: string) => any[]
-  PROGRESSIONS: Record<string, { name: string; romanNumerals: string[]; description: string; style: string; defaultKey?: string }>
+  PROGRESSIONS: Record<string, { name: string; romanNumerals: string[]; description: string; style: string; defaultKey?: string; mode?: 'major' | 'minor' }>
   getProgression: (id: string, key: string) => any[]
   parseRomanProgression: (numerals: string, key: string) => any[]
   analyzeVoicing: (notes: any[], chord?: any) => {
