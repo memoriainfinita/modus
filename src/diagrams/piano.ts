@@ -1,6 +1,6 @@
 import { functionColor, neutralColor, type HarmonicFunction } from '../theory/chord'
 import { color as themeColor } from '../ui/theme'
-import { noteNameToMidi } from '../theory/notes'
+import { noteNameToMidi, midiToNoteName, nameAtMidi } from '../theory/notes'
 import { localizeDrawnNoteNames } from '../i18n/i18n'
 
 /** A phone: the piano shows two octaves, wide enough for a finger. */
@@ -32,6 +32,21 @@ export function pianoRange(noteNames: string[], octaves: number): { from: string
   return { from: `C${Math.max(0, low)}`, to: `B${Math.min(8, high)}` }
 }
 
+/** A scale to mark on the keys: its degrees' names and pitch classes, the tonic first. */
+export type PianoScale = { names: string[]; pitchClasses: number[] }
+
+/** Every key in the range whose pitch class is in the scale, named as the scale spells it (C#4 in E Dorian, not Db4). */
+function scaleKeysIn(range: { from: string; to: string }, scale: PianoScale): { midi: number; name: string }[] {
+  const low = noteNameToMidi(range.from), high = noteNameToMidi(range.to)
+  if (low === null || high === null) return []
+  const keys: { midi: number; name: string }[] = []
+  for (let m = low; m <= high; m++) {
+    const i = scale.pitchClasses.indexOf(m % 12)
+    if (i >= 0) keys.push({ midi: m, name: nameAtMidi(scale.names[i], m) ?? midiToNoteName(m) })
+  }
+  return keys
+}
+
 /** The octaves the piano panel has room for now. */
 export const containerOctaves = (el: HTMLElement) => pianoOctaves(el.clientWidth, el.clientHeight, isNarrow())
 
@@ -40,17 +55,21 @@ export const containerOctaves = (el: HTMLElement) => pianoOctaves(el.clientWidth
  * pressing it; the caller plays it through the input path and watches for the release
  * itself, since a key the detector lights is rebuilt and never receives its own pointerup.
  */
-export function renderPiano(container: HTMLElement, noteNames: string[], fn: HarmonicFunction | null, onPress?: (midi: number, pointerId: number) => void, prevNotes: string[] | null = null) {
+export function renderPiano(container: HTMLElement, noteNames: string[], fn: HarmonicFunction | null, onPress?: (midi: number, pointerId: number) => void, prevNotes: string[] | null = null, scale: PianoScale | null = null) {
   const color = functionColor(fn)
   // The chord before: its keys that are not held now, in the neutral colour
   const now = new Set(noteNames.map(noteNameToMidi))
   const before = (prevNotes ?? []).filter(n => !now.has(noteNameToMidi(n)))
-  const keys = [...noteNames, ...before]
-  const colors = [...noteNames.map(() => color), ...before.map(() => neutralColor())]
+  const range = pianoRange([...noteNames, ...before], containerOctaves(container))
+  // The scale on every octave drawn, quiet, under the keys played and the chord before
+  const taken = new Set([...noteNames, ...before].map(noteNameToMidi))
+  const scaleKeys = scale ? scaleKeysIn(range, scale).filter(k => !taken.has(k.midi)) : []
+  const keys = [...noteNames, ...before, ...scaleKeys.map(k => k.name)]
+  const colors = [...noteNames.map(() => color), ...before.map(() => neutralColor()),
+    ...scaleKeys.map(k => themeColor(k.midi % 12 === scale!.pitchClasses[0] ? 'piano-scale-root' : 'piano-scale'))]
 
   container.innerHTML = Notae.renderPiano({
-    name: '', keys, colors,
-    range: pianoRange([...noteNames, ...before], containerOctaves(container))
+    name: '', keys, colors, range
   }, {
     pianoWhiteKeyColor: themeColor('piano-white'),
     pianoWhiteKeyStrokeColor: themeColor('piano-white-stroke'),

@@ -11,7 +11,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 // UMT comes from the devDependency (same tag as package.json); the rest from their sources
 export const PINS = {
   umt: 'v0.11.0',
-  notae: '81b58dee532f4827ccce2146f02d9ae9cc05c471',
+  notae: '5a3ae1b5c7e49219d0db0dc998e8db342a3f99b9',
   abcjs: '6.7.1',
   soundfontPlayer: '0.12.0',
 }

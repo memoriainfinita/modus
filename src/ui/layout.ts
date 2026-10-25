@@ -319,7 +319,7 @@ function ownMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>)
       <div class="menu-chips" role="group" aria-label="${t('menu.clef')}" title="${t('staff.clef.title')}">${STAFF_CLEFS.map(c =>
         `<button type="button" class="menu-chip" data-clef="${c}" data-label="${escapeHtml(`${t('menu.clef')}: ${t(`staff.clef.${c}`)}`)}" aria-pressed="false">${t(`staff.clef.${c}`)}</button>`).join('')}</div>
       ${item('btn-staff-prev', t('menu.prev'), t('staff.prev.title'))}`
-    case 'piano': return item('btn-piano-prev', t('menu.prev'), t('piano.prev.title'))
+    case 'piano': return item('btn-piano-prev', t('menu.prev'), t('piano.prev.title')) + item('btn-piano-scale', t('menu.scale'), t('piano.scale.title'))
     case 'analysis': return `
       ${steps('btn-analysis-minus', 'btn-analysis-plus')}
       ${heading(t('menu.fields'))}
