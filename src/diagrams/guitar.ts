@@ -1,14 +1,16 @@
-// The strings panel: any fretted instrument (guitar, bass, ukulele…) in any tuning, in two
-// views: the chord's playable shapes one at a time, or every place its notes are on the neck.
+// The strings panel: any fretted instrument (guitar, bass, ukulele…) in any tuning, in three
+// views: the chord's playable shapes one at a time, every place its notes are on the neck, or
+// the key's scale on the neck, whole or by positions (CAGED, three notes per string).
 
-import { tryParseChord, tryUMT } from '../theory/chord'
+import { tryParseChord, tryUMT, functionColor, type HarmonicFunction } from '../theory/chord'
+import { SCALE_CHOICES, SCALE_SYSTEMS, scaleSymbol, scaleInfo, systemsFor, scalePositions, shapeName, type ScaleChoice, type ScaleSystem, type ScalePosition } from '../theory/scales'
 import { playableVoicings, tuningToMidi, normalizeNoteName } from '../theory/voicings'
 import { INSTRUMENT_IDS, INSTRUMENT_TUNINGS, defaultTuning, referenceStrings, type InstrumentId } from '../theory/instruments'
 import { noteNameToMidi, PITCH_NAMES_FLAT } from '../theory/notes'
 import { loadBool, loadChoice, loadJSON, save } from '../ui/storage'
 import { fretboardColors } from './fretboard-style'
 import { color } from '../ui/theme'
-import { t, chordLabel, noteLabel, localizeDrawnNoteNames } from '../i18n/i18n'
+import { t, chordLabel, noteLabel, scaleLabel, localizeDrawnNoteNames } from '../i18n/i18n'
 import type { StringKey } from '../i18n/en'
 import { escapeHtml as escapeAttr } from '../ui/html'
 
@@ -18,8 +20,8 @@ export function setGuitarControlsVisible(v: boolean) { guitarControlsVisible = v
 let guitarVoicingIdx = 0
 let onVoicingChange: (idx: number) => void = () => {}
 
-/** The voicing on screen (index into the playable list), for view windows. */
-export function getGuitarVoicingIndex(): number { return guitarVoicingIdx }
+/** The voicing or scale position on screen (index into the view's list), for view windows. */
+export function getGuitarVoicingIndex(): number { return stringsView === 'scale' ? scaleIdx : guitarVoicingIdx }
 export function setGuitarVoicingChange(cb: (idx: number) => void) { onVoicingChange = cb }
 let lastGuitarSymbol: string | null = null
 let lastNoteNames: string[] = []
@@ -30,10 +32,28 @@ let instrument = loadChoice<InstrumentId>('guitar-instrument', INSTRUMENT_IDS, '
 const tuningKeys = () => [...Object.keys(INSTRUMENT_TUNINGS[instrument]), 'custom']
 let guitarTuningKey = loadChoice('guitar-tuning', tuningKeys(), defaultTuning(instrument))
 
-/** Shapes: one playable voicing at a time. Neck: every place the notes sounding are, frets 0–12. */
-export type StringsView = 'shapes' | 'neck'
-let stringsView = loadChoice<StringsView>('guitar-view', ['shapes', 'neck'], 'shapes')
+/**
+ * Shapes: one playable voicing at a time. Neck: every place the notes sounding are, frets 0–12.
+ * Scale: the analysis key's scale, whole or one position at a time.
+ */
+export type StringsView = 'shapes' | 'neck' | 'scale'
+let stringsView = loadChoice<StringsView>('guitar-view', ['shapes', 'neck', 'scale'], 'shapes')
 export function getStringsView(): StringsView { return stringsView }
+
+const SCALE_LABEL_MODES = ['degrees', 'notes', 'none'] as const
+let scaleChoice = loadChoice<ScaleChoice>('guitar-scale', SCALE_CHOICES, 'key')
+let scaleSystem = loadChoice<ScaleSystem>('guitar-scale-system', SCALE_SYSTEMS, 'neck')
+let scaleLabelMode = loadChoice('guitar-scale-labels', SCALE_LABEL_MODES, 'degrees')
+let scaleIdx = 0
+let lastScaleSig = ''
+let scaleKey: string | null = null
+let scaleChordFn: HarmonicFunction | null = null
+
+/** The key whose scale the Scale view draws, and the function of the chord sounding, whose notes it colours. */
+export function setGuitarScaleContext(key: string | null, fn: HarmonicFunction | null) {
+  scaleKey = key
+  scaleChordFn = fn
+}
 
 const NECK_FRETS = 12
 // Drawn at one spacing and scaled to its panel
@@ -136,7 +156,14 @@ function tabs(): string {
   const tab = (v: StringsView, label: string, tip: string) =>
     `<button type="button" class="strings-tab" data-view="${v}" aria-pressed="${stringsView === v}" title="${escapeAttr(tip)}">${escapeAttr(label)}</button>`
   return `<div class="strings-tabs guitar-chrome" role="group" aria-label="${escapeAttr(t('strings.view'))}">
-    ${tab('shapes', t('strings.view.shapes'), t('strings.view.shapes.title'))}${tab('neck', t('strings.view.neck'), t('strings.view.neck.title'))}</div>`
+    ${tab('shapes', t('strings.view.shapes'), t('strings.view.shapes.title'))}${tab('neck', t('strings.view.neck'), t('strings.view.neck.title'))}${tab('scale', t('strings.view.scale'), t('strings.view.scale.title'))}</div>`
+}
+
+/** The Scale view's systems the scale and instrument allow; none shown when only the whole neck does. */
+function systemTabs(systems: ScaleSystem[], current: ScaleSystem): string {
+  if (systems.length < 2) return ''
+  return `<div class="strings-tabs strings-systems guitar-chrome" role="group" aria-label="${escapeAttr(t('strings.scale.system'))}">${systems.map(s =>
+    `<button type="button" class="strings-tab strings-system" data-system="${s}" aria-pressed="${s === current}" title="${escapeAttr(t(`strings.scale.system.${s}.title`))}">${escapeAttr(t(`strings.scale.system.${s}`))}</button>`).join('')}</div>`
 }
 
 function stage(drawing: string, label: string, total: number): string {
@@ -173,14 +200,24 @@ function renderMenu() {
     <div class="strings-inputs" style="grid-template-columns: repeat(${count}, minmax(0, 1fr))">${guitarStringTuning.map((note, i) =>
       `<input class="guitar-string-input" data-string="${i}" value="${escapeAttr(noteLabel(note))}" aria-label="${escapeAttr(t('guitar.string', { n: count - i }))}" maxlength="4" autocomplete="off" spellcheck="false">`).join('')}</div>
     <div class="menu-heading">${t('strings.labels')}</div>
-    <div class="menu-chips">${(['none', 'tuning', 'notes'] as const).map(m => chip('data-labels', m, t(`strings.labels.${m}`), guitarLabelMode === m)).join('')}</div>`
+    <div class="menu-chips">${(['none', 'tuning', 'notes'] as const).map(m => chip('data-labels', m, t(`strings.labels.${m}`), guitarLabelMode === m)).join('')}</div>${stringsView === 'scale' ? `
+    <div class="menu-heading">${t('strings.scale')}</div>
+    <div class="menu-chips">${SCALE_CHOICES.map(c => chip('data-scale', c, t(`strings.scale.${c}`), scaleChoice === c)).join('')}</div>
+    <div class="menu-heading">${t('strings.scale.labels')}</div>
+    <div class="menu-chips">${SCALE_LABEL_MODES.map(m => chip('data-scale-labels', m, t(`strings.scale.labels.${m}`), scaleLabelMode === m)).join('')}</div>` : ''}`
   if (menu.dataset.wired) return
   menu.dataset.wired = '1'
   const redraw = () => { const c = document.getElementById('guitar-container'); if (c) redrawFresh(c) }
   menu.addEventListener('click', e => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-instrument], [data-tuning], [data-labels]')
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-instrument], [data-tuning], [data-labels], [data-scale], [data-scale-labels]')
     if (!b) return
-    if (b.dataset.instrument) {
+    if (b.dataset.scale) {
+      scaleChoice = b.dataset.scale as ScaleChoice
+      save('guitar-scale', scaleChoice)
+    } else if (b.dataset.scaleLabels) {
+      scaleLabelMode = b.dataset.scaleLabels as typeof scaleLabelMode
+      save('guitar-scale-labels', scaleLabelMode)
+    } else if (b.dataset.instrument) {
       instrument = b.dataset.instrument as InstrumentId
       save('guitar-instrument', instrument)
       guitarTuningKey = defaultTuning(instrument)
@@ -228,9 +265,14 @@ function redrawFresh(container: HTMLElement) {
 }
 
 function wireChrome(container: HTMLElement) {
-  container.querySelectorAll<HTMLElement>('.strings-tab').forEach(b => b.addEventListener('click', () => {
+  container.querySelectorAll<HTMLElement>('.strings-tab[data-view]').forEach(b => b.addEventListener('click', () => {
     stringsView = b.dataset.view as StringsView
     save('guitar-view', stringsView)
+    renderGuitar(container, lastGuitarSymbol, lastNoteNames, undefined, lastPreferFlats)
+  }))
+  container.querySelectorAll<HTMLElement>('.strings-system').forEach(b => b.addEventListener('click', () => {
+    scaleSystem = b.dataset.system as ScaleSystem
+    save('guitar-scale-system', scaleSystem)
     renderGuitar(container, lastGuitarSymbol, lastNoteNames, undefined, lastPreferFlats)
   }))
   // The caption opens the ⋯ menu, where instrument and tuning are changed
@@ -248,7 +290,7 @@ function watchShape(container: HTMLElement) {
   if (watched.has(container) || typeof ResizeObserver === 'undefined') return
   watched.add(container)
   new ResizeObserver(() => {
-    if (stringsView === 'neck' && neckDrawnVertical !== null && neckVertical(container) !== neckDrawnVertical) {
+    if (stringsView !== 'shapes' && neckDrawnVertical !== null && neckVertical(container) !== neckDrawnVertical) {
       renderGuitar(container, lastGuitarSymbol, lastNoteNames, undefined, lastPreferFlats)
     }
   }).observe(container)
@@ -262,6 +304,81 @@ function neckSvg(noteNames: string[], open: number[], preferFlats: boolean, vert
     return pos.length ? pos : [null]
   })
   return tryUMT('neck', () => Notae.renderFretboard({ name: '', frets, tuning: guitarStringTuning } as any, neckStyle(preferFlats, vertical)), '')
+}
+
+// A position wider than this many frets is not played with the hand in one place
+const REACH = 6
+
+/** Where a position lies, as the foot names it: "E shape · frets 2–5", "Pattern 3 · frets 5–10 · too wide". */
+function positionLabel(pos: ScalePosition): string {
+  const shape = shapeName(pos.name)
+  if (!shape) return ''
+  const all = pos.frets.flat()
+  const parts = [
+    'caged' in shape ? t('strings.scale.shape', { shape: shape.caged }) : t('strings.scale.pattern', { n: shape.pattern }),
+    t('strings.scale.frets', { from: Math.min(...all), to: Math.max(...all) }),
+  ]
+  if (pos.span > REACH) parts.push(t('strings.scale.wide', { n: pos.span }))
+  return parts.join(' · ')
+}
+
+/**
+ * The scale on the strings: the tonic in the accent, the notes of the chord sounding in its
+ * function's colour, the rest of the scale quiet; each dot labelled by degree, by name or not.
+ */
+function scaleSvg(pos: ScalePosition, info: NonNullable<ReturnType<typeof scaleInfo>>, open: number[], noteNames: string[], whole: boolean, vertical: boolean): string {
+  const sounding = new Set(noteNames.map(noteNameToMidi).filter((m): m is number => m !== null).map(m => m % 12))
+  const chordColor = functionColor(scaleChordFn)
+  const dotColors = pos.frets.map((fs, i) => fs.map((f, k) =>
+    sounding.has((open[i] + f) % 12) ? chordColor : pos.degrees[i][k] === 1 ? color('fret-dot') : color('scale-dot')))
+  const dotLabels = pos.degrees.map(ds => ds.map(d =>
+    scaleLabelMode === 'degrees' ? info.degreeLabels[d - 1] ?? '' : scaleLabelMode === 'notes' ? info.names[d - 1] ?? '' : ''))
+  const high = Math.max(...pos.frets.flat())
+  const numFrets = whole ? NECK_FRETS : Math.max(4, high - pos.baseFret + 1)
+  const style = { ...neckStyle(true, vertical), numFrets, showNoteNames: false, showOpenNotes: true, showFingerNumbers: false, dotColor: color('scale-dot') }
+  return tryUMT('scale', () => Notae.renderFretboard({ name: '', frets: pos.frets, baseFret: pos.baseFret, dotColors, dotLabels, tuning: guitarStringTuning }, style), '')
+}
+
+/** The Scale view: the analysis key's scale (or another on its tonic) by the system chosen. */
+function renderScaleView(container: HTMLElement, noteNames: string[], open: number[], forcedIdx: number | undefined) {
+  const symbol = scaleKey ? scaleSymbol(scaleKey, scaleChoice) : null
+  const info = scaleInfo(symbol)
+  if (!symbol || !info) {
+    neckDrawnVertical = null
+    container.innerHTML = tabs() + `<div class="no-voicing">${t('strings.scale.noKey')}</div>` + foot('', 0, 0)
+    wireChrome(container)
+    return
+  }
+  const systems = systemsFor(info, open)
+  const system = systems.includes(scaleSystem) ? scaleSystem : 'neck'
+  const positions = scalePositions(info, open, system)
+  const sig = `${symbol}|${system}|${open.join(' ')}`
+  if (sig !== lastScaleSig) { scaleIdx = 0; lastScaleSig = sig }
+  if (forcedIdx !== undefined) scaleIdx = forcedIdx
+  const total = positions.length
+  const named = scaleLabel(symbol)
+  if (!total) {
+    neckDrawnVertical = null
+    container.innerHTML = tabs() + systemTabs(systems, system) + `<div class="no-voicing">${t('strings.scale.none')}</div>` + foot(named, 0, 0)
+    wireChrome(container)
+    return
+  }
+  const idx = Math.min(scaleIdx, total - 1)
+  const pos = positions[idx]
+  neckDrawnVertical = neckVertical(container)
+  const where = [named, positionLabel(pos)].filter(Boolean).join(' · ')
+  container.innerHTML = tabs() + systemTabs(systems, system)
+    + stage(scaleSvg(pos, info, open, noteNames, system === 'neck', neckDrawnVertical), t('a11y.strings.scale', { scale: where }), total)
+    + foot(where, total, idx)
+  localizeDrawnNoteNames(container.querySelector('.strings-drawing')!)
+  container.querySelectorAll<HTMLElement>('.guitar-nav').forEach(btn => {
+    btn.addEventListener('click', () => {
+      scaleIdx = (idx + parseInt(btn.dataset.dir!) + total) % total
+      renderGuitar(container, lastGuitarSymbol, lastNoteNames, undefined, lastPreferFlats)
+      onVoicingChange(scaleIdx)
+    })
+  })
+  wireChrome(container)
 }
 
 /**
@@ -279,6 +396,10 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
   if (chordSymbol !== lastGuitarSymbol) {
     guitarVoicingIdx = 0
     lastGuitarSymbol = chordSymbol
+  }
+  if (stringsView === 'scale') {
+    renderScaleView(container, noteNames, open, voicingIndex)
+    return
   }
   if (voicingIndex !== undefined) guitarVoicingIdx = voicingIndex
   const named = chordSymbol ? chordLabel(chordSymbol) : t('a11y.nothing')

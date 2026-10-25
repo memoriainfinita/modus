@@ -6,6 +6,8 @@ declare const UMT: {
     getDiatonicChords: (type?: 'triad' | 'seventh') => any[]
   }
   getFretboardVoicings: (chord: any, tuning: readonly number[]) => any[]
+  getFretboardScale: (scale: any, tuning: readonly number[], options?: { maxFret?: number }) => { frets: number[][]; degrees: number[][]; baseFret: number; root: string; tuning: string[] }
+  getFretboardScaleShapes: (scale: any, tuning: readonly number[], options: { system: '3nps' | 'caged' }) => { name: string; frets: number[][]; degrees: number[][]; baseFret: number; startDegree: number; span: number; root: string; tuning: string[] }[]
   GUITAR_STANDARD: readonly number[]
   GUITAR_DROPPED_D: readonly number[]
   GUITAR_OPEN_G: readonly number[]
@@ -67,6 +69,7 @@ declare const UMT: {
 
 declare const Notae: {
   renderPiano: (chord: { name: string; keys: string[]; colors?: string[]; root?: string; range?: { from: string; to: string } }, opts?: any) => string
+  /** frets per string; `dotColors` / `dotLabels` parallel to them (notae 5a3ae1b). */
   renderFretboard: (chord: any, opts?: any) => string
 }
 

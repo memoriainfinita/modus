@@ -6,10 +6,11 @@ import { subscribeView, VIEW_BACKGROUNDS, VIEW_NAMES } from './channel'
 import type { ViewName, ViewBackground, ViewState } from './channel'
 import { renderStaff, STAFF_CLEFS } from '../diagrams/staff'
 import { renderPiano } from '../diagrams/piano'
-import { renderGuitar } from '../diagrams/guitar'
+import { renderGuitar, setGuitarScaleContext } from '../diagrams/guitar'
 import { renderCircleOfFifths, cofAccidentalFor } from '../diagrams/cof'
 import type { CofOptions } from '../diagrams/cof'
 import { functionColor } from '../theory/chord'
+import { scaleInfo, scaleSymbol } from '../theory/scales'
 import { escapeHtml } from '../ui/html'
 import { fitSvg } from '../ui/fit'
 import { loadBool, loadChoice } from '../ui/storage'
@@ -49,8 +50,14 @@ export function renderView(view: ViewName, el: HTMLElement, s: ViewState) {
     inner.style.width = '100%'
   }
   else if (view === 'cof') renderCircleOfFifths(el, s.key, s.symbol, () => {}, 400, { ...cofOptions(s.key), backdrop: color('bg') })
-  else if (view === 'piano') renderPiano(el, s.notes, s.symbol ? s.function : null)
-  else if (view === 'guitar') renderGuitar(el, s.symbol, s.notes, s.guitarVoicing)
+  else if (view === 'piano') {
+    const scale = loadBool('piano-scale', false) && s.key ? scaleInfo(scaleSymbol(s.key, 'key')) : null
+    renderPiano(el, s.notes, s.symbol ? s.function : null, undefined, null, scale)
+  }
+  else if (view === 'guitar') {
+    setGuitarScaleContext(s.key, s.symbol ? s.function : null)
+    renderGuitar(el, s.symbol, s.notes, s.guitarVoicing)
+  }
   fitSvg(el.querySelector('svg'))
 }
 
@@ -79,7 +86,7 @@ export function runViewerFromUrl(): boolean {
   // Guitar tuning, CoF options, the staff clef, language and note names live in localStorage: when
   // the main window changes them, the view reloads with them (songs are saved there too, and are ignored).
   window.addEventListener('storage', e => {
-    if (e.key && /^(guitar-|cof-|staff-clef|lang$|note-names$)/.test(e.key)) location.reload()
+    if (e.key && /^(guitar-|cof-|staff-clef|piano-scale$|lang$|note-names$)/.test(e.key)) location.reload()
   })
   return true
 }

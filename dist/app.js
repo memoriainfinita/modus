@@ -906,6 +906,8 @@
     "staff.clef.bass": "Bass",
     "staff.prev.title": "Write the chord before next to this one, to see each voice move",
     "piano.prev.title": "Mark the keys of the chord before, to see each voice move",
+    "menu.scale": "Scale",
+    "piano.scale.title": "Mark the key's scale on the keyboard, its tonic stronger, under the keys played",
     "cof.flat.title": "Show flat enharmonics (Gb, Db\u2026)",
     "cof.sharp.title": "Show sharp enharmonics (F#, C#\u2026)",
     "cof.spelledInKey": "Spelled as in {key}; flats or sharps apply without a key",
@@ -1349,6 +1351,7 @@
     "a11y.staff": "Staff: {notes}",
     "a11y.piano": "Piano: {notes}",
     "a11y.strings": "Strings: {chord}",
+    "a11y.strings.scale": "Strings, scale: {scale}",
     "a11y.cof": "Circle of fifths: Enter plays a chord, Enter twice sets its key",
     "a11y.nothing": "nothing played",
     "a11y.chip": "{chord}, {roman}: Enter shows and plays it, Delete removes it",
@@ -1553,6 +1556,31 @@
     "strings.view.shapes.title": "The chord's playable shapes, one at a time",
     "strings.view.neck": "Neck",
     "strings.view.neck.title": "Every place the notes sounding are on the neck, frets 0\u201312",
+    "strings.view.scale": "Scale",
+    "strings.view.scale.title": "The key's scale on the neck, whole or one position at a time; the tonic marked, the notes sounding in their function's colour",
+    "strings.scale.system": "Positions",
+    "strings.scale.system.neck": "Whole neck",
+    "strings.scale.system.neck.title": "Every note of the scale, frets 0\u201312",
+    "strings.scale.system.caged": "CAGED",
+    "strings.scale.system.caged.title": "The five CAGED shapes, climbing the neck: E, D, C, A, G (6-string guitar in standard tuning)",
+    "strings.scale.system.3nps": "3 per string",
+    "strings.scale.system.3nps.title": "Three notes on each string, a pattern starting from each degree",
+    "strings.scale.noKey": "No key yet: choose one, or play a few chords",
+    "strings.scale.none": "No positions for this scale on this instrument",
+    "strings.scale.shape": "{shape} shape",
+    "strings.scale.pattern": "Pattern {n}",
+    "strings.scale.frets": "frets {from}\u2013{to}",
+    "strings.scale.wide": "{n} frets wide, more than a hand reaches",
+    "strings.scale": "Scale",
+    "strings.scale.key": "The key's",
+    "strings.scale.pentatonic": "Pentatonic",
+    "strings.scale.blues": "Blues",
+    "strings.scale.harmonicMinor": "Harmonic minor",
+    "strings.scale.melodicMinor": "Melodic minor",
+    "strings.scale.labels": "On the scale's notes",
+    "strings.scale.labels.degrees": "Degrees",
+    "strings.scale.labels.notes": "Notes",
+    "strings.scale.labels.none": "Nothing",
     "guitar.tuning.custom": "Custom",
     // History
     "history.clear": "Clear",
@@ -1881,6 +1909,8 @@
     "staff.clef.bass": "Fa",
     "staff.prev.title": "Escribir el acorde anterior junto a este, para ver moverse cada voz",
     "piano.prev.title": "Marcar las teclas del acorde anterior, para ver moverse cada voz",
+    "menu.scale": "Escala",
+    "piano.scale.title": "Marcar en el teclado la escala de la tonalidad, su t\xF3nica m\xE1s fuerte, bajo las teclas tocadas",
     "cof.flat.title": "Enarm\xF3nicos con bemoles (Solb, Reb\u2026)",
     "cof.sharp.title": "Enarm\xF3nicos con sostenidos (Fa#, Do#\u2026)",
     "cof.spelledInKey": "Escrito como en {key}; bemoles o sostenidos sirven sin tonalidad",
@@ -2320,6 +2350,7 @@
     "a11y.staff": "Pentagrama: {notes}",
     "a11y.piano": "Piano: {notes}",
     "a11y.strings": "Cuerdas: {chord}",
+    "a11y.strings.scale": "Cuerdas, escala: {scale}",
     "a11y.cof": "C\xEDrculo de quintas: Intro toca un acorde, Intro dos veces fija su tonalidad",
     "a11y.nothing": "nada tocado",
     "a11y.chip": "{chord}, {roman}: Intro lo muestra y lo toca, Supr lo quita",
@@ -2521,6 +2552,31 @@
     "strings.view.shapes.title": "Las posiciones tocables del acorde, una a una",
     "strings.view.neck": "M\xE1stil",
     "strings.view.neck.title": "Todos los sitios del m\xE1stil donde est\xE1n las notas que suenan, trastes 0\u201312",
+    "strings.view.scale": "Escala",
+    "strings.view.scale.title": "La escala de la tonalidad en el m\xE1stil, entera o por posiciones; la t\xF3nica marcada, las notas que suenan en el color de su funci\xF3n",
+    "strings.scale.system": "Posiciones",
+    "strings.scale.system.neck": "M\xE1stil entero",
+    "strings.scale.system.neck.title": "Todas las notas de la escala, trastes 0\u201312",
+    "strings.scale.system.caged": "CAGED",
+    "strings.scale.system.caged.title": "Las cinco formas CAGED, subiendo por el m\xE1stil: E, D, C, A, G (guitarra de 6 cuerdas en afinaci\xF3n est\xE1ndar)",
+    "strings.scale.system.3nps": "3 por cuerda",
+    "strings.scale.system.3nps.title": "Tres notas en cada cuerda, un patr\xF3n desde cada grado",
+    "strings.scale.noKey": "A\xFAn no hay tonalidad: elige una, o toca unos acordes",
+    "strings.scale.none": "Esta escala no tiene posiciones en este instrumento",
+    "strings.scale.shape": "Forma de {shape}",
+    "strings.scale.pattern": "Patr\xF3n {n}",
+    "strings.scale.frets": "trastes {from}\u2013{to}",
+    "strings.scale.wide": "{n} trastes de ancho, m\xE1s de lo que alcanza una mano",
+    "strings.scale": "Escala",
+    "strings.scale.key": "La de la tonalidad",
+    "strings.scale.pentatonic": "Pentat\xF3nica",
+    "strings.scale.blues": "Blues",
+    "strings.scale.harmonicMinor": "Menor arm\xF3nica",
+    "strings.scale.melodicMinor": "Menor mel\xF3dica",
+    "strings.scale.labels": "Sobre las notas de la escala",
+    "strings.scale.labels.degrees": "Grados",
+    "strings.scale.labels.notes": "Notas",
+    "strings.scale.labels.none": "Nada",
     "guitar.tuning.custom": "Personal",
     "history.clear": "Borrar",
     "history.send": "\u2192 Canci\xF3n",
@@ -3427,6 +3483,69 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     if (prevNotes?.length) container2.querySelectorAll(".abcjs-note.abcjs-m0").forEach((el2) => el2.classList.add("staff-prev"));
   }
 
+  // src/theory/scales.ts
+  var SCALE_CHOICES = ["key", "pentatonic", "blues", "harmonicMinor", "melodicMinor"];
+  var SCALE_SYSTEMS = ["neck", "caged", "3nps"];
+  function scaleSymbol(key, choice2) {
+    const [tonic] = key.split(" ");
+    if (!keyMode(key) || pitchClassOf(tonic) < 0) return null;
+    const minor = isMinorKey(key);
+    switch (choice2) {
+      case "key":
+        return key;
+      case "pentatonic":
+        return `${tonic} Pentatonic ${minor ? "Minor" : "Major"}`;
+      case "blues":
+        return minor ? `${tonic} Blues` : `${tonic} Blues Major`;
+      case "harmonicMinor":
+        return `${tonic} Harmonic Minor`;
+      case "melodicMinor":
+        return `${tonic} Melodic Minor`;
+    }
+  }
+  var LETTERS2 = "CDEFGAB";
+  var MAJOR_SEMITONES = [0, 2, 4, 5, 7, 9, 11];
+  function intervalLabel(tonic, name) {
+    const steps2 = (LETTERS2.indexOf(name[0]) - LETTERS2.indexOf(tonic[0]) + 7) % 7;
+    const semis = (pitchClassOf(name) - pitchClassOf(tonic) + 12) % 12;
+    let alter = semis - MAJOR_SEMITONES[steps2];
+    if (alter > 6) alter -= 12;
+    if (alter < -6) alter += 12;
+    const acc = alter > 0 ? "\u266F".repeat(alter) : "\u266D".repeat(-alter);
+    return `${acc}${steps2 + 1}`;
+  }
+  function scaleInfo(symbol) {
+    if (!symbol) return null;
+    const scale = tryUMT("scale", () => UMT.parseScaleSymbol(symbol), null);
+    if (!scale) return null;
+    const notes2 = tryUMT("scale notes", () => scale.getNotes().map((n) => n.name.replace(/-?\d+$/, "")), []);
+    const names = notes2.length > 1 && notes2[notes2.length - 1] === notes2[0] ? notes2.slice(0, -1) : notes2;
+    if (!names.length) return null;
+    return {
+      scale,
+      names,
+      degreeLabels: names.map((n) => intervalLabel(names[0], n)),
+      pitchClasses: names.map(pitchClassOf)
+    };
+  }
+  function systemsFor(info2, open2) {
+    return SCALE_SYSTEMS.filter((s) => s === "neck" || (s === "3nps" ? info2.names.length >= 7 : scalePositions(info2, open2, s).length > 0));
+  }
+  function scalePositions(info2, open2, system, maxFret = 12) {
+    const tuning = open2.map((m) => m - 69);
+    if (system === "neck") {
+      const map = tryUMT("fretboard scale", () => UMT.getFretboardScale(info2.scale, tuning, { maxFret }), null);
+      return map ? [{ name: "", frets: map.frets, degrees: map.degrees, baseFret: 1, span: maxFret }] : [];
+    }
+    return tryUMT("fretboard scale shapes", () => UMT.getFretboardScaleShapes(info2.scale, tuning, { system }), []).map((s) => ({ name: s.name, frets: s.frets, degrees: s.degrees, baseFret: s.baseFret, span: s.span }));
+  }
+  function shapeName(name) {
+    const c = name.match(/^([CAGED]m?) shape$/);
+    if (c) return { caged: c[1] };
+    const p = name.match(/^Pattern (\d+)$/);
+    return p ? { pattern: parseInt(p[1]) } : null;
+  }
+
   // src/theory/instruments.ts
   var INSTRUMENT_IDS = ["guitar", "guitar7", "bass", "bass5", "ukulele", "baritone", "mandolin", "banjo"];
   var INSTRUMENT_TUNINGS = {
@@ -3543,7 +3662,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   var onVoicingChange = () => {
   };
   function getGuitarVoicingIndex() {
-    return guitarVoicingIdx;
+    return stringsView === "scale" ? scaleIdx : guitarVoicingIdx;
   }
   function setGuitarVoicingChange(cb) {
     onVoicingChange = cb;
@@ -3555,9 +3674,21 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   var instrument2 = loadChoice("guitar-instrument", INSTRUMENT_IDS, "guitar");
   var tuningKeys = () => [...Object.keys(INSTRUMENT_TUNINGS[instrument2]), "custom"];
   var guitarTuningKey = loadChoice("guitar-tuning", tuningKeys(), defaultTuning(instrument2));
-  var stringsView = loadChoice("guitar-view", ["shapes", "neck"], "shapes");
+  var stringsView = loadChoice("guitar-view", ["shapes", "neck", "scale"], "shapes");
   function getStringsView() {
     return stringsView;
+  }
+  var SCALE_LABEL_MODES = ["degrees", "notes", "none"];
+  var scaleChoice = loadChoice("guitar-scale", SCALE_CHOICES, "key");
+  var scaleSystem = loadChoice("guitar-scale-system", SCALE_SYSTEMS, "neck");
+  var scaleLabelMode = loadChoice("guitar-scale-labels", SCALE_LABEL_MODES, "degrees");
+  var scaleIdx = 0;
+  var lastScaleSig = "";
+  var scaleKey = null;
+  var scaleChordFn = null;
+  function setGuitarScaleContext(key, fn) {
+    scaleKey = key;
+    scaleChordFn = fn;
   }
   var NECK_FRETS = 12;
   var SHAPE_SPACING = 19;
@@ -3640,7 +3771,11 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   function tabs() {
     const tab = (v, label, tip) => `<button type="button" class="strings-tab" data-view="${v}" aria-pressed="${stringsView === v}" title="${escapeHtml(tip)}">${escapeHtml(label)}</button>`;
     return `<div class="strings-tabs guitar-chrome" role="group" aria-label="${escapeHtml(t("strings.view"))}">
-    ${tab("shapes", t("strings.view.shapes"), t("strings.view.shapes.title"))}${tab("neck", t("strings.view.neck"), t("strings.view.neck.title"))}</div>`;
+    ${tab("shapes", t("strings.view.shapes"), t("strings.view.shapes.title"))}${tab("neck", t("strings.view.neck"), t("strings.view.neck.title"))}${tab("scale", t("strings.view.scale"), t("strings.view.scale.title"))}</div>`;
+  }
+  function systemTabs(systems, current4) {
+    if (systems.length < 2) return "";
+    return `<div class="strings-tabs strings-systems guitar-chrome" role="group" aria-label="${escapeHtml(t("strings.scale.system"))}">${systems.map((s) => `<button type="button" class="strings-tab strings-system" data-system="${s}" aria-pressed="${s === current4}" title="${escapeHtml(t(`strings.scale.system.${s}.title`))}">${escapeHtml(t(`strings.scale.system.${s}`))}</button>`).join("")}</div>`;
   }
   function stage(drawing, label, total) {
     const nav = (dir, tip) => total > 1 ? `<button type="button" class="guitar-nav guitar-chrome" data-dir="${dir}" title="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">${dir < 0 ? "\u2039" : "\u203A"}</button>` : "";
@@ -3667,7 +3802,11 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     <div class="menu-heading">${t("strings.strings")}</div>
     <div class="strings-inputs" style="grid-template-columns: repeat(${count}, minmax(0, 1fr))">${guitarStringTuning.map((note, i) => `<input class="guitar-string-input" data-string="${i}" value="${escapeHtml(noteLabel(note))}" aria-label="${escapeHtml(t("guitar.string", { n: count - i }))}" maxlength="4" autocomplete="off" spellcheck="false">`).join("")}</div>
     <div class="menu-heading">${t("strings.labels")}</div>
-    <div class="menu-chips">${["none", "tuning", "notes"].map((m) => chip2("data-labels", m, t(`strings.labels.${m}`), guitarLabelMode === m)).join("")}</div>`;
+    <div class="menu-chips">${["none", "tuning", "notes"].map((m) => chip2("data-labels", m, t(`strings.labels.${m}`), guitarLabelMode === m)).join("")}</div>${stringsView === "scale" ? `
+    <div class="menu-heading">${t("strings.scale")}</div>
+    <div class="menu-chips">${SCALE_CHOICES.map((c) => chip2("data-scale", c, t(`strings.scale.${c}`), scaleChoice === c)).join("")}</div>
+    <div class="menu-heading">${t("strings.scale.labels")}</div>
+    <div class="menu-chips">${SCALE_LABEL_MODES.map((m) => chip2("data-scale-labels", m, t(`strings.scale.labels.${m}`), scaleLabelMode === m)).join("")}</div>` : ""}`;
     if (menu.dataset.wired) return;
     menu.dataset.wired = "1";
     const redraw = () => {
@@ -3675,9 +3814,15 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       if (c) redrawFresh(c);
     };
     menu.addEventListener("click", (e) => {
-      const b = e.target.closest("[data-instrument], [data-tuning], [data-labels]");
+      const b = e.target.closest("[data-instrument], [data-tuning], [data-labels], [data-scale], [data-scale-labels]");
       if (!b) return;
-      if (b.dataset.instrument) {
+      if (b.dataset.scale) {
+        scaleChoice = b.dataset.scale;
+        save("guitar-scale", scaleChoice);
+      } else if (b.dataset.scaleLabels) {
+        scaleLabelMode = b.dataset.scaleLabels;
+        save("guitar-scale-labels", scaleLabelMode);
+      } else if (b.dataset.instrument) {
         instrument2 = b.dataset.instrument;
         save("guitar-instrument", instrument2);
         guitarTuningKey = defaultTuning(instrument2);
@@ -3721,9 +3866,14 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     renderGuitar(container2, sym, [...lastNoteNames], void 0, lastPreferFlats);
   }
   function wireChrome(container2) {
-    container2.querySelectorAll(".strings-tab").forEach((b) => b.addEventListener("click", () => {
+    container2.querySelectorAll(".strings-tab[data-view]").forEach((b) => b.addEventListener("click", () => {
       stringsView = b.dataset.view;
       save("guitar-view", stringsView);
+      renderGuitar(container2, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
+    }));
+    container2.querySelectorAll(".strings-system").forEach((b) => b.addEventListener("click", () => {
+      scaleSystem = b.dataset.system;
+      save("guitar-scale-system", scaleSystem);
       renderGuitar(container2, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
     }));
     container2.querySelector(".strings-caption")?.addEventListener("click", (e) => {
@@ -3738,7 +3888,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     if (watched.has(container2) || typeof ResizeObserver === "undefined") return;
     watched.add(container2);
     new ResizeObserver(() => {
-      if (stringsView === "neck" && neckDrawnVertical !== null && neckVertical(container2) !== neckDrawnVertical) {
+      if (stringsView !== "shapes" && neckDrawnVertical !== null && neckVertical(container2) !== neckDrawnVertical) {
         renderGuitar(container2, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
       }
     }).observe(container2);
@@ -3751,6 +3901,69 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     });
     return tryUMT("neck", () => Notae.renderFretboard({ name: "", frets, tuning: guitarStringTuning }, neckStyle(preferFlats, vertical)), "");
   }
+  var REACH = 6;
+  function positionLabel(pos) {
+    const shape = shapeName(pos.name);
+    if (!shape) return "";
+    const all = pos.frets.flat();
+    const parts = [
+      "caged" in shape ? t("strings.scale.shape", { shape: shape.caged }) : t("strings.scale.pattern", { n: shape.pattern }),
+      t("strings.scale.frets", { from: Math.min(...all), to: Math.max(...all) })
+    ];
+    if (pos.span > REACH) parts.push(t("strings.scale.wide", { n: pos.span }));
+    return parts.join(" \xB7 ");
+  }
+  function scaleSvg(pos, info2, open2, noteNames, whole, vertical) {
+    const sounding3 = new Set(noteNames.map(noteNameToMidi).filter((m) => m !== null).map((m) => m % 12));
+    const chordColor = functionColor(scaleChordFn);
+    const dotColors = pos.frets.map((fs, i) => fs.map((f, k) => sounding3.has((open2[i] + f) % 12) ? chordColor : pos.degrees[i][k] === 1 ? color("fret-dot") : color("scale-dot")));
+    const dotLabels = pos.degrees.map((ds) => ds.map((d) => scaleLabelMode === "degrees" ? info2.degreeLabels[d - 1] ?? "" : scaleLabelMode === "notes" ? info2.names[d - 1] ?? "" : ""));
+    const high = Math.max(...pos.frets.flat());
+    const numFrets = whole ? NECK_FRETS : Math.max(4, high - pos.baseFret + 1);
+    const style = { ...neckStyle(true, vertical), numFrets, showNoteNames: false, showOpenNotes: true, showFingerNumbers: false, dotColor: color("scale-dot") };
+    return tryUMT("scale", () => Notae.renderFretboard({ name: "", frets: pos.frets, baseFret: pos.baseFret, dotColors, dotLabels, tuning: guitarStringTuning }, style), "");
+  }
+  function renderScaleView(container2, noteNames, open2, forcedIdx) {
+    const symbol = scaleKey ? scaleSymbol(scaleKey, scaleChoice) : null;
+    const info2 = scaleInfo(symbol);
+    if (!symbol || !info2) {
+      neckDrawnVertical = null;
+      container2.innerHTML = tabs() + `<div class="no-voicing">${t("strings.scale.noKey")}</div>` + foot("", 0, 0);
+      wireChrome(container2);
+      return;
+    }
+    const systems = systemsFor(info2, open2);
+    const system = systems.includes(scaleSystem) ? scaleSystem : "neck";
+    const positions = scalePositions(info2, open2, system);
+    const sig = `${symbol}|${system}|${open2.join(" ")}`;
+    if (sig !== lastScaleSig) {
+      scaleIdx = 0;
+      lastScaleSig = sig;
+    }
+    if (forcedIdx !== void 0) scaleIdx = forcedIdx;
+    const total = positions.length;
+    const named = scaleLabel(symbol);
+    if (!total) {
+      neckDrawnVertical = null;
+      container2.innerHTML = tabs() + systemTabs(systems, system) + `<div class="no-voicing">${t("strings.scale.none")}</div>` + foot(named, 0, 0);
+      wireChrome(container2);
+      return;
+    }
+    const idx = Math.min(scaleIdx, total - 1);
+    const pos = positions[idx];
+    neckDrawnVertical = neckVertical(container2);
+    const where = [named, positionLabel(pos)].filter(Boolean).join(" \xB7 ");
+    container2.innerHTML = tabs() + systemTabs(systems, system) + stage(scaleSvg(pos, info2, open2, noteNames, system === "neck", neckDrawnVertical), t("a11y.strings.scale", { scale: where }), total) + foot(where, total, idx);
+    localizeDrawnNoteNames(container2.querySelector(".strings-drawing"));
+    container2.querySelectorAll(".guitar-nav").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        scaleIdx = (idx + parseInt(btn.dataset.dir) + total) % total;
+        renderGuitar(container2, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
+        onVoicingChange(scaleIdx);
+      });
+    });
+    wireChrome(container2);
+  }
   function renderGuitar(container2, chordSymbol, noteNames = [], voicingIndex, preferFlats = true) {
     lastNoteNames = noteNames;
     lastPreferFlats = preferFlats;
@@ -3761,6 +3974,10 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     if (chordSymbol !== lastGuitarSymbol) {
       guitarVoicingIdx = 0;
       lastGuitarSymbol = chordSymbol;
+    }
+    if (stringsView === "scale") {
+      renderScaleView(container2, noteNames, open2, voicingIndex);
+      return;
     }
     if (voicingIndex !== void 0) guitarVoicingIdx = voicingIndex;
     const named = chordSymbol ? chordLabel(chordSymbol) : t("a11y.nothing");
@@ -6952,7 +7169,7 @@ ${explainCadence(cadence)}` : "");
       <div class="menu-chips" role="group" aria-label="${t("menu.clef")}" title="${t("staff.clef.title")}">${STAFF_CLEFS.map((c) => `<button type="button" class="menu-chip" data-clef="${c}" data-label="${escapeHtml(`${t("menu.clef")}: ${t(`staff.clef.${c}`)}`)}" aria-pressed="false">${t(`staff.clef.${c}`)}</button>`).join("")}</div>
       ${item("btn-staff-prev", t("menu.prev"), t("staff.prev.title"))}`;
       case "piano":
-        return item("btn-piano-prev", t("menu.prev"), t("piano.prev.title"));
+        return item("btn-piano-prev", t("menu.prev"), t("piano.prev.title")) + item("btn-piano-scale", t("menu.scale"), t("piano.scale.title"));
       case "analysis":
         return `
       ${steps("btn-analysis-minus", "btn-analysis-plus")}
@@ -7340,18 +7557,35 @@ ${explainCadence(cadence)}` : "");
     const low = Math.min(from, ...played2), high = Math.max(to, ...played2);
     return { from: `C${Math.max(0, low)}`, to: `B${Math.min(8, high)}` };
   }
+  function scaleKeysIn(range2, scale) {
+    const low = noteNameToMidi(range2.from), high = noteNameToMidi(range2.to);
+    if (low === null || high === null) return [];
+    const keys = [];
+    for (let m = low; m <= high; m++) {
+      const i = scale.pitchClasses.indexOf(m % 12);
+      if (i >= 0) keys.push({ midi: m, name: nameAtMidi(scale.names[i], m) ?? midiToNoteName(m) });
+    }
+    return keys;
+  }
   var containerOctaves = (el2) => pianoOctaves(el2.clientWidth, el2.clientHeight, isNarrow());
-  function renderPiano(container2, noteNames, fn, onPress, prevNotes = null) {
+  function renderPiano(container2, noteNames, fn, onPress, prevNotes = null, scale = null) {
     const color2 = functionColor(fn);
     const now = new Set(noteNames.map(noteNameToMidi));
     const before = (prevNotes ?? []).filter((n) => !now.has(noteNameToMidi(n)));
-    const keys = [...noteNames, ...before];
-    const colors = [...noteNames.map(() => color2), ...before.map(() => neutralColor())];
+    const range2 = pianoRange([...noteNames, ...before], containerOctaves(container2));
+    const taken = new Set([...noteNames, ...before].map(noteNameToMidi));
+    const scaleKeys = scale ? scaleKeysIn(range2, scale).filter((k) => !taken.has(k.midi)) : [];
+    const keys = [...noteNames, ...before, ...scaleKeys.map((k) => k.name)];
+    const colors = [
+      ...noteNames.map(() => color2),
+      ...before.map(() => neutralColor()),
+      ...scaleKeys.map((k) => color(k.midi % 12 === scale.pitchClasses[0] ? "piano-scale-root" : "piano-scale"))
+    ];
     container2.innerHTML = Notae.renderPiano({
       name: "",
       keys,
       colors,
-      range: pianoRange([...noteNames, ...before], containerOctaves(container2))
+      range: range2
     }, {
       pianoWhiteKeyColor: color("piano-white"),
       pianoWhiteKeyStrokeColor: color("piano-white-stroke"),
@@ -7556,8 +7790,13 @@ ${explainCadence(cadence)}` : "");
       inner.style.width = "100%";
     } else if (view2 === "cof") renderCircleOfFifths(el2, s.key, s.symbol, () => {
     }, 400, { ...cofOptions(s.key), backdrop: color("bg") });
-    else if (view2 === "piano") renderPiano(el2, s.notes, s.symbol ? s.function : null);
-    else if (view2 === "guitar") renderGuitar(el2, s.symbol, s.notes, s.guitarVoicing);
+    else if (view2 === "piano") {
+      const scale = loadBool("piano-scale", false) && s.key ? scaleInfo(scaleSymbol(s.key, "key")) : null;
+      renderPiano(el2, s.notes, s.symbol ? s.function : null, void 0, null, scale);
+    } else if (view2 === "guitar") {
+      setGuitarScaleContext(s.key, s.symbol ? s.function : null);
+      renderGuitar(el2, s.symbol, s.notes, s.guitarVoicing);
+    }
     fitSvg(el2.querySelector("svg"));
   }
   function runViewerFromUrl() {
@@ -7578,7 +7817,7 @@ ${explainCadence(cadence)}` : "");
     document.body.appendChild(el2);
     subscribeView((s) => renderView(view2, el2, s));
     window.addEventListener("storage", (e) => {
-      if (e.key && /^(guitar-|cof-|staff-clef|lang$|note-names$)/.test(e.key)) location.reload();
+      if (e.key && /^(guitar-|cof-|staff-clef|piano-scale$|lang$|note-names$)/.test(e.key)) location.reload();
     });
     return true;
   }
@@ -9929,6 +10168,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   var cofShowDegrees = loadBool("cof-show-degrees", false);
   var cofShow7ths = loadBool("cof-show-7ths", false);
   var showPrevChord = loadBool("show-prev-chord", false);
+  var showPianoScale = loadBool("piano-scale", false);
   var analysisFieldsVisible = Object.fromEntries(
     // Every field shown at first but Movable do, for who sings: from the panel's menu
     ANALYSIS_FIELD_KEYS.map((f) => [f, loadBool(`analysis-field-${f}`, f !== "movable")])
@@ -10218,6 +10458,18 @@ ${explainCadence(c.cadence)}` : ""}`;
       showPrev();
       renderZone1Diagrams(displayedNotes(), selectedSymbol());
     }));
+    const scaleButton = $2("btn-piano-scale");
+    const showScale = () => {
+      scaleButton.classList.toggle("active", showPianoScale);
+      scaleButton.setAttribute("aria-pressed", String(showPianoScale));
+    };
+    showScale();
+    scaleButton.addEventListener("click", () => {
+      showPianoScale = !showPianoScale;
+      save("piano-scale", showPianoScale);
+      showScale();
+      renderZone1Diagrams(displayedNotes(), selectedSymbol());
+    });
     ANALYSIS_FIELD_KEYS.forEach((f) => {
       $2(`btn-field-${f}`).addEventListener("click", () => {
         analysisFieldsVisible[f] = !analysisFieldsVisible[f];
@@ -10692,7 +10944,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     const prev = showPrevChord && chordSymbol ? prevVoicing : null;
     renderIfChanged("staff", `${notes2}|${key}|${staffClef}|${prev?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev));
     const fn = chordSymbol ? state.analysis?.function ?? null : null;
-    renderIfChanged("piano", `${notes2}|${fn}|${prev?.join(" ")}|${containerOctaves($2("piano-container"))}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev));
+    const pianoScale = showPianoScale && key ? scaleInfo(scaleSymbol(key, "key")) : null;
+    renderIfChanged("piano", `${notes2}|${fn}|${prev?.join(" ")}|${containerOctaves($2("piano-container"))}|${pianoScale?.names.join(" ")}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev, pianoScale));
     const spoken = noteNames.map(noteLabel).join(" ") || t("a11y.nothing");
     for (const [id, key2] of [["staff-container", "a11y.staff"], ["piano-container", "a11y.piano"]]) {
       const el2 = $2(id);
@@ -10701,10 +10954,12 @@ ${explainCadence(c.cadence)}` : ""}`;
     }
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
-    const neck = getStringsView() === "neck" ? `${notes2}|${keyPrefersSharps(key)}` : "";
+    const view2 = getStringsView();
+    const neck = view2 === "neck" ? `${notes2}|${keyPrefersSharps(key)}` : view2 === "scale" ? `${notes2}|${key}|${fn}` : "";
+    setGuitarScaleContext(key, fn);
     const named = !isModuleShown("chord");
     setGuitarShowsName(named);
-    renderIfChanged("guitar", `${chordSymbol}|${neck}|${named}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames, void 0, !keyPrefersSharps(key)));
+    renderIfChanged("guitar", `${chordSymbol}|${view2}|${neck}|${named}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames, void 0, !keyPrefersSharps(key)));
     renderIfChanged("cof", `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, COF_SIZE, cofOpts));
     const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, usualOnly: keyUsualOnly, fontScale: keyScale };
     const keyTitle = key ? state.activeKey ? keyLabel(key) : t("keyPanel.auto", { key: keyLabel(key) }) : "";

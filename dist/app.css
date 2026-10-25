@@ -82,6 +82,9 @@
   --fret-dot: #d9c9a3;
   --fret-dot-text: #141414;
   --neck-dot: #d9c9a3;
+  --scale-dot: #8c8778;
+  --piano-scale: #bdb6a6;
+  --piano-scale-root: #a68c52;
   --logo-bg: #141414;
   --logo-ink: #ece8df;
 }
@@ -167,6 +170,9 @@
   --fret-dot: #6b5530;
   --fret-dot-text: #ffffff;
   --neck-dot: #6b5530;
+  --scale-dot: #8a8170;
+  --piano-scale: #b9b2a3;
+  --piano-scale-root: #6b5530;
   --logo-bg: #141414;
   --logo-ink: #ece8df;
 }
@@ -252,6 +258,9 @@
   --fret-dot: #f0dca8;
   --fret-dot-text: #000000;
   --neck-dot: #f0dca8;
+  --scale-dot: #a3a3a3;
+  --piano-scale: #9a9a9a;
+  --piano-scale-root: #c9a23c;
   --logo-bg: #000000;
   --logo-ink: #ffffff;
 }
@@ -337,6 +346,9 @@
   --fret-dot: #9a3b1b;
   --fret-dot-text: #ffffff;
   --neck-dot: #9a3b1b;
+  --scale-dot: #7d7466;
+  --piano-scale: #c2b59a;
+  --piano-scale-root: #9a3b1b;
   --logo-bg: #2b2418;
   --logo-ink: #f6f1e7;
 }
@@ -1824,6 +1836,14 @@ body.presenting .grid {
 .strings-tab[aria-pressed=true] {
   background: var(--surface);
   color: var(--text-strong);
+}
+.strings-systems {
+  margin-top: 2px;
+}
+.strings-systems .strings-tab {
+  height: 22px;
+  padding: 0 7px;
+  font-size: 12px;
 }
 .strings-stage {
   flex: 1;

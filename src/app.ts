@@ -10,7 +10,7 @@ import { renderPiano, isNarrow, containerOctaves } from './diagrams/piano'
 import { renderVelocity } from './diagrams/velocity'
 import type { NoteVelocity } from './diagrams/velocity'
 import { noteNameToMidi } from './theory/notes'
-import { renderGuitar, getStringsView, getGuitarVoicingIndex, setGuitarVoicingChange, setGuitarShowsName } from './diagrams/guitar'
+import { renderGuitar, getStringsView, getGuitarVoicingIndex, setGuitarVoicingChange, setGuitarShowsName, setGuitarScaleContext } from './diagrams/guitar'
 import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS, VIEW_NAMES } from './view/channel'
 import type { ViewName, ViewBackground, ViewState } from './view/channel'
 import { runViewerFromUrl } from './view/viewer'
@@ -19,6 +19,7 @@ import type { ExportTarget } from './ui/export'
 import { renderCircleOfFifths, cofAccidentalFor } from './diagrams/cof'
 import { renderKeyExplorer } from './diagrams/key-explorer'
 import { buildKeyMap } from './theory/key-map'
+import { scaleInfo, scaleSymbol } from './theory/scales'
 import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, notifyChordReleased, renderHistory, markActiveHistoryEntry, restoreCarriedHistory, rhythmText } from './history/history'
 import { addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song/model'
 import { loadActiveSong, saveSong, songTabs, openSong, newSong, deleteSong, restoreSong } from './song/library'
@@ -66,6 +67,7 @@ let cofShowDegrees = loadBool('cof-show-degrees', false)
 let cofShow7ths    = loadBool('cof-show-7ths', false)
 // Staff and piano also show the chord before, to see each voice move
 let showPrevChord  = loadBool('show-prev-chord', false)
+let showPianoScale = loadBool('piano-scale', false)
 
 const analysisFieldsVisible = Object.fromEntries(
   // Every field shown at first but Movable do, for who sings: from the panel's menu
@@ -356,6 +358,16 @@ function wireLayoutEvents() {
     showPrev()
     renderZone1Diagrams(displayedNotes(), selectedSymbol())
   }))
+
+  const scaleButton = $('btn-piano-scale')
+  const showScale = () => { scaleButton.classList.toggle('active', showPianoScale); scaleButton.setAttribute('aria-pressed', String(showPianoScale)) }
+  showScale()
+  scaleButton.addEventListener('click', () => {
+    showPianoScale = !showPianoScale
+    save('piano-scale', showPianoScale)
+    showScale()
+    renderZone1Diagrams(displayedNotes(), selectedSymbol())
+  })
 
   ANALYSIS_FIELD_KEYS.forEach(f => {
     $(`btn-field-${f}`).addEventListener('click', () => {
@@ -899,8 +911,9 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   renderIfChanged('staff', `${notes}|${key}|${staffClef}|${prev?.join(' ')}`, () =>
     renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef, prev))
   const fn = chordSymbol ? state.analysis?.function ?? null : null
-  renderIfChanged('piano', `${notes}|${fn}|${prev?.join(' ')}|${containerOctaves($('piano-container'))}`, () =>
-    renderPiano($('piano-container'), noteNames, fn, onPianoPress, prev))
+  const pianoScale = showPianoScale && key ? scaleInfo(scaleSymbol(key, 'key')) : null
+  renderIfChanged('piano', `${notes}|${fn}|${prev?.join(' ')}|${containerOctaves($('piano-container'))}|${pianoScale?.names.join(' ')}`, () =>
+    renderPiano($('piano-container'), noteNames, fn, onPianoPress, prev, pianoScale))
   // The drawings by name, for a screen reader: the notes they show
   const spoken = noteNames.map(noteLabel).join(' ') || t('a11y.nothing')
   for (const [id, key] of [['staff-container', 'a11y.staff'], ['piano-container', 'a11y.piano']] as const) {
@@ -910,12 +923,14 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   }
   const vel = noteVelocities(noteNames)
   renderIfChanged('velocity', JSON.stringify(vel), () => renderVelocity($('velocity-container'), vel))
-  // The shapes follow the chord; the neck view, every note
-  const neck = getStringsView() === 'neck' ? `${notes}|${keyPrefersSharps(key)}` : ''
+  // The shapes follow the chord; the neck view, every note; the scale view, the key and the notes sounding in it
+  const view = getStringsView()
+  const neck = view === 'neck' ? `${notes}|${keyPrefersSharps(key)}` : view === 'scale' ? `${notes}|${key}|${fn}` : ''
+  setGuitarScaleContext(key, fn)
   // The chord's name over the shape only where no Chord panel names it
   const named = !isModuleShown('chord')
   setGuitarShowsName(named)
-  renderIfChanged('guitar', `${chordSymbol}|${neck}|${named}`, () =>
+  renderIfChanged('guitar', `${chordSymbol}|${view}|${neck}|${named}`, () =>
     renderGuitar($('guitar-container'), chordSymbol, noteNames, undefined, !keyPrefersSharps(key)))
   renderIfChanged('cof', `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () =>
     renderCircleOfFifths($('cof-container'), key, chordSymbol, onCofClick, COF_SIZE, cofOpts))
