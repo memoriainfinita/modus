@@ -1043,6 +1043,9 @@
     "next.resolves": "{chord} is {roman}: it resolves to {target}",
     "next.inProgressions": "In",
     "next.play": "Play {chord} and show it after this chord",
+    "next.playInstead": "Play {chord} and show it in place of this chord",
+    "next.or": "or",
+    "next.instead": "In place of {chord}",
     "ex.nth.1": "1st",
     "ex.nth.2": "2nd",
     "ex.nth.3": "3rd",
@@ -2049,6 +2052,9 @@
     "next.resolves": "{chord} es {roman}: resuelve en {target}",
     "next.inProgressions": "En",
     "next.play": "Tocar {chord} y mostrarlo tras este acorde",
+    "next.playInstead": "Tocar {chord} y mostrarlo en lugar de este acorde",
+    "next.or": "o",
+    "next.instead": "En lugar de {chord}",
     "ex.nth.1": "1.\xBA",
     "ex.nth.2": "2.\xBA",
     "ex.nth.3": "3.\xBA",
@@ -9700,6 +9706,20 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
 
   // src/detector/next.ts
+  function substitutions(symbol, key) {
+    const chord = tryParseChord(symbol);
+    if (!chord) return [];
+    const out = [];
+    for (const s of tryUMT("substitutions", () => UMT.getSubstitutions(chord, key), [])) {
+      const name = s.chord?.name ?? s.name;
+      if (!name || sameChord(name, symbol) || out.some((o) => sameChord(o.symbol, name))) continue;
+      out.push({ symbol: name, type: s.type ?? null });
+    }
+    return out;
+  }
+  function substitutesFor(current4, key) {
+    return key ? substitutions(current4, key) : [];
+  }
   function keyChords(key, sevenths) {
     const map = buildKeyMap(key, sevenths);
     return map ? map.diatonic.flatMap((c) => c.alternative ? [c.symbol, c.alternative.symbol] : [c.symbol]) : [];
@@ -9719,7 +9739,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       let s = out.find((o) => sameChord(o.symbol, symbol));
       if (!s) {
         const info3 = romanInKey(symbol, key);
-        out.push(s = { symbol, roman: info3?.roman ?? null, function: info3?.function ?? "unknown", resolution: null, cadence: null, progressions: [] });
+        out.push(s = { symbol, roman: info3?.roman ?? null, function: info3?.function ?? "unknown", resolution: null, cadence: null, progressions: [], borrowings: [] });
       }
       return s;
     };
@@ -9755,26 +9775,53 @@ ${explainCadence(c.cadence)}` : ""}`;
       if (b) matches.push({ id, ...b });
     }
     matches.sort((a, b) => b.length - a.length).forEach((m) => entry(m.symbol)?.progressions.push(m.id));
+    const usual = (buildKeyMap(key, sevenths)?.parallel ?? []).flatMap((row3) => row3.chords.filter((c) => c.common).map((c) => ({ symbol: c.symbol, mode: row3.mode, function: c.function })));
+    for (const s of out) {
+      for (const sub of substitutions(s.symbol, key)) {
+        if (sub.type !== "modal" || sameChord(sub.symbol, current4)) continue;
+        const b = usual.find((u) => sameChord(u.symbol, sub.symbol));
+        if (b && !s.borrowings.some((o) => sameChord(o.symbol, b.symbol))) s.borrowings.push(b);
+      }
+    }
     return out;
   }
-  function renderNext(container2, current4, key, items, onPick) {
-    if (!current4 || !items.length) {
+  function renderNext(container2, current4, key, items, onPick, substitutes = []) {
+    if (!current4 || !items.length && !substitutes.length) {
       container2.innerHTML = `<p class="next-empty">${escapeHtml(t(current4 && !key ? "next.noKey" : current4 ? "next.none" : "next.empty"))}</p>`;
       return;
     }
     const progression = (id) => `<span class="next-reason" title="${escapeHtml(t(`prog.${id}.about`))}">${escapeHtml(t(`prog.${id}`))}</span>`;
-    container2.innerHTML = `<ul class="next-list">${items.map((s) => `
+    const button = (symbol, fn, { alt = false, instead = false } = {}) => `<button type="button" class="key-chord key-fnb-${fn}${alt ? " next-alt" : ""}" data-chord="${escapeHtml(symbol)}"${instead ? ' data-instead="1"' : ""}
+      title="${escapeHtml(t(instead ? "next.playInstead" : "next.play", { chord: chordLabel(symbol) }))}">${escapeHtml(chordLabel(symbol))}</button>`;
+    const borrowings = (s) => {
+      const modes = [...new Set(s.borrowings.map((b) => b.mode))];
+      return modes.map((mode4) => `<span class="next-alts">${escapeHtml(t("next.or"))} ${s.borrowings.filter((b) => b.mode === mode4).map((b) => button(b.symbol, b.function, { alt: true })).join(" ")} ${escapeHtml(t("keyPanel.from", { mode: scaleLabel(mode4) }))}</span>`).join("");
+    };
+    const list = items.length ? `<ul class="next-list">${items.map((s) => `
     <li class="next-row">
-      <button type="button" class="key-chord key-fnb-${s.function}" data-chord="${escapeHtml(s.symbol)}"
-        title="${escapeHtml(t("next.play", { chord: chordLabel(s.symbol) }))}">${escapeHtml(chordLabel(s.symbol))}</button>
+      ${button(s.symbol, s.function)}
       <span class="key-roman">${escapeHtml(s.roman ?? "\u2014")}</span>
       <span class="next-why">
         ${s.resolution ? `<span>${escapeHtml(s.resolution)}</span>` : ""}
         ${s.cadence ? `<span class="next-reason"${s.cadence.about ? ` title="${escapeHtml(s.cadence.about)}"` : ""}>${escapeHtml(s.cadence.name)}</span>` : ""}
         ${s.progressions.length ? `<span>${escapeHtml(t("next.inProgressions"))} ${s.progressions.map(progression).join(", ")}</span>` : ""}
+        ${borrowings(s)}
       </span>
-    </li>`).join("")}</ul>`;
-    container2.querySelectorAll(".key-chord").forEach((btn) => btn.addEventListener("click", () => onPick(btn.dataset.chord)));
+    </li>`).join("")}</ul>` : "";
+    const subs = substitutes.length && key ? `
+    <h3 class="next-heading">${escapeHtml(t("next.instead", { chord: chordLabel(current4) }))}</h3>
+    <ul class="next-list next-subs">${substitutes.map((s) => {
+      const info2 = romanInKey(s.symbol, key);
+      const about = s.type && SUBSTITUTION_TYPES.includes(s.type) ? t(`ex.sub.${s.type}`) : null;
+      return `
+      <li class="next-row">
+        ${button(s.symbol, info2?.function ?? "unknown", { instead: true })}
+        <span class="key-roman">${escapeHtml(info2?.roman ?? "\u2014")}</span>
+        <span class="next-why">${s.type ? `<span class="next-reason"${about ? ` title="${escapeHtml(about)}"` : ""}>${escapeHtml(substitutionTypeLabel(s.type))}</span>` : ""}</span>
+      </li>`;
+    }).join("")}</ul>` : "";
+    container2.innerHTML = list + subs;
+    container2.querySelectorAll(".key-chord").forEach((btn) => btn.addEventListener("click", () => onPick(btn.dataset.chord, !!btn.dataset.instead)));
   }
 
   // src/ui/ear.ts
@@ -10811,12 +10858,20 @@ ${explainCadence(c.cadence)}` : ""}`;
     const sym = selectedSymbol();
     if (sym && !liftingNotes) nextFrom = { symbol: sym, notes: displayedNotes(), prev: cadencePrev };
     const key = analysisKey();
-    renderNext(el2, nextFrom?.symbol ?? null, key, nextFrom ? suggestNext(nextFrom.symbol, key, nextFrom.prev) : [], onNextPick);
+    renderNext(
+      el2,
+      nextFrom?.symbol ?? null,
+      key,
+      nextFrom ? suggestNext(nextFrom.symbol, key, nextFrom.prev) : [],
+      onNextPick,
+      nextFrom ? substitutesFor(nextFrom.symbol, key) : []
+    );
   }
-  function onNextPick(chord) {
+  function onNextPick(chord, instead) {
     const from = nextFrom;
     playChord(chord);
-    showChord(chord, void 0, from ? { symbol: from.symbol, notes: from.notes } : null);
+    const prev = instead ? from?.prev ? { symbol: from.prev, notes: chordNoteNames(from.prev) } : null : from ? { symbol: from.symbol, notes: from.notes } : null;
+    showChord(chord, void 0, prev);
   }
   function announceDetection() {
     const d = state.detection;

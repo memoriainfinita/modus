@@ -208,6 +208,15 @@ await check('Next (Study layout): A7 in C Major resolves to Dm7; a click plays i
   await page.click('#next-container .key-chord[data-chord="Dm7"]')
   assert((await text('.chord-name-badge')) === 'Dm7', 'picked chord on screen')
   assert((await text('#next-container')).includes('G7'), 'Dm7 leads to G7')
+  // Under the list, what may stand for Dm7; a substitute takes its place, after the chord before it
+  const subs = await text('#next-container .next-subs')
+  assert((await text('#next-container .next-heading')).includes('Dm7') && subs.includes('Fm7'), `substitutes: ${subs}`)
+  await page.click('#next-container .next-subs .key-chord[data-chord="Fm7"]')
+  assert((await text('.chord-name-badge')) === 'Fm7', 'substitute on screen')
+  // A suggestion offers the usual borrowings that may stand for it, from their mode
+  await page.click('#next-container .next-subs .key-chord[data-chord="Fmaj7"]')
+  const alts = await page.locator('#next-container .next-list:not(.next-subs) .next-alt').allTextContents()
+  assert(alts.length > 0, 'borrowings offered after Fmaj7')
   await page.click('#btn-layout'); await page.click('#layout-menu [data-preset="standard"]'); await page.mouse.click(5, 990)
 })
 

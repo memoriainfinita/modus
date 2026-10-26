@@ -30,7 +30,7 @@ import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
 import { explainDetection, renderExplanation } from './detector/explain'
-import { suggestNext, renderNext } from './detector/next'
+import { suggestNext, renderNext, substitutesFor } from './detector/next'
 import { renderProgressions } from './ui/progressions'
 import { renderEar, resetEarScore, type EarQuestion } from './ui/ear'
 import { wireSettings, openSettings, closeSettings, offerSettingsUndo, settingsCommands } from './ui/settings'
@@ -566,14 +566,20 @@ function renderNextPanel() {
   // Kept until another chord is played: the notes left while a chord is released do not count
   if (sym && !liftingNotes) nextFrom = { symbol: sym, notes: displayedNotes(), prev: cadencePrev }
   const key = analysisKey()
-  renderNext(el, nextFrom?.symbol ?? null, key, nextFrom ? suggestNext(nextFrom.symbol, key, nextFrom.prev) : [], onNextPick)
+  renderNext(el, nextFrom?.symbol ?? null, key, nextFrom ? suggestNext(nextFrom.symbol, key, nextFrom.prev) : [], onNextPick,
+    nextFrom ? substitutesFor(nextFrom.symbol, key) : [])
 }
 
-/** A suggested chord: played and shown after the chord it follows, so its cadence reads from it. */
-function onNextPick(chord: string) {
+/**
+ * A suggested chord: played and shown after the chord it follows, so its cadence reads from it.
+ * A substitute is shown in place of that chord instead, after the chord before it.
+ */
+function onNextPick(chord: string, instead: boolean) {
   const from = nextFrom
   playChord(chord)
-  showChord(chord, undefined, from ? { symbol: from.symbol, notes: from.notes } : null)
+  const prev = instead ? (from?.prev ? { symbol: from.prev, notes: chordNoteNames(from.prev) } : null)
+    : from ? { symbol: from.symbol, notes: from.notes } : null
+  showChord(chord, undefined, prev)
 }
 
 /** What a screen reader hears when the detector changes: the chord with its degree and function, a note, an interval. */
