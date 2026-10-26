@@ -71,6 +71,16 @@ function renderChordSummary(
       ${head.fromRoman && head.fromRoman !== '?' ? `<span class="chord-head-prev-roman${fnClass(head.fromFunction)}">${escapeHtml(head.fromRoman)}</span>` : ''}
       ${analysis.cadence ? `<span class="cadence-pill">${escapeHtml(cadenceLabel(analysis.cadence, true))}</span>` : ''}
     </span>` : ''
+  // Always the same three rows, so the header keeps its height from chord to chord
+  const v = analysis?.voicingCard ?? null
+  const cardRow = (label: string, value: string | null) =>
+    `<span class="chord-card-label">${escapeHtml(label)}</span><span class="chord-card-value">${escapeHtml(value || '—')}</span>`
+  const card = `
+    <span class="chord-card">
+      ${cardRow(t('head.position'), v?.position ?? null)}
+      ${cardRow(t('head.layout'), v?.layout ?? null)}
+      ${cardRow(t('head.degrees'), v?.degrees.join(' ') ?? null)}
+    </span>`
 
   el.innerHTML = `
     <div class="chord-head chord-summary-row">
@@ -78,6 +88,7 @@ function renderChordSummary(
         <span class="chord-name-badge">${escapeHtml(chordLabel(symbol))}</span>
         <span class="chord-notes">${notesOf(detection.notes)}</span>
       </span>
+      ${card}
       ${degree}
       ${from}
       ${alts.length ? `<span class="chord-head-group chord-head-alts">

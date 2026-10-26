@@ -697,13 +697,13 @@
     } catch {
     }
     if (!name || degrees.length !== 7) return { abcKey: "none", accidentals: {} };
-    const accidentals = {};
+    const accidentals2 = {};
     for (const n of degrees) {
       const m = n.match(/^([A-G])([#b])/);
-      if (m) accidentals[m[1]] = m[2];
+      if (m) accidentals2[m[1]] = m[2];
     }
     const [root2] = name.split(" ");
-    return { abcKey: root2 + ABC_MODE[keyMode(name)], accidentals };
+    return { abcKey: root2 + ABC_MODE[keyMode(name)], accidentals: accidentals2 };
   }
   function keyPrefersSharps(key) {
     return Object.values(keySignature(key ?? null).accidentals).includes("#");
@@ -881,6 +881,9 @@
     "head.from": "from",
     "head.also": "Also",
     "head.empty": "Play, or type a chord",
+    "head.position": "Position",
+    "head.layout": "Voicing",
+    "head.degrees": "Degrees",
     "views.title": "View windows for OBS, and diagram export (SVG, PNG)",
     "views.open": "Open a view window",
     "views.background": "Background",
@@ -1886,6 +1889,9 @@
     "head.from": "desde",
     "head.also": "Tambi\xE9n",
     "head.empty": "Toca, o escribe un acorde",
+    "head.position": "Posici\xF3n",
+    "head.layout": "Disposici\xF3n",
+    "head.degrees": "Grados",
     "views.title": "Ventanas de vista para OBS y exportar diagramas (SVG, PNG)",
     "views.open": "Abrir una ventana de vista",
     "views.background": "Fondo",
@@ -2988,19 +2994,27 @@
     return steps2;
   }
   var pcName = (n) => n.replace(/-?\d+$/, "");
+  var readVoicing = (noteNames, chord) => noteNames.length < 3 ? null : tryUMT("voicing", () => UMT.analyzeVoicing(noteNames.map((n) => UMT.parseNote(n)), chord), null);
+  var bassText = (v) => v.inversion !== null && v.inversion >= 0 && v.inversion <= 3 ? t(`voicing.inversion${v.inversion}`) : t("voicing.inBass", { degree: v.bassDegree ?? pcName(v.bass) });
   function describeVoicing(noteNames, chord) {
-    if (noteNames.length < 3) return null;
-    const v = tryUMT("voicing", () => UMT.analyzeVoicing(noteNames.map((n) => UMT.parseNote(n)), chord), null);
+    const v = readVoicing(noteNames, chord);
     if (!v) return null;
-    const bass = v.inversion >= 0 && v.inversion <= 3 ? t(`voicing.inversion${v.inversion}`) : t("voicing.inBass", { degree: v.bassDegree ?? pcName(v.bass) });
     return [
-      bass,
-      t(`voicing.${v.position}`),
+      bassText(v),
+      v.position ? t(`voicing.${v.position}`) : null,
       v.drop,
       v.doubled.length ? t("voicing.doubled", { notes: v.doubled.join(" ") }) : null,
       v.omitted.length ? t("voicing.missing", { notes: v.omitted.join(" ") }) : null,
       v.added.length ? `+ ${v.added.map(pcName).join(" ")}` : null
     ].filter(Boolean).join(" \xB7 ");
+  }
+  var accidentals = (degree) => degree.replace(/b/g, "\u266D").replace(/#/g, "\u266F");
+  function voicingCard(noteNames, chord) {
+    const v = readVoicing(noteNames, chord);
+    if (!v) return null;
+    const layout = [v.position ? t(`voicing.${v.position}`) : null, v.drop].filter(Boolean).join(" \xB7 ");
+    const degrees = [...new Set(v.voices.map((n) => n.degree ? accidentals(n.degree) : `+${noteLabel(pcName(n.note))}`))];
+    return { position: bassText(v), layout: layout || null, degrees };
   }
   var pcOf = (name) => pitchClassOf(pcName(name));
   function presentUpperStructures(noteNames, chord) {
@@ -3063,6 +3077,7 @@
     if (bassNote) result.figuredBass = tryUMT("figured bass", () => UMT.FiguredBass.fromChord(chord, bassNote), "");
     result.suggestedScales = tryUMT("scales", () => UMT.Harmony.getSuggestedScales(chord).map((s) => scaleLabel(s.scale)), []);
     result.voicing = describeVoicing(noteNames, chord);
+    result.voicingCard = voicingCard(noteNames, chord);
     result.upperStructures = presentUpperStructures(noteNames, chord);
     result.slash = readSlash(noteNames, chord);
     const prevChord = tryParseChord(prevChordSymbol);
@@ -3101,6 +3116,7 @@
       substitutions: [],
       cadence: null,
       voicing: null,
+      voicingCard: null,
       upperStructures: [],
       slash: null,
       transformation: null,
@@ -3435,12 +3451,12 @@
   // src/diagrams/staff.ts
   var STAFF_CLEFS = ["grand", "treble", "bass"];
   var LETTERS = "CDEFGAB";
-  function parseNotes(noteNames, accidentals) {
+  function parseNotes(noteNames, accidentals2) {
     return noteNames.flatMap((n) => {
       const m = n.match(/^([A-G])(#{0,2}|b{0,2})(-?\d+)$/);
       if (!m) return [];
       const [, letter, acc, octStr] = m;
-      const keyAcc = accidentals[letter] ?? "";
+      const keyAcc = accidentals2[letter] ?? "";
       const mark = acc === keyAcc ? "" : acc ? acc.replace(/#/g, "^").replace(/b/g, "_") : "=";
       const oct = parseInt(octStr);
       const pitch = oct >= 5 ? letter.toLowerCase() + "'".repeat(oct - 5) : oct === 4 ? letter : letter + ",".repeat(4 - oct);
@@ -3450,9 +3466,9 @@
   var chordOf = (notes2) => `[${notes2.map((n) => n.mark + n.pitch).join("")}]1`;
   var MIDDLE_C = 4 * 7;
   function buildStaffAbc(noteNames, keyStr, clef = "treble", prevNotes = null) {
-    const { abcKey, accidentals } = keySignature(keyStr);
-    const notes2 = parseNotes(noteNames, accidentals);
-    const prev = prevNotes?.length ? parseNotes(prevNotes, accidentals) : null;
+    const { abcKey, accidentals: accidentals2 } = keySignature(keyStr);
+    const notes2 = parseNotes(noteNames, accidentals2);
+    const prev = prevNotes?.length ? parseNotes(prevNotes, accidentals2) : null;
     const bar = (before, now, empty2) => {
       const chord = (ns) => ns.length ? chordOf(ns) : empty2;
       return before ? `${chord(before)} | ${chord(now)}` : chord(now);
@@ -4112,12 +4128,21 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       ${head.fromRoman && head.fromRoman !== "?" ? `<span class="chord-head-prev-roman${fnClass(head.fromFunction)}">${escapeHtml(head.fromRoman)}</span>` : ""}
       ${analysis.cadence ? `<span class="cadence-pill">${escapeHtml(cadenceLabel(analysis.cadence, true))}</span>` : ""}
     </span>` : "";
+    const v = analysis?.voicingCard ?? null;
+    const cardRow = (label, value) => `<span class="chord-card-label">${escapeHtml(label)}</span><span class="chord-card-value">${escapeHtml(value || "\u2014")}</span>`;
+    const card = `
+    <span class="chord-card">
+      ${cardRow(t("head.position"), v?.position ?? null)}
+      ${cardRow(t("head.layout"), v?.layout ?? null)}
+      ${cardRow(t("head.degrees"), v?.degrees.join(" ") ?? null)}
+    </span>`;
     el2.innerHTML = `
     <div class="chord-head chord-summary-row">
       <span class="chord-head-group chord-head-main">
         <span class="chord-name-badge">${escapeHtml(chordLabel(symbol))}</span>
         <span class="chord-notes">${notesOf(detection.notes)}</span>
       </span>
+      ${card}
       ${degree}
       ${from}
       ${alts.length ? `<span class="chord-head-group chord-head-alts">
@@ -5150,7 +5175,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     if (noteNames.length < 3) return [];
     const chord = tryParseChord(symbol);
     const v = tryUMT("voicing", () => UMT.analyzeVoicing(noteNames.map((n) => UMT.parseNote(n)), chord), null);
-    if (!v) return [];
+    if (!v?.position) return [];
     const out = [{ term: t("ex.term.voicing", { v: t(`voicing.${v.position}`) }), text: t(`ex.voicing.${v.position}`) }];
     if (v.drop) out.push({ term: v.drop, text: t("ex.voicing.drop") });
     return out;

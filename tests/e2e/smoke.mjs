@@ -1013,6 +1013,8 @@ await check('analysis: a shell is named, its voicing read; single notes give the
   assert(await text('.chord-name-badge') === 'G7', `shell: ${await text('.chord-name-badge')}`)
   const voicing = await field('Voicing')
   assert(voicing.includes('no 5'), `voicing: ${voicing}`)
+  const card = await page.locator('#chord-summary .chord-card-value').allTextContents()
+  assert(card.join(' | ') === 'root position | close | R 3 ♭7', `header card: ${card.join(' | ')}`)
   await off([43, 59, 65])
   for (const n of [60, 62, 64, 65]) { await play([n], 60); await off([n]); await page.waitForTimeout(40) }
   await play([67], 60)

@@ -1,8 +1,8 @@
-import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult, SlashReading } from '../types'
+import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis, HistoryEntry, SingleNoteResult, IntervalResult, ChordResult, SlashReading, VoicingCard } from '../types'
 import { midiToNoteName, pitchClassOf, PITCH_NAMES_FLAT } from '../theory/notes'
 import { tryParseChord, isKnownChord, normalizeChordName, tryUMT } from '../theory/chord'
 import { normalizeKey } from '../theory/keys'
-import { t, chordLabel, scaleLabel, substitutionTypeLabel } from '../i18n/i18n'
+import { t, chordLabel, noteLabel, scaleLabel, substitutionTypeLabel } from '../i18n/i18n'
 import { analyzeVoiceLeading, describeVoiceLeading } from './voice-leading'
 import { getPref } from '../settings/prefs'
 import { movableSyllable } from '../theory/solfege'
@@ -147,20 +147,42 @@ export function analyzeChordProgression(chords: string[], key: string | null, st
 
 const pcName = (n: string) => n.replace(/-?\d+$/, '')
 
+const readVoicing = (noteNames: string[], chord: any) => noteNames.length < 3 ? null
+  : tryUMT('voicing', () => UMT.analyzeVoicing(noteNames.map(n => UMT.parseNote(n)), chord), null)
+
+type Voicing = NonNullable<ReturnType<typeof readVoicing>>
+
+// The inversion, or the member in the bass when it is none of R 3 5 7 (a 9th), or the
+// bass note when it is outside the chord
+const bassText = (v: Voicing) => v.inversion !== null && v.inversion >= 0 && v.inversion <= 3
+  ? t(`voicing.inversion${v.inversion as 0 | 1 | 2 | 3}`)
+  : t('voicing.inBass', { degree: v.bassDegree ?? pcName(v.bass) })
+
 /** How the chord is laid out (UMT `analyzeVoicing`), in one line. Null for fewer than 3 notes. */
 export function describeVoicing(noteNames: string[], chord: any): string | null {
-  if (noteNames.length < 3) return null
-  const v = tryUMT('voicing', () => UMT.analyzeVoicing(noteNames.map(n => UMT.parseNote(n)), chord), null)
+  const v = readVoicing(noteNames, chord)
   if (!v) return null
-  const bass = v.inversion >= 0 && v.inversion <= 3
-    ? t(`voicing.inversion${v.inversion as 0 | 1 | 2 | 3}`)
-    : t('voicing.inBass', { degree: v.bassDegree ?? pcName(v.bass) })
   return [
-    bass, t(`voicing.${v.position}`), v.drop,
+    bassText(v), v.position ? t(`voicing.${v.position}`) : null, v.drop,
     v.doubled.length ? t('voicing.doubled', { notes: v.doubled.join(' ') }) : null,
     v.omitted.length ? t('voicing.missing', { notes: v.omitted.join(' ') }) : null,
     v.added.length ? `+ ${v.added.map(pcName).join(' ')}` : null,
   ].filter(Boolean).join(' · ')
+}
+
+const accidentals = (degree: string) => degree.replace(/b/g, '♭').replace(/#/g, '♯')
+
+/**
+ * The same reading for the chord header, in fixed rows: position, layout (close or open,
+ * drop) and each sounding member once from the bass up ("R 3 5 ♭7 ♯9"); a note outside the
+ * chord as "+E". Null for fewer than 3 notes.
+ */
+export function voicingCard(noteNames: string[], chord: any): VoicingCard | null {
+  const v = readVoicing(noteNames, chord)
+  if (!v) return null
+  const layout = [v.position ? t(`voicing.${v.position}`) : null, v.drop].filter(Boolean).join(' · ')
+  const degrees = [...new Set(v.voices.map(n => n.degree ? accidentals(n.degree) : `+${noteLabel(pcName(n.note))}`))]
+  return { position: bassText(v), layout: layout || null, degrees }
 }
 
 const pcOf = (name: string) => pitchClassOf(pcName(name))
@@ -256,6 +278,7 @@ export function buildHarmonicAnalysis(
   if (bassNote) result.figuredBass = tryUMT('figured bass', () => UMT.FiguredBass.fromChord(chord, bassNote), '')
   result.suggestedScales = tryUMT('scales', () => UMT.Harmony.getSuggestedScales(chord).map(s => scaleLabel(s.scale)), [])
   result.voicing = describeVoicing(noteNames, chord)
+  result.voicingCard = voicingCard(noteNames, chord)
   result.upperStructures = presentUpperStructures(noteNames, chord)
   result.slash = readSlash(noteNames, chord)
 
@@ -289,7 +312,7 @@ function emptyAnalysis(chordName: string): HarmonicAnalysis {
     chordName, roman: '?', function: 'unknown',
     isDiatonic: false, isBorrowed: false, isSecondary: false,
     figuredBass: '', suggestedScales: [], substitutions: [],
-    cadence: null, voicing: null, upperStructures: [], slash: null, transformation: null,
+    cadence: null, voicing: null, voicingCard: null, upperStructures: [], slash: null, transformation: null,
     substitutionTypes: [], voiceLeading: null, voiceRules: null, voiceRuleKeys: [],
   }
 }

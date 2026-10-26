@@ -1320,6 +1320,11 @@ body.rail-hidden .rail-col {
   .module-chord .chord-notes {
     font-size: 13px;
   }
+  .module-chord .chord-card {
+    font-size: 13px;
+    line-height: 1.15;
+    gap: 0 10px;
+  }
 }
 @media (max-width: 720px) {
   .grid {
@@ -1757,6 +1762,22 @@ body.presenting .grid {
 .chord-head-alts {
   margin-left: auto;
   gap: 6px;
+}
+.chord-card {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  justify-content: start;
+  gap: 2px 10px;
+  align-items: baseline;
+  font-size: 14px;
+}
+.chord-card-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.chord-card-value {
+  color: var(--text);
+  white-space: nowrap;
 }
 .fn-T {
   color: var(--fn-t);
