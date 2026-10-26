@@ -1024,6 +1024,19 @@ await check('MIDI input is written in the key: G#m in E Major, rewritten on a ke
   await off([68, 71, 75])
 })
 
+await check('a chord logged on Auto redraws the song but leaves the open key menu open', async () => {
+  await setKey('')
+  await page.click('#mod-history .history-clear-btn').catch(() => {})
+  await page.click('#btn-key')
+  await play([64, 68, 71], 1000)   // logged: the auto key becomes E Major
+  await off([64, 68, 71])
+  const open = await page.evaluate(() => document.getElementById('key-menu').classList.contains('open'))
+  const key = await text('#key-btn-name')
+  await page.keyboard.press('Escape')
+  assert(key === 'E Major', `auto key: ${key}`)
+  assert(open, 'the key menu closed')
+})
+
 await check('the piano lights every spelled note: C# E# G# in F# Major', async () => {
   await setKey('F# Major')
   await on([61, 65, 68])
