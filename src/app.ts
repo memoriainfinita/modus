@@ -6,7 +6,7 @@ import { initAudioOnGesture, GM_INSTRUMENT_GROUPS, unlockAudioOnAnyGesture, prel
 import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
 import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
 import { openPresentation, closePresentation, isPresenting } from './view/presentation'
-import { renderPiano, isNarrow, containerOctaves } from './diagrams/piano'
+import { renderPiano, containerOctaves } from './diagrams/piano'
 import { renderVelocity } from './diagrams/velocity'
 import type { NoteVelocity } from './diagrams/velocity'
 import { noteNameToMidi } from './theory/notes'
@@ -891,6 +891,7 @@ function submitTypedChord(input: HTMLInputElement) {
 function updateComputerKeyboardButton() {
   const on = isComputerKeyboardOn()
   document.querySelectorAll('[data-act="keyboard"]').forEach(b => b.classList.toggle('active-mode', on))
+  document.querySelectorAll<HTMLElement>('[data-on="keyboard"]').forEach(i => { i.hidden = !on })
   $('keyboard-status').textContent = on ? computerKeyboardStatus() : ''
 }
 
@@ -970,6 +971,8 @@ function onCofClick(chord: string, key: string | null) {
 
 function drawTuner(error?: string) {
   document.querySelectorAll('[data-act="mic"]').forEach(b => b.classList.toggle('active-mode', isMicOn()))
+  // An open microphone always shows, in the input's status in the bar
+  document.querySelectorAll<HTMLElement>('[data-on="mic"]').forEach(i => { i.hidden = !isMicOn() })
   const el = document.getElementById('tuner-container')
   if (el) renderTuner(el, { toggle: toggleMic }, error)
 }
@@ -1269,7 +1272,7 @@ function setModeBtn(mode: MidiMode) {
   $('mode-hint').textContent = t(`mode.${mode}.title`)
 }
 
-// ─── Bar and rail ────────────────────────────────────────────────────────────
+// ─── Bar ─────────────────────────────────────────────────────────────────────
 
 // Keys in the order of the circle of fifths, by pitch class: Gb Db Ab … B, and their relative minors
 const FIFTHS_MAJOR = [6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11]
@@ -1277,8 +1280,8 @@ const FIFTHS_MAJOR = [6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11]
 let keyMenuMode: KeyMode = 'Major'
 
 function wireBar() {
-  wirePopover($('input-menu'), [$('rail-input'), $('btn-input-status'), $('tab-input')])
-  wirePopover($('sound-menu'), [$('rail-sound'), $('btn-sound-status'), $('tab-sound')], () => {
+  wirePopover($('input-menu'), [$('btn-input-status'), $('tab-input')])
+  wirePopover($('sound-menu'), [$('btn-sound-status'), $('tab-sound')], () => {
     const filter = $('instrument-filter') as HTMLInputElement
     filter.value = ''
     renderChoices($('audio-instrument') as HTMLSelectElement, $('instrument-list'), '')
@@ -1298,17 +1301,6 @@ function wireBar() {
     renderKeyGrid()
   }))
 
-  // The rail: shown unless hidden last time; a phone starts without it (it covers the page there)
-  railOpen = loadBool('rail-open', true) && !isNarrow()
-  applyRail()
-  $('btn-rail').addEventListener('click', () => { railOpen = !railOpen; if (!isNarrow()) save('rail-open', railOpen); applyRail() })
-  // On a phone the rail covers its own button: a touch outside it closes it
-  document.addEventListener('pointerdown', e => {
-    if (!railOpen || !isNarrow() || document.querySelector('.rail-col')!.contains(e.target as Node)) return
-    railOpen = false
-    applyRail()
-  }, true)
-
   const input = $('typed-chord') as HTMLInputElement
   wireCommandSearch({
     input,
@@ -1322,13 +1314,6 @@ function wireBar() {
   updateKeyButton()
   updateSoundStatus()
   setAudioStatusDot()
-}
-
-let railOpen = true
-function applyRail() {
-  document.body.classList.toggle('rail-hidden', !railOpen)
-  $('btn-rail').setAttribute('aria-expanded', String(railOpen))
-  if (!railOpen) closePopover()
 }
 
 function pickKey(key: string) {
@@ -1359,7 +1344,6 @@ function setMidiStatus(text: string, color: string, title: string) {
   el.textContent = text
   el.title = title
   el.style.setProperty('--dot', color)
-  $('rail-midi-dot').style.background = color
 }
 
 function updateSoundStatus() {
@@ -1434,7 +1418,6 @@ function barCommands(): Command[] {
       label: t('cmd.export', { name: t(`view.${b.dataset.export as ViewName}`), format: b.dataset.format!.toUpperCase() }), hint: t('views.save'), run: () => b.click(),
     })),
     ...settingsCommands(),
-    { label: t('cmd.rail'), run: () => $('btn-rail').click() },
     ...GM_INSTRUMENT_GROUPS.flatMap(g => g.instruments.map(i => ({
       label: t('cmd.instrument', { name: instrumentLabel(i) }), hint: t(g.label),
       run: () => { const sel = $('audio-instrument') as HTMLSelectElement; sel.value = i; sel.dispatchEvent(new Event('change')) },

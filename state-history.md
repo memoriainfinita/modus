@@ -2,6 +2,11 @@
 
 What left `state.md`. Most recent first.
 
+### 2026-10-26 — The rail removed
+
+**What changed:** the pattern "Bar and rail" (2026-10-12, boards `Barra C` and `Barra E`) is superseded. The rail opened the bar's input and sound menus again from icons and held the computer keyboard and the mic, which the input menu also holds; only layout, presentation and view windows were its own. Those moved to the bar; the mic and keyboard show as icons in the input status while on.
+**Why:** the user noticed the duplicated functions. The rail was there so the bar could stand alone with the rail hidden, which left the rail mostly repeating the bar.
+
 ### 2026-10-26 — Phone panels no longer grow with their content
 
 Item 13 (2026-10-11) let the text panels grow to their content in one column. On a real phone each chord grew Explanation (110 → 570 px) and Key, and released it shrank: the piano jumped from under the fingers. Now each panel keeps its layout rows and scrolls inside.

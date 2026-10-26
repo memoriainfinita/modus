@@ -83,11 +83,12 @@ export function showModule(id: ModuleId, shown: boolean) {
 export function renderLayout(_panels: Panels, fieldsVisible: Record<AnalysisFieldKey, boolean>) {
   $('app').innerHTML =
     buildToolbar() +
-    '<div class="workspace">' + buildRail() +
+    '<div class="workspace">' +
     '<div class="work-main"><div id="midi-banner"></div>' +
     `<main id="grid" class="grid" aria-label="${t('a11y.panels')}">${MODULE_IDS.map(id => moduleFrame(id, fieldsVisible)).join('')}</main>` +
     '</div></div>' +
     buildTabbar() +
+    `<div class="menu-store">${buildMenus()}</div>` +
     buildSettings()
   applyGrid()
   wireGrid()
@@ -150,13 +151,12 @@ function wirePanelMenus() {
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && open) { e.stopPropagation(); close(true) } }, true)
 }
 
-// The bar: the key, a field for a chord or an order, and two statuses (what comes in, what
-// sounds) that open their menus. The rail beside the panels opens the same menus from icons
-// and holds the keyboard, the mic and the page (layout, presentation, view windows); it hides.
+// The bar: the key, a field for a chord or an order, two statuses (what comes in, with the
+// computer keyboard's and the mic's icons while they are on; what sounds) that open their
+// menus, the page (layout, presentation, view windows), Settings and Help. Each once.
 function buildToolbar(): string {
   return `
     <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t('a11y.toolbar')}">
-      <button id="btn-rail" class="ctrl-btn icon-btn ghost" title="${t('rail.title')}" aria-controls="rail">${ICONS.rail}</button>
       <span class="brand" title="Modus">${LOGO}<span class="brand-name">modus</span></span>
       <div class="pop-anchor">
         <button id="btn-key" class="key-btn" title="${t('key.menu.title')}"><span id="key-btn-name"></span><span id="key-btn-auto" class="key-btn-auto"></span></button>
@@ -170,35 +170,27 @@ function buildToolbar(): string {
       </div>
       <div class="tb-status">
         <div class="pop-anchor pop-end">
-          <button id="btn-input-status" class="status-btn" title="${t('a11y.group.input')}"><span id="midi-status" class="midi-status">MIDI</span><span id="mode-status" class="status-sub"></span></button>
+          <button id="btn-input-status" class="status-btn" title="${t('a11y.group.input')}"><span id="midi-status" class="midi-status">MIDI</span><span id="mode-status" class="status-sub"></span><span class="status-act" data-on="keyboard" title="${t('input.keyboard')}" hidden>${ICONS.keyboard}</span><span class="status-act" data-on="mic" title="${t('input.mic')}" hidden>${ICONS.mic}</span></button>
         </div>
         <div class="pop-anchor pop-end">
           <button id="btn-sound-status" class="status-btn" title="${t('a11y.group.sound')}"><span id="sound-status" class="sound-status"></span></button>
         </div>
+        <span class="tb-sep tb-page" aria-hidden="true"></span>
+        <div class="pop-anchor pop-end tb-page">
+          <button id="btn-layout" class="ctrl-btn icon-btn ghost" title="${t('layout.title')}">${ICONS.layout}</button>
+        </div>
+        <button id="btn-present" class="ctrl-btn icon-btn ghost tb-page" title="${t('present.title')}">${ICONS.present}</button>
+        <div class="pop-anchor pop-end tb-page">
+          <button id="btn-views" class="ctrl-btn icon-btn ghost" title="${t('views.title')}">${ICONS.views}</button>
+        </div>
+        <span class="tb-sep tb-page" aria-hidden="true"></span>
         <button id="btn-settings" class="ctrl-btn icon-btn ghost" title="${t('set.title.button')}" aria-haspopup="dialog">${ICONS.settings}</button>
         <button id="btn-help" class="ctrl-btn icon-btn ghost help-q" title="${t('help.title')}">?</button>
       </div>
     </div>`
 }
 
-function buildRail(): string {
-  return `
-    <div class="rail-col">
-      <nav id="rail" class="rail" aria-label="${t('a11y.rail')}">
-        <button id="rail-input" class="rail-btn" title="${t('a11y.group.input')}">${ICONS.midi}<span id="rail-midi-dot" class="rail-dot"></span></button>
-        <button id="rail-sound" class="rail-btn" title="${t('a11y.group.sound')}">${ICONS.sound}</button>
-        <button id="btn-keyboard" class="rail-btn" data-act="keyboard" title="${t('keyboard.title')}">${ICONS.keyboard}</button>
-        <button id="btn-mic" class="rail-btn" data-act="mic" title="${t('mic.title')}">${ICONS.mic}</button>
-        <span class="rail-sep" aria-hidden="true"></span>
-        <button id="btn-layout" class="rail-btn" title="${t('layout.title')}">${ICONS.layout}</button>
-        <button id="btn-present" class="rail-btn" title="${t('present.title')}">${ICONS.present}</button>
-        <button id="btn-views" class="rail-btn" title="${t('views.title')}">${ICONS.views}</button>
-        ${buildMenus()}
-      </nav>
-    </div>`
-}
-
-// On a phone the rail gives way to a bar along the bottom, in reach of the thumb, each icon
+// On a phone the page's buttons of the top bar give way to a bar along the bottom, in reach of the thumb, each icon
 // with its name; its menus rise from the bottom as sheets (ui/popover.ts). What a phone has no
 // use for stays out: the computer keyboard and the view windows for OBS.
 function buildTabbar(): string {
@@ -214,7 +206,7 @@ function buildTabbar(): string {
     </nav>`
 }
 
-// The menus start in the rail, closed; each opens next to the button pressed (ui/popover.ts).
+// The menus start in a store, closed; each opens under the button pressed (ui/popover.ts).
 // A list of choices stands for each select, which stays hidden as the value's holder.
 function buildMenus(): string {
   return `

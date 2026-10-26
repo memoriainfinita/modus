@@ -760,7 +760,6 @@
     "cmd.present": "Presentation",
     "cmd.settings": "Settings",
     "cmd.help": "Help",
-    "cmd.rail": "Show or hide the rail",
     "cmd.on": "on",
     "cmd.menu": "\u22EF menu",
     "cmd.setting": "Settings: {name}",
@@ -772,7 +771,6 @@
     "cmd.export": "Save {name} as {format}",
     "cmd.none": "No chord or order matches \u201C{q}\u201D",
     "cmd.hint": "A chord (G7, F#m7b5\u2026) plays it; the name of an option does it.",
-    "rail.title": "Show or hide the rail (input, sound, layout, presentation, view windows)",
     "input.playWith": "Play with",
     "input.keyboard": "Computer keyboard",
     "input.mic": "Microphone (sing or play)",
@@ -1342,7 +1340,6 @@
     "pref.mic-response.normal": "Normal",
     "pref.mic-response.steady": "Steady",
     "a11y.toolbar": "Controls",
-    "a11y.rail": "Rail",
     "a11y.panels": "Panels",
     "a11y.panelKeys": "{name} panel: Enter, options; arrows, move; Shift + arrows, resize; Delete, hide",
     "a11y.panelKeysNoMenu": "{name} panel: arrows, move; Shift + arrows, resize; Delete, hide",
@@ -1391,7 +1388,7 @@
     "tour.history": "Every chord you hold is logged here with its numeral, and the cadences and modulations between them. Click a chip to see it again, drag it to the song, right-click or long-press to remove it.",
     "tour.layout.title": "Your layout",
     "tour.layout.touch": "Every element is a panel: hide it with \xD7; its options are in its \u22EF menu. Here, in Panels: ready-made layouts for study, class, transcription or recording, and which panels show. More presents the layout full screen.",
-    "tour.layout": "Every element is a panel: drag it by its title, resize it from its corner, hide it with \xD7; its options are in its \u22EF menu. Here, in the rail (hide it with the button by the logo): ready-made layouts for study, class, transcription or recording, and your own. P presents the layout full screen.",
+    "tour.layout": "Every element is a panel: drag it by its title, resize it from its corner, hide it with \xD7; its options are in its \u22EF menu. Here, in the bar: ready-made layouts for study, class, transcription or recording, and your own. P presents the layout full screen.",
     "tour.practice.title": "Practice",
     "tour.practice": "Progressions plays the classic progressions in your key; Ear training plays without showing and you name what you heard; the Player loops and slows down a recording to transcribe it.",
     "tour.help.title": "Help",
@@ -1777,7 +1774,6 @@
     "cmd.present": "Presentaci\xF3n",
     "cmd.settings": "Ajustes",
     "cmd.help": "Ayuda",
-    "cmd.rail": "Mostrar u ocultar el riel",
     "cmd.on": "activo",
     "cmd.menu": "men\xFA \u22EF",
     "cmd.setting": "Ajustes: {name}",
@@ -1789,7 +1785,6 @@
     "cmd.export": "Guardar {name} como {format}",
     "cmd.none": "Ni acorde ni orden con \xAB{q}\xBB",
     "cmd.hint": "Un acorde (Sol7, Fa#m7b5\u2026) lo toca; el nombre de una opci\xF3n la hace.",
-    "rail.title": "Mostrar u ocultar el riel (entrada, sonido, disposici\xF3n, presentaci\xF3n, ventanas)",
     "input.playWith": "Tocar con",
     "input.keyboard": "Teclado del ordenador",
     "input.mic": "Micr\xF3fono (cantar o tocar)",
@@ -2351,7 +2346,6 @@
     "pref.mic-response.normal": "Normal",
     "pref.mic-response.steady": "Estable",
     "a11y.toolbar": "Controles",
-    "a11y.rail": "Riel",
     "a11y.panels": "Paneles",
     "a11y.panelKeys": "Panel {name}: Intro, opciones; flechas, mover; May\xFAs + flechas, tama\xF1o; Supr, ocultar",
     "a11y.panelKeysNoMenu": "Panel {name}: flechas, mover; May\xFAs + flechas, tama\xF1o; Supr, ocultar",
@@ -2400,7 +2394,7 @@
     "tour.history": "Cada acorde que mantienes queda aqu\xED con su grado, y las cadencias y modulaciones entre ellos. Haz clic en una ficha para volver a verla, arr\xE1strala a la canci\xF3n, clic derecho o pulsaci\xF3n larga para quitarla.",
     "tour.layout.title": "Tu disposici\xF3n",
     "tour.layout.touch": "Cada elemento es un panel: oc\xFAltalo con \xD7; sus opciones est\xE1n en su men\xFA \u22EF. Aqu\xED, en Paneles: disposiciones para estudiar, dar clase, transcribir o grabar, y qu\xE9 paneles se ven. M\xE1s presenta la disposici\xF3n a pantalla completa.",
-    "tour.layout": "Cada elemento es un panel: arr\xE1stralo por el t\xEDtulo, cambia su tama\xF1o desde la esquina, oc\xFAltalo con \xD7; sus opciones est\xE1n en su men\xFA \u22EF. Aqu\xED, en el riel (se oculta con el bot\xF3n junto al logo): disposiciones para estudiar, dar clase, transcribir o grabar, y las tuyas. P presenta la disposici\xF3n a pantalla completa.",
+    "tour.layout": "Cada elemento es un panel: arr\xE1stralo por el t\xEDtulo, cambia su tama\xF1o desde la esquina, oc\xFAltalo con \xD7; sus opciones est\xE1n en su men\xFA \u22EF. Aqu\xED, en la barra: disposiciones para estudiar, dar clase, transcribir o grabar, y las tuyas. P presenta la disposici\xF3n a pantalla completa.",
     "tour.practice.title": "Practica",
     "tour.practice": "Progresiones toca las progresiones cl\xE1sicas en tu tonalidad; Entrenamiento auditivo toca sin ense\xF1ar y t\xFA dices lo que has o\xEDdo; el Reproductor repite y ralentiza una grabaci\xF3n para transcribirla.",
     "tour.help.title": "Ayuda",
@@ -4674,7 +4668,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     { id: "cof", target: "#mod-cof" },
     { id: "history", target: "#mod-history" },
     { id: "layout", target: "#btn-layout, #tab-layout" },
-    // the rail's, or the bottom bar's on a phone
+    // the top bar's, or the bottom bar's on a phone
     { id: "practice", target: "#mod-progressions" },
     { id: "help", target: "#btn-help" }
   ];
@@ -5456,7 +5450,6 @@ ${explainCadence(cadence)}` : "");
     present: line('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
     views: line('<rect x="3" y="7" width="14" height="13" rx="1.5"/><path d="M7 4h14v13"/>'),
     settings: line('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
-    rail: line('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>'),
     midi: line('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 6v7M12 6v7M17 6v7"/>'),
     sound: line('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>'),
     search: line('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),
@@ -6228,10 +6221,8 @@ ${explainCadence(cadence)}` : "");
   function openPopover(pop, trigger) {
     closePopover();
     const sheet = phone2() && SHEETS.has(pop.menu.id);
-    const rail = sheet ? null : trigger.closest("#rail");
-    const anchor = sheet ? document.body : rail ?? trigger.closest(".pop-anchor") ?? trigger.parentElement;
+    const anchor = sheet ? document.body : trigger.closest(".pop-anchor") ?? trigger.parentElement;
     anchor.appendChild(pop.menu);
-    pop.menu.classList.toggle("pop-side", !!rail);
     pop.menu.classList.toggle("pop-sheet", sheet);
     pop.menu.classList.add("open");
     pop.menu.style.top = "";
@@ -6239,10 +6230,6 @@ ${explainCadence(cadence)}` : "");
     if (sheet) {
       pop.menu.scrollTop = 0;
       if (!pop.menu.querySelector(":scope > .pop-handle")) pop.menu.insertAdjacentHTML("afterbegin", '<div class="pop-handle" aria-hidden="true"></div>');
-    }
-    if (rail) {
-      const top = Math.min(trigger.offsetTop, rail.clientHeight - pop.menu.offsetHeight - 8);
-      pop.menu.style.top = `${Math.max(8, top)}px`;
     }
     trigger.setAttribute("aria-expanded", "true");
     current2 = { pop, trigger };
@@ -7065,7 +7052,7 @@ ${explainCadence(cadence)}` : "");
     setGrid(shown ? addCell(grid2, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid2, id));
   }
   function renderLayout(_panels, fieldsVisible) {
-    $("app").innerHTML = buildToolbar() + '<div class="workspace">' + buildRail() + `<div class="work-main"><div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, fieldsVisible)).join("")}</main></div></div>` + buildTabbar() + buildSettings();
+    $("app").innerHTML = buildToolbar() + `<div class="workspace"><div class="work-main"><div id="midi-banner"></div><main id="grid" class="grid" aria-label="${t("a11y.panels")}">${MODULE_IDS.map((id) => moduleFrame(id, fieldsVisible)).join("")}</main></div></div>` + buildTabbar() + `<div class="menu-store">${buildMenus()}</div>` + buildSettings();
     applyGrid();
     wireGrid();
     wireLayoutMenu();
@@ -7125,7 +7112,6 @@ ${explainCadence(cadence)}` : "");
   function buildToolbar() {
     return `
     <div id="z1-toolbar" class="toolbar" role="toolbar" aria-label="${t("a11y.toolbar")}">
-      <button id="btn-rail" class="ctrl-btn icon-btn ghost" title="${t("rail.title")}" aria-controls="rail">${ICONS.rail}</button>
       <span class="brand" title="Modus">${LOGO}<span class="brand-name">modus</span></span>
       <div class="pop-anchor">
         <button id="btn-key" class="key-btn" title="${t("key.menu.title")}"><span id="key-btn-name"></span><span id="key-btn-auto" class="key-btn-auto"></span></button>
@@ -7139,30 +7125,23 @@ ${explainCadence(cadence)}` : "");
       </div>
       <div class="tb-status">
         <div class="pop-anchor pop-end">
-          <button id="btn-input-status" class="status-btn" title="${t("a11y.group.input")}"><span id="midi-status" class="midi-status">MIDI</span><span id="mode-status" class="status-sub"></span></button>
+          <button id="btn-input-status" class="status-btn" title="${t("a11y.group.input")}"><span id="midi-status" class="midi-status">MIDI</span><span id="mode-status" class="status-sub"></span><span class="status-act" data-on="keyboard" title="${t("input.keyboard")}" hidden>${ICONS.keyboard}</span><span class="status-act" data-on="mic" title="${t("input.mic")}" hidden>${ICONS.mic}</span></button>
         </div>
         <div class="pop-anchor pop-end">
           <button id="btn-sound-status" class="status-btn" title="${t("a11y.group.sound")}"><span id="sound-status" class="sound-status"></span></button>
         </div>
+        <span class="tb-sep tb-page" aria-hidden="true"></span>
+        <div class="pop-anchor pop-end tb-page">
+          <button id="btn-layout" class="ctrl-btn icon-btn ghost" title="${t("layout.title")}">${ICONS.layout}</button>
+        </div>
+        <button id="btn-present" class="ctrl-btn icon-btn ghost tb-page" title="${t("present.title")}">${ICONS.present}</button>
+        <div class="pop-anchor pop-end tb-page">
+          <button id="btn-views" class="ctrl-btn icon-btn ghost" title="${t("views.title")}">${ICONS.views}</button>
+        </div>
+        <span class="tb-sep tb-page" aria-hidden="true"></span>
         <button id="btn-settings" class="ctrl-btn icon-btn ghost" title="${t("set.title.button")}" aria-haspopup="dialog">${ICONS.settings}</button>
         <button id="btn-help" class="ctrl-btn icon-btn ghost help-q" title="${t("help.title")}">?</button>
       </div>
-    </div>`;
-  }
-  function buildRail() {
-    return `
-    <div class="rail-col">
-      <nav id="rail" class="rail" aria-label="${t("a11y.rail")}">
-        <button id="rail-input" class="rail-btn" title="${t("a11y.group.input")}">${ICONS.midi}<span id="rail-midi-dot" class="rail-dot"></span></button>
-        <button id="rail-sound" class="rail-btn" title="${t("a11y.group.sound")}">${ICONS.sound}</button>
-        <button id="btn-keyboard" class="rail-btn" data-act="keyboard" title="${t("keyboard.title")}">${ICONS.keyboard}</button>
-        <button id="btn-mic" class="rail-btn" data-act="mic" title="${t("mic.title")}">${ICONS.mic}</button>
-        <span class="rail-sep" aria-hidden="true"></span>
-        <button id="btn-layout" class="rail-btn" title="${t("layout.title")}">${ICONS.layout}</button>
-        <button id="btn-present" class="rail-btn" title="${t("present.title")}">${ICONS.present}</button>
-        <button id="btn-views" class="rail-btn" title="${t("views.title")}">${ICONS.views}</button>
-        ${buildMenus()}
-      </nav>
     </div>`;
   }
   function buildTabbar() {
@@ -11101,6 +11080,9 @@ ${explainCadence(c.cadence)}` : ""}`;
   function updateComputerKeyboardButton() {
     const on = isComputerKeyboardOn();
     document.querySelectorAll('[data-act="keyboard"]').forEach((b) => b.classList.toggle("active-mode", on));
+    document.querySelectorAll('[data-on="keyboard"]').forEach((i) => {
+      i.hidden = !on;
+    });
     $2("keyboard-status").textContent = on ? computerKeyboardStatus() : "";
   }
   function noteVelocities(noteNames) {
@@ -11159,6 +11141,9 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function drawTuner(error) {
     document.querySelectorAll('[data-act="mic"]').forEach((b) => b.classList.toggle("active-mode", isMicOn()));
+    document.querySelectorAll('[data-on="mic"]').forEach((i) => {
+      i.hidden = !isMicOn();
+    });
     const el2 = document.getElementById("tuner-container");
     if (el2) renderTuner(el2, { toggle: toggleMic }, error);
   }
@@ -11440,8 +11425,8 @@ ${explainCadence(c.cadence)}` : ""}`;
   var FIFTHS_MAJOR = [6, 1, 8, 3, 10, 5, 0, 7, 2, 9, 4, 11];
   var keyMenuMode = "Major";
   function wireBar() {
-    wirePopover($2("input-menu"), [$2("rail-input"), $2("btn-input-status"), $2("tab-input")]);
-    wirePopover($2("sound-menu"), [$2("rail-sound"), $2("btn-sound-status"), $2("tab-sound")], () => {
+    wirePopover($2("input-menu"), [$2("btn-input-status"), $2("tab-input")]);
+    wirePopover($2("sound-menu"), [$2("btn-sound-status"), $2("tab-sound")], () => {
       const filter2 = $2("instrument-filter");
       filter2.value = "";
       renderChoices($2("audio-instrument"), $2("instrument-list"), "");
@@ -11460,18 +11445,6 @@ ${explainCadence(c.cadence)}` : ""}`;
       keyMenuMode = KEY_MODES.find((m) => m.toLowerCase() === b.dataset.keymode) ?? "Major";
       renderKeyGrid();
     }));
-    railOpen = loadBool("rail-open", true) && !isNarrow();
-    applyRail();
-    $2("btn-rail").addEventListener("click", () => {
-      railOpen = !railOpen;
-      if (!isNarrow()) save("rail-open", railOpen);
-      applyRail();
-    });
-    document.addEventListener("pointerdown", (e) => {
-      if (!railOpen || !isNarrow() || document.querySelector(".rail-col").contains(e.target)) return;
-      railOpen = false;
-      applyRail();
-    }, true);
     const input = $2("typed-chord");
     wireCommandSearch({
       input,
@@ -11488,12 +11461,6 @@ ${explainCadence(c.cadence)}` : ""}`;
     updateKeyButton();
     updateSoundStatus();
     setAudioStatusDot();
-  }
-  var railOpen = true;
-  function applyRail() {
-    document.body.classList.toggle("rail-hidden", !railOpen);
-    $2("btn-rail").setAttribute("aria-expanded", String(railOpen));
-    if (!railOpen) closePopover();
   }
   function pickKey(key) {
     const sel = $2("key-select");
@@ -11517,7 +11484,6 @@ ${explainCadence(c.cadence)}` : ""}`;
     el2.textContent = text;
     el2.title = title;
     el2.style.setProperty("--dot", color2);
-    $2("rail-midi-dot").style.background = color2;
   }
   function updateSoundStatus() {
     const name = instrumentLabel($2("audio-instrument").value);
@@ -11587,7 +11553,6 @@ ${explainCadence(c.cadence)}` : ""}`;
         run: () => b.click()
       })),
       ...settingsCommands(),
-      { label: t("cmd.rail"), run: () => $2("btn-rail").click() },
       ...GM_INSTRUMENT_GROUPS.flatMap((g) => g.instruments.map((i) => ({
         label: t("cmd.instrument", { name: instrumentLabel(i) }),
         hint: t(g.label),

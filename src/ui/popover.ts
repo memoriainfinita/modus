@@ -1,6 +1,6 @@
 // Menus that open from a button: one open at a time, closed by a press elsewhere or Esc.
-// A menu can have several buttons (the rail's icon and the bar's status); it opens next to
-// the one pressed: out to the right of the rail, or below the bar.
+// A menu can have several buttons (the top bar's and the bottom bar's on a phone); it opens
+// under the one pressed.
 
 type Pop = { menu: HTMLElement; onOpen?: () => void }
 let current: { pop: Pop; trigger: HTMLElement } | null = null
@@ -26,10 +26,8 @@ const phone = () => matchMedia('(max-width: 720px)').matches
 function openPopover(pop: Pop, trigger: HTMLElement) {
   closePopover()
   const sheet = phone() && SHEETS.has(pop.menu.id)
-  const rail = sheet ? null : trigger.closest<HTMLElement>('#rail')
-  const anchor = sheet ? document.body : rail ?? trigger.closest<HTMLElement>('.pop-anchor') ?? trigger.parentElement!
+  const anchor = sheet ? document.body : trigger.closest<HTMLElement>('.pop-anchor') ?? trigger.parentElement!
   anchor.appendChild(pop.menu)
-  pop.menu.classList.toggle('pop-side', !!rail)
   pop.menu.classList.toggle('pop-sheet', sheet)
   pop.menu.classList.add('open')
   pop.menu.style.top = ''
@@ -37,11 +35,6 @@ function openPopover(pop: Pop, trigger: HTMLElement) {
   if (sheet) {
     pop.menu.scrollTop = 0
     if (!pop.menu.querySelector(':scope > .pop-handle')) pop.menu.insertAdjacentHTML('afterbegin', '<div class="pop-handle" aria-hidden="true"></div>')
-  }
-  if (rail) {
-    // Level with its icon, kept inside the rail's height (layout px: zoom does not change them)
-    const top = Math.min(trigger.offsetTop, rail.clientHeight - pop.menu.offsetHeight - 8)
-    pop.menu.style.top = `${Math.max(8, top)}px`
   }
   trigger.setAttribute('aria-expanded', 'true')
   current = { pop, trigger }
