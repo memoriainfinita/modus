@@ -1047,6 +1047,25 @@ await check('the piano lights every spelled note: C# E# G# in F# Major', async (
   await off([61, 65, 68])
 })
 
+await check('the neck view names the notes as spelled: F# in D on Auto, E# in F# Major', async () => {
+  const neckNames = async () => (await page.locator('#guitar-container .strings-drawing text').allTextContents()).filter(t => /^[A-G]/.test(t))
+  await page.click('.strings-tab[data-view="neck"]')
+  await setKey('')
+  await on([50, 57, 62, 66])
+  await page.waitForTimeout(100)
+  const d = await neckNames()
+  await off([50, 57, 62, 66])
+  await setKey('F# Major')
+  await on([61, 65, 68])
+  await page.waitForTimeout(100)
+  const cs = await neckNames()
+  await off([61, 65, 68])
+  await page.click('.strings-tab[data-view="shapes"]')
+  await setKey('')
+  assert(d.includes('F#') && !d.includes('Gb'), `D: ${d.join(',')}`)
+  assert(cs.includes('E#') && !cs.includes('F'), `C#: ${cs.join(',')}`)
+})
+
 await check('staff renders a key signature for F# Major', async () => {
   await setKey('F# Major')
   await play([66, 70, 73])

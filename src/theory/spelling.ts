@@ -1,6 +1,7 @@
 // Note and chord spelling for display. UMT does the theory (spellPitchInKey, spellChord,
 // spellChordInKey); this module applies it to detector results and chord symbols.
-// Without a key, names stay as they come (MIDI input: flats).
+// Without a key, a chord's notes are written by the chord (F# in D); single notes and
+// intervals stay as they come (MIDI input: flats).
 
 import type { DetectionResult } from '../types'
 import { noteNameToMidi, nameAtMidi, pitchClassOf } from './notes'
@@ -54,7 +55,12 @@ export function spellVoicing(names: string[], symbol: string | null, key: string
 
 /** A MIDI detection written in the key: chord names (root by the key), notes, single note, interval. */
 export function spellDetection(d: DetectionResult, key: string | null): DetectionResult {
-  if (!d || !key) return d
+  if (!d) return d
+  if (!key) {
+    if (d.kind === 'note' || d.kind === 'interval') return d
+    const symbol = d.candidates[d.selectedIndex]
+    return { ...d, notes: spellVoicing(d.notes, symbol === '?' ? null : symbol, null) }
+  }
   if (d.kind === 'note') {
     const noteName = spellName(d.noteName, key)
     return { ...d, noteName, pitchClass: noteName.replace(/-?\d+$/, '') }

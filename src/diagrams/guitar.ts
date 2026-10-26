@@ -310,10 +310,13 @@ function neckPositions(noteNames: string[], open: number[], split: boolean): Sca
   return split ? neckWindows(whole) : [whole]
 }
 
-function neckSvg(pos: ScalePosition, preferFlats: boolean, vertical: boolean): string {
+// Each dot named as the note sounding there is spelled (F# in D, not Gb), not by a flat or sharp preference
+function neckSvg(pos: ScalePosition, noteNames: string[], open: number[], preferFlats: boolean, vertical: boolean): string {
+  const spelled = new Map(noteNames.map(n => [noteNameToMidi(n), n.replace(/-?\d+$/, '')]))
   const frets = pos.frets.map(fs => fs.length ? fs : [null])
-  const style = { ...neckStyle(preferFlats, vertical), numFrets: pos.span }
-  return tryUMT('neck', () => Notae.renderFretboard({ name: '', frets, baseFret: pos.baseFret, tuning: guitarStringTuning } as any, style), '')
+  const dotLabels = pos.frets.map((fs, i) => fs.map(f => spelled.get(open[i] + f) ?? ''))
+  const style = { ...neckStyle(preferFlats, vertical), numFrets: pos.span, showNoteNames: false }
+  return tryUMT('neck', () => Notae.renderFretboard({ name: '', frets, baseFret: pos.baseFret, dotLabels, tuning: guitarStringTuning } as any, style), '')
 }
 
 // A position wider than this many frets is not played with the hand in one place
@@ -429,7 +432,7 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
     const idx = Math.min(neckIdx, total - 1)
     const pos = positions[idx]
     const where = split ? t('strings.scale.frets', { from: pos.baseFret === 1 ? 0 : pos.baseFret, to: pos.baseFret + pos.span - 1 }) : ''
-    container.innerHTML = tabs() + stage(neckSvg(pos, preferFlats, neckDrawnVertical), t('a11y.strings', { chord: named }), total) + foot(where, total, idx)
+    container.innerHTML = tabs() + stage(neckSvg(pos, noteNames, open, preferFlats, neckDrawnVertical), t('a11y.strings', { chord: named }), total) + foot(where, total, idx)
     localizeDrawnNoteNames(container.querySelector('.strings-drawing')!)
     container.querySelectorAll<HTMLElement>('.guitar-nav').forEach(btn => {
       btn.addEventListener('click', () => {

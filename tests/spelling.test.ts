@@ -39,9 +39,16 @@ describe('spellDetection', () => {
     expect(i?.kind === 'interval' && i.notes).toEqual(['F#4', 'A#4'])
   })
 
-  it('without a key, MIDI input keeps its flats', () => {
-    const d = detect([68, 71, 75], null)
-    expect(d?.kind === 'chord' && d.notes).toEqual(['Ab4', 'B4', 'Eb5'])
+  it('without a key, a chord\'s notes are written by the chord: F# in D, Cb in Abm', () => {
+    const d = detect([62, 66, 69], null)
+    expect(d?.kind === 'chord' && [d.candidates[0], d.notes]).toEqual(['D', ['D4', 'F#4', 'A4']])
+    const m = detect([68, 71, 75], null)
+    expect(m?.kind === 'chord' && [m.candidates[0], m.notes]).toEqual(['Abm', ['Ab4', 'Cb5', 'Eb5']])
+  })
+
+  it('without a key, a single note keeps MIDI\'s flats', () => {
+    const n = detect([66], null)
+    expect(n?.kind === 'note' && n.noteName).toBe('Gb4')
   })
 })
 
