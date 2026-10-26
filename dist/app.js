@@ -3677,7 +3677,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   var onVoicingChange = () => {
   };
   function getGuitarVoicingIndex() {
-    return stringsView === "scale" ? scaleIdx : guitarVoicingIdx;
+    return stringsView === "scale" ? scaleIdx : stringsView === "neck" ? neckIdx : guitarVoicingIdx;
   }
   function setGuitarVoicingChange(cb) {
     onVoicingChange = cb;
@@ -3901,6 +3901,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   var neckNarrow = (container2) => container2.clientWidth < NARROW_NECK;
   var neckDrawnVertical = null;
   var neckDrawnNarrow = false;
+  var neckIdx = 0;
   var watched = /* @__PURE__ */ new WeakSet();
   function watchShape(container2) {
     if (watched.has(container2) || typeof ResizeObserver === "undefined") return;
@@ -3911,13 +3912,16 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       }
     }).observe(container2);
   }
-  function neckSvg(noteNames, open2, preferFlats, vertical) {
+  function neckPositions(noteNames, open2, split) {
     const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
-    const frets = open2.map((o) => {
-      const pos = midi.map((n) => n - o).filter((f) => f >= 0 && f <= NECK_FRETS);
-      return pos.length ? pos : [null];
-    });
-    return tryUMT("neck", () => Notae.renderFretboard({ name: "", frets, tuning: guitarStringTuning }, neckStyle(preferFlats, vertical)), "");
+    const frets = open2.map((o) => midi.map((n) => n - o).filter((f) => f >= 0 && f <= NECK_FRETS));
+    const whole = { name: "", frets, degrees: frets.map((fs) => fs.map(() => 0)), baseFret: 1, span: NECK_FRETS };
+    return split ? neckWindows(whole) : [whole];
+  }
+  function neckSvg(pos, preferFlats, vertical) {
+    const frets = pos.frets.map((fs) => fs.length ? fs : [null]);
+    const style = { ...neckStyle(preferFlats, vertical), numFrets: pos.span };
+    return tryUMT("neck", () => Notae.renderFretboard({ name: "", frets, baseFret: pos.baseFret, tuning: guitarStringTuning }, style), "");
   }
   var REACH = 6;
   function positionLabel(pos) {
@@ -4006,8 +4010,22 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     if (stringsView === "neck") {
       neckDrawnVertical = neckVertical(container2);
       neckDrawnNarrow = neckNarrow(container2);
-      container2.innerHTML = tabs() + stage(neckSvg(noteNames, open2, preferFlats, neckDrawnVertical), t("a11y.strings", { chord: named }), 0) + foot("", 0, 0);
+      const split = !neckDrawnVertical && neckDrawnNarrow;
+      const positions = neckPositions(noteNames, open2, split);
+      const total2 = positions.length;
+      if (voicingIndex !== void 0) neckIdx = voicingIndex;
+      const idx2 = Math.min(neckIdx, total2 - 1);
+      const pos = positions[idx2];
+      const where = split ? t("strings.scale.frets", { from: pos.baseFret === 1 ? 0 : pos.baseFret, to: pos.baseFret + pos.span - 1 }) : "";
+      container2.innerHTML = tabs() + stage(neckSvg(pos, preferFlats, neckDrawnVertical), t("a11y.strings", { chord: named }), total2) + foot(where, total2, idx2);
       localizeDrawnNoteNames(container2.querySelector(".strings-drawing"));
+      container2.querySelectorAll(".guitar-nav").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          neckIdx = (idx2 + parseInt(btn.dataset.dir) + total2) % total2;
+          renderGuitar(container2, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
+          onVoicingChange(neckIdx);
+        });
+      });
       wireChrome(container2);
       return;
     }

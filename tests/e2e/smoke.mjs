@@ -1623,7 +1623,7 @@ await check('a phone: the bar at the bottom opens its menus as sheets; Help is f
   assert(help.keys === 0 && help.sections[0] === 'Gestures' && !help.sections.includes('Mouse'), `help: ${JSON.stringify(help)}`)
 })
 
-await check('a phone: the scale\'s whole neck goes four frets at a time, with ‹ ›', async () => {
+await check('a phone: the scale\'s whole neck and the Neck view go four frets at a time, with ‹ ›', async () => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: 'en-US' })
   await context.addInitScript(FAKE_MIDI)
   const p = await context.newPage()
@@ -1641,9 +1641,17 @@ await check('a phone: the scale\'s whole neck goes four frets at a time, with �
   await p.tap('#guitar-container .guitar-nav[data-dir="1"]')
   const second = await caption()
   const dots = await p.locator('#guitar-container .strings-dot').count()
+  // Neck: the window stays while the chord changes
+  await p.tap('.strings-tab[data-view="neck"]')
+  await p.tap('#guitar-container .guitar-nav[data-dir="1"]')
+  await p.evaluate(() => [50, 57, 62, 66].forEach(n => window.__midi([0x90, n, 100])))
+  await p.waitForTimeout(100)
+  const neck = await caption()
+  const neckNotes = await p.locator('#guitar-container .strings-drawing text').allTextContents()
   await context.close()
   assert(first.includes('frets 0–4') && second.includes('frets 5–8'), `captions: ${first} | ${second}`)
   assert(dots === 3, `windows: ${dots}`)
+  assert(neck.includes('frets 5–8') && neckNotes.includes('D'), `neck: ${neck}, ${neckNotes.join(',')}`)
 })
 
 await check('offline: once opened, the app loads and plays without a network', async () => {

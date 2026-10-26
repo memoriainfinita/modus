@@ -21,7 +21,7 @@ let guitarVoicingIdx = 0
 let onVoicingChange: (idx: number) => void = () => {}
 
 /** The voicing or scale position on screen (index into the view's list), for view windows. */
-export function getGuitarVoicingIndex(): number { return stringsView === 'scale' ? scaleIdx : guitarVoicingIdx }
+export function getGuitarVoicingIndex(): number { return stringsView === 'scale' ? scaleIdx : stringsView === 'neck' ? neckIdx : guitarVoicingIdx }
 export function setGuitarVoicingChange(cb: (idx: number) => void) { onVoicingChange = cb }
 let lastGuitarSymbol: string | null = null
 let lastNoteNames: string[] = []
@@ -290,6 +290,7 @@ const NARROW_NECK = 520
 const neckNarrow = (container: HTMLElement) => container.clientWidth < NARROW_NECK
 let neckDrawnVertical: boolean | null = null
 let neckDrawnNarrow = false
+let neckIdx = 0
 const watched = new WeakSet<HTMLElement>()
 function watchShape(container: HTMLElement) {
   if (watched.has(container) || typeof ResizeObserver === 'undefined') return
@@ -301,14 +302,18 @@ function watchShape(container: HTMLElement) {
   }).observe(container)
 }
 
-/** Every fret (0–12) on each string where a sounding note is. */
-function neckSvg(noteNames: string[], open: number[], preferFlats: boolean, vertical: boolean): string {
+/** Every fret (0–12) on each string where a sounding note is: the whole neck, or one of its windows when narrow. */
+function neckPositions(noteNames: string[], open: number[], split: boolean): ScalePosition[] {
   const midi = noteNames.map(noteNameToMidi).filter((n): n is number => n !== null)
-  const frets = open.map(o => {
-    const pos = midi.map(n => n - o).filter(f => f >= 0 && f <= NECK_FRETS)
-    return pos.length ? pos : [null]
-  })
-  return tryUMT('neck', () => Notae.renderFretboard({ name: '', frets, tuning: guitarStringTuning } as any, neckStyle(preferFlats, vertical)), '')
+  const frets = open.map(o => midi.map(n => n - o).filter(f => f >= 0 && f <= NECK_FRETS))
+  const whole = { name: '', frets, degrees: frets.map(fs => fs.map(() => 0)), baseFret: 1, span: NECK_FRETS }
+  return split ? neckWindows(whole) : [whole]
+}
+
+function neckSvg(pos: ScalePosition, preferFlats: boolean, vertical: boolean): string {
+  const frets = pos.frets.map(fs => fs.length ? fs : [null])
+  const style = { ...neckStyle(preferFlats, vertical), numFrets: pos.span }
+  return tryUMT('neck', () => Notae.renderFretboard({ name: '', frets, baseFret: pos.baseFret, tuning: guitarStringTuning } as any, style), '')
 }
 
 // A position wider than this many frets is not played with the hand in one place
@@ -416,8 +421,23 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
   if (stringsView === 'neck') {
     neckDrawnVertical = neckVertical(container)
     neckDrawnNarrow = neckNarrow(container)
-    container.innerHTML = tabs() + stage(neckSvg(noteNames, open, preferFlats, neckDrawnVertical), t('a11y.strings', { chord: named }), 0) + foot('', 0, 0)
+    // The window stays where it is while chords change: the hand keeps its place on the neck
+    const split = !neckDrawnVertical && neckDrawnNarrow
+    const positions = neckPositions(noteNames, open, split)
+    const total = positions.length
+    if (voicingIndex !== undefined) neckIdx = voicingIndex
+    const idx = Math.min(neckIdx, total - 1)
+    const pos = positions[idx]
+    const where = split ? t('strings.scale.frets', { from: pos.baseFret === 1 ? 0 : pos.baseFret, to: pos.baseFret + pos.span - 1 }) : ''
+    container.innerHTML = tabs() + stage(neckSvg(pos, preferFlats, neckDrawnVertical), t('a11y.strings', { chord: named }), total) + foot(where, total, idx)
     localizeDrawnNoteNames(container.querySelector('.strings-drawing')!)
+    container.querySelectorAll<HTMLElement>('.guitar-nav').forEach(btn => {
+      btn.addEventListener('click', () => {
+        neckIdx = (idx + parseInt(btn.dataset.dir!) + total) % total
+        renderGuitar(container, lastGuitarSymbol, lastNoteNames, undefined, lastPreferFlats)
+        onVoicingChange(neckIdx)
+      })
+    })
     wireChrome(container)
     return
   }
