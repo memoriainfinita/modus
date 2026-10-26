@@ -74,6 +74,12 @@ describe('substitutesFor', () => {
     expect(substitutesFor('Dm7', 'C Major').map(s => s.symbol)).toEqual(['Fmaj7', 'Fm7', 'Bb7', 'Dm7b5'])
   })
 
+  it('in minor the deceptive resolution goes to VI and V trades with the harmonic minor vii° (UMT 0.12)', () => {
+    expect(substitutesFor('E7', 'A Minor')).toContainEqual({ symbol: 'F', type: 'deceptive' })
+    expect(substitutesFor('E7', 'A Minor')).toContainEqual({ symbol: 'G#dim7', type: 'diatonic' })
+    expect(substitutesFor('E', 'A Minor').map(s => s.symbol)).toContain('G#dim')
+  })
+
   it('nothing without a key or a readable chord', () => {
     expect(substitutesFor('G7', null)).toEqual([])
     expect(substitutesFor('?', 'C Major')).toEqual([])
