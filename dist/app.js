@@ -859,6 +859,7 @@
     "menu.optionsOf": "Options of {name}",
     "menu.size": "Text size",
     "menu.clef": "Staves",
+    "menu.staffNames": "Names",
     "menu.prev": "Chord before",
     "menu.fields": "Fields",
     "menu.flat": "Flats",
@@ -905,6 +906,10 @@
     "staff.clef.grand": "Grand",
     "staff.clef.treble": "Treble",
     "staff.clef.bass": "Bass",
+    "staff.names.title": "A column right of the staff with each note at its height: its name, or its degree in the chord (R 3 \u266D7)",
+    "staff.names.off": "None",
+    "staff.names.notes": "Notes",
+    "staff.names.degrees": "Degrees",
     "staff.prev.title": "Write the chord before next to this one, to see each voice move",
     "piano.prev.title": "Mark the keys of the chord before, to see each voice move",
     "menu.scale": "Scale",
@@ -1874,6 +1879,7 @@
     "menu.optionsOf": "Opciones de {name}",
     "menu.size": "Tama\xF1o del texto",
     "menu.clef": "Pentagramas",
+    "menu.staffNames": "Nombres",
     "menu.prev": "Acorde anterior",
     "menu.fields": "Campos",
     "menu.flat": "Bemoles",
@@ -1918,6 +1924,10 @@
     "staff.clef.grand": "Doble",
     "staff.clef.treble": "Sol",
     "staff.clef.bass": "Fa",
+    "staff.names.title": "Una columna a la derecha del pentagrama con cada nota a su altura: su nombre, o su grado en el acorde (R 3 \u266D7)",
+    "staff.names.off": "Ninguno",
+    "staff.names.notes": "Notas",
+    "staff.names.degrees": "Grados",
     "staff.prev.title": "Escribir el acorde anterior junto a este, para ver moverse cada voz",
     "piano.prev.title": "Marcar las teclas del acorde anterior, para ver moverse cada voz",
     "menu.scale": "Escala",
@@ -3030,6 +3040,19 @@
     const degrees = [...new Set(v.voices.map((n) => n.degree ? accidentals(n.degree) : `+${noteLabel(pcName(n.note))}`))];
     return { position: bassText(v), layout: layout || null, degrees };
   }
+  function noteDegrees(noteNames, chord) {
+    const v = readVoicing(noteNames, chord);
+    if (!v) return null;
+    return noteNames.map((n) => {
+      const degree = v.voices.find((x) => x.note === n)?.degree;
+      return degree ? accidentals(degree) : `+${noteLabel(pcName(n))}`;
+    });
+  }
+  function staffLabels(mode4, noteNames, chordSymbol) {
+    if (mode4 === "off" || !noteNames.length) return null;
+    const chord = mode4 === "degrees" && chordSymbol ? tryParseChord(chordSymbol) : null;
+    return chord && noteDegrees(noteNames, chord) || noteNames.map((n) => noteLabel(pcName(n)));
+  }
   var pcOf = (name) => pitchClassOf(pcName(name));
   function presentUpperStructures(noteNames, chord) {
     const sounding3 = new Set(noteNames.map(pcOf));
@@ -3508,9 +3531,81 @@ ${bar(prev && upper(prev), upper(notes2), empty)}
 V:LH clef=bass
 ${bar(prev && lower(prev), lower(notes2), empty)}`;
   }
-  function renderStaff(container2, noteNames, width = 380, keyStr = null, scale = 2, clef = "treble", prevNotes = null) {
+  var STAFF_NAMES = ["off", "notes", "degrees"];
+  var BOTTOM_LINE = { treble: 4 * 7 + 2, bass: 2 * 7 + 4 };
+  function placeNames(noteNames, labels, clef, staves, gap) {
+    const placed = noteNames.flatMap((n, i) => {
+      const step2 = parseNotes([n], {})[0]?.step;
+      if (step2 === void 0 || !labels[i]) return [];
+      const onTreble = clef === "treble" || clef === "grand" && step2 >= MIDDLE_C;
+      const staff = clef === "grand" && !onTreble ? staves[1] : staves[0];
+      if (!staff) return [];
+      const bottom = staff.top + 4 * staff.spacing;
+      return [{ step: step2, y: bottom - (step2 - BOTTOM_LINE[onTreble ? "treble" : "bass"]) * staff.spacing / 2, text: labels[i] }];
+    }).sort((a, b) => a.step - b.step);
+    placed.forEach((p, i) => {
+      if (i > 0) p.y = Math.min(p.y, placed[i - 1].y - gap);
+    });
+    return placed.map(({ y, text }) => ({ y, text }));
+  }
+  function lineBox(p) {
+    if (p?.tagName.toLowerCase() === "line") {
+      const a = (name) => parseFloat(p.getAttribute(name) ?? "");
+      return Number.isFinite(a("y1")) ? { y: a("y1"), right: Math.max(a("x1"), a("x2")) } : null;
+    }
+    const n = (p?.getAttribute("d")?.match(/-?[\d.]+/g) ?? []).map(Number);
+    return n.length >= 8 ? { y: (n[1] + n[5]) / 2, right: Math.max(n[0], n[2]) } : null;
+  }
+  function endLineAt(p, right) {
+    if (p.tagName.toLowerCase() === "line") {
+      p.setAttribute("x2", String(right));
+      return;
+    }
+    const n = (p.getAttribute("d")?.match(/-?[\d.]+/g) ?? []).map(Number);
+    if (n.length >= 8) p.setAttribute("d", `M ${n[0]} ${n[1]} L ${right} ${n[3]} L ${right} ${n[5]} L ${n[6]} ${n[7]} z`);
+  }
+  function drawnStaves(svg) {
+    return [...svg.querySelectorAll(".abcjs-top-line")].flatMap((top) => {
+      const lines = [top];
+      while (lines.length < 5 && lines[lines.length - 1].nextElementSibling) lines.push(lines[lines.length - 1].nextElementSibling);
+      const a = lineBox(lines[0]), b = lineBox(lines[1]);
+      if (!a || !b || lines.length < 5) return [];
+      return [{ top: a.y, spacing: b.y - a.y, lines }];
+    });
+  }
+  function drawNames(container2, noteNames, labels, clef) {
+    const svg = container2.querySelector("svg");
+    const staves = svg ? drawnStaves(svg) : [];
+    if (!svg || !staves.length) return;
+    const size = staves[0].spacing;
+    const heads = [...svg.querySelectorAll(".abcjs-notehead")].map((h) => {
+      const b = h.getBBox();
+      return b.x + b.width;
+    });
+    const drawnRight = Math.max(...staves.map((s) => lineBox(s.lines[0])?.right ?? 0));
+    const right = heads.length ? Math.min(drawnRight, Math.max(...heads) + size * 1.5) : drawnRight;
+    staves.forEach((s) => s.lines.forEach((l) => endLineAt(l, right)));
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "staff-names");
+    g.setAttribute("stroke", "none");
+    for (const { y, text } of placeNames(noteNames, labels, clef, staves, size)) {
+      const el2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      el2.setAttribute("x", String(right + size));
+      el2.setAttribute("y", String(y));
+      el2.setAttribute("dominant-baseline", "central");
+      el2.setAttribute("font-size", String(size));
+      el2.setAttribute("font-weight", "400");
+      el2.setAttribute("fill", "currentColor");
+      el2.setAttribute("fill-opacity", "0.8");
+      el2.textContent = text;
+      g.appendChild(el2);
+    }
+    svg.appendChild(g);
+  }
+  function renderStaff(container2, noteNames, width = 380, keyStr = null, scale = 2, clef = "treble", prevNotes = null, labels = null) {
     ABCJS.renderAbc(container2, buildStaffAbc(noteNames, keyStr, clef, prevNotes), { staffwidth: width - 20, scale, add_classes: !!prevNotes?.length });
     if (prevNotes?.length) container2.querySelectorAll(".abcjs-note.abcjs-m0").forEach((el2) => el2.classList.add("staff-prev"));
+    if (labels?.length) drawNames(container2, noteNames, labels, clef);
   }
 
   // src/theory/scales.ts
@@ -7256,6 +7351,8 @@ ${explainCadence(cadence)}` : "");
         return `
       ${heading(t("menu.clef"))}
       <div class="menu-chips" role="group" aria-label="${t("menu.clef")}" title="${t("staff.clef.title")}">${STAFF_CLEFS.map((c) => `<button type="button" class="menu-chip" data-clef="${c}" data-label="${escapeHtml(`${t("menu.clef")}: ${t(`staff.clef.${c}`)}`)}" aria-pressed="false">${t(`staff.clef.${c}`)}</button>`).join("")}</div>
+      ${heading(t("menu.staffNames"))}
+      <div class="menu-chips" role="group" aria-label="${t("menu.staffNames")}" title="${t("staff.names.title")}">${STAFF_NAMES.map((n) => `<button type="button" class="menu-chip" data-staff-names="${n}" data-label="${escapeHtml(`${t("menu.staffNames")}: ${t(`staff.names.${n}`)}`)}" aria-pressed="false">${t(`staff.names.${n}`)}</button>`).join("")}</div>
       ${item("btn-staff-prev", t("menu.prev"), t("staff.prev.title"))}`;
       case "piano":
         return item("btn-piano-prev", t("menu.prev"), t("piano.prev.title")) + item("btn-piano-scale", t("menu.scale"), t("piano.scale.title"));
@@ -7918,7 +8015,16 @@ ${explainCadence(cadence)}` : "");
     if (view2 === "staff") {
       el2.innerHTML = "<div></div>";
       const inner = el2.firstElementChild;
-      renderStaff(inner, s.notes, 200, s.key, 1, loadChoice("staff-clef", STAFF_CLEFS, "grand"));
+      renderStaff(
+        inner,
+        s.notes,
+        200,
+        s.key,
+        1,
+        loadChoice("staff-clef", STAFF_CLEFS, "grand"),
+        null,
+        staffLabels(loadChoice("staff-names", STAFF_NAMES, "off"), s.notes, s.symbol)
+      );
       inner.style.height = "100%";
       inner.style.width = "100%";
     } else if (view2 === "cof") renderCircleOfFifths(el2, s.key, s.symbol, () => {
@@ -7950,7 +8056,7 @@ ${explainCadence(cadence)}` : "");
     document.body.appendChild(el2);
     subscribeView((s) => renderView(view2, el2, s));
     window.addEventListener("storage", (e) => {
-      if (e.key && /^(guitar-|cof-|staff-clef|piano-scale$|lang$|note-names$)/.test(e.key)) location.reload();
+      if (e.key && /^(guitar-|cof-|staff-clef|staff-names$|piano-scale$|lang$|note-names$)/.test(e.key)) location.reload();
     });
     return true;
   }
@@ -10361,6 +10467,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   var STAFF_WIDTH = 380;
   var COF_SIZE = 300;
   var staffClef = loadChoice("staff-clef", STAFF_CLEFS, "grand");
+  var staffNames = loadChoice("staff-names", STAFF_NAMES, "off");
   var cofAccidental = loadChoice("cof-accidental", ["flat", "sharp"], "flat");
   var cofShowMinor = loadBool("cof-show-minor", true);
   var cofShowDegrees = loadBool("cof-show-degrees", false);
@@ -10642,6 +10749,15 @@ ${explainCadence(c.cadence)}` : ""}`;
       staffClef = b.dataset.clef;
       save("staff-clef", staffClef);
       showClef();
+      renderZone1Diagrams(displayedNotes(), selectedSymbol());
+    }));
+    const nameChips = [...document.querySelectorAll("#menu-staff [data-staff-names]")];
+    const showNames = () => nameChips.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.staffNames === staffNames)));
+    showNames();
+    nameChips.forEach((b) => b.addEventListener("click", () => {
+      staffNames = b.dataset.staffNames;
+      save("staff-names", staffNames);
+      showNames();
       renderZone1Diagrams(displayedNotes(), selectedSymbol());
     }));
     const prevButtons = [$2("btn-staff-prev"), $2("btn-piano-prev")];
@@ -11154,7 +11270,8 @@ ${explainCadence(c.cadence)}` : ""}`;
     syncCofAccidentalButtons();
     const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
     const prev = showPrevChord && chordSymbol ? prevVoicing : null;
-    renderIfChanged("staff", `${notes2}|${key}|${staffClef}|${prev?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev));
+    const labels = staffLabels(staffNames, noteNames, chordSymbol);
+    renderIfChanged("staff", `${notes2}|${key}|${staffClef}|${prev?.join(" ")}|${labels?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev, labels));
     const fn = chordSymbol ? state.analysis?.function ?? null : null;
     const pianoScale = showPianoScale && key ? scaleInfo(scaleSymbol(key, "key")) : null;
     renderIfChanged("piano", `${notes2}|${fn}|${prev?.join(" ")}|${containerOctaves($2("piano-container"))}|${pianoScale?.names.join(" ")}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev, pianoScale));

@@ -4,7 +4,8 @@
 
 import { subscribeView, VIEW_BACKGROUNDS, VIEW_NAMES } from './channel'
 import type { ViewName, ViewBackground, ViewState } from './channel'
-import { renderStaff, STAFF_CLEFS } from '../diagrams/staff'
+import { renderStaff, STAFF_CLEFS, STAFF_NAMES } from '../diagrams/staff'
+import { staffLabels } from '../detector/analyzer'
 import { renderPiano } from '../diagrams/piano'
 import { renderGuitar, setGuitarScaleContext } from '../diagrams/guitar'
 import { renderCircleOfFifths, cofAccidentalFor } from '../diagrams/cof'
@@ -45,7 +46,8 @@ export function renderView(view: ViewName, el: HTMLElement, s: ViewState) {
     // draws into, so it draws into an inner one that is then stretched.
     el.innerHTML = '<div></div>'
     const inner = el.firstElementChild as HTMLElement
-    renderStaff(inner, s.notes, 200, s.key, 1, loadChoice('staff-clef', STAFF_CLEFS, 'grand'))
+    renderStaff(inner, s.notes, 200, s.key, 1, loadChoice('staff-clef', STAFF_CLEFS, 'grand'), null,
+      staffLabels(loadChoice('staff-names', STAFF_NAMES, 'off'), s.notes, s.symbol))
     inner.style.height = '100%'
     inner.style.width = '100%'
   }
@@ -86,7 +88,7 @@ export function runViewerFromUrl(): boolean {
   // Guitar tuning, CoF options, the staff clef, language and note names live in localStorage: when
   // the main window changes them, the view reloads with them (songs are saved there too, and are ignored).
   window.addEventListener('storage', e => {
-    if (e.key && /^(guitar-|cof-|staff-clef|piano-scale$|lang$|note-names$)/.test(e.key)) location.reload()
+    if (e.key && /^(guitar-|cof-|staff-clef|staff-names$|piano-scale$|lang$|note-names$)/.test(e.key)) location.reload()
   })
   return true
 }

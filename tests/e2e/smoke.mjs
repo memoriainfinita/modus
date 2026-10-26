@@ -932,6 +932,33 @@ await check('the staves: grand, treble or bass, each in view in the menu, the on
   assert((await chosen()).join() === 'grand' && grand > treble * 1.4, `heights ${grand} ${treble}`)
 })
 
+await check('names beside the staff: off by default, then notes or degrees at each note\'s height, across both staves', async () => {
+  const names = () => page.locator('#staff-container .staff-names text').evaluateAll(es =>
+    es.map(e => ({ text: e.textContent, y: +e.getAttribute('y') })))
+  const pressed = () => page.locator('#menu-staff [data-staff-names][aria-pressed="true"]').evaluateAll(es => es.map(e => e.dataset.staffNames))
+  const chord = [48, 64, 67, 70]   // C3 E4 G4 Bb4: C7 with its root on the bass staff
+  await on(chord)
+  assert((await names()).length === 0 && (await pressed()).join() === 'off', 'a column by default')
+  await option('staff', '#menu-staff [data-staff-names="degrees"]')
+  const deg = await names()
+  assert(deg.map(n => n.text).join(' ') === 'R 3 5 ♭7', `degrees: ${deg.map(n => n.text)}`)
+  assert(deg.every((n, i) => i === 0 || n.y < deg[i - 1].y), 'from the bass up')
+  assert(deg[0].y - deg[1].y > 40, `the root on the bass staff: ${deg.map(n => n.y)}`)
+  // The staff ends a little after the chord: the column stands beside the notes
+  const gap = await page.locator('#staff-container svg').evaluate(svg => {
+    const head = Math.max(...[...svg.querySelectorAll('.abcjs-notehead')].map(h => { const b = h.getBBox(); return b.x + b.width }))
+    const text = Math.min(...[...svg.querySelectorAll('.staff-names text')].map(t => +t.getAttribute('x')))
+    const spacing = svg.querySelector('.staff-names text').getAttribute('font-size')
+    return (text - head) / spacing
+  })
+  assert(gap > 1 && gap < 4, `column ${gap.toFixed(1)} lines from the chord`)
+  await option('staff', '#menu-staff [data-staff-names="notes"]')
+  assert((await names()).map(n => n.text).join(' ') === 'C E G Bb', `notes: ${(await names()).map(n => n.text)}`)
+  await off(chord)
+  await option('staff', '#menu-staff [data-staff-names="off"]')
+  assert((await names()).length === 0, 'off again')
+})
+
 await check('a panel\'s preferences in its menu are the ones in Settings', async () => {
   await option('progressions', '#menu-progressions [data-pref-step="progression-bpm"][data-dir="1"]')
   await openSettings('practice')

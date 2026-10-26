@@ -185,6 +185,30 @@ export function voicingCard(noteNames: string[], chord: any): VoicingCard | null
   return { position: bassText(v), layout: layout || null, degrees }
 }
 
+/**
+ * Each note's member of the chord, parallel to `noteNames` ("R", "♭7", a note outside it as
+ * "+E"), for the column beside the staff. Null for fewer than 3 notes or a chord UMT cannot read.
+ */
+export function noteDegrees(noteNames: string[], chord: any): string[] | null {
+  const v = readVoicing(noteNames, chord)
+  if (!v) return null
+  return noteNames.map(n => {
+    const degree = v.voices.find(x => x.note === n)?.degree
+    return degree ? accidentals(degree) : `+${noteLabel(pcName(n))}`
+  })
+}
+
+/**
+ * What the column beside the staff writes, parallel to `noteNames`: the names as the page
+ * names notes, or each note's degree in the chord (the names when there is no chord or
+ * UMT cannot read it); null when the column is off.
+ */
+export function staffLabels(mode: 'off' | 'notes' | 'degrees', noteNames: string[], chordSymbol: string | null): string[] | null {
+  if (mode === 'off' || !noteNames.length) return null
+  const chord = mode === 'degrees' && chordSymbol ? tryParseChord(chordSymbol) : null
+  return (chord && noteDegrees(noteNames, chord)) || noteNames.map(n => noteLabel(pcName(n)))
+}
+
 const pcOf = (name: string) => pitchClassOf(pcName(name))
 
 /**

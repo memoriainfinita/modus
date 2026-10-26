@@ -17,7 +17,7 @@ import { buildSettings } from './settings'
 import { ICONS, LOGO } from './icons'
 import { wirePopover } from './popover'
 import { prefMenuHtml } from './pref-menu'
-import { STAFF_CLEFS } from '../diagrams/staff'
+import { STAFF_CLEFS, STAFF_NAMES } from '../diagrams/staff'
 import type { Command } from './commands'
 import { instrumentLabel } from '../i18n/instruments'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
@@ -314,6 +314,9 @@ function ownMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>)
       ${heading(t('menu.clef'))}
       <div class="menu-chips" role="group" aria-label="${t('menu.clef')}" title="${t('staff.clef.title')}">${STAFF_CLEFS.map(c =>
         `<button type="button" class="menu-chip" data-clef="${c}" data-label="${escapeHtml(`${t('menu.clef')}: ${t(`staff.clef.${c}`)}`)}" aria-pressed="false">${t(`staff.clef.${c}`)}</button>`).join('')}</div>
+      ${heading(t('menu.staffNames'))}
+      <div class="menu-chips" role="group" aria-label="${t('menu.staffNames')}" title="${t('staff.names.title')}">${STAFF_NAMES.map(n =>
+        `<button type="button" class="menu-chip" data-staff-names="${n}" data-label="${escapeHtml(`${t('menu.staffNames')}: ${t(`staff.names.${n}`)}`)}" aria-pressed="false">${t(`staff.names.${n}`)}</button>`).join('')}</div>
       ${item('btn-staff-prev', t('menu.prev'), t('staff.prev.title'))}`
     case 'piano': return item('btn-piano-prev', t('menu.prev'), t('piano.prev.title')) + item('btn-piano-scale', t('menu.scale'), t('piano.scale.title'))
     case 'analysis': return `

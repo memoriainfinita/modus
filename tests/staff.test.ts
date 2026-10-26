@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { buildStaffAbc } from '../src/diagrams/staff'
+import { buildStaffAbc, placeNames } from '../src/diagrams/staff'
+import { staffLabels } from '../src/detector/analyzer'
+import { useLang } from '../src/i18n/i18n'
 import { keySignature, keyPrefersSharps, normalizeKey } from '../src/theory/keys'
 
 const body = (abc: string) => abc.split('\n').pop()
@@ -113,5 +115,47 @@ describe('buildStaffAbc on a grand staff', () => {
 
   it('bass clef alone puts the clef on the key line', () => {
     expect(buildStaffAbc(['C3'], 'F Major', 'bass')).toContain('K:F clef=bass\n')
+  })
+})
+
+describe('names beside the staff', () => {
+  // Two staves as abcjs draws them: lines 10 apart, the bass staff 100 lower
+  const staves = [{ top: 0, spacing: 10 }, { top: 100, spacing: 10 }]
+  const ys = (p: { y: number }[]) => p.map(x => x.y)
+
+  it('each label at its note height: E4 on the bottom line, F5 on the top, G2 on the bass staff', () => {
+    expect(ys(placeNames(['E4', 'F5'], ['E', 'F'], 'treble', staves, 5))).toEqual([40, 0])
+    expect(ys(placeNames(['G2', 'A3'], ['G', 'A'], 'bass', staves, 5))).toEqual([40, 0])
+  })
+
+  it('on a grand staff middle C goes on the treble staff, B3 on the bass staff, by the letter (B#3 too)', () => {
+    expect(ys(placeNames(['C4', 'B3'], ['C', 'B'], 'grand', staves, 5))).toEqual([95, 50])
+    expect(ys(placeNames(['C4', 'B#3'], ['C', 'B#'], 'grand', staves, 5))).toEqual([95, 50])
+  })
+
+  it('eased apart from the bass up, in pitch order: a second never overlaps', () => {
+    const p = placeNames(['D4', 'C4', 'E4'], ['D', 'C', 'E'], 'treble', staves, 8)
+    expect(p.map(x => x.text)).toEqual(['C', 'D', 'E'])
+    expect(ys(p)).toEqual([50, 42, 34])
+  })
+
+  it('a note it cannot read or without a label is left out', () => {
+    expect(placeNames(['C4', '?', 'G4'], ['C', 'x', ''], 'treble', staves, 5).map(x => x.text)).toEqual(['C'])
+  })
+})
+
+describe('staffLabels', () => {
+  it('off writes nothing; notes as the page names them', () => {
+    expect(staffLabels('off', ['C4', 'E4', 'G4'], 'C')).toBeNull()
+    expect(staffLabels('notes', ['C4', 'Eb4', 'G4'], 'Cm')).toEqual(['C', 'Eb', 'G'])
+    useLang('es')
+    try { expect(staffLabels('notes', ['C4', 'Eb4'], null)).toEqual(['Do', 'Mib']) } finally { useLang('en') }
+  })
+
+  it('degrees in the chord, a note outside it with +; names without a chord or under three notes', () => {
+    expect(staffLabels('degrees', ['E3', 'C4', 'G4', 'Bb4'], 'C7')).toEqual(['3', 'R', '5', '♭7'])
+    expect(staffLabels('degrees', ['C4', 'E4', 'G4', 'D5'], 'C')).toEqual(['R', '3', '5', '+D'])
+    expect(staffLabels('degrees', ['C4', 'E4'], null)).toEqual(['C', 'E'])
+    expect(staffLabels('degrees', ['C4', 'E4'], 'C')).toEqual(['C', 'E'])
   })
 })
