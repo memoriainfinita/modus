@@ -155,12 +155,18 @@ export function renderCircleOfFifths(
   })
 
   svg += '</svg>'
+  // A segment played from the keyboard redraws the circle: the focus stays on the same segment
+  const segments = () => [...container.querySelectorAll<SVGPathElement>('[data-chord]')]
+  const focused = segments().indexOf(document.activeElement as SVGPathElement)
   container.innerHTML = svg
 
-  container.querySelectorAll<SVGPathElement>('[data-chord]').forEach(el => {
+  segments().forEach(el => {
     el.addEventListener('click', () => onSegmentClick(el.dataset.chord!, el.dataset.key ?? null))
     makeActivatable(el, chordLabel(el.dataset.chord!))
+    // The <title> is the mouse's tooltip; a screen reader takes this description before it
+    el.setAttribute('aria-description', t(el.dataset.key ? 'a11y.cof.segment' : 'a11y.cof.segmentPlay'))
   })
   container.querySelector('svg')?.setAttribute('aria-label', t('a11y.cof'))
   container.querySelector('svg')?.setAttribute('role', 'group')
+  if (focused >= 0) segments()[focused]?.focus()
 }
