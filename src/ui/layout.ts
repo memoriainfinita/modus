@@ -21,6 +21,7 @@ import { STAFF_CLEFS, STAFF_NAMES } from '../diagrams/staff'
 import type { Command } from './commands'
 import { instrumentLabel } from '../i18n/instruments'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
+import { WINDOW_PANELS } from '../view/mirror'
 import type { ViewName, ViewBackground } from '../view/channel'
 import { t, keyLabel } from '../i18n/i18n'
 import { COLS, placeCell, addCell, removeCell, parseGrid, fitGrid } from '../layout/grid'
@@ -297,6 +298,9 @@ function buildMenus(): string {
       <div class="view-menu-title" title="${escapeHtml(t('views.bg.hint'))}">${t('views.background')}</div>
       <div class="choice-chips" role="group" aria-label="${t('views.background')}">${(Object.keys(VIEW_BACKGROUNDS) as ViewBackground[]).map(b =>
         `<button class="choice-chip" data-view-bg="${b}" aria-pressed="false">${t(`views.bg.${b}`)}</button>`).join('')}</div>
+      <div class="view-menu-title" title="${escapeHtml(t('views.panels.hint'))}">${t('views.panels')}</div>
+      <div class="choice-chips" role="group" aria-label="${t('views.panels')}">${WINDOW_PANELS.map(p =>
+        `<button class="choice-chip" data-window-panels="${p}" aria-pressed="false">${t(`views.panels.${p}`)}</button>`).join('')}</div>
     </div>`
 }
 

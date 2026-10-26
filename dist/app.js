@@ -896,6 +896,10 @@
     "views.windows": "Windows for OBS",
     "views.windows.hint": 'A window with a whole layout, without controls, that follows this one: play here in your layout and capture another in OBS (Window Capture of "Modus window: \u2026"). If OBS shows it frozen, leave it uncovered or on another screen.',
     "views.single": "One diagram",
+    "views.panels": "Panels",
+    "views.panels.hint": "The panels of the layout windows: with their ground, or clear, so the Chroma Key takes them out with the background and only the drawings and text stay",
+    "views.panels.solid": "with ground",
+    "views.panels.clear": "clear",
     "views.bg.hint": "The background of the windows, for a Chroma Key filter in OBS (Magenta: the tonic is green)",
     "views.bg.green": "green",
     "views.bg.magenta": "magenta",
@@ -1921,6 +1925,10 @@
     "views.windows": "Ventanas para OBS",
     "views.windows.hint": 'Una ventana con una disposici\xF3n entera, sin controles, que sigue a esta: toca aqu\xED con tu disposici\xF3n y captura otra en OBS (Captura de ventana de "Modus window: \u2026"). Si en OBS se queda congelada, d\xE9jala sin tapar o en otra pantalla.',
     "views.single": "Un diagrama",
+    "views.panels": "Paneles",
+    "views.panels.hint": "Los paneles de las ventanas de disposici\xF3n: con su fondo, o transparentes, para que el Chroma Key los quite con el fondo y solo queden los dibujos y el texto",
+    "views.panels.solid": "con fondo",
+    "views.panels.clear": "transparentes",
     "views.bg.hint": "El fondo de las ventanas, para un filtro Chroma Key en OBS (Magenta: la t\xF3nica es verde)",
     "views.bg.green": "verde",
     "views.bg.magenta": "magenta",
@@ -6652,6 +6660,61 @@ ${explainCadence(cadence)}` : "");
     guitar: [380, 460]
   };
 
+  // src/view/mirror.ts
+  var NAME2 = "modus-mirror";
+  function open2() {
+    try {
+      return new BroadcastChannel(NAME2);
+    } catch {
+      return null;
+    }
+  }
+  function createMirrorPublisher(read) {
+    const channel2 = open2();
+    let queued = false;
+    let last = "";
+    channel2?.addEventListener("message", (e) => {
+      if (e.data?.type === "hello") {
+        last = "";
+        send2();
+      }
+    });
+    function send2() {
+      queued = false;
+      const state2 = read();
+      const sig = JSON.stringify(state2);
+      if (sig === last) return;
+      last = sig;
+      channel2?.postMessage({ type: "state", state: state2 });
+    }
+    return () => {
+      if (!channel2 || queued) return;
+      queued = true;
+      queueMicrotask(send2);
+    };
+  }
+  function subscribeMirror(onState) {
+    const channel2 = open2();
+    channel2?.addEventListener("message", (e) => {
+      if (e.data?.type === "state") onState(e.data.state);
+    });
+    channel2?.postMessage({ type: "hello" });
+  }
+  var WINDOW_PANELS = ["solid", "clear"];
+  function layoutWindowParams() {
+    const params = new URLSearchParams(location.search);
+    const layout = params.get("window");
+    if (!layout) return null;
+    const bg = params.get("bg");
+    return { layout, background: bg && VIEW_BACKGROUNDS[bg] || VIEW_BACKGROUNDS.magenta, panels: params.get("panels") === "clear" ? "clear" : "solid" };
+  }
+  function layoutWindowUrl(layout, bg, panels, base = location.href) {
+    const url = new URL(base);
+    url.search = new URLSearchParams({ window: layout, bg, panels }).toString();
+    url.hash = "";
+    return url.toString();
+  }
+
   // src/layout/grid.ts
   var COLS = 12;
   var MIN_W = 2;
@@ -7352,6 +7415,8 @@ ${explainCadence(cadence)}` : "");
       <div class="choice-chips">${VIEW_NAMES.map((v) => `<button class="choice-chip" data-view="${v}">${viewLabel(v)}</button>`).join("")}</div>
       <div class="view-menu-title" title="${escapeHtml(t("views.bg.hint"))}">${t("views.background")}</div>
       <div class="choice-chips" role="group" aria-label="${t("views.background")}">${Object.keys(VIEW_BACKGROUNDS).map((b) => `<button class="choice-chip" data-view-bg="${b}" aria-pressed="false">${t(`views.bg.${b}`)}</button>`).join("")}</div>
+      <div class="view-menu-title" title="${escapeHtml(t("views.panels.hint"))}">${t("views.panels")}</div>
+      <div class="choice-chips" role="group" aria-label="${t("views.panels")}">${WINDOW_PANELS.map((p) => `<button class="choice-chip" data-window-panels="${p}" aria-pressed="false">${t(`views.panels.${p}`)}</button>`).join("")}</div>
     </div>`;
   }
   var exportRows = () => ["staff", "cof", "guitar", "piano"].map((v) => `
@@ -8092,60 +8157,6 @@ ${explainCadence(cadence)}` : "");
       if (e.key && /^(guitar-|cof-|staff-clef|staff-names$|piano-scale$|lang$|note-names$)/.test(e.key)) location.reload();
     });
     return true;
-  }
-
-  // src/view/mirror.ts
-  var NAME2 = "modus-mirror";
-  function open2() {
-    try {
-      return new BroadcastChannel(NAME2);
-    } catch {
-      return null;
-    }
-  }
-  function createMirrorPublisher(read) {
-    const channel2 = open2();
-    let queued = false;
-    let last = "";
-    channel2?.addEventListener("message", (e) => {
-      if (e.data?.type === "hello") {
-        last = "";
-        send2();
-      }
-    });
-    function send2() {
-      queued = false;
-      const state2 = read();
-      const sig = JSON.stringify(state2);
-      if (sig === last) return;
-      last = sig;
-      channel2?.postMessage({ type: "state", state: state2 });
-    }
-    return () => {
-      if (!channel2 || queued) return;
-      queued = true;
-      queueMicrotask(send2);
-    };
-  }
-  function subscribeMirror(onState) {
-    const channel2 = open2();
-    channel2?.addEventListener("message", (e) => {
-      if (e.data?.type === "state") onState(e.data.state);
-    });
-    channel2?.postMessage({ type: "hello" });
-  }
-  function layoutWindowParams() {
-    const params = new URLSearchParams(location.search);
-    const layout = params.get("window");
-    if (!layout) return null;
-    const bg = params.get("bg");
-    return { layout, background: bg && VIEW_BACKGROUNDS[bg] || VIEW_BACKGROUNDS.magenta };
-  }
-  function layoutWindowUrl(layout, bg, base = location.href) {
-    const url = new URL(base);
-    url.search = new URLSearchParams({ window: layout, bg }).toString();
-    url.hash = "";
-    return url.toString();
   }
 
   // src/ui/export.ts
@@ -11189,6 +11200,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     });
     buildLayout();
     document.body.classList.add("layout-window");
+    document.body.classList.toggle("panels-clear", w.panels === "clear");
     document.documentElement.style.setProperty("--window-bg", w.background);
     openPresentation(() => {
     });
@@ -11227,6 +11239,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     $2("btn-present").classList.add("active-mode");
   }
   var viewBackground = loadChoice("view-bg", Object.keys(VIEW_BACKGROUNDS), "magenta");
+  var windowPanels = loadChoice("window-panels", WINDOW_PANELS, "solid");
   function wireViewMenu() {
     const menu = $2("view-menu");
     wirePopover(menu, [$2("btn-views")]);
@@ -11239,6 +11252,15 @@ ${explainCadence(c.cadence)}` : ""}`;
       save("view-bg", viewBackground);
       showBg();
     }));
+    const panelChips = [...menu.querySelectorAll("[data-window-panels]")];
+    const showPanels = () => panelChips.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.windowPanels === windowPanels)));
+    showPanels();
+    panelChips.forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      windowPanels = b.dataset.windowPanels;
+      save("window-panels", windowPanels);
+      showPanels();
+    }));
     const list = $2("window-list");
     const fillWindows = () => {
       list.innerHTML = layoutChoices().map((c) => `<button class="choice-row" data-window="${escapeHtml(c.id)}">${escapeHtml(c.label)}</button>`).join("");
@@ -11248,7 +11270,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     list.addEventListener("click", (e) => {
       const id = e.target.closest("[data-window]")?.dataset.window;
       if (!id) return;
-      window.open(layoutWindowUrl(id, viewBackground), `modus-window-${id}`, "popup,width=1280,height=720")?.focus();
+      window.open(layoutWindowUrl(id, viewBackground, windowPanels), `modus-window-${id}`, "popup,width=1280,height=720")?.focus();
       closePopover();
     });
     menu.querySelectorAll("[data-view]").forEach((btn) => {
@@ -11464,7 +11486,14 @@ ${explainCadence(c.cadence)}` : ""}`;
     const key = analysisKey();
     const notes2 = noteNames.join(" ");
     syncCofAccidentalButtons();
-    const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths };
+    const cofOpts = {
+      accidental: cofAccidentalFor(key, cofAccidental),
+      showMinor: cofShowMinor,
+      showDegrees: cofShowDegrees,
+      show7ths: cofShow7ths,
+      // Clear panels in a layout window: the minor ring's see-through ground would be keyed out with the chroma
+      backdrop: layoutWindow?.panels === "clear" ? color("bg") : void 0
+    };
     const prev = showPrevChord && chordSymbol ? prevVoicing : null;
     const labels = staffLabels(staffNames, noteNames, chordSymbol);
     renderIfChanged("staff", `${notes2}|${key}|${staffClef}|${prev?.join(" ")}|${labels?.join(" ")}`, () => renderStaff($2("staff-container"), noteNames, STAFF_WIDTH, key, 1, staffClef, prev, labels));

@@ -14,7 +14,7 @@ import { renderGuitar, getStringsView, getGuitarVoicingIndex, setGuitarVoicingCh
 import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS, VIEW_NAMES } from './view/channel'
 import type { ViewName, ViewBackground, ViewState } from './view/channel'
 import { runViewerFromUrl } from './view/viewer'
-import { createMirrorPublisher, subscribeMirror, layoutWindowParams, layoutWindowUrl, type MirrorState } from './view/mirror'
+import { createMirrorPublisher, subscribeMirror, layoutWindowParams, layoutWindowUrl, WINDOW_PANELS, type MirrorState, type WindowPanels } from './view/mirror'
 import { exportDiagram } from './ui/export'
 import type { ExportTarget } from './ui/export'
 import { renderCircleOfFifths, cofAccidentalFor } from './diagrams/cof'
@@ -52,7 +52,7 @@ import { loadBool, loadChoice, loadNumber, save, setStorageReadOnly } from './ui
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps, keyMode, keyOnParent, KEY_MODES, type KeyMode } from './theory/keys'
 import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands, panelMenuCommands, isModuleShown, useLayout, layoutChoices } from './ui/layout'
-import { applyTheme, onThemeChange, followSystemTheme } from './ui/theme'
+import { applyTheme, onThemeChange, followSystemTheme, color } from './ui/theme'
 import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang, getLang } from './i18n/i18n'
 import { announce, silence, watchIconButtons } from './ui/a11y'
 
@@ -682,7 +682,7 @@ function applyMirror(s: MirrorState) {
 }
 
 /** A layout window: the layout asked for, without controls, on its background, following the main window. */
-function initLayoutWindow(w: { layout: string; background: string }) {
+function initLayoutWindow(w: { layout: string; background: string; panels: WindowPanels }) {
   setStorageReadOnly()
   if (!useLayout(w.layout)) useLayout('standard')
   // A stable title, in English whatever the language: OBS window capture finds the window by it
@@ -697,6 +697,7 @@ function initLayoutWindow(w: { layout: string; background: string }) {
   })
   buildLayout()
   document.body.classList.add('layout-window')
+  document.body.classList.toggle('panels-clear', w.panels === 'clear')
   document.documentElement.style.setProperty('--window-bg', w.background)
   openPresentation(() => {})
   drawEar()
@@ -738,6 +739,7 @@ function togglePresentation() {
 }
 
 let viewBackground = loadChoice('view-bg', Object.keys(VIEW_BACKGROUNDS) as ViewBackground[], 'magenta')
+let windowPanels = loadChoice('window-panels', WINDOW_PANELS, 'solid')
 
 function wireViewMenu() {
   const menu = $('view-menu')
@@ -752,6 +754,16 @@ function wireViewMenu() {
     save('view-bg', viewBackground)
     showBg()
   }))
+  // The layout windows' panels: with their ground, or clear for the chroma key to take them out too
+  const panelChips = [...menu.querySelectorAll<HTMLButtonElement>('[data-window-panels]')]
+  const showPanels = () => panelChips.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.windowPanels === windowPanels)))
+  showPanels()
+  panelChips.forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation()
+    windowPanels = b.dataset.windowPanels as WindowPanels
+    save('window-panels', windowPanels)
+    showPanels()
+  }))
   // A window per layout, the saved ones as they are when the menu opens
   const list = $('window-list')
   const fillWindows = () => {
@@ -764,7 +776,7 @@ function wireViewMenu() {
     const id = (e.target as HTMLElement).closest<HTMLElement>('[data-window]')?.dataset.window
     if (!id) return
     // One window per layout: opening it again brings the same window back
-    window.open(layoutWindowUrl(id, viewBackground), `modus-window-${id}`, 'popup,width=1280,height=720')?.focus()
+    window.open(layoutWindowUrl(id, viewBackground, windowPanels), `modus-window-${id}`, 'popup,width=1280,height=720')?.focus()
     closePopover()
   })
   menu.querySelectorAll<HTMLButtonElement>('[data-view]').forEach(btn => {
@@ -1034,7 +1046,9 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const key = analysisKey()
   const notes = noteNames.join(' ')
   syncCofAccidentalButtons()
-  const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths }
+  const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths,
+    // Clear panels in a layout window: the minor ring's see-through ground would be keyed out with the chroma
+    backdrop: layoutWindow?.panels === 'clear' ? color('bg') : undefined }
   const prev = showPrevChord && chordSymbol ? prevVoicing : null
   const labels = staffLabels(staffNames, noteNames, chordSymbol)
   renderIfChanged('staff', `${notes}|${key}|${staffClef}|${prev?.join(' ')}|${labels?.join(' ')}`, () =>
