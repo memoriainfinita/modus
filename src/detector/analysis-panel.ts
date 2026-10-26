@@ -102,6 +102,21 @@ function renderChordSummary(
   })
 }
 
+/**
+ * The name never wider than its panel: its size follows the panel's height (CSS), which in a
+ * tall narrow panel or full screen would carry a long name (C7#9b13) past the right edge.
+ * Called after each chord and whenever the panel changes size.
+ */
+export function fitChordName() {
+  const el = document.getElementById('chord-summary')
+  const name = el?.querySelector<HTMLElement>('.chord-name-badge, .chord-head-name')
+  if (!el || !name) return
+  name.style.fontSize = ''
+  const room = el.clientWidth
+  const width = name.getBoundingClientRect().width
+  if (room > 0 && width > room) name.style.fontSize = `${parseFloat(getComputedStyle(name).fontSize) * room / width * 0.97}px`
+}
+
 // ─── Analysis panel ───────────────────────────────────────────────────────────
 
 export function renderZone1Analysis(
@@ -114,6 +129,7 @@ export function renderZone1Analysis(
   head: ChordHeadContext = { from: null, fromRoman: null, fromFunction: null }
 ) {
   renderChordSummary(detection, analysis, head, onAltSelect)
+  fitChordName()
 
   const el = document.getElementById('analysis-content')
   if (!el) return

@@ -648,12 +648,14 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 .menu-sep { height: 1px; margin: 4px 6px; background: var(--line); }
 .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; }
 
-/* The chord as a header: its name large and growing with the panel; the panel's own header
-   floats over it, seen when the pointer or the keyboard is on the panel */
-.module-chord .module-header {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 1; opacity: 0; transition: opacity .15s;
+/* The chord as a header: its name large and growing with the panel. Its own header, and the
+   diagrams' (staff, circle, piano, velocity), float over the panel, seen when the pointer or the
+   keyboard is on it: the drawing takes the whole panel. Panels whose text or controls start at
+   the top keep theirs in place, where a floating one would cover them */
+:is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity) .module-header {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 1; opacity: 0; transition: opacity .15s; background: var(--surface-2);
 }
-.module-chord:hover .module-header, .module-chord:focus-within .module-header, .module-chord.module-moving .module-header { opacity: 1; }
+:is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity):is(:hover, :focus-within, .module-moving, .module-menu-open) .module-header { opacity: 1; }
 .module-chord .module-body { justify-content: center; padding: 10px 24px; }
 .module-chord .chord-name-badge, .module-chord .chord-head-name { font-size: clamp(26px, 52cqh, 40vh); }
 .module-chord .chord-notes { font-size: clamp(13px, 14cqh, 5vh); }
@@ -688,7 +690,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
   #key-container { justify-content: stretch; }
   #key-container .key-main { width: 100%; }
   #key-container .key-mode-row { flex-wrap: wrap; }
-  .module-chord .module-header { opacity: 1; position: static; }
+  :is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity) .module-header { opacity: 1; position: static; }
   .toolbar { padding: 8px 10px; flex-wrap: wrap; gap: 6px 8px; }
   .brand-name, .status-sub, .tb-kbd { display: none; }
   .tb-search { order: 10; flex: 1 1 100%; margin: 0; }
@@ -1463,7 +1465,7 @@ body { touch-action: manipulation; }
   .ctrl-btn, .mode-btn, .size-ctrl-btn, .guitar-nav, .ear-answer, .ctrl-select, .module-close, .module-more, .menu-step { min-height: 36px; min-width: 36px; }
   .menu-item { min-height: 40px; }
   .module-resize { width: 24px; height: 24px; opacity: 1; }
-  .module-chord .module-header { opacity: 1; }
+  :is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity) .module-header { opacity: 1; }
   .history-chip, .prog-chip { min-height: 40px; }
 }
 

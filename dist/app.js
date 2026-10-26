@@ -4287,8 +4287,18 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       btn.addEventListener("click", () => onAltSelect2(parseInt(btn.dataset.idx)));
     });
   }
+  function fitChordName() {
+    const el2 = document.getElementById("chord-summary");
+    const name = el2?.querySelector(".chord-name-badge, .chord-head-name");
+    if (!el2 || !name) return;
+    name.style.fontSize = "";
+    const room = el2.clientWidth;
+    const width = name.getBoundingClientRect().width;
+    if (room > 0 && width > room) name.style.fontSize = `${parseFloat(getComputedStyle(name).fontSize) * room / width * 0.97}px`;
+  }
   function renderZone1Analysis(detection, analysis, noteSet2, fieldsVisible, scale, onAltSelect2, head = { from: null, fromRoman: null, fromFunction: null }) {
     renderChordSummary(detection, analysis, head, onAltSelect2);
+    fitChordName();
     const el2 = document.getElementById("analysis-content");
     if (!el2) return;
     el2.style.fontSize = scale + "px";
@@ -10985,6 +10995,7 @@ ${explainCadence(c.cadence)}` : ""}`;
         renderDetector();
       }
     }).observe(pianoEl);
+    if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => fitChordName()).observe($2("chord-summary"));
     let shown = currentGrid().map((c) => c.id).sort().join();
     onLayoutChange(() => {
       const now = currentGrid().map((c) => c.id).sort().join();

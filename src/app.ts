@@ -29,7 +29,7 @@ import { mountSong, markActiveChord, removeChordWithUndo, onPlayingChange, showP
 import { isSongPlaying, stopSong, type SongStep } from './song/playback'
 import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis, Song, SongChord } from './types'
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
-import { ANALYSIS_FIELD_KEYS, renderZone1Analysis } from './detector/analysis-panel'
+import { ANALYSIS_FIELD_KEYS, renderZone1Analysis, fitChordName } from './detector/analysis-panel'
 import { explainDetection, renderExplanation } from './detector/explain'
 import { suggestNext, renderNext, substitutesFor } from './detector/next'
 import { renderProgressions } from './ui/progressions'
@@ -455,6 +455,8 @@ function buildLayout() {
     const now = containerOctaves(pianoEl)
     if (now !== octaves) { octaves = now; renderDetector() }
   }).observe(pianoEl)
+  // The chord's name fitted to its panel's width again when the panel changes size (full screen, a resize)
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => fitChordName()).observe($('chord-summary'))
   let shown = currentGrid().map(c => c.id).sort().join()
   onLayoutChange(() => {
     const now = currentGrid().map(c => c.id).sort().join()
