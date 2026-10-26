@@ -3,7 +3,7 @@
 // the key's scale on the neck, whole or by positions (CAGED, three notes per string).
 
 import { tryParseChord, tryUMT, functionColor, type HarmonicFunction } from '../theory/chord'
-import { SCALE_CHOICES, SCALE_SYSTEMS, scaleSymbol, scaleInfo, systemsFor, scalePositions, shapeName, type ScaleChoice, type ScaleSystem, type ScalePosition } from '../theory/scales'
+import { SCALE_CHOICES, SCALE_SYSTEMS, scaleSymbol, scaleInfo, systemsFor, scalePositions, neckWindows, shapeName, type ScaleChoice, type ScaleSystem, type ScalePosition } from '../theory/scales'
 import { playableVoicings, tuningToMidi, normalizeNoteName } from '../theory/voicings'
 import { INSTRUMENT_IDS, INSTRUMENT_TUNINGS, defaultTuning, referenceStrings, type InstrumentId } from '../theory/instruments'
 import { noteNameToMidi, PITCH_NAMES_FLAT } from '../theory/notes'
@@ -284,13 +284,18 @@ function wireChrome(container: HTMLElement) {
 
 /** The neck stands up in a tall panel and lies down in a wide one. */
 const neckVertical = (container: HTMLElement) => container.clientHeight > container.clientWidth * 1.15
+// Lying down in a panel narrower than this (a phone, Class on a laptop), the scale's whole neck
+// is too small to read: it goes four frets at a time
+const NARROW_NECK = 520
+const neckNarrow = (container: HTMLElement) => container.clientWidth < NARROW_NECK
 let neckDrawnVertical: boolean | null = null
+let neckDrawnNarrow = false
 const watched = new WeakSet<HTMLElement>()
 function watchShape(container: HTMLElement) {
   if (watched.has(container) || typeof ResizeObserver === 'undefined') return
   watched.add(container)
   new ResizeObserver(() => {
-    if (stringsView !== 'shapes' && neckDrawnVertical !== null && neckVertical(container) !== neckDrawnVertical) {
+    if (stringsView !== 'shapes' && neckDrawnVertical !== null && (neckVertical(container) !== neckDrawnVertical || neckNarrow(container) !== neckDrawnNarrow)) {
       renderGuitar(container, lastGuitarSymbol, lastNoteNames, undefined, lastPreferFlats)
     }
   }).observe(container)
@@ -351,8 +356,10 @@ function renderScaleView(container: HTMLElement, noteNames: string[], open: numb
   }
   const systems = systemsFor(info, open)
   const system = systems.includes(scaleSystem) ? scaleSystem : 'neck'
-  const positions = scalePositions(info, open, system)
-  const sig = `${symbol}|${system}|${open.join(' ')}`
+  const vertical = neckVertical(container)
+  const split = system === 'neck' && !vertical && neckNarrow(container)
+  const positions = split ? scalePositions(info, open, system).flatMap(w => neckWindows(w)) : scalePositions(info, open, system)
+  const sig = `${symbol}|${system}|${open.join(' ')}|${split}`
   if (sig !== lastScaleSig) { scaleIdx = 0; lastScaleSig = sig }
   if (forcedIdx !== undefined) scaleIdx = forcedIdx
   const total = positions.length
@@ -365,10 +372,12 @@ function renderScaleView(container: HTMLElement, noteNames: string[], open: numb
   }
   const idx = Math.min(scaleIdx, total - 1)
   const pos = positions[idx]
-  neckDrawnVertical = neckVertical(container)
-  const where = [named, positionLabel(pos)].filter(Boolean).join(' · ')
+  neckDrawnVertical = vertical
+  neckDrawnNarrow = neckNarrow(container)
+  const frets = split ? t('strings.scale.frets', { from: pos.baseFret === 1 ? 0 : pos.baseFret, to: pos.baseFret + pos.span - 1 }) : positionLabel(pos)
+  const where = [named, frets].filter(Boolean).join(' · ')
   container.innerHTML = tabs() + systemTabs(systems, system)
-    + stage(scaleSvg(pos, info, open, noteNames, system === 'neck', neckDrawnVertical), t('a11y.strings.scale', { scale: where }), total)
+    + stage(scaleSvg(pos, info, open, noteNames, system === 'neck' && !split, vertical), t('a11y.strings.scale', { scale: where }), total)
     + foot(where, total, idx)
   localizeDrawnNoteNames(container.querySelector('.strings-drawing')!)
   container.querySelectorAll<HTMLElement>('.guitar-nav').forEach(btn => {
@@ -406,6 +415,7 @@ export function renderGuitar(container: HTMLElement, chordSymbol: string | null,
 
   if (stringsView === 'neck') {
     neckDrawnVertical = neckVertical(container)
+    neckDrawnNarrow = neckNarrow(container)
     container.innerHTML = tabs() + stage(neckSvg(noteNames, open, preferFlats, neckDrawnVertical), t('a11y.strings', { chord: named }), 0) + foot('', 0, 0)
     localizeDrawnNoteNames(container.querySelector('.strings-drawing')!)
     wireChrome(container)

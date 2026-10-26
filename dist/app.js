@@ -3539,6 +3539,21 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     }
     return tryUMT("fretboard scale shapes", () => UMT.getFretboardScaleShapes(info2.scale, tuning, { system }), []).map((s) => ({ name: s.name, frets: s.frets, degrees: s.degrees, baseFret: s.baseFret, span: s.span }));
   }
+  function neckWindows(whole, size = 4) {
+    const windows = [];
+    for (let base = 1; base <= whole.span; base += size) {
+      const top = Math.min(base + size - 1, whole.span);
+      const inside = (f) => f >= (base === 1 ? 0 : base) && f <= top;
+      windows.push({
+        name: "",
+        frets: whole.frets.map((fs) => fs.filter(inside)),
+        degrees: whole.degrees.map((ds, i) => ds.filter((_, k) => inside(whole.frets[i][k]))),
+        baseFret: base,
+        span: top - base + 1
+      });
+    }
+    return windows;
+  }
   function shapeName(name) {
     const c = name.match(/^([CAGED]m?) shape$/);
     if (c) return { caged: c[1] };
@@ -3882,13 +3897,16 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     });
   }
   var neckVertical = (container2) => container2.clientHeight > container2.clientWidth * 1.15;
+  var NARROW_NECK = 520;
+  var neckNarrow = (container2) => container2.clientWidth < NARROW_NECK;
   var neckDrawnVertical = null;
+  var neckDrawnNarrow = false;
   var watched = /* @__PURE__ */ new WeakSet();
   function watchShape(container2) {
     if (watched.has(container2) || typeof ResizeObserver === "undefined") return;
     watched.add(container2);
     new ResizeObserver(() => {
-      if (stringsView !== "shapes" && neckDrawnVertical !== null && neckVertical(container2) !== neckDrawnVertical) {
+      if (stringsView !== "shapes" && neckDrawnVertical !== null && (neckVertical(container2) !== neckDrawnVertical || neckNarrow(container2) !== neckDrawnNarrow)) {
         renderGuitar(container2, lastGuitarSymbol, lastNoteNames, void 0, lastPreferFlats);
       }
     }).observe(container2);
@@ -3934,8 +3952,10 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     }
     const systems = systemsFor(info2, open2);
     const system = systems.includes(scaleSystem) ? scaleSystem : "neck";
-    const positions = scalePositions(info2, open2, system);
-    const sig = `${symbol}|${system}|${open2.join(" ")}`;
+    const vertical = neckVertical(container2);
+    const split = system === "neck" && !vertical && neckNarrow(container2);
+    const positions = split ? scalePositions(info2, open2, system).flatMap((w) => neckWindows(w)) : scalePositions(info2, open2, system);
+    const sig = `${symbol}|${system}|${open2.join(" ")}|${split}`;
     if (sig !== lastScaleSig) {
       scaleIdx = 0;
       lastScaleSig = sig;
@@ -3951,9 +3971,11 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     }
     const idx = Math.min(scaleIdx, total - 1);
     const pos = positions[idx];
-    neckDrawnVertical = neckVertical(container2);
-    const where = [named, positionLabel(pos)].filter(Boolean).join(" \xB7 ");
-    container2.innerHTML = tabs() + systemTabs(systems, system) + stage(scaleSvg(pos, info2, open2, noteNames, system === "neck", neckDrawnVertical), t("a11y.strings.scale", { scale: where }), total) + foot(where, total, idx);
+    neckDrawnVertical = vertical;
+    neckDrawnNarrow = neckNarrow(container2);
+    const frets = split ? t("strings.scale.frets", { from: pos.baseFret === 1 ? 0 : pos.baseFret, to: pos.baseFret + pos.span - 1 }) : positionLabel(pos);
+    const where = [named, frets].filter(Boolean).join(" \xB7 ");
+    container2.innerHTML = tabs() + systemTabs(systems, system) + stage(scaleSvg(pos, info2, open2, noteNames, system === "neck" && !split, vertical), t("a11y.strings.scale", { scale: where }), total) + foot(where, total, idx);
     localizeDrawnNoteNames(container2.querySelector(".strings-drawing"));
     container2.querySelectorAll(".guitar-nav").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -3983,6 +4005,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     const named = chordSymbol ? chordLabel(chordSymbol) : t("a11y.nothing");
     if (stringsView === "neck") {
       neckDrawnVertical = neckVertical(container2);
+      neckDrawnNarrow = neckNarrow(container2);
       container2.innerHTML = tabs() + stage(neckSvg(noteNames, open2, preferFlats, neckDrawnVertical), t("a11y.strings", { chord: named }), 0) + foot("", 0, 0);
       localizeDrawnNoteNames(container2.querySelector(".strings-drawing"));
       wireChrome(container2);

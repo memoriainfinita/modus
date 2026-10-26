@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { scaleSymbol, scaleInfo, systemsFor, scalePositions, shapeName } from '../src/theory/scales'
+import { scaleSymbol, scaleInfo, systemsFor, scalePositions, neckWindows, shapeName } from '../src/theory/scales'
 import { INSTRUMENT_TUNINGS } from '../src/theory/instruments'
 
 const GUITAR = INSTRUMENT_TUNINGS.guitar.standard
@@ -77,6 +77,16 @@ describe('scalePositions', () => {
   it('a pattern per degree with 3nps; on a ukulele too wide to play', () => {
     expect(scalePositions(scaleInfo('G Major')!, GUITAR, '3nps')).toHaveLength(7)
     expect(Math.min(...scalePositions(scaleInfo('C Major')!, UKULELE, '3nps').map(p => p.span))).toBeGreaterThan(6)
+  })
+})
+
+describe('neckWindows', () => {
+  it('the whole neck in three windows of four frets, the open strings in the first, each fret once', () => {
+    const [neck] = scalePositions(scaleInfo('A Minor')!, GUITAR, 'neck')
+    const windows = neckWindows(neck)
+    expect(windows.map(w => [w.baseFret, w.span])).toEqual([[1, 4], [5, 4], [9, 4]])
+    expect(windows.map(w => w.frets[0])).toEqual([[0, 1, 3], [5, 7, 8], [10, 12]])
+    expect(windows.map(w => w.degrees[0])).toEqual([[5, 6, 7], [1, 2, 3], [4, 5]])
   })
 })
 

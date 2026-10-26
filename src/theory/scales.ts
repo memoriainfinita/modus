@@ -94,6 +94,23 @@ export function scalePositions(info: ScaleInfo, open: number[], system: ScaleSys
     .map(s => ({ name: s.name, frets: s.frets, degrees: s.degrees, baseFret: s.baseFret, span: s.span }))
 }
 
+/** The whole neck cut into windows of `size` frets (0–4 with the open strings, 5–8, 9–12), for a panel too narrow to read it at once. */
+export function neckWindows(whole: ScalePosition, size = 4): ScalePosition[] {
+  const windows: ScalePosition[] = []
+  for (let base = 1; base <= whole.span; base += size) {
+    const top = Math.min(base + size - 1, whole.span)
+    const inside = (f: number) => f >= (base === 1 ? 0 : base) && f <= top
+    windows.push({
+      name: '',
+      frets: whole.frets.map(fs => fs.filter(inside)),
+      degrees: whole.degrees.map((ds, i) => ds.filter((_, k) => inside(whole.frets[i][k]))),
+      baseFret: base,
+      span: top - base + 1,
+    })
+  }
+  return windows
+}
+
 /** UMT's shape name in parts: "Em shape" → CAGED letter Em; "Pattern 3" → pattern 3. */
 export function shapeName(name: string): { caged: string } | { pattern: number } | null {
   const c = name.match(/^([CAGED]m?) shape$/)
