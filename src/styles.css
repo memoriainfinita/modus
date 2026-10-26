@@ -1311,6 +1311,11 @@ body.view-mode .guitar-chrome { display: none; }
 .next-why { display: flex; flex-direction: column; color: var(--text-soft); }
 .next-reason[title] { cursor: help; }
 .next-empty { color: var(--text-muted); margin: 0; }
+/* "or Fm · Bb7 from aeolian": the usual borrowings that may stand for a suggestion */
+.next-alts { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
+.next-alt { padding: 0.1em 0.4em; font-size: 0.9em; }
+/* What may be played in place of the chord on screen */
+.next-heading { font-size: 12px; font-weight: 400; color: var(--text-muted); margin: 12px 0 6px; }
 
 /* Progressions panel: the progression bar by bar, as history chips */
 #progressions-container { display: flex; flex-direction: column; gap: 4px; min-height: 0; }

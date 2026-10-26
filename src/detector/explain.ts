@@ -107,7 +107,7 @@ function voicingEntries(noteNames: string[], symbol: string): Explanation[] {
 }
 
 const PLR_EXAMPLES = { P: ['C', 'Cm'], R: ['C', 'Am'], L: ['C', 'Em'] } as const
-const SUBSTITUTION_TYPES = ['tritone', 'diatonic', 'deceptive', 'chromatic-mediant', 'sus4', 'modal']
+export const SUBSTITUTION_TYPES = ['tritone', 'diatonic', 'deceptive', 'chromatic-mediant', 'sus4', 'modal']
 
 /** Every term of the analysis of what is on screen, explained. */
 export function explainDetection(detection: DetectionResult, a: HarmonicAnalysis | null, key: string | null, prevSymbol: string | null): Explanation[] {

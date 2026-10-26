@@ -3121,6 +3121,22 @@ body.view-mode .guitar-chrome {
   color: var(--text-muted);
   margin: 0;
 }
+.next-alts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+.next-alt {
+  padding: 0.1em 0.4em;
+  font-size: 0.9em;
+}
+.next-heading {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin: 12px 0 6px;
+}
 #progressions-container {
   display: flex;
   flex-direction: column;
