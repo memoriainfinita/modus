@@ -1096,6 +1096,19 @@ await check('keyboard: the circle\'s segments describe the keys, not the mouse; 
   assert(after === 'D', `focus after Enter: ${after}`)
 })
 
+await check('keyboard: the circle is one tab stop; arrows go round a ring and across the rings, and do not step the song', async () => {
+  const stops = await page.evaluate(() => [...document.querySelectorAll('#cof-container [data-chord]')].filter(e => e.tabIndex >= 0).length)
+  const head = () => page.locator('#chord-summary').innerText()
+  const before = await head()
+  await page.focus('#cof-container [data-chord="F"]')
+  const at = () => page.evaluate(() => document.activeElement?.dataset?.chord)
+  const seen = []
+  for (const k of ['ArrowRight', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'Home']) { await page.keyboard.press(k); seen.push(await at()) }
+  assert(stops === 1, `tab stops in the circle: ${stops}`)
+  assert(seen.join(' ') === 'C Am Bdim Bdim Am Dm C', `walk: ${seen.join(' ')}`)
+  assert(await head() === before, 'the arrows stepped the song or history')
+})
+
 await check('a note that keeps the chord does not rebuild the circle or guitar', async () => {
   await play([60, 64, 67])
   await page.evaluate(() => {
