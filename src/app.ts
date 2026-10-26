@@ -1,10 +1,10 @@
 import './styles.css'
 import { initMidi, setNoteChangeCallback, setSoundCallbacks, setMode, getMode, getDevices, chooseDevice, resolveDevice, pointerDown, pointerUp, releaseKeptNotes, getVelocity, getInputChannel, setInputChannel, setHeardNotes } from './input/midi'
 import { wireComputerKeyboard, toggleComputerKeyboard, isComputerKeyboardOn, computerKeyboardStatus, setComputerKeyboardChange } from './input/computer-keyboard'
-import { analyzeNotes, buildHarmonicAnalysis, analyzeNoteSet, getAutoKey, romanInKey } from './detector/analyzer'
+import { analyzeNotes, buildHarmonicAnalysis, analyzeNoteSet, getAutoKey, romanInKey, staffLabels } from './detector/analyzer'
 import { initAudioOnGesture, GM_INSTRUMENT_GROUPS, unlockAudioOnAnyGesture, preloadAudio, setInstrument, setVolume, liveNoteOn, liveNoteOff, setSustain, playNoteNames, playChord, setAudioStatusCallback, setAudioMissedCallback, setPreviewListener } from './audio/audio'
 import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSettings, chooseOutput, setOutputChannel, setThru, outputLoops } from './output/midi-out'
-import { renderStaff, STAFF_CLEFS } from './diagrams/staff'
+import { renderStaff, STAFF_CLEFS, STAFF_NAMES } from './diagrams/staff'
 import { openPresentation, closePresentation, isPresenting } from './view/presentation'
 import { renderPiano, containerOctaves } from './diagrams/piano'
 import { renderVelocity } from './diagrams/velocity'
@@ -61,6 +61,7 @@ import { announce, silence, watchIconButtons } from './ui/a11y'
 const STAFF_WIDTH = 380
 const COF_SIZE = 300
 let staffClef = loadChoice('staff-clef', STAFF_CLEFS, 'grand')
+let staffNames = loadChoice('staff-names', STAFF_NAMES, 'off')
 let cofAccidental = loadChoice('cof-accidental', ['flat', 'sharp'] as const, 'flat')
 let cofShowMinor   = loadBool('cof-show-minor', true)
 let cofShowDegrees = loadBool('cof-show-degrees', false)
@@ -346,6 +347,17 @@ function wireLayoutEvents() {
     staffClef = b.dataset.clef as typeof staffClef
     save('staff-clef', staffClef)
     showClef()
+    renderZone1Diagrams(displayedNotes(), selectedSymbol())
+  }))
+
+  // The column beside the staff: off, names or degrees
+  const nameChips = [...document.querySelectorAll<HTMLElement>('#menu-staff [data-staff-names]')]
+  const showNames = () => nameChips.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.staffNames === staffNames)))
+  showNames()
+  nameChips.forEach(b => b.addEventListener('click', () => {
+    staffNames = b.dataset.staffNames as typeof staffNames
+    save('staff-names', staffNames)
+    showNames()
     renderZone1Diagrams(displayedNotes(), selectedSymbol())
   }))
 
@@ -917,8 +929,9 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   syncCofAccidentalButtons()
   const cofOpts = { accidental: cofAccidentalFor(key, cofAccidental), showMinor: cofShowMinor, showDegrees: cofShowDegrees, show7ths: cofShow7ths }
   const prev = showPrevChord && chordSymbol ? prevVoicing : null
-  renderIfChanged('staff', `${notes}|${key}|${staffClef}|${prev?.join(' ')}`, () =>
-    renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef, prev))
+  const labels = staffLabels(staffNames, noteNames, chordSymbol)
+  renderIfChanged('staff', `${notes}|${key}|${staffClef}|${prev?.join(' ')}|${labels?.join(' ')}`, () =>
+    renderStaff($('staff-container'), noteNames, STAFF_WIDTH, key, 1, staffClef, prev, labels))
   const fn = chordSymbol ? state.analysis?.function ?? null : null
   const pianoScale = showPianoScale && key ? scaleInfo(scaleSymbol(key, 'key')) : null
   renderIfChanged('piano', `${notes}|${fn}|${prev?.join(' ')}|${containerOctaves($('piano-container'))}|${pianoScale?.names.join(' ')}`, () =>
