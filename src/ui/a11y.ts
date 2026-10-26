@@ -4,10 +4,17 @@
 
 let live: HTMLElement | null = null
 let pending: ReturnType<typeof setTimeout> | null = null
+let pendingSounding = false
 let lastSaid = ''
+let lastId = ''
 
-/** Says `text` to a screen reader, once it has held for `delay` ms (a chord arrives note by note). */
-export function announce(text: string, delay = 350) {
+/**
+ * Says `text` to a screen reader, once it has held for `delay` ms (a chord arrives note by note).
+ * `sounding` names what is sounding (a chord, a note): said once while it sounds, even when its
+ * text grows (the key found after the chord, its numeral read anew); while it waits to be said,
+ * the newer text replaces it.
+ */
+export function announce(text: string, delay = 350, sounding?: string) {
   if (typeof document === 'undefined') return
   if (!live) {
     live = document.createElement('div')
@@ -17,13 +24,25 @@ export function announce(text: string, delay = 350) {
     live.setAttribute('aria-atomic', 'true')
     document.body.appendChild(live)
   }
+  if (sounding !== undefined) {
+    if (sounding === lastId && !(pending && pendingSounding)) return
+    lastId = sounding
+  }
   if (pending) clearTimeout(pending)
+  pendingSounding = sounding !== undefined
   pending = setTimeout(() => {
     pending = null
     if (text === lastSaid) return
     lastSaid = text
     live!.textContent = text
   }, delay)
+}
+
+/** Nothing sounding, or notes being lifted: what waits to be said of it is dropped, and the same chord played again is said again. */
+export function silence() {
+  if (pending && pendingSounding) { clearTimeout(pending); pending = null }
+  lastId = ''
+  lastSaid = ''
 }
 
 const HAS_WORD = /\p{L}{2,}/u

@@ -140,6 +140,20 @@ await check('loads without errors', async () => {
   assert(page.errors.length === 0, page.errors.join(' | '))
 })
 
+await check('a page loads at its top, not scrolled down to the song (desktop and phone)', async () => {
+  const at = []
+  for (const opts of [{ viewport: { width: 1280, height: 720 } }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]) {
+    const context = await browser.newContext({ ...opts, locale: 'en-US' })
+    const p = await context.newPage()
+    await p.goto(URL_)
+    await p.waitForFunction(() => window.UMT && window.Notae)
+    await p.waitForTimeout(800)
+    at.push(await p.evaluate(() => window.scrollY))
+    await context.close()
+  }
+  assert(at.every(y => y === 0), `scrolled to: ${at}`)
+})
+
 await check('MIDI device name is escaped', async () => {
   const opt = await text('#midi-device option')
   assert(opt === '<b>Fake</b> Keys', `option text: ${opt}`)
@@ -442,6 +456,29 @@ await check('microphone: a sung A3 shows on the tuner and in the detector as a n
   await page.click('#tuner-mic')
   assert(await text('.tuner-note') === '—', 'tuner still shows a note')
   assert(!(await text('#analysis-content')).includes('MIDI 57'), 'the note is still held')
+})
+
+await check('screen reader: a chord is said once while held, even when the auto key comes; nothing of its release; again when played again', async () => {
+  await setKey('')
+  await page.click('#mod-history .history-clear-btn').catch(() => {})
+  await page.waitForTimeout(600)   // what the checks before left to say is said before listening
+  await page.evaluate(() => {
+    window.__said = []
+    let last = document.getElementById('sr-live')?.textContent ?? ''   // said before: not counted
+    new MutationObserver(() => {
+      const now = document.getElementById('sr-live')?.textContent ?? ''
+      if (now && now !== last) window.__said.push(now)
+      last = now
+    }).observe(document.body, { subtree: true, childList: true, characterData: true })
+  })
+  await play([60, 64, 67], 1500)   // logged after 800 ms: the auto key comes while it is held
+  await off([60, 64, 67])
+  await page.waitForTimeout(600)
+  await play([60, 64, 67], 600)
+  await off([60, 64, 67])
+  await page.waitForTimeout(600)
+  const said = await page.evaluate(() => window.__said)
+  assert(said.length === 2 && said.every(s => s.startsWith('C major')), `said: ${JSON.stringify(said)}`)
 })
 
 await check('keyboard and screen reader: circle, buttons, panels and chips work from the keyboard; the chord is announced', async () => {
