@@ -391,9 +391,12 @@ const FITTED: readonly ModuleId[] = ['key', 'explain', 'history', 'song', 'tuner
 let contentRows: Record<string, number> = {}
 let dragging = false
 
-/** The grid as drawn: fitted to content, except while a panel is dragged or the layout presented. */
+/**
+ * The grid as drawn: fitted to content, except while a panel is dragged or the layout presented,
+ * and on a phone, where the panels keep their rows (styles.css says why).
+ */
 function shownGrid(): Grid {
-  return dragging || document.body.classList.contains('presenting') ? grid : fitGrid(grid, contentRows)
+  return dragging || document.body.classList.contains('presenting') || narrow() ? grid : fitGrid(grid, contentRows)
 }
 
 /** Draws the layout again, as after presentation starts or ends. */
@@ -549,6 +552,8 @@ function watchFittedPanels() {
     sizes.observe(body)
   }
   onLayoutChange(schedule)
+  // Into or out of a phone's width: fitted on one side, the layout's rows on the other
+  matchMedia('(max-width: 720px)').addEventListener('change', () => applyGrid())
   schedule()
 }
 

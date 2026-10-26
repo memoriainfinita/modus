@@ -179,7 +179,7 @@ export const es: Record<StringKey, string> = {
   'views.bg.magenta': 'magenta',
   'views.bg.black': 'negro',
   'views.bg.dark': 'oscuro',
-  'views.hint': 'En OBS: Captura de ventana de "Modus view: …" y después un filtro Chroma Key. La ventana sigue a esta en directo.',
+  'views.hint': 'En OBS: Captura de ventana de "Modus view: …" y después un filtro Chroma Key con el color del fondo (Magenta, no verde: la tónica es verde). La ventana sigue a esta en directo.',
   'views.save': 'Guardar el diagrama en pantalla (fondo transparente)',
   'view.chord': 'Acorde',
   'view.staff': 'Pentagrama',

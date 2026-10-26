@@ -66,8 +66,8 @@ export function runViewerFromUrl(): boolean {
   const params = new URLSearchParams(location.search)
   const view = params.get('view') as ViewName | null
   if (!view || !VIEW_NAMES.includes(view)) return false
-  const bg = (params.get('bg') ?? 'green') as ViewBackground
-  const background = VIEW_BACKGROUNDS[bg] ?? VIEW_BACKGROUNDS.green
+  const bg = (params.get('bg') ?? 'magenta') as ViewBackground
+  const background = VIEW_BACKGROUNDS[bg] ?? VIEW_BACKGROUNDS.magenta
 
   // A stable title, in English whatever the language: OBS window capture finds the window by it.
   document.title = `Modus view: ${view}`
