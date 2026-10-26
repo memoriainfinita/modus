@@ -682,6 +682,38 @@ body {
   content: "\b7";
   margin: 0 5px;
 }
+.status-act {
+  display: inline-flex;
+  margin-left: 6px;
+  color: var(--accent-text);
+}
+.status-act[hidden] {
+  display: none;
+}
+.status-act .icon {
+  width: 15px;
+  height: 15px;
+}
+.tb-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 6px;
+  background: var(--line);
+}
+@media (max-width: 1000px) {
+  .brand-name,
+  .status-sub,
+  .tb-kbd {
+    display: none;
+  }
+  .midi-status,
+  .sound-status {
+    max-width: 110px;
+  }
+  .tb-search {
+    min-width: 0;
+  }
+}
 .seg {
   display: flex;
   border: 1px solid var(--border-soft);
@@ -719,68 +751,8 @@ body {
   display: flex;
   flex-direction: column;
 }
-.rail-col {
-  flex: none;
-  width: 60px;
-  background: var(--bg-bar);
-  border-right: 1px solid var(--line);
-}
-.rail {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  height: calc(100vh / var(--zoom, 1));
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 10px 0;
-}
-body.rail-hidden .rail-col {
-  display: none;
-}
-.rail-btn {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  flex: none;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.rail-btn .icon {
-  width: 20px;
-  height: 20px;
-}
-.rail-btn:hover,
-.rail-btn[aria-expanded=true] {
-  background: var(--surface);
-  color: var(--text);
-}
-.rail-btn.active-mode {
-  background: var(--surface);
-  color: var(--accent-text);
-}
-.rail-dot {
-  position: absolute;
-  right: 9px;
-  top: 9px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--text-dim);
-}
-.rail-sep {
-  width: 28px;
-  height: 1px;
-  background: var(--line);
-  margin: 6px 0;
+.menu-store {
+  display: contents;
 }
 .tabbar {
   display: none;
@@ -840,10 +812,6 @@ body.rail-hidden .rail-col {
 .pop-anchor.pop-end > .pop-menu {
   left: auto;
   right: 0;
-}
-.pop-menu.pop-side {
-  left: calc(100% + 8px);
-  right: auto;
 }
 .choice-list {
   display: flex;
@@ -1406,8 +1374,7 @@ body.rail-hidden .rail-col {
   .sound-status {
     max-width: 92px;
   }
-  .rail-col,
-  #btn-rail {
+  .tb-page {
     display: none !important;
   }
   .work-main {
@@ -1551,7 +1518,6 @@ body.presenting {
   overflow: hidden;
 }
 body.presenting .toolbar,
-body.presenting .rail-col,
 body.presenting #midi-banner,
 body.presenting .module-header,
 body.presenting .module-resize,

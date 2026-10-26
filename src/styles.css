@@ -423,8 +423,9 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 .ctrl-select:hover { border-color: var(--border); }
 
 /* ─── Bar ─────────────────────────────────────────────────────── */
-/* The rail's button, the brand and the key on the left; the field for a chord or an order in
-   the middle; what comes in and what sounds on the right, each a status that opens its menu */
+/* The brand and the key on the left; the field for a chord or an order in the middle; on the
+   right what comes in and what sounds, each a status that opens its menu, then the page
+   (layout, presentation, view windows), Settings and Help */
 .toolbar {
   display: flex; gap: 12px; align-items: center; min-height: 52px; padding: 8px 14px 8px 8px;
   background: var(--bg-bar); border-bottom: 1px solid var(--line);
@@ -471,6 +472,18 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 .midi-status, .sound-status { display: inline-flex; align-items: center; gap: 6px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
 .midi-status::before, .sound-status::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--dot, var(--text-dim)); }
 .status-sub::before { content: '·'; margin: 0 5px; }
+/* The computer keyboard and the microphone, while on, in the input's status */
+.status-act { display: inline-flex; margin-left: 6px; color: var(--accent-text); }
+.status-act[hidden] { display: none; }
+.status-act .icon { width: 15px; height: 15px; }
+.tb-sep { width: 1px; height: 20px; margin: 0 6px; background: var(--line); }
+/* Below ~1000 px the brand's name, the playing mode (in the input menu) and the statuses'
+   long names give the bar's buttons their room */
+@media (max-width: 1000px) {
+  .brand-name, .status-sub, .tb-kbd { display: none; }
+  .midi-status, .sound-status { max-width: 110px; }
+  .tb-search { min-width: 0; }
+}
 .seg { display: flex; border: 1px solid var(--border-soft); border-radius: 6px; overflow: hidden; }
 .seg .mode-btn { border: 0; border-radius: 0; height: 28px; }
 .seg .mode-btn + .mode-btn { border-left: 1px solid var(--border-soft); }
@@ -478,26 +491,12 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
 .auto-key-label { font-size: 12px; color: var(--text-muted); }
 .auto-key-label:empty { display: none; }
 
-/* ─── Rail ────────────────────────────────────────────────────── */
-/* Icons down the left of the panels, held in view while the page scrolls; hidden at will */
+/* ─── Workspace ───────────────────────────────────────────────── */
 .workspace { flex: 1; display: flex; align-items: stretch; min-height: 0; }
 .work-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.rail-col { flex: none; width: 60px; background: var(--bg-bar); border-right: 1px solid var(--line); }
-.rail {
-  position: sticky; top: 0; z-index: 30; height: calc(100vh / var(--zoom, 1)); box-sizing: border-box;
-  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0;
-}
-body.rail-hidden .rail-col { display: none; }
-.rail-btn {
-  position: relative; width: 44px; height: 44px; flex: none; border: 0; border-radius: 8px; background: transparent;
-  color: var(--text-muted); display: flex; align-items: center; justify-content: center; cursor: pointer;
-}
-.rail-btn .icon { width: 20px; height: 20px; }
-.rail-btn:hover, .rail-btn[aria-expanded="true"] { background: var(--surface); color: var(--text); }
-.rail-btn.active-mode { background: var(--surface); color: var(--accent-text); }
-.rail-dot { position: absolute; right: 9px; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); }
-.rail-sep { width: 28px; height: 1px; background: var(--line); margin: 6px 0; }
-/* The bar along the bottom that stands for the rail on a phone (its rules in the phone block) */
+/* Where the menus wait, closed, until a button opens one under it (ui/popover.ts) */
+.menu-store { display: contents; }
+/* The bar along the bottom that stands for the page's buttons on a phone (its rules in the phone block) */
 .tabbar { display: none; }
 .pop-handle { display: none; }
 .pop-sheet .pop-handle { display: block; }
@@ -509,7 +508,7 @@ body.rail-hidden .rail-col { display: none; }
 .tab-btn[aria-expanded="true"], .tab-btn.active-mode { color: var(--accent-text); }
 .tab-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ─── Menus of the bar and the rail (ui/popover.ts) ───────────── */
+/* ─── Menus of the bar (ui/popover.ts) ────────────────────────── */
 .view-menu.pop-menu {
   width: 300px; box-sizing: border-box; padding: 12px; gap: 8px; z-index: 50;
   background: var(--surface); border-radius: 10px; box-shadow: 0 12px 32px var(--shadow);
@@ -517,7 +516,6 @@ body.rail-hidden .rail-col { display: none; }
 }
 .pop-anchor > .pop-menu { left: 0; right: auto; top: calc(100% + 6px); }
 .pop-anchor.pop-end > .pop-menu { left: auto; right: 0; }
-.pop-menu.pop-side { left: calc(100% + 8px); right: auto; }
 .choice-list { display: flex; flex-direction: column; gap: 2px; }
 .choice-scroll { max-height: 280px; overflow: auto; }
 .choice-row {
@@ -695,8 +693,8 @@ body.rail-hidden .rail-col { display: none; }
   .brand-name, .status-sub, .tb-kbd { display: none; }
   .tb-search { order: 10; flex: 1 1 100%; margin: 0; }
   .midi-status, .sound-status { max-width: 92px; }
-  /* No rail on a phone: the bar along the bottom (ui/layout.ts buildTabbar) takes its place */
-  .rail-col, #btn-rail { display: none !important; }
+  /* The page's buttons give way to the bar along the bottom (ui/layout.ts buildTabbar) */
+  .tb-page { display: none !important; }
   .work-main { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
   .tabbar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 56;
@@ -738,7 +736,7 @@ body.rail-hidden .rail-col { display: none; }
 
 /* Presentation: the layout alone, its rows filling the window (view/presentation.ts) */
 body.presenting { overflow: hidden; }
-body.presenting .toolbar, body.presenting .rail-col, body.presenting #midi-banner, body.presenting .module-header,
+body.presenting .toolbar, body.presenting #midi-banner, body.presenting .module-header,
 body.presenting .module-resize, body.presenting .module-menu, body.presenting .guitar-chrome,
 body.presenting .chord-head-alts { display: none !important; }
 body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }

@@ -448,12 +448,16 @@ await check('player chords: a recorded C chord is read, and the playhead shows i
 })
 
 await check('microphone: a sung A3 shows on the tuner and in the detector as a note; off lets it go', async () => {
-  await page.click('#btn-mic')
+  await page.click('#btn-input-status')
+  await page.click('#menu-mic')
+  await page.click('#btn-input-status')
   await page.waitForFunction(() => document.querySelector('.tuner-note')?.textContent === 'A3', null, { timeout: 5000 })
   assert((await text('.tuner-detail')).includes('Hz'), `detail: ${await text('.tuner-detail')}`)
   await page.waitForFunction(() => document.querySelector('#analysis-content')?.textContent?.includes('A3'), null, { timeout: 3000 })
-  assert(await page.locator('#btn-mic.active-mode').count() === 1, 'toolbar button not lit')
+  assert(await page.locator('#menu-mic.active-mode').count() === 1, 'input menu row not lit')
+  assert(await page.locator('#btn-input-status [data-on="mic"]').isVisible(), 'the bar does not show the open microphone')
   await page.click('#tuner-mic')
+  assert(await page.locator('#btn-input-status [data-on="mic"]').isHidden(), 'the bar still shows the microphone')
   assert(await text('.tuner-note') === '—', 'tuner still shows a note')
   assert(!(await text('#analysis-content')).includes('MIDI 57'), 'the note is still held')
 })
@@ -1262,7 +1266,7 @@ await check('on-screen piano, Hold: each click adds a note, a second click remov
 
 await check('computer keyboard: M on, A D G is a C chord, H plays A instead of toggling Hold; M off', async () => {
   await page.keyboard.press('m')
-  assert(await page.locator('#btn-keyboard.active-mode').count() === 1, 'keyboard mode not on')
+  assert(await page.locator('#menu-keyboard.active-mode').count() === 1 && await page.locator('#btn-input-status [data-on="keyboard"]').isVisible(), 'keyboard mode not on')
   for (const k of ['a', 'd', 'g']) await page.keyboard.down(k)
   await page.waitForTimeout(80)
   assert(await badgeOrNone() === 'C', `A D G: ${await badgeOrNone()}`)
@@ -1277,7 +1281,7 @@ await check('computer keyboard: M on, A D G is a C chord, H plays A instead of t
   assert((await text('#keyboard-status')).startsWith('C3'), `octave: ${await text('#keyboard-status')}`)
   await page.keyboard.press('x')
   await page.keyboard.press('m')
-  assert(await page.locator('#btn-keyboard.active-mode').count() === 0, 'keyboard mode still on')
+  assert(await page.locator('#menu-keyboard.active-mode').count() === 0 && await page.locator('#btn-input-status [data-on="keyboard"]').isHidden(), 'keyboard mode still on')
 })
 
 await check('typed chord: / focuses the field, Enter shows it; an unknown name is marked', async () => {
@@ -1515,20 +1519,22 @@ await check('key menu: Auto, or a key from the circle\'s order; the bar names it
   assert((await text('#key-btn-auto')) === 'auto', 'auto not marked')
 })
 
-await check('the rail hides and stays hidden after a reload; its menus also open from the bar', async () => {
-  await page.click('#btn-rail')
-  assert(!(await page.locator('#rail').isVisible()), 'rail still shown')
-  await page.reload()
-  await page.waitForFunction(() => window.UMT && window.Notae)
-  assert(!(await page.locator('#rail').isVisible()), 'rail back after reload')
+await check('the bar holds each control once: its menus open under their buttons; the sound menu filters', async () => {
+  // A menu once opened stays in its button's anchor: its buttons are not the bar's
+  const ids = await page.evaluate(() => [...document.querySelectorAll('#z1-toolbar button[id]')].filter(b => !b.closest('.pop-menu')).map(b => b.id))
+  assert(ids.join(' ') === 'btn-key btn-input-status btn-sound-status btn-layout btn-present btn-views btn-settings btn-help', `bar: ${ids.join(' ')}`)
+  for (const [btn, menu] of [['#btn-layout', '#layout-menu'], ['#btn-views', '#view-menu']]) {
+    await page.click(btn)
+    const [b, m] = await Promise.all([page.locator(btn).boundingBox(), page.locator(menu).boundingBox()])
+    assert(m && m.y >= b.y + b.height && Math.abs(m.x + m.width - (b.x + b.width)) < 2, `${menu} not under ${btn}: ${JSON.stringify([b, m])}`)
+    await page.click(btn)
+  }
   await page.click('#btn-sound-status')
   assert(await page.locator('#sound-menu').isVisible(), 'sound menu not open from the bar')
   await page.fill('#instrument-filter', 'violin')
   const found = await page.locator('#instrument-list .choice-row').allInnerTexts()
   assert(found.length === 1 && found[0].startsWith('Violin'), `filtered: ${found.join(' | ')}`)
   await page.click('#btn-sound-status')
-  await page.click('#btn-rail')
-  assert(await page.locator('#rail').isVisible(), 'rail not back')
 })
 
 await check('the field reaches the panels\' ⋯ options and each row of Settings', async () => {
@@ -1720,7 +1726,7 @@ await check('a phone: the bar at the bottom opens its menus as sheets; Help is f
   const p = await context.newPage()
   await p.goto(URL_)
   await p.waitForFunction(() => window.UMT && window.Notae)
-  assert(await p.locator('#tabbar').isVisible() && await p.locator('.rail-col').isHidden() && await p.locator('#btn-rail').isHidden(), 'no bottom bar in place of the rail')
+  assert(await p.locator('#tabbar').isVisible() && await p.locator('#btn-layout').isHidden() && await p.locator('#btn-views').isHidden(), 'no bottom bar in place of the page\'s buttons')
   const sheet = () => p.evaluate(() => { const m = document.querySelector('.pop-menu.open'); if (!m) return null; const r = m.getBoundingClientRect(); return { id: m.id, sheet: m.classList.contains('pop-sheet'), left: r.left, width: r.width, bottom: Math.round(r.bottom) } })
   const opened = []
   for (const tab of ['tab-input', 'tab-sound', 'tab-layout', 'tab-more']) {

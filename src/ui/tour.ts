@@ -15,7 +15,7 @@ const STEPS: { id: string; target: string | null }[] = [
   { id: 'explain', target: '#mod-explain' },
   { id: 'cof', target: '#mod-cof' },
   { id: 'history', target: '#mod-history' },
-  { id: 'layout', target: '#btn-layout, #tab-layout' },   // the rail's, or the bottom bar's on a phone
+  { id: 'layout', target: '#btn-layout, #tab-layout' },   // the top bar's, or the bottom bar's on a phone
   { id: 'practice', target: '#mod-progressions' },
   { id: 'help', target: '#btn-help' },
 ]
