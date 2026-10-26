@@ -4197,8 +4197,10 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   // src/ui/a11y.ts
   var live = null;
   var pending = null;
+  var pendingSounding = false;
   var lastSaid = "";
-  function announce(text, delay = 350) {
+  var lastId = "";
+  function announce(text, delay = 350, sounding3) {
     if (typeof document === "undefined") return;
     if (!live) {
       live = document.createElement("div");
@@ -4208,13 +4210,26 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       live.setAttribute("aria-atomic", "true");
       document.body.appendChild(live);
     }
+    if (sounding3 !== void 0) {
+      if (sounding3 === lastId && !(pending && pendingSounding)) return;
+      lastId = sounding3;
+    }
     if (pending) clearTimeout(pending);
+    pendingSounding = sounding3 !== void 0;
     pending = setTimeout(() => {
       pending = null;
       if (text === lastSaid) return;
       lastSaid = text;
       live.textContent = text;
     }, delay);
+  }
+  function silence() {
+    if (pending && pendingSounding) {
+      clearTimeout(pending);
+      pending = null;
+    }
+    lastId = "";
+    lastSaid = "";
   }
   var HAS_WORD = /\p{L}{2,}/u;
   function labelIconButtons(root2) {
@@ -8632,7 +8647,13 @@ ${explainCadence(cadence)}` : "");
     });
     tabs2.appendChild(newTab);
     root2.appendChild(tabs2);
-    requestAnimationFrame(() => tabs2.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" }));
+    requestAnimationFrame(() => {
+      const on = tabs2.querySelector('[aria-selected="true"]');
+      if (!on) return;
+      const strip = tabs2.getBoundingClientRect(), tab = on.getBoundingClientRect();
+      if (tab.left < strip.left) tabs2.scrollLeft -= strip.left - tab.left;
+      else if (tab.right > strip.right) tabs2.scrollLeft += tab.right - strip.right;
+    });
     const bars = song.sections.reduce((n, s) => n + s.measures.length * Math.max(1, s.repeatCount), 0);
     const summary = el("span", "song-form-info");
     summary.textContent = song.sections.length ? [
@@ -10717,13 +10738,16 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function announceDetection() {
     const d = state.detection;
-    if (!d) return;
+    if (!d || liftingNotes) {
+      silence();
+      return;
+    }
     if (d.kind === "note") {
-      announce(t("a11y.note", { note: noteLabel(d.noteName) }));
+      announce(t("a11y.note", { note: noteLabel(d.noteName) }), void 0, `note:${d.noteName}`);
       return;
     }
     if (d.kind === "interval") {
-      announce(d.intervalName);
+      announce(d.intervalName, void 0, `interval:${d.notes.join(" ")}`);
       return;
     }
     const sym = selectedSymbol();
@@ -10731,7 +10755,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const chord = tryParseChord(sym);
     const name = chord ? tryUMT("chord names", () => UMT.chordLongName(chord, getLang()), chordLabel(sym)) : chordLabel(sym);
     const a = state.analysis;
-    announce(a && a.roman !== "?" ? t("a11y.chord", { chord: name, roman: a.roman, fn: t(`fn.${a.function}`) }) : name);
+    announce(a && a.roman !== "?" ? t("a11y.chord", { chord: name, roman: a.roman, fn: t(`fn.${a.function}`) }) : name, void 0, `chord:${sym}`);
   }
   function renderDetector() {
     announceDetection();

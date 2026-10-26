@@ -53,7 +53,7 @@ import { normalizeKey, keyPrefersSharps, keyMode, keyOnParent, KEY_MODES, type K
 import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands, panelMenuCommands, isModuleShown } from './ui/layout'
 import { applyTheme, onThemeChange, followSystemTheme } from './ui/theme'
 import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang, getLang } from './i18n/i18n'
-import { announce, watchIconButtons } from './ui/a11y'
+import { announce, silence, watchIconButtons } from './ui/a11y'
 
 // ─── Size preferences ────────────────────────────────────────────────────────
 
@@ -579,15 +579,17 @@ function onNextPick(chord: string) {
 /** What a screen reader hears when the detector changes: the chord with its degree and function, a note, an interval. */
 function announceDetection() {
   const d = state.detection
-  if (!d) return
-  if (d.kind === 'note') { announce(t('a11y.note', { note: noteLabel(d.noteName) })); return }
-  if (d.kind === 'interval') { announce(d.intervalName); return }
+  // The notes left while a chord is lifted are not played: nothing of them is said
+  if (!d || liftingNotes) { silence(); return }
+  if (d.kind === 'note') { announce(t('a11y.note', { note: noteLabel(d.noteName) }), undefined, `note:${d.noteName}`); return }
+  if (d.kind === 'interval') { announce(d.intervalName, undefined, `interval:${d.notes.join(' ')}`); return }
   const sym = selectedSymbol()
   if (!sym) return
   const chord = tryParseChord(sym)
   const name = chord ? tryUMT('chord names', () => UMT.chordLongName(chord, getLang()), chordLabel(sym)) : chordLabel(sym)
   const a = state.analysis
-  announce(a && a.roman !== '?' ? t('a11y.chord', { chord: name, roman: a.roman, fn: t(`fn.${a.function}`) }) : name)
+  // Said once while it sounds: a key found or changed meanwhile does not say it again
+  announce(a && a.roman !== '?' ? t('a11y.chord', { chord: name, roman: a.roman, fn: t(`fn.${a.function}`) }) : name, undefined, `chord:${sym}`)
 }
 
 function renderDetector() {

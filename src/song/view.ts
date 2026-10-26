@@ -211,7 +211,15 @@ function buildSongDOM(song: Song, h: SongEventHandlers): HTMLElement {
   newTab.addEventListener('click', () => { if (!isBlankSong(_song)) h.onNewSong() })
   tabs.appendChild(newTab)
   root.appendChild(tabs)
-  requestAnimationFrame(() => tabs.querySelector<HTMLElement>('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }))
+  // The open song's tab in view within the strip only: scrollIntoView would also scroll the page
+  // down to the song, the last panel, on every load
+  requestAnimationFrame(() => {
+    const on = tabs.querySelector<HTMLElement>('[aria-selected="true"]')
+    if (!on) return
+    const strip = tabs.getBoundingClientRect(), tab = on.getBoundingClientRect()
+    if (tab.left < strip.left) tabs.scrollLeft -= strip.left - tab.left
+    else if (tab.right > strip.right) tabs.scrollLeft += tab.right - strip.right
+  })
 
   const bars = song.sections.reduce((n, s) => n + s.measures.length * Math.max(1, s.repeatCount), 0)
   const summary = el('span', 'song-form-info')
