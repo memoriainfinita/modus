@@ -66,18 +66,22 @@ export function subscribeMirror(onState: (s: MirrorState) => void) {
   channel?.postMessage({ type: 'hello' } satisfies Message)
 }
 
-/** `?window=<layout>&bg=…`: the layout (a preset id or "saved:name") and its background; null in the main window. */
-export function layoutWindowParams(): { layout: string; background: string } | null {
+/** The panels of a layout window: their own ground, or none, so a chroma key takes them out with the background. */
+export const WINDOW_PANELS = ['solid', 'clear'] as const
+export type WindowPanels = typeof WINDOW_PANELS[number]
+
+/** `?window=<layout>&bg=…&panels=…`: the layout (a preset id or "saved:name"), its background and panels; null in the main window. */
+export function layoutWindowParams(): { layout: string; background: string; panels: WindowPanels } | null {
   const params = new URLSearchParams(location.search)
   const layout = params.get('window')
   if (!layout) return null
   const bg = params.get('bg') as ViewBackground | null
-  return { layout, background: (bg && VIEW_BACKGROUNDS[bg]) || VIEW_BACKGROUNDS.magenta }
+  return { layout, background: (bg && VIEW_BACKGROUNDS[bg]) || VIEW_BACKGROUNDS.magenta, panels: params.get('panels') === 'clear' ? 'clear' : 'solid' }
 }
 
-export function layoutWindowUrl(layout: string, bg: ViewBackground, base = location.href): string {
+export function layoutWindowUrl(layout: string, bg: ViewBackground, panels: WindowPanels, base = location.href): string {
   const url = new URL(base)
-  url.search = new URLSearchParams({ window: layout, bg }).toString()
+  url.search = new URLSearchParams({ window: layout, bg, panels }).toString()
   url.hash = ''
   return url.toString()
 }

@@ -742,6 +742,9 @@ body.presenting .chord-head-alts { display: none !important; }
 body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 /* A layout window (OBS): its panels on the windows' background, keyed out around them */
 html:has(> body.layout-window), body.layout-window { background: var(--window-bg); }
+/* Clear panels: keyed out with the background; text and drawings keep a dark glow to read over video */
+body.layout-window.panels-clear .module { background: transparent; text-shadow: 0 0 3px var(--glow); }
+body.layout-window.panels-clear .module svg { filter: drop-shadow(0 0 1px var(--glow)); }
 
 /* ─── Panels ──────────────────────────────────────────────────── */
 #analysis-content { display: flex; flex-direction: column; gap: 0.45em; flex-shrink: 0; }   /* taller than its panel: the panel scrolls */

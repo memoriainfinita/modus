@@ -1533,6 +1533,13 @@ html:has(> body.layout-window),
 body.layout-window {
   background: var(--window-bg);
 }
+body.layout-window.panels-clear .module {
+  background: transparent;
+  text-shadow: 0 0 3px var(--glow);
+}
+body.layout-window.panels-clear .module svg {
+  filter: drop-shadow(0 0 1px var(--glow));
+}
 #analysis-content {
   display: flex;
   flex-direction: column;

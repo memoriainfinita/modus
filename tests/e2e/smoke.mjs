@@ -645,6 +645,8 @@ await check('layout window: a whole other layout that follows this one, on the c
   await page.click('#btn-views')
   const listed = await page.locator('#window-list [data-window]').evaluateAll(es => es.map(e => e.dataset.window))
   assert(listed.slice(0, 5).join() === 'standard,study,class,transcription,recording', `listed: ${listed}`)
+  // Clear panels: the chroma key takes them out with the background
+  await page.click('#view-menu [data-window-panels="clear"]')
   const [win] = await Promise.all([page.context().waitForEvent('page'), page.click('#window-list [data-window="class"]')])
   await win.waitForFunction(() => window.UMT && document.body.classList.contains('layout-window'))
   assert(await win.title() === 'Modus window: Class', `title: ${await win.title()}`)
@@ -652,6 +654,8 @@ await check('layout window: a whole other layout that follows this one, on the c
   assert(!(await win.locator('#z1-toolbar').isVisible()) && !(await win.locator('.module-header').first().isVisible()), 'controls shown')
   // Class shows the history under the chord; Standard does not: the window has its own layout
   assert(await win.locator('#mod-history').isVisible(), 'not the Class layout')
+  const panelBg = await win.locator('#mod-chord').evaluate(e => getComputedStyle(e).backgroundColor)
+  assert(panelBg === 'rgba(0, 0, 0, 0)', `clear panels: ${panelBg}`)
   for (const chord of [[60, 64, 67], [57, 60, 64], [65, 69, 72]]) { await play(chord, 700); await off(chord); await page.waitForTimeout(150) }
   await play([67, 71, 74, 77], 700)
   await win.waitForFunction(() => document.querySelector('#mod-chord .chord-name-badge')?.textContent === 'G7', null, { timeout: 5000 })
@@ -661,6 +665,7 @@ await check('layout window: a whole other layout that follows this one, on the c
   assert(await chips(win) === await chips(page) && await chips(win) > 0, `history ${await chips(win)} / ${await chips(page)}`)
   await win.close()
   assert(await page.evaluate(() => localStorage.getItem('layout')) === layoutBefore, 'the window changed the stored layout')
+  await page.click('#btn-views'); await page.click('#view-menu [data-window-panels="solid"]'); await page.mouse.click(5, 990)
 })
 
 await check('export: the staff as SVG and the circle as PNG, from their own menus', async () => {
