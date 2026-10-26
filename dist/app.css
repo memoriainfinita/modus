@@ -1246,7 +1246,7 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 1px;
 }
-.module-chord .module-header {
+:is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity) .module-header {
   position: absolute;
   top: 0;
   left: 0;
@@ -1254,10 +1254,9 @@ body {
   z-index: 1;
   opacity: 0;
   transition: opacity .15s;
+  background: var(--surface-2);
 }
-.module-chord:hover .module-header,
-.module-chord:focus-within .module-header,
-.module-chord.module-moving .module-header {
+:is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity):is(:hover, :focus-within, .module-moving, .module-menu-open) .module-header {
   opacity: 1;
 }
 .module-chord .module-body {
@@ -1351,7 +1350,7 @@ body {
   #key-container .key-mode-row {
     flex-wrap: wrap;
   }
-  .module-chord .module-header {
+  :is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity) .module-header {
     opacity: 1;
     position: static;
   }
@@ -3729,7 +3728,7 @@ body {
     height: 24px;
     opacity: 1;
   }
-  .module-chord .module-header {
+  :is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity) .module-header {
     opacity: 1;
   }
   .history-chip,
