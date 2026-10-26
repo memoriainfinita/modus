@@ -1330,7 +1330,7 @@ body.rail-hidden .rail-col {
     height: calc(var(--h) * 30px + (var(--h) - 1) * 10px);
     flex-shrink: 0;
   }
-  :is(.module-chord, .module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) {
+  .module-chord {
     height: auto;
     min-height: calc(var(--h) * 30px + (var(--h) - 1) * 10px);
   }
@@ -1529,8 +1529,6 @@ body.rail-hidden .rail-col {
     background: var(--on-accent);
   }
   :is(.module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) .module-body {
-    overflow: visible;
-    flex: none;
     container-type: inline-size;
   }
   .module-header {
@@ -2982,10 +2980,10 @@ body.view-mode .guitar-chrome {
   color: var(--text);
   text-shadow: 0 0 1vmin var(--glow);
 }
-.view-guitar > :not(:first-child) {
+.view-guitar > :not(.strings-stage) {
   display: none !important;
 }
-.view-guitar > div:first-child {
+.view-guitar > .strings-stage {
   width: 100%;
   height: 100%;
 }

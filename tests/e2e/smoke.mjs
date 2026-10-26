@@ -605,12 +605,26 @@ await check('view window: the chord view follows the detector, alone on the chro
   assert(await view.title() === 'Modus view: chord', `title: ${await view.title()}`)
   assert(!(await view.locator('#app').isVisible()), 'the app shows in the view window')
   const bg = await view.evaluate(() => getComputedStyle(document.body).backgroundColor)
-  assert(bg === 'rgb(0, 255, 0)', `background: ${bg}`)
+  assert(bg === 'rgb(255, 0, 255)', `background: ${bg}`)   // magenta: the tonic's green would be keyed out of green
   await play([57, 60, 64, 67], 200)
   const shown = await view.locator('.view-chord-name').innerText()
   await off([57, 60, 64, 67])
   await view.close()
   assert(shown === 'Am7', `view shows ${shown}`)
+})
+
+await check('view window: the strings view shows the drawing, without the panel\'s tabs', async () => {
+  await page.click('#btn-views')
+  const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="guitar"]')])
+  await view.waitForFunction(() => window.UMT && window.Notae && document.getElementById('view-content'))
+  await play([60, 64, 67], 300)
+  const drawn = await view.evaluate(() => {
+    const r = document.querySelector('#view-content .strings-drawing svg')?.getBoundingClientRect()
+    return { w: Math.round(r?.width ?? 0), h: Math.round(r?.height ?? 0), tabs: !!document.querySelector('#view-content .strings-tabs')?.offsetParent }
+  })
+  await off([60, 64, 67])
+  await view.close()
+  assert(drawn.w > 100 && drawn.h > 100 && !drawn.tabs, `drawn: ${JSON.stringify(drawn)}`)
 })
 
 await check('export: the staff as SVG and the circle as PNG', async () => {

@@ -5,7 +5,8 @@
 export type ViewName = 'chord' | 'staff' | 'cof' | 'piano' | 'guitar'
 export const VIEW_NAMES: ViewName[] = ['chord', 'staff', 'cof', 'piano', 'guitar']
 
-export const VIEW_BACKGROUNDS = { green: '#00ff00', magenta: '#ff00ff', black: '#000000', dark: '#141414' } as const
+// Magenta first and by default: the tonic's green would be keyed out of a green chroma
+export const VIEW_BACKGROUNDS = { magenta: '#ff00ff', green: '#00ff00', black: '#000000', dark: '#141414' } as const
 export type ViewBackground = keyof typeof VIEW_BACKGROUNDS
 
 export interface ViewState {

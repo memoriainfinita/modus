@@ -888,7 +888,7 @@
     "views.bg.magenta": "magenta",
     "views.bg.black": "black",
     "views.bg.dark": "dark",
-    "views.hint": 'In OBS: Window Capture of "Modus view: \u2026", then a Chroma Key filter. The window follows this one live.',
+    "views.hint": `In OBS: Window Capture of "Modus view: \u2026", then a Chroma Key filter with the background's colour (Magenta, not green: the tonic is green). The window follows this one live.`,
     "views.save": "Save the diagram on screen (transparent)",
     "view.chord": "Chord",
     "view.staff": "Staff",
@@ -1893,7 +1893,7 @@
     "views.bg.magenta": "magenta",
     "views.bg.black": "negro",
     "views.bg.dark": "oscuro",
-    "views.hint": 'En OBS: Captura de ventana de "Modus view: \u2026" y despu\xE9s un filtro Chroma Key. La ventana sigue a esta en directo.',
+    "views.hint": 'En OBS: Captura de ventana de "Modus view: \u2026" y despu\xE9s un filtro Chroma Key con el color del fondo (Magenta, no verde: la t\xF3nica es verde). La ventana sigue a esta en directo.',
     "views.save": "Guardar el diagrama en pantalla (fondo transparente)",
     "view.chord": "Acorde",
     "view.staff": "Pentagrama",
@@ -6463,7 +6463,7 @@ ${explainCadence(cadence)}` : "");
 
   // src/view/channel.ts
   var VIEW_NAMES = ["chord", "staff", "cof", "piano", "guitar"];
-  var VIEW_BACKGROUNDS = { green: "#00ff00", magenta: "#ff00ff", black: "#000000", dark: "#141414" };
+  var VIEW_BACKGROUNDS = { magenta: "#ff00ff", green: "#00ff00", black: "#000000", dark: "#141414" };
   var NAME = "modus-view";
   function open() {
     try {
@@ -7321,7 +7321,7 @@ ${explainCadence(cadence)}` : "");
   var contentRows = {};
   var dragging = false;
   function shownGrid() {
-    return dragging || document.body.classList.contains("presenting") ? grid2 : fitGrid(grid2, contentRows);
+    return dragging || document.body.classList.contains("presenting") || narrow() ? grid2 : fitGrid(grid2, contentRows);
   }
   function refreshLayout() {
     applyGrid();
@@ -7464,6 +7464,7 @@ ${explainCadence(cadence)}` : "");
       sizes.observe(body);
     }
     onLayoutChange(schedule2);
+    matchMedia("(max-width: 720px)").addEventListener("change", () => applyGrid());
     schedule2();
   }
   function renderLayoutMenu() {
@@ -7866,8 +7867,8 @@ ${explainCadence(cadence)}` : "");
     const params = new URLSearchParams(location.search);
     const view2 = params.get("view");
     if (!view2 || !VIEW_NAMES.includes(view2)) return false;
-    const bg = params.get("bg") ?? "green";
-    const background = VIEW_BACKGROUNDS[bg] ?? VIEW_BACKGROUNDS.green;
+    const bg = params.get("bg") ?? "magenta";
+    const background = VIEW_BACKGROUNDS[bg] ?? VIEW_BACKGROUNDS.magenta;
     document.title = `Modus view: ${view2}`;
     applyDocumentLang();
     applyTheme("dark");
@@ -10794,7 +10795,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     openPresentation(() => $2("btn-present").classList.remove("active-mode"));
     $2("btn-present").classList.add("active-mode");
   }
-  var viewBackground = loadChoice("view-bg", Object.keys(VIEW_BACKGROUNDS), "green");
+  var viewBackground = loadChoice("view-bg", Object.keys(VIEW_BACKGROUNDS), "magenta");
   function wireViewMenu() {
     const menu = $2("view-menu");
     wirePopover(menu, [$2("btn-views")]);

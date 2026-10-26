@@ -87,7 +87,7 @@ Click a chord to play it and show it in the detector; the key stays. The chord o
 
 ### Views for OBS, and export
 
-The ⧉ button opens a window with one element alone — the chord name with its degree, the staff, the circle of fifths, the piano or the guitar — filling the window on a chroma green (or magenta, black, dark) background, following what you play live. In OBS: Window Capture of "Modus view: chord" (or staff, cof…), then a Chroma Key filter. The same menu saves the staff, circle, guitar or piano as SVG or PNG with a transparent background.
+The ⧉ button opens a window with one element alone — the chord name with its degree, the staff, the circle of fifths, the piano or the guitar — filling the window on a chroma magenta (or green, black, dark) background, following what you play live. In OBS: Window Capture of "Modus view: chord" (or staff, cof…), then a Chroma Key filter with Magenta as its key colour (green would key out the tonic, drawn in green). The same menu saves the staff, circle, guitar or piano as SVG or PNG with a transparent background.
 
 **Presentation** (⛶ or P) shows the current layout over the whole screen with no controls, for a class or a recording of the screen (the Class layout is made for it); Esc leaves.
 

@@ -2,6 +2,10 @@
 
 What left `state.md`. Most recent first.
 
+### 2026-10-26 — Phone panels no longer grow with their content
+
+Item 13 (2026-10-11) let the text panels grow to their content in one column. On a real phone each chord grew Explanation (110 → 570 px) and Key, and released it shrank: the piano jumped from under the fingers. Now each panel keeps its layout rows and scrolls inside.
+
 ### 2026-10-13 — The song builder is reopened
 
 **What changed:** the freeze of 2026-10-10 (no new features for the song builder) no longer holds. The Song panel became a chord chart with the form as a strip, sections written as text and songs as tabs; playing the whole song is TODO.

@@ -636,7 +636,7 @@ function togglePresentation() {
   $('btn-present').classList.add('active-mode')
 }
 
-let viewBackground = loadChoice('view-bg', Object.keys(VIEW_BACKGROUNDS) as ViewBackground[], 'green')
+let viewBackground = loadChoice('view-bg', Object.keys(VIEW_BACKGROUNDS) as ViewBackground[], 'magenta')
 
 function wireViewMenu() {
   const menu = $('view-menu')

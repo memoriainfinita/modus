@@ -669,14 +669,14 @@ body.rail-hidden .rail-col { display: none; }
   .module-chord .chord-notes { font-size: 13px; }
 }
 
-/* A phone: the same panels in one column, in layout order. Diagrams as tall as their rows;
-   text panels as tall as what they say, so nothing is cut off a narrow screen */
+/* A phone: the same panels in one column, in layout order, each as tall as its rows in the
+   layout, whatever it shows: a panel that grew with a chord would push the piano from under
+   the fingers. Text that does not fit scrolls inside its panel. The chord, first on the page,
+   pushes nothing: as tall as its name */
 @media (max-width: 720px) {
   .grid { display: flex; flex-direction: column; }
   .module { height: calc(var(--h) * 30px + (var(--h) - 1) * 10px); flex-shrink: 0; }
-  :is(.module-chord, .module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) {
-    height: auto; min-height: calc(var(--h) * 30px + (var(--h) - 1) * 10px);
-  }
+  .module-chord { height: auto; min-height: calc(var(--h) * 30px + (var(--h) - 1) * 10px); }
   .module-chord .module-body { container-type: inline-size; }
   .module-chord .chord-name-badge, .module-chord .chord-head-name { font-size: 44px; }
   .module-chord .chord-notes { font-size: 15px; }
@@ -729,7 +729,7 @@ body.rail-hidden .rail-col { display: none; }
   }
   .pop-sheet .layout-module input:checked { background: var(--accent); }
   .pop-sheet .layout-module input:checked::before { transform: translateX(16px); background: var(--on-accent); }
-  :is(.module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) .module-body { overflow: visible; flex: none; container-type: inline-size; }
+  :is(.module-analysis, .module-explain, .module-key, .module-progressions, .module-ear, .module-history, .module-song) .module-body { container-type: inline-size; }
   .module-header { cursor: default; }
   .module-resize { display: none; }
 }
@@ -1263,8 +1263,9 @@ body.view-mode .guitar-chrome { display: none; }
 .view-chord { flex-direction: column; gap: 2vmin; font-family: system-ui, sans-serif; text-align: center; }
 .view-chord-name { font-size: 34vmin; font-weight: 700; line-height: 1; text-shadow: 0 0 1.2vmin var(--glow); }
 .view-chord-detail { font-size: 10vmin; color: var(--text); text-shadow: 0 0 1vmin var(--glow); }
-.view-guitar > :not(:first-child) { display: none !important; }
-.view-guitar > div:first-child { width: 100%; height: 100%; }
+/* Only the drawing: the panel's tabs and foot go before and after it */
+.view-guitar > :not(.strings-stage) { display: none !important; }
+.view-guitar > .strings-stage { width: 100%; height: 100%; }
 .view-staff > div { width: 100%; height: 100%; }
 
 /* ─── Velocity ────────────────────────────────────────────────── */

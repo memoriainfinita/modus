@@ -183,7 +183,7 @@ export const en = {
   'views.bg.magenta': 'magenta',
   'views.bg.black': 'black',
   'views.bg.dark': 'dark',
-  'views.hint': 'In OBS: Window Capture of "Modus view: …", then a Chroma Key filter. The window follows this one live.',
+  'views.hint': 'In OBS: Window Capture of "Modus view: …", then a Chroma Key filter with the background\'s colour (Magenta, not green: the tonic is green). The window follows this one live.',
   'views.save': 'Save the diagram on screen (transparent)',
   'view.chord': 'Chord',
   'view.staff': 'Staff',
