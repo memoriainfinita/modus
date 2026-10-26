@@ -79,8 +79,8 @@ describe('presets', () => {
     }
   })
 
-  it('standard shows every panel but Velocity and Next, the chord across the top', () => {
-    expect(PRESETS.standard.map(c => c.id).sort()).toEqual(MODULE_IDS.filter(id => id !== 'velocity' && id !== 'next').sort())
+  it('standard shows every panel but Velocity, Next and Isomorphic, the chord across the top', () => {
+    expect(PRESETS.standard.map(c => c.id).sort()).toEqual(MODULE_IDS.filter(id => id !== 'velocity' && id !== 'next' && id !== 'iso').sort())
     expect(PRESETS.standard.find(c => c.id === 'chord')).toMatchObject({ x: 0, y: 0, w: 12 })
   })
 })

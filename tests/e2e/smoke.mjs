@@ -640,6 +640,62 @@ await check('view window: the strings view shows the drawing, without the panel\
   assert(drawn.w > 100 && drawn.h > 100 && !drawn.tabs, `drawn: ${JSON.stringify(drawn)}`)
 })
 
+await check('isomorphic panel: G7 in C lit in the dominant\'s colour with its shape, other octaves softer; cell size, layout, a cell that plays; its view window', async () => {
+  const shot = async name => { if (process.env.E2E_SHOTS) await page.locator('#mod-iso').screenshot({ path: join(process.env.E2E_SHOTS, `iso-${name}.png`) }) }
+  const token = name => page.evaluate(n => getComputedStyle(document.documentElement).getPropertyValue(`--${n}`).trim(), name)
+  const fill = m => page.locator(`#iso-container polygon[data-midi="${m}"]`).first().getAttribute('fill')
+  const cells = () => page.locator('#iso-container polygon').count()
+  const G7 = [55, 59, 62, 65]
+  await setKey('C Major')
+  await showPanel('iso')
+  await page.locator('#mod-iso').scrollIntoViewIfNeeded()
+  assert(await cells() > 40, `cells: ${await cells()}`)
+  await on(G7)
+  await page.waitForTimeout(100)
+  assert(await fill(55) === await token('fn-d'), `G3: ${await fill(55)}`)
+  const soft = await fill(67), plain = await fill(61)
+  assert(soft !== await token('fn-d') && soft !== plain && plain === await token('iso-cell'), `soft ${soft}, plain ${plain}`)
+  assert(await page.locator('#iso-container path').count() === 1, 'the chord\'s shape')
+  await shot('g7-medium')
+  const medium = await cells()
+  await option('iso', '#menu-iso [data-iso-size="small"]')
+  assert(await cells() > medium * 1.8, `small ${await cells()}, medium ${medium}`)
+  await shot('g7-small')
+  // Wicki-Hayden in rows: a whole tone to the right
+  await option('iso', '#menu-iso [data-iso-layout="wicki"]')
+  const step = await page.locator('#iso-container polygon[data-midi="60"]').first().evaluate(c => {
+    const box = c.getBBox(), cells = [...c.ownerSVGElement.querySelectorAll('polygon')]
+    const right = cells.find(o => { const b = o.getBBox(); return Math.abs(b.y - box.y) < 1 && b.x > box.x && b.x - box.x < box.width * 1.2 })
+    return right ? Number(right.dataset.midi) - 60 : null
+  })
+  assert(step === 2, `right of C4 in Wicki-Hayden: +${step}`)
+  await shot('g7-wicki')
+  await off(G7)
+  await option('iso', '#menu-iso [data-iso-layout="harmonic"]')
+  await option('iso', '#menu-iso [data-iso-size="medium"]')
+  // A cell plays like a piano key, while pressed
+  await mode('normal')
+  await page.locator('#iso-container polygon[data-midi="60"]').first().scrollIntoViewIfNeeded()
+  const box = await page.locator('#iso-container polygon[data-midi="60"]').first().boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.waitForTimeout(80)
+  const shown = (await page.locator('body').innerText()).includes('MIDI 60')
+  await page.mouse.up()
+  assert(shown, 'the cell did not sound in the detector')
+  // Its view window, laid out for the window
+  await page.click('#btn-views')
+  const [view] = await Promise.all([page.context().waitForEvent('page'), page.click('#view-menu [data-view="iso"]')])
+  await view.waitForFunction(() => window.UMT && window.Notae && document.getElementById('view-content'))
+  await play(G7, 300)
+  const lit = await view.locator(`#view-content polygon[data-midi="55"]`).first().getAttribute('fill')
+  await off(G7)
+  await view.close()
+  assert(lit === await token('fn-d'), `view: ${lit}`)
+  await showPanel('iso', false)
+  await setKey('')
+})
+
 await check('layout window: a whole other layout that follows this one, on the chroma background, writing nothing', async () => {
   const layoutBefore = await page.evaluate(() => localStorage.getItem('layout'))
   await page.click('#btn-views')

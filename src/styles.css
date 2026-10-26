@@ -91,6 +91,12 @@
   --scale-dot: #8c8778;
   --piano-scale: #bdb6a6;
   --piano-scale-root: #a68c52;
+  --iso-cell: #262626;
+  --iso-label: #8d8981;
+  --iso-off-label: #5c5a55;
+  --iso-link: #f7f4ee;
+  --iso-scale: #34322c;
+  --iso-scale-label: #d6d3cc;
   --logo-bg: #141414;
   --logo-ink: #ece8df;
 }
@@ -180,6 +186,12 @@
   --scale-dot: #8a8170;
   --piano-scale: #b9b2a3;
   --piano-scale-root: #6b5530;
+  --iso-cell: #e4e1db;
+  --iso-label: #6a665e;
+  --iso-off-label: #a9a49a;
+  --iso-link: #1f1d1a;
+  --iso-scale: #d6ccb6;
+  --iso-scale-label: #2f2c27;
   --logo-bg: #141414;
   --logo-ink: #ece8df;
 }
@@ -270,6 +282,12 @@
   --scale-dot: #a3a3a3;
   --piano-scale: #9a9a9a;
   --piano-scale-root: #c9a23c;
+  --iso-cell: #1f1f1f;
+  --iso-label: #ababab;
+  --iso-off-label: #6e6e6e;
+  --iso-link: #ffffff;
+  --iso-scale: #3d3d3d;
+  --iso-scale-label: #ffffff;
   --logo-bg: #000000;
   --logo-ink: #ffffff;
 }
@@ -360,6 +378,12 @@
   --scale-dot: #7d7466;
   --piano-scale: #c2b59a;
   --piano-scale-root: #9a3b1b;
+  --iso-cell: #e3d8c3;
+  --iso-label: #7a6d58;
+  --iso-off-label: #b3a68e;
+  --iso-link: #2a2118;
+  --iso-scale: #d2c09c;
+  --iso-scale-label: #2a2118;
   --logo-bg: #2b2418;
   --logo-ink: #f6f1e7;
 }
@@ -652,10 +676,10 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
    diagrams' (staff, circle, piano, velocity), float over the panel, seen when the pointer or the
    keyboard is on it: the drawing takes the whole panel. Panels whose text or controls start at
    the top keep theirs in place, where a floating one would cover them */
-:is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity) .module-header {
+:is(.module-chord, .module-staff, .module-cof, .module-piano, .module-iso, .module-velocity) .module-header {
   position: absolute; top: 0; left: 0; right: 0; z-index: 1; opacity: 0; transition: opacity .15s; background: var(--surface-2);
 }
-:is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity):is(:hover, :focus-within, .module-moving, .module-menu-open) .module-header { opacity: 1; }
+:is(.module-chord, .module-staff, .module-cof, .module-piano, .module-iso, .module-velocity):is(:hover, :focus-within, .module-moving, .module-menu-open) .module-header { opacity: 1; }
 .module-chord .module-body { justify-content: center; padding: 10px 24px; }
 .module-chord .chord-name-badge, .module-chord .chord-head-name { font-size: clamp(26px, 52cqh, 40vh); }
 .module-chord .chord-notes { font-size: clamp(13px, 14cqh, 5vh); }
@@ -690,7 +714,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
   #key-container { justify-content: stretch; }
   #key-container .key-main { width: 100%; }
   #key-container .key-mode-row { flex-wrap: wrap; }
-  :is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity) .module-header { opacity: 1; position: static; }
+  :is(.module-chord, .module-staff, .module-cof, .module-piano, .module-iso, .module-velocity) .module-header { opacity: 1; position: static; }
   .toolbar { padding: 8px 10px; flex-wrap: wrap; gap: 6px 8px; }
   .brand-name, .status-sub, .tb-kbd { display: none; }
   .tb-search { order: 10; flex: 1 1 100%; margin: 0; }
@@ -1252,6 +1276,7 @@ body.layout-window.panels-clear .module svg { filter: drop-shadow(0 0 1px var(--
 /* ─── Input without a controller ───────────────────────────────── */
 /* Dots and labels drawn over lit piano keys must not catch the press meant for the key */
 #piano-container circle, #piano-container text { pointer-events: none; }
+#iso-container { overflow: hidden; }
 
 /* ─── View windows (OBS) ──────────────────────────────────────── */
 .view-menu-wrap { position: relative; }
@@ -1460,12 +1485,12 @@ path[role="button"]:focus-visible { outline: none; stroke: var(--cursor); stroke
 
 /* Touch screens: no double-tap zoom (the circle takes two taps), keys and buttons a finger can hit */
 body { touch-action: manipulation; }
-#piano-container svg { touch-action: none; }   /* fingers on the keys play, they do not scroll */
+#piano-container svg, #iso-container svg { touch-action: none; }   /* fingers on the keys play, they do not scroll */
 @media (pointer: coarse) {
   .ctrl-btn, .mode-btn, .size-ctrl-btn, .guitar-nav, .ear-answer, .ctrl-select, .module-close, .module-more, .menu-step { min-height: 36px; min-width: 36px; }
   .menu-item { min-height: 40px; }
   .module-resize { width: 24px; height: 24px; opacity: 1; }
-  :is(.module-chord, .module-staff, .module-cof, .module-piano, .module-velocity) .module-header { opacity: 1; }
+  :is(.module-chord, .module-staff, .module-cof, .module-piano, .module-iso, .module-velocity) .module-header { opacity: 1; }
   .history-chip, .prog-chip { min-height: 40px; }
 }
 

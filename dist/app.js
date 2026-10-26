@@ -855,6 +855,7 @@
     "module.tuner": "Tuner",
     "module.key": "Key",
     "module.piano": "Piano",
+    "module.iso": "Isomorphic",
     "module.velocity": "Velocity",
     "module.history": "History",
     "module.song": "Song",
@@ -911,6 +912,7 @@
     "view.staff": "Staff",
     "view.cof": "Circle of Fifths",
     "view.piano": "Piano",
+    "view.iso": "Isomorphic",
     "view.guitar": "Strings",
     "help.title": "Help: keys, gestures, panels (?)",
     // Shared controls
@@ -929,6 +931,49 @@
     "piano.prev.title": "Mark the keys of the chord before, to see each voice move",
     "menu.scale": "Scale",
     "piano.scale.title": "Mark the key's scale on the keyboard, its tonic stronger, under the keys played",
+    // Isomorphic keyboard panel
+    "iso.layout": "Layout",
+    "iso.layout.title": "How the notes are laid out: each layout keeps an interval's shape in every key",
+    "iso.layout.harmonic": "Harmonic table",
+    "iso.layout.wicki": "Wicki-Hayden",
+    "iso.layout.gerhard": "Gerhard",
+    "iso.layout.janko": "Jank\xF3",
+    "iso.layout.custom": "Custom",
+    "iso.right": "Right",
+    "iso.right.title": "Semitones one cell to the right (in rows)",
+    "iso.upRight": "Up right",
+    "iso.upRight.title": "Semitones one cell up and to the right (in rows)",
+    "iso.down": "down",
+    "iso.up": "up",
+    "iso.size": "Cell size",
+    "iso.size.title": "Smaller cells show more notes in the panel",
+    "iso.size.small": "Small",
+    "iso.size.medium": "Medium",
+    "iso.size.large": "Large",
+    "iso.center": "Centre note",
+    "iso.center.title": "The note in the middle of the grid; a chord outside it moves the grid to it",
+    "iso.orientation": "Orientation",
+    "iso.orientation.title": "Cells in rows, or in columns (the layout turned a quarter); each layout keeps its own",
+    "iso.orientation.rows": "Rows",
+    "iso.orientation.columns": "Columns",
+    "iso.colors": "Colour",
+    "iso.colors.title": "Function: only what sounds, in its function's colour. Pitch class: a hue per note, brighter by octave. Piano: naturals light, sharps dark",
+    "iso.colors.function": "Function",
+    "iso.colors.pitch": "Pitch class",
+    "iso.colors.piano": "Piano",
+    "iso.labels": "Labels",
+    "iso.labels.title": "Note names as written in the key, degrees over its tonic, or movable do (degrees and do need a key)",
+    "iso.labels.notes": "Notes",
+    "iso.labels.degrees": "Degrees",
+    "iso.labels.movable": "Movable do",
+    "iso.labels.none": "None",
+    "iso.octaves": "Other octaves",
+    "iso.octaves.title": "The notes sounding in other octaves: softer, or not marked",
+    "iso.octaves.soft": "Soft",
+    "iso.octaves.hidden": "Hidden",
+    "iso.links": "Chord shape",
+    "iso.links.title": "Join the notes sounding where they are neighbours, to see the chord's shape",
+    "iso.scale.title": "Mark the key's scale on the grid, its tonic stronger; the notes outside it fade",
     "cof.flat.title": "Show flat enharmonics (Gb, Db\u2026)",
     "cof.sharp.title": "Show sharp enharmonics (F#, C#\u2026)",
     "cof.spelledInKey": "Spelled as in {key}; flats or sharps apply without a key",
@@ -1376,6 +1421,7 @@
     "a11y.note": "Note {note}",
     "a11y.staff": "Staff: {notes}",
     "a11y.piano": "Piano: {notes}",
+    "a11y.iso": "Isomorphic keyboard: {notes}",
     "a11y.strings": "Strings: {chord}",
     "a11y.strings.scale": "Strings, scale: {scale}",
     "a11y.cof": "Circle of fifths: arrows move, Enter plays, Enter twice sets the key",
@@ -1469,6 +1515,7 @@
     "help.panel.guitar": "Chord shapes or the whole neck, for guitar, bass, ukulele and more",
     "help.panel.key": "The key's chords, negative harmony, parallel modes, Coltrane axis",
     "help.panel.piano": "What sounds; click or touch a key to play",
+    "help.panel.iso": "What sounds on a grid of hexagons where a chord keeps its shape in every key; click or touch a cell to play",
     "help.panel.velocity": "How hard each note was struck",
     "help.panel.progressions": "Classic progressions in the key, to hear and analyse",
     "help.panel.ear": "Name by ear an interval, a chord or a cadence",
@@ -1884,6 +1931,7 @@
     "module.tuner": "Afinador",
     "module.key": "Tonalidad",
     "module.piano": "Piano",
+    "module.iso": "Isom\xF3rfico",
     "module.velocity": "Velocidad",
     "module.history": "Historial",
     "module.song": "Canci\xF3n",
@@ -1940,6 +1988,7 @@
     "view.staff": "Pentagrama",
     "view.cof": "C\xEDrculo de quintas",
     "view.piano": "Piano",
+    "view.iso": "Isom\xF3rfico",
     "view.guitar": "Cuerdas",
     "help.title": "Ayuda: teclas, gestos, paneles (?)",
     "ctrl.smaller": "M\xE1s peque\xF1o",
@@ -1956,6 +2005,49 @@
     "piano.prev.title": "Marcar las teclas del acorde anterior, para ver moverse cada voz",
     "menu.scale": "Escala",
     "piano.scale.title": "Marcar en el teclado la escala de la tonalidad, su t\xF3nica m\xE1s fuerte, bajo las teclas tocadas",
+    // Panel del teclado isomórfico
+    "iso.layout": "Disposici\xF3n",
+    "iso.layout.title": "C\xF3mo se reparten las notas: cada disposici\xF3n mantiene la forma de un intervalo en todas las tonalidades",
+    "iso.layout.harmonic": "Tabla arm\xF3nica",
+    "iso.layout.wicki": "Wicki-Hayden",
+    "iso.layout.gerhard": "Gerhard",
+    "iso.layout.janko": "Jank\xF3",
+    "iso.layout.custom": "Personalizada",
+    "iso.right": "Derecha",
+    "iso.right.title": "Semitonos una celda a la derecha (en filas)",
+    "iso.upRight": "Arriba derecha",
+    "iso.upRight.title": "Semitonos una celda arriba a la derecha (en filas)",
+    "iso.down": "bajar",
+    "iso.up": "subir",
+    "iso.size": "Tama\xF1o de celda",
+    "iso.size.title": "Con celdas m\xE1s peque\xF1as caben m\xE1s notas en el panel",
+    "iso.size.small": "Peque\xF1a",
+    "iso.size.medium": "Media",
+    "iso.size.large": "Grande",
+    "iso.center": "Nota central",
+    "iso.center.title": "La nota en el centro de la rejilla; un acorde fuera de ella lleva la rejilla hasta \xE9l",
+    "iso.orientation": "Orientaci\xF3n",
+    "iso.orientation.title": "Celdas en filas o en columnas (la disposici\xF3n girada un cuarto); cada disposici\xF3n guarda la suya",
+    "iso.orientation.rows": "Filas",
+    "iso.orientation.columns": "Columnas",
+    "iso.colors": "Color",
+    "iso.colors.title": "Funci\xF3n: solo lo que suena, en el color de su funci\xF3n. Clase de nota: un tono por nota, m\xE1s claro por octava. Piano: naturales claras, alteradas oscuras",
+    "iso.colors.function": "Funci\xF3n",
+    "iso.colors.pitch": "Clase de nota",
+    "iso.colors.piano": "Piano",
+    "iso.labels": "Etiquetas",
+    "iso.labels.title": "Nombres de nota escritos en la tonalidad, grados sobre su t\xF3nica o do m\xF3vil (grados y do necesitan tonalidad)",
+    "iso.labels.notes": "Notas",
+    "iso.labels.degrees": "Grados",
+    "iso.labels.movable": "Do m\xF3vil",
+    "iso.labels.none": "Ninguna",
+    "iso.octaves": "Otras octavas",
+    "iso.octaves.title": "Las notas que suenan en otras octavas: m\xE1s suaves, o sin marcar",
+    "iso.octaves.soft": "Suaves",
+    "iso.octaves.hidden": "Ocultas",
+    "iso.links": "Figura del acorde",
+    "iso.links.title": "Unir las notas que suenan donde son vecinas, para ver la forma del acorde",
+    "iso.scale.title": "Marcar en la rejilla la escala de la tonalidad, su t\xF3nica m\xE1s fuerte; las notas fuera de ella se apagan",
     "cof.flat.title": "Enarm\xF3nicos con bemoles (Solb, Reb\u2026)",
     "cof.sharp.title": "Enarm\xF3nicos con sostenidos (Fa#, Do#\u2026)",
     "cof.spelledInKey": "Escrito como en {key}; bemoles o sostenidos sirven sin tonalidad",
@@ -2399,6 +2491,7 @@
     "a11y.note": "Nota {note}",
     "a11y.staff": "Pentagrama: {notes}",
     "a11y.piano": "Piano: {notes}",
+    "a11y.iso": "Teclado isom\xF3rfico: {notes}",
     "a11y.strings": "Cuerdas: {chord}",
     "a11y.strings.scale": "Cuerdas, escala: {scale}",
     "a11y.cof": "C\xEDrculo de quintas: flechas para moverse, Intro toca, Intro dos veces fija la tonalidad",
@@ -2492,6 +2585,7 @@
     "help.panel.guitar": "Posiciones del acorde o el m\xE1stil entero, para guitarra, bajo, ukelele y m\xE1s",
     "help.panel.key": "Los acordes de la tonalidad, armon\xEDa negativa, modos paralelos, eje de Coltrane",
     "help.panel.piano": "Lo que suena; haz clic o toca una tecla para tocar",
+    "help.panel.iso": "Lo que suena, en una rejilla de hex\xE1gonos donde un acorde mantiene su forma en todas las tonalidades; haz clic o toca una celda para tocar",
     "help.panel.velocity": "Con qu\xE9 fuerza se toc\xF3 cada nota",
     "help.panel.progressions": "Progresiones cl\xE1sicas en la tonalidad, para o\xEDrlas y analizarlas",
     "help.panel.ear": "Reconocer de o\xEDdo un intervalo, un acorde o una cadencia",
@@ -6486,6 +6580,198 @@ ${explainCadence(cadence)}` : "");
     onPrefChange(refresh);
   }
 
+  // src/diagrams/iso.ts
+  var ISO_LAYOUTS = ["harmonic", "wicki", "gerhard", "janko", "custom"];
+  var ISO_SIZES = ["small", "medium", "large"];
+  var ISO_ORIENTATIONS = ["rows", "columns"];
+  var ISO_COLORS = ["function", "pitch", "piano"];
+  var ISO_LABELS = ["notes", "degrees", "movable", "none"];
+  var ISO_OCTAVES = ["soft", "hidden"];
+  var CELL_SIZE = { small: 16, medium: 24, large: 32 };
+  var CENTER_MIN = 36;
+  var CENTER_MAX = 84;
+  var STEP_MIN = -12;
+  var STEP_MAX = 12;
+  var NATIVE_ORIENTATION = {
+    harmonic: "columns",
+    gerhard: "columns",
+    wicki: "rows",
+    janko: "rows",
+    custom: "rows"
+  };
+  function loadIsoOptions() {
+    const layout = loadChoice("iso-layout", ISO_LAYOUTS, "harmonic");
+    return {
+      layout,
+      right: loadNumber("iso-right", 7, STEP_MIN, STEP_MAX),
+      upRight: loadNumber("iso-up-right", 3, STEP_MIN, STEP_MAX),
+      size: loadChoice("iso-size", ISO_SIZES, "medium"),
+      center: loadNumber("iso-center", 60, CENTER_MIN, CENTER_MAX),
+      orientation: loadChoice(`iso-orientation-${layout}`, ISO_ORIENTATIONS, NATIVE_ORIENTATION[layout]),
+      colors: loadChoice("iso-colors", ISO_COLORS, "function"),
+      labels: loadChoice("iso-labels", ISO_LABELS, "notes"),
+      octaves: loadChoice("iso-octaves", ISO_OCTAVES, "soft"),
+      links: loadBool("iso-links", true),
+      scale: loadBool("iso-scale", false)
+    };
+  }
+  function saveIsoOption(o, name, value) {
+    o[name] = value;
+    if (name === "layout") o.orientation = loadChoice(`iso-orientation-${value}`, ISO_ORIENTATIONS, NATIVE_ORIENTATION[value]);
+    const key = name === "orientation" ? `iso-orientation-${o.layout}` : name === "upRight" ? "iso-up-right" : `iso-${name}`;
+    save(key, value);
+  }
+  var layoutOf = (o) => o.layout === "custom" ? { right: o.right, upRight: o.upRight } : o.layout;
+  function isoGrid(o, width, height, played2) {
+    const make = (center) => Notae.hexGrid({ layout: layoutOf(o), width, height, cellSize: CELL_SIZE[o.size], center, orientation: o.orientation });
+    const grid3 = make(o.center);
+    const has = (g) => {
+      const in_ = new Set(g.cells.map((c) => c.note));
+      return played2.every((m) => in_.has(m));
+    };
+    if (!played2.length || has(grid3)) return grid3;
+    const around = make(Math.round((Math.min(...played2) + Math.max(...played2)) / 2));
+    return has(around) ? around : grid3;
+  }
+  function namesByClass(noteNames, key) {
+    const names = PITCH_NAMES_FLAT.map((n) => key ? spellPitchClassInKey(n, key) : n);
+    for (const n of noteNames) {
+      const base = n.replace(/-?\d+$/, "");
+      const pc3 = pitchClassOf(base);
+      if (pc3 >= 0) names[pc3] = base;
+    }
+    return names;
+  }
+  function labelsByClass(o, names, key) {
+    const tonic = key?.split(" ")[0] ?? null;
+    return names.map((n) => {
+      if (o.labels === "none") return "";
+      if (o.labels === "degrees" && tonic) return intervalLabel(tonic, n);
+      if (o.labels === "movable" && key) return movableSyllable(n, key) ?? noteLabel(n);
+      return noteLabel(n);
+    });
+  }
+  function mixColor(a, b, amount) {
+    const rgb = (c) => /^#[0-9a-f]{6}$/i.test(c) ? [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)) : null;
+    const x = rgb(a), y = rgb(b);
+    if (!x || !y) return a;
+    return "#" + x.map((v, i) => Math.round(v * amount + y[i] * (1 - amount)).toString(16).padStart(2, "0")).join("");
+  }
+  function wireIsoMenu(o, onChange4) {
+    const menu = document.getElementById("menu-iso");
+    if (!menu) return;
+    const CHIPS = { "iso-layout": "layout", "iso-size": "size", "iso-orientation": "orientation", "iso-colors": "colors", "iso-labels": "labels", "iso-octaves": "octaves" };
+    const value = (id) => menu.querySelector(`#${id}-value`);
+    const show = () => {
+      for (const [attr, name] of Object.entries(CHIPS)) {
+        const data = attr.replace(/-(\w)/g, (_, c) => c.toUpperCase());
+        menu.querySelectorAll(`[data-${attr}]`).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset[data] === o[name])));
+      }
+      ;
+      menu.querySelector("#iso-custom").hidden = o.layout !== "custom";
+      value("iso-right").textContent = signed(o.right);
+      value("iso-up-right").textContent = signed(o.upRight);
+      value("iso-center").textContent = noteLabel(`${PITCH_NAMES_FLAT[o.center % 12]}${Math.floor(o.center / 12) - 1}`);
+      for (const [id, on] of [["btn-iso-links", o.links], ["btn-iso-scale", o.scale]]) {
+        const b = document.getElementById(id);
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-pressed", String(on));
+      }
+    };
+    const change = () => {
+      show();
+      onChange4();
+    };
+    for (const [attr, name] of Object.entries(CHIPS)) {
+      const data = attr.replace(/-(\w)/g, (_, c) => c.toUpperCase());
+      menu.querySelectorAll(`[data-${attr}]`).forEach((b) => b.addEventListener("click", () => {
+        saveIsoOption(o, name, b.dataset[data]);
+        change();
+      }));
+    }
+    const step2 = (id, name, min, max) => {
+      for (const [dir, d] of [["down", -1], ["up", 1]]) {
+        menu.querySelector(`#${id}-${dir}`).addEventListener("click", () => {
+          saveIsoOption(o, name, Math.max(min, Math.min(max, o[name] + d)));
+          change();
+        });
+      }
+    };
+    step2("iso-right", "right", STEP_MIN, STEP_MAX);
+    step2("iso-up-right", "upRight", STEP_MIN, STEP_MAX);
+    step2("iso-center", "center", CENTER_MIN, CENTER_MAX);
+    document.getElementById("btn-iso-links").addEventListener("click", () => {
+      saveIsoOption(o, "links", !o.links);
+      change();
+    });
+    document.getElementById("btn-iso-scale").addEventListener("click", () => {
+      saveIsoOption(o, "scale", !o.scale);
+      change();
+    });
+    show();
+  }
+  var signed = (n) => n > 0 ? `+${n}` : String(n);
+  var NATURAL = [true, false, true, false, true, true, false, true, false, true, false, true];
+  function renderIso(container2, noteNames, fn, key, o, onPress) {
+    const width = Math.floor(container2.clientWidth), height = Math.floor(container2.clientHeight);
+    if (!width || !height) {
+      container2.innerHTML = "";
+      return;
+    }
+    const played2 = noteNames.map(noteNameToMidi).filter((m) => m !== null);
+    const grid3 = isoGrid(o, width, height, played2);
+    const light2 = ["light", "paper"].includes(resolveTheme());
+    const lit = functionColor(fn);
+    const onLit = color("on-accent");
+    const ground = color("surface-2");
+    const playedClasses = new Set(played2.map((m) => m % 12));
+    const scale = o.scale && key ? scaleInfo(scaleSymbol(key, "key")) : null;
+    const inScale = (pc3) => !scale || scale.pitchClasses.includes(pc3);
+    const tonicPc = key ? pitchClassOf(key.split(" ")[0]) : -1;
+    const labels = labelsByClass(o, namesByClass(noteNames, key), key);
+    const classes = labels.map((label, pc3) => {
+      const k = { label };
+      if (o.colors === "piano") Object.assign(k, NATURAL[pc3] ? { fill: color("piano-white"), text: color("piano-black-label"), stroke: color("piano-white-stroke") } : { fill: color("piano-black"), text: color("piano-label") });
+      if (scale) {
+        if (!inScale(pc3)) Object.assign(k, { fill: color("iso-cell"), text: color("iso-off-label") });
+        else if (pc3 === tonicPc) Object.assign(k, { fill: color("piano-scale-root"), text: onLit, bold: true });
+        else if (o.colors === "function") Object.assign(k, { fill: color("iso-scale"), text: color("iso-scale-label") });
+      } else if (pc3 === tonicPc) Object.assign(k, { stroke: color("accent"), bold: true }, o.colors === "function" ? { text: color("accent-text") } : {});
+      if (o.octaves === "soft" && playedClasses.has(pc3)) {
+        Object.assign(k, { fill: mixColor(lit, k.fill ?? ground, 0.32), text: color("text-strong"), stroke: void 0 });
+      }
+      return k;
+    });
+    const notes2 = {};
+    for (const c of grid3.cells) {
+      const pc3 = c.note % 12, oct = Math.floor(c.note / 12) - 1;
+      const k = {};
+      if (o.colors === "pitch" && inScale(pc3) && !(o.octaves === "soft" && playedClasses.has(pc3)) && !(scale && pc3 === tonicPc)) {
+        const hue = pc3 * 7 % 12 * 30;
+        const l = light2 ? 84 - (oct - 4) * 4 : 24 + (oct - 4) * 4;
+        Object.assign(k, { fill: `hsl(${hue} 45% ${Math.max(10, Math.min(92, l))}%)`, text: color(light2 ? "text-strong" : "text-soft") });
+      }
+      if (pc3 === 0 && o.labels === "notes" && o.size !== "small") k.label = `${labels[0]}${oct}`;
+      if (played2.includes(c.note)) Object.assign(k, { fill: lit, text: onLit, bold: true, stroke: void 0 });
+      if (Object.keys(k).length) notes2[c.note] = k;
+    }
+    container2.innerHTML = Notae.renderHexGrid(grid3, { classes, notes: notes2, links: o.links ? played2 : void 0 }, {
+      hexCellColor: color("iso-cell"),
+      hexTextColor: color("iso-label"),
+      hexLinkColor: color("iso-link"),
+      fontFamily: "inherit"
+    });
+    container2.querySelectorAll("polygon[data-midi]").forEach((el2) => {
+      const midi = Number(el2.dataset.midi);
+      el2.style.cursor = "pointer";
+      el2.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        onPress?.(midi, e.pointerId);
+      });
+    });
+  }
+
   // src/i18n/instruments.ts
   var ES = {
     acoustic_grand_piano: "Piano de cola",
@@ -6624,7 +6910,7 @@ ${explainCadence(cadence)}` : "");
   }
 
   // src/view/channel.ts
-  var VIEW_NAMES = ["chord", "staff", "cof", "piano", "guitar"];
+  var VIEW_NAMES = ["chord", "staff", "cof", "piano", "iso", "guitar"];
   var VIEW_BACKGROUNDS = { magenta: "#ff00ff", green: "#00ff00", black: "#000000", dark: "#141414" };
   var NAME = "modus-view";
   function open() {
@@ -6667,6 +6953,7 @@ ${explainCadence(cadence)}` : "");
     staff: [800, 420],
     cof: [520, 520],
     piano: [960, 300],
+    iso: [800, 480],
     guitar: [380, 460]
   };
 
@@ -6803,6 +7090,7 @@ ${explainCadence(cadence)}` : "");
     "guitar",
     "key",
     "piano",
+    "iso",
     "velocity",
     "progressions",
     "ear",
@@ -6822,6 +7110,7 @@ ${explainCadence(cadence)}` : "");
     guitar: { w: 3, h: 9 },
     key: { w: 12, h: 11 },
     piano: { w: 7, h: 5 },
+    iso: { w: 6, h: 8 },
     velocity: { w: 2, h: 5 },
     progressions: { w: 12, h: 4 },
     ear: { w: 6, h: 5 },
@@ -6834,7 +7123,7 @@ ${explainCadence(cadence)}` : "");
   var PRESET_IDS = ["standard", "study", "class", "transcription", "recording"];
   var grid = (specs) => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }));
   var PRESETS = {
-    // Everything but Velocity and Next (in the layout menu): the chord as a header across the page, the four
+    // Everything but Velocity, Next and Isomorphic (in the layout menu): the chord as a header across the page, the four
     // diagrams under it, the key and its explanation, then the piano and the practice panels
     standard: grid([
       ["chord", 0, 0, 12, 3],
@@ -7429,7 +7718,7 @@ ${explainCadence(cadence)}` : "");
       <div class="choice-chips" role="group" aria-label="${t("views.panels")}">${WINDOW_PANELS.map((p) => `<button class="choice-chip" data-window-panels="${p}" aria-pressed="false">${t(`views.panels.${p}`)}</button>`).join("")}</div>
     </div>`;
   }
-  var exportRows = () => ["staff", "cof", "guitar", "piano"].map((v) => `
+  var exportRows = () => ["staff", "cof", "guitar", "piano", "iso"].map((v) => `
   <div class="view-menu-export"><span>${viewLabel(v)}</span>
     <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
     <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
@@ -7444,7 +7733,7 @@ ${explainCadence(cadence)}` : "");
     const prefs = prefMenuHtml(id);
     return own && prefs ? `${own}<div class="menu-sep"></div>${prefs}` : own || prefs;
   }
-  var EXPORTABLE = ["staff", "cof", "guitar", "piano"];
+  var EXPORTABLE = ["staff", "cof", "guitar", "piano", "iso"];
   var exportMenu = (id) => `<div class="menu-sep"></div>
   <div class="menu-row" title="${escapeHtml(t("views.save"))}"><span class="menu-label">${t("menu.export")}</span>
     <button type="button" class="menu-step menu-export" data-export="${id}" data-format="svg">SVG</button>
@@ -7464,6 +7753,8 @@ ${explainCadence(cadence)}` : "");
       ${item("btn-staff-prev", t("menu.prev"), t("staff.prev.title"))}`;
       case "piano":
         return item("btn-piano-prev", t("menu.prev"), t("piano.prev.title")) + item("btn-piano-scale", t("menu.scale"), t("piano.scale.title"));
+      case "iso":
+        return isoMenu();
       case "analysis":
         return `
       ${steps("btn-analysis-minus", "btn-analysis-plus")}
@@ -7495,6 +7786,30 @@ ${explainCadence(cadence)}` : "");
         return "";
     }
   }
+  function isoMenu() {
+    const chips = (name, attr, values) => `
+    ${heading(t(`iso.${name}`))}
+    <div class="menu-chips" role="group" aria-label="${t(`iso.${name}`)}" title="${escapeHtml(t(`iso.${name}.title`))}">${values.map((v) => `<button type="button" class="menu-chip" data-${attr}="${v}" data-label="${escapeHtml(`${t(`iso.${name}`)}: ${t(`iso.${name}.${v}`)}`)}" aria-pressed="false">${t(`iso.${name}.${v}`)}</button>`).join("")}</div>`;
+    const stepper2 = (id, label, title) => `<div class="menu-row" title="${escapeHtml(title)}"><span class="menu-label">${escapeHtml(label)}</span>
+      <button type="button" id="${id}-down" class="menu-step" aria-label="${escapeHtml(`${label}: ${t("iso.down")}`)}">\u2212</button>
+      <span id="${id}-value" class="menu-value" aria-live="polite"></span>
+      <button type="button" id="${id}-up" class="menu-step" aria-label="${escapeHtml(`${label}: ${t("iso.up")}`)}">+</button></div>`;
+    return `
+    ${chips("layout", "iso-layout", ISO_LAYOUTS)}
+    <div id="iso-custom">
+      ${stepper2("iso-right", t("iso.right"), t("iso.right.title"))}
+      ${stepper2("iso-up-right", t("iso.upRight"), t("iso.upRight.title"))}
+    </div>
+    ${chips("size", "iso-size", ISO_SIZES)}
+    ${stepper2("iso-center", t("iso.center"), t("iso.center.title"))}
+    ${chips("orientation", "iso-orientation", ISO_ORIENTATIONS)}
+    ${chips("colors", "iso-colors", ISO_COLORS)}
+    ${chips("labels", "iso-labels", ISO_LABELS)}
+    ${chips("octaves", "iso-octaves", ISO_OCTAVES)}
+    <div class="menu-sep"></div>
+    ${item("btn-iso-links", t("iso.links"), t("iso.links.title"))}
+    ${item("btn-iso-scale", t("menu.scale"), t("iso.scale.title"))}`;
+  }
   function moduleBody(id) {
     switch (id) {
       case "chord":
@@ -7525,6 +7840,8 @@ ${explainCadence(cadence)}` : "");
         return '<div id="tuner-container"></div>';
       case "piano":
         return '<div id="piano-container" class="fit"></div>';
+      case "iso":
+        return '<div id="iso-container" class="fit"></div>';
       case "velocity":
         return '<div id="velocity-container"></div>';
       case "history":
@@ -8140,6 +8457,9 @@ ${explainCadence(cadence)}` : "");
     else if (view2 === "piano") {
       const scale = loadBool("piano-scale", false) && s.key ? scaleInfo(scaleSymbol(s.key, "key")) : null;
       renderPiano(el2, s.notes, s.symbol ? s.function : null, void 0, null, scale);
+    } else if (view2 === "iso") {
+      renderIso(el2, s.notes, s.symbol && s.function !== "unknown" ? s.function : null, s.key, loadIsoOptions());
+      return;
     } else if (view2 === "guitar") {
       setGuitarScaleContext(s.key, s.symbol ? s.function : null);
       renderGuitar(el2, s.symbol, s.notes, s.guitarVoicing);
@@ -8162,9 +8482,16 @@ ${explainCadence(cadence)}` : "");
     el2.id = "view-content";
     el2.className = `view-${view2}`;
     document.body.appendChild(el2);
-    subscribeView((s) => renderView(view2, el2, s));
+    let last = null;
+    subscribeView((s) => {
+      last = s;
+      renderView(view2, el2, s);
+    });
+    if (view2 === "iso") window.addEventListener("resize", () => {
+      if (last) renderView(view2, el2, last);
+    });
     window.addEventListener("storage", (e) => {
-      if (e.key && /^(guitar-|cof-|staff-clef|staff-names$|piano-scale$|lang$|note-names$)/.test(e.key)) location.reload();
+      if (e.key && /^(guitar-|cof-|staff-clef|staff-names$|piano-scale$|iso-|lang$|note-names$)/.test(e.key)) location.reload();
     });
     return true;
   }
@@ -8174,7 +8501,8 @@ ${explainCadence(cadence)}` : "");
     staff: "#staff-container",
     cof: "#cof-container",
     guitar: "#guitar-container",
-    piano: "#piano-container"
+    piano: "#piano-container",
+    iso: "#iso-container"
   };
   var PAD = 4;
   function diagramSvg(target) {
@@ -10592,6 +10920,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   var cofShow7ths = loadBool("cof-show-7ths", false);
   var showPrevChord = loadBool("show-prev-chord", false);
   var showPianoScale = loadBool("piano-scale", false);
+  var isoOptions = loadIsoOptions();
   var analysisFieldsVisible = Object.fromEntries(
     // Every field shown at first but Movable do, for who sings: from the panel's menu
     ANALYSIS_FIELD_KEYS.map((f) => [f, loadBool(`analysis-field-${f}`, f !== "movable")])
@@ -10907,6 +11236,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       showScale();
       renderZone1Diagrams(displayedNotes(), selectedSymbol());
     });
+    wireIsoMenu(isoOptions, () => renderZone1Diagrams(displayedNotes(), selectedSymbol()));
     ANALYSIS_FIELD_KEYS.forEach((f) => {
       $2(`btn-field-${f}`).addEventListener("click", () => {
         analysisFieldsVisible[f] = !analysisFieldsVisible[f];
@@ -10995,6 +11325,7 @@ ${explainCadence(c.cadence)}` : ""}`;
         renderDetector();
       }
     }).observe(pianoEl);
+    if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => renderZone1Diagrams(displayedNotes(), selectedSymbol())).observe($2("iso-container"));
     if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => fitChordName()).observe($2("chord-summary"));
     let shown = currentGrid().map((c) => c.id).sort().join();
     onLayoutChange(() => {
@@ -11511,8 +11842,10 @@ ${explainCadence(c.cadence)}` : ""}`;
     const fn = chordSymbol ? state.analysis?.function ?? null : null;
     const pianoScale = showPianoScale && key ? scaleInfo(scaleSymbol(key, "key")) : null;
     renderIfChanged("piano", `${notes2}|${fn}|${prev?.join(" ")}|${containerOctaves($2("piano-container"))}|${pianoScale?.names.join(" ")}`, () => renderPiano($2("piano-container"), noteNames, fn, onPianoPress, prev, pianoScale));
+    const isoEl = $2("iso-container");
+    renderIfChanged("iso", `${notes2}|${fn}|${key}|${JSON.stringify(isoOptions)}|${isoEl.clientWidth}x${isoEl.clientHeight}`, () => renderIso(isoEl, noteNames, fn, key, isoOptions, onPianoPress));
     const spoken = noteNames.map(noteLabel).join(" ") || t("a11y.nothing");
-    for (const [id, key2] of [["staff-container", "a11y.staff"], ["piano-container", "a11y.piano"]]) {
+    for (const [id, key2] of [["staff-container", "a11y.staff"], ["piano-container", "a11y.piano"], ["iso-container", "a11y.iso"]]) {
       const el2 = $2(id);
       el2.setAttribute("role", "img");
       el2.setAttribute("aria-label", t(key2, { notes: spoken }));

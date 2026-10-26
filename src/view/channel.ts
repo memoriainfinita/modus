@@ -2,8 +2,8 @@
 // same origin in the same browser, so a BroadcastChannel carries what is on screen; a view
 // that opens asks for the current state.
 
-export type ViewName = 'chord' | 'staff' | 'cof' | 'piano' | 'guitar'
-export const VIEW_NAMES: ViewName[] = ['chord', 'staff', 'cof', 'piano', 'guitar']
+export type ViewName = 'chord' | 'staff' | 'cof' | 'piano' | 'iso' | 'guitar'
+export const VIEW_NAMES: ViewName[] = ['chord', 'staff', 'cof', 'piano', 'iso', 'guitar']
 
 // Magenta first and by default: the tonic's green would be keyed out of a green chroma
 export const VIEW_BACKGROUNDS = { magenta: '#ff00ff', green: '#00ff00', black: '#000000', dark: '#141414' } as const
@@ -64,5 +64,5 @@ export function viewUrl(view: ViewName, bg: ViewBackground, base = location.href
 
 /** Window size each view opens with; the diagram fills whatever size it is given. */
 export const VIEW_WINDOW: Record<ViewName, [number, number]> = {
-  chord: [640, 360], staff: [800, 420], cof: [520, 520], piano: [960, 300], guitar: [380, 460],
+  chord: [640, 360], staff: [800, 420], cof: [520, 520], piano: [960, 300], iso: [800, 480], guitar: [380, 460],
 }

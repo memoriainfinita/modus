@@ -72,7 +72,16 @@ declare const Notae: {
   renderPiano: (chord: { name: string; keys: string[]; colors?: string[]; root?: string; range?: { from: string; to: string } }, opts?: any) => string
   /** frets per string; `dotColors` / `dotLabels` parallel to them (notae 5a3ae1b). */
   renderFretboard: (chord: any, opts?: any) => string
+  /** The isomorphic grid (notae 5ba68c2): cells laid out to fill an area, then drawn. */
+  hexGrid: (opts: { layout: string | { right: number; upRight: number }; width: number; height: number; cellSize: number; center?: number; orientation?: 'rows' | 'columns' }) => NotaeHexGrid
+  renderHexGrid: (grid: NotaeHexGrid, chord?: {
+    classes?: (NotaeHexKey | null | undefined)[]
+    notes?: Record<number, NotaeHexKey>
+    links?: number[]
+  }, opts?: any) => string
 }
+type NotaeHexGrid = { cells: { q: number; p: number; x: number; y: number; note: number }[]; cellSize: number; orientation: 'rows' | 'columns'; width: number; height: number }
+type NotaeHexKey = { fill?: string; text?: string; stroke?: string; label?: string; bold?: boolean }
 
 declare const ABCJS: {
   renderAbc: (target: string | HTMLElement, abc: string, options?: any) => any[]

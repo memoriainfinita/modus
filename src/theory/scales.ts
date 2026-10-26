@@ -41,7 +41,7 @@ const LETTERS = 'CDEFGAB'
 const MAJOR_SEMITONES = [0, 2, 4, 5, 7, 9, 11]
 
 /** "♭3", "♯4", "5": the letter's distance from the tonic, and how far it lies from the major scale's. */
-function intervalLabel(tonic: string, name: string): string {
+export function intervalLabel(tonic: string, name: string): string {
   const steps = (LETTERS.indexOf(name[0]) - LETTERS.indexOf(tonic[0]) + 7) % 7
   const semis = (pitchClassOf(name) - pitchClassOf(tonic) + 12) % 12
   let alter = semis - MAJOR_SEMITONES[steps]
