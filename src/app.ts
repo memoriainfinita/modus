@@ -7,6 +7,7 @@ import { outLiveOn, outLiveOff, outSustain, outPreview, getOutputs, getOutputSet
 import { renderStaff, STAFF_CLEFS, STAFF_NAMES } from './diagrams/staff'
 import { openPresentation, closePresentation, isPresenting } from './view/presentation'
 import { renderPiano, containerOctaves } from './diagrams/piano'
+import { renderIso, loadIsoOptions, wireIsoMenu } from './diagrams/iso'
 import { renderVelocity } from './diagrams/velocity'
 import type { NoteVelocity } from './diagrams/velocity'
 import { noteNameToMidi } from './theory/notes'
@@ -70,6 +71,7 @@ let cofShow7ths    = loadBool('cof-show-7ths', false)
 // Staff and piano also show the chord before, to see each voice move
 let showPrevChord  = loadBool('show-prev-chord', false)
 let showPianoScale = loadBool('piano-scale', false)
+const isoOptions = loadIsoOptions()
 
 const analysisFieldsVisible = Object.fromEntries(
   // Every field shown at first but Movable do, for who sings: from the panel's menu
@@ -384,6 +386,8 @@ function wireLayoutEvents() {
     renderZone1Diagrams(displayedNotes(), selectedSymbol())
   })
 
+  wireIsoMenu(isoOptions, () => renderZone1Diagrams(displayedNotes(), selectedSymbol()))
+
   ANALYSIS_FIELD_KEYS.forEach(f => {
     $(`btn-field-${f}`).addEventListener('click', () => {
       analysisFieldsVisible[f] = !analysisFieldsVisible[f]
@@ -455,6 +459,8 @@ function buildLayout() {
     const now = containerOctaves(pianoEl)
     if (now !== octaves) { octaves = now; renderDetector() }
   }).observe(pianoEl)
+  // The isomorphic grid is laid out for its panel's size: drawn again at each new size
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => renderZone1Diagrams(displayedNotes(), selectedSymbol())).observe($('iso-container'))
   // The chord's name fitted to its panel's width again when the panel changes size (full screen, a resize)
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => fitChordName()).observe($('chord-summary'))
   let shown = currentGrid().map(c => c.id).sort().join()
@@ -1059,9 +1065,12 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const pianoScale = showPianoScale && key ? scaleInfo(scaleSymbol(key, 'key')) : null
   renderIfChanged('piano', `${notes}|${fn}|${prev?.join(' ')}|${containerOctaves($('piano-container'))}|${pianoScale?.names.join(' ')}`, () =>
     renderPiano($('piano-container'), noteNames, fn, onPianoPress, prev, pianoScale))
+  const isoEl = $('iso-container')
+  renderIfChanged('iso', `${notes}|${fn}|${key}|${JSON.stringify(isoOptions)}|${isoEl.clientWidth}x${isoEl.clientHeight}`, () =>
+    renderIso(isoEl, noteNames, fn, key, isoOptions, onPianoPress))
   // The drawings by name, for a screen reader: the notes they show
   const spoken = noteNames.map(noteLabel).join(' ') || t('a11y.nothing')
-  for (const [id, key] of [['staff-container', 'a11y.staff'], ['piano-container', 'a11y.piano']] as const) {
+  for (const [id, key] of [['staff-container', 'a11y.staff'], ['piano-container', 'a11y.piano'], ['iso-container', 'a11y.iso']] as const) {
     const el = $(id)
     el.setAttribute('role', 'img')
     el.setAttribute('aria-label', t(key, { notes: spoken }))

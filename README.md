@@ -83,6 +83,7 @@ Every element is a panel on a grid: drag it by its title, resize it from its cor
 Click a chord to play it and show it in the detector; the key stays. The chord on screen is outlined wherever it appears. Font scale −/+.
 
 - **Piano** (notae) — 4 octaves C2–B5, click any key to play
+- **Isomorphic** (notae) — a hexagon grid (harmonic table, Wicki-Hayden, Gerhard, Jankó, custom) where a chord keeps its shape in every key; click a cell to play
 - **Velocity** — how hard each note on screen was struck, as a bar and a number
 
 ### Views for OBS, and export
@@ -219,6 +220,7 @@ src/
   diagrams/
     staff.ts              staff (abcjs)
     piano.ts              piano (notae), click to play
+    iso.ts                isomorphic keyboard (notae hex grid), its options and ⋯ menu
     guitar.ts             strings panel: instrument, tuning, shapes or the whole neck (notae)
     cof.ts                circle of fifths (custom SVG)
     key-explorer.ts       key panel rendering

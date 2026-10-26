@@ -4,14 +4,14 @@
 import type { Grid } from './grid'
 
 export const MODULE_IDS = [
-  'chord', 'staff', 'analysis', 'explain', 'next', 'cof', 'guitar', 'key', 'piano', 'velocity', 'progressions', 'ear', 'player', 'tuner', 'metronome', 'history', 'song',
+  'chord', 'staff', 'analysis', 'explain', 'next', 'cof', 'guitar', 'key', 'piano', 'iso', 'velocity', 'progressions', 'ear', 'player', 'tuner', 'metronome', 'history', 'song',
 ] as const
 export type ModuleId = typeof MODULE_IDS[number]
 
 /** Width and height a panel takes when it is added (columns of 12, rows). */
 export const MODULE_SIZE: Record<ModuleId, { w: number; h: number }> = {
   chord: { w: 4, h: 3 }, staff: { w: 4, h: 8 }, analysis: { w: 3, h: 11 }, explain: { w: 4, h: 11 }, next: { w: 4, h: 8 }, cof: { w: 3, h: 7 },
-  guitar: { w: 3, h: 9 }, key: { w: 12, h: 11 }, piano: { w: 7, h: 5 },
+  guitar: { w: 3, h: 9 }, key: { w: 12, h: 11 }, piano: { w: 7, h: 5 }, iso: { w: 6, h: 8 },
   velocity: { w: 2, h: 5 }, progressions: { w: 12, h: 4 }, ear: { w: 6, h: 5 }, player: { w: 6, h: 5 }, tuner: { w: 3, h: 5 }, metronome: { w: 6, h: 10 }, history: { w: 12, h: 3 }, song: { w: 12, h: 12 },
 }
 
@@ -22,7 +22,7 @@ type Spec = [ModuleId, number, number, number, number]   // id, x, y, w, h
 const grid = (specs: Spec[]): Grid => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }))
 
 export const PRESETS: Record<PresetId, Grid> = {
-  // Everything but Velocity and Next (in the layout menu): the chord as a header across the page, the four
+  // Everything but Velocity, Next and Isomorphic (in the layout menu): the chord as a header across the page, the four
   // diagrams under it, the key and its explanation, then the piano and the practice panels
   standard: grid([
     ['chord', 0, 0, 12, 3],

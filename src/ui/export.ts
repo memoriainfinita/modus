@@ -1,10 +1,10 @@
 // Export of a diagram on screen as an SVG or PNG file, transparent background. The SVG is
 // copied with the colours it inherits written in (abcjs draws in currentColor).
 
-export type ExportTarget = 'staff' | 'cof' | 'guitar' | 'piano'
+export type ExportTarget = 'staff' | 'cof' | 'guitar' | 'piano' | 'iso'
 
 const CONTAINERS: Record<ExportTarget, string> = {
-  staff: '#staff-container', cof: '#cof-container', guitar: '#guitar-container', piano: '#piano-container',
+  staff: '#staff-container', cof: '#cof-container', guitar: '#guitar-container', piano: '#piano-container', iso: '#iso-container',
 }
 
 const PAD = 4   // drawing units around the content: strokes reach past getBBox

@@ -7,6 +7,7 @@ import type { ViewName, ViewBackground, ViewState } from './channel'
 import { renderStaff, STAFF_CLEFS, STAFF_NAMES } from '../diagrams/staff'
 import { staffLabels } from '../detector/analyzer'
 import { renderPiano } from '../diagrams/piano'
+import { renderIso, loadIsoOptions } from '../diagrams/iso'
 import { renderGuitar, setGuitarScaleContext } from '../diagrams/guitar'
 import { renderCircleOfFifths, cofAccidentalFor } from '../diagrams/cof'
 import type { CofOptions } from '../diagrams/cof'
@@ -56,6 +57,10 @@ export function renderView(view: ViewName, el: HTMLElement, s: ViewState) {
     const scale = loadBool('piano-scale', false) && s.key ? scaleInfo(scaleSymbol(s.key, 'key')) : null
     renderPiano(el, s.notes, s.symbol ? s.function : null, undefined, null, scale)
   }
+  else if (view === 'iso') {
+    renderIso(el, s.notes, s.symbol && s.function !== 'unknown' ? s.function : null, s.key, loadIsoOptions())
+    return   // laid out for the window's size: nothing to fit
+  }
   else if (view === 'guitar') {
     setGuitarScaleContext(s.key, s.symbol ? s.function : null)
     renderGuitar(el, s.symbol, s.notes, s.guitarVoicing)
@@ -84,11 +89,14 @@ export function runViewerFromUrl(): boolean {
   el.className = `view-${view}`
   document.body.appendChild(el)
 
-  subscribeView(s => renderView(view, el, s))
+  let last: ViewState | null = null
+  subscribeView(s => { last = s; renderView(view, el, s) })
+  // The grid is laid out for the window's size: drawn again when the window is resized
+  if (view === 'iso') window.addEventListener('resize', () => { if (last) renderView(view, el, last) })
   // Guitar tuning, CoF options, the staff clef, language and note names live in localStorage: when
   // the main window changes them, the view reloads with them (songs are saved there too, and are ignored).
   window.addEventListener('storage', e => {
-    if (e.key && /^(guitar-|cof-|staff-clef|staff-names$|piano-scale$|lang$|note-names$)/.test(e.key)) location.reload()
+    if (e.key && /^(guitar-|cof-|staff-clef|staff-names$|piano-scale$|iso-|lang$|note-names$)/.test(e.key)) location.reload()
   })
   return true
 }

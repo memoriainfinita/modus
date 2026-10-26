@@ -52,7 +52,7 @@ Without Web MIDI a dismissible warning says a controller cannot connect. Song bu
 
 Single page, dark or light (see Theme): the bar on top, the rail down the left, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
 
-Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Velocity, Progressions, Ear training, Player, Tuner, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
+Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Isomorphic, Velocity, Progressions, Ear training, Player, Tuner, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
 
 The ▦ menu in the rail:
 - **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (the chord and its history across the top, then staff, circle, strings and piano, large, made to be presented with P), Transcription (the player and tuner on top, history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
@@ -221,6 +221,15 @@ Its ⋯ menu: text size (12 px by default), triads / sevenths (`7`), show/hide N
 ### Piano and velocity
 
 **Piano:** notae, as many octaves as the panel holds at its height, centred on middle C (from two, C3–B4, to seven, C1–B7; two on a phone, see Layout), widened to every note shown; key labels in the note names chosen. Pressing a key plays it through the input path (see Input without a controller); notae tags each key with `data-note`. With Chord before the keys of the previous chord that are not held now are lit in the neutral colour.
+
+**Isomorphic:** an isomorphic keyboard (notae `hexGrid` and `renderHexGrid`), a grid of hexagons where an interval keeps its shape in every key. It is not in any preset; it is added from the ▦ menu. The grid fills the panel at the cell size chosen, the centre note in the middle; when a note sounding falls outside, the grid is laid around the notes (the centre chosen stays). The notes sounding are lit in their function's colour and, with Chord shape, joined by a line where they are neighbours; the same notes in other octaves are drawn softer, or not marked. Pressing a cell plays it as a piano key does. Its ⋯ menu:
+- Layout: harmonic table (fifth up, thirds on the diagonals; the default), Wicki-Hayden, Gerhard, Jankó, or custom (semitones one cell right and one up-right, −12 to +12)
+- Cell size: small, medium (default), large; Centre note: C2–C6, middle C by default
+- Orientation: rows or columns, kept per layout (the harmonic table and Gerhard in columns, Wicki-Hayden and Jankó in rows by default)
+- Colour: function (default: only what sounds), pitch class (a hue per note along the fifths, brighter by octave), piano (naturals light, sharps dark)
+- Labels: note names written in the key, degrees over its tonic, movable do, none (degrees and do need a key; without one, the names); the octave on each C at the larger sizes
+- Other octaves: soft (default) or hidden; Chord shape (on); Scale: the key's scale marked, its tonic stronger, the notes outside it faded
+- Save as SVG or PNG. A view window of its own; layout windows draw it like the main window
 
 **Velocity:** one bar per note on screen, highest on top, with the MIDI velocity (1–127) it was struck with on any input. Kept after release, so Hold still shows it. A chord picked from history, song or circle has none and shows nothing. No dynamic marks (p, mf…): there is no standard mapping from velocity.
 

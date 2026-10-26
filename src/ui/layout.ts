@@ -18,6 +18,7 @@ import { ICONS, LOGO } from './icons'
 import { wirePopover } from './popover'
 import { prefMenuHtml } from './pref-menu'
 import { STAFF_CLEFS, STAFF_NAMES } from '../diagrams/staff'
+import { ISO_LAYOUTS, ISO_SIZES, ISO_ORIENTATIONS, ISO_COLORS, ISO_LABELS, ISO_OCTAVES } from '../diagrams/iso'
 import type { Command } from './commands'
 import { instrumentLabel } from '../i18n/instruments'
 import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
@@ -305,7 +306,7 @@ function buildMenus(): string {
 }
 
 /** A diagram saved as SVG or PNG: in the view menu, and in More on a phone. */
-const exportRows = () => (['staff', 'cof', 'guitar', 'piano'] as const).map(v => `
+const exportRows = () => (['staff', 'cof', 'guitar', 'piano', 'iso'] as const).map(v => `
   <div class="view-menu-export"><span>${viewLabel(v)}</span>
     <button class="ctrl-btn" data-export="${v}" data-format="svg">SVG</button>
     <button class="ctrl-btn" data-export="${v}" data-format="png">PNG</button>
@@ -330,7 +331,7 @@ function panelMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean
 }
 
 // The diagrams that save to a file: in their own ⋯ menu, as SVG or PNG on a transparent ground
-const EXPORTABLE = ['staff', 'cof', 'guitar', 'piano'] as const
+const EXPORTABLE = ['staff', 'cof', 'guitar', 'piano', 'iso'] as const
 const exportMenu = (id: typeof EXPORTABLE[number]) => `<div class="menu-sep"></div>
   <div class="menu-row" title="${escapeHtml(t('views.save'))}"><span class="menu-label">${t('menu.export')}</span>
     <button type="button" class="menu-step menu-export" data-export="${id}" data-format="svg">SVG</button>
@@ -352,6 +353,7 @@ function ownMenuBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boole
         `<button type="button" class="menu-chip" data-staff-names="${n}" data-label="${escapeHtml(`${t('menu.staffNames')}: ${t(`staff.names.${n}`)}`)}" aria-pressed="false">${t(`staff.names.${n}`)}</button>`).join('')}</div>
       ${item('btn-staff-prev', t('menu.prev'), t('staff.prev.title'))}`
     case 'piano': return item('btn-piano-prev', t('menu.prev'), t('piano.prev.title')) + item('btn-piano-scale', t('menu.scale'), t('piano.scale.title'))
+    case 'iso': return isoMenu()
     case 'analysis': return `
       ${steps('btn-analysis-minus', 'btn-analysis-plus')}
       ${heading(t('menu.fields'))}
@@ -378,6 +380,35 @@ function ownMenuBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boole
   }
 }
 
+// The isomorphic keyboard's options: each a row of chips (the one in use pressed), the
+// custom layout's two intervals and the centre note with − and +
+function isoMenu(): string {
+  const chips = (name: string, attr: string, values: readonly string[]) => `
+    ${heading(t(`iso.${name}` as StringKey))}
+    <div class="menu-chips" role="group" aria-label="${t(`iso.${name}` as StringKey)}" title="${escapeHtml(t(`iso.${name}.title` as StringKey))}">${values.map(v =>
+      `<button type="button" class="menu-chip" data-${attr}="${v}" data-label="${escapeHtml(`${t(`iso.${name}` as StringKey)}: ${t(`iso.${name}.${v}` as StringKey)}`)}" aria-pressed="false">${t(`iso.${name}.${v}` as StringKey)}</button>`).join('')}</div>`
+  const stepper = (id: string, label: string, title: string) =>
+    `<div class="menu-row" title="${escapeHtml(title)}"><span class="menu-label">${escapeHtml(label)}</span>
+      <button type="button" id="${id}-down" class="menu-step" aria-label="${escapeHtml(`${label}: ${t('iso.down')}`)}">−</button>
+      <span id="${id}-value" class="menu-value" aria-live="polite"></span>
+      <button type="button" id="${id}-up" class="menu-step" aria-label="${escapeHtml(`${label}: ${t('iso.up')}`)}">+</button></div>`
+  return `
+    ${chips('layout', 'iso-layout', ISO_LAYOUTS)}
+    <div id="iso-custom">
+      ${stepper('iso-right', t('iso.right'), t('iso.right.title'))}
+      ${stepper('iso-up-right', t('iso.upRight'), t('iso.upRight.title'))}
+    </div>
+    ${chips('size', 'iso-size', ISO_SIZES)}
+    ${stepper('iso-center', t('iso.center'), t('iso.center.title'))}
+    ${chips('orientation', 'iso-orientation', ISO_ORIENTATIONS)}
+    ${chips('colors', 'iso-colors', ISO_COLORS)}
+    ${chips('labels', 'iso-labels', ISO_LABELS)}
+    ${chips('octaves', 'iso-octaves', ISO_OCTAVES)}
+    <div class="menu-sep"></div>
+    ${item('btn-iso-links', t('iso.links'), t('iso.links.title'))}
+    ${item('btn-iso-scale', t('menu.scale'), t('iso.scale.title'))}`
+}
+
 function moduleBody(id: ModuleId): string {
   switch (id) {
     case 'chord': return '<div id="chord-summary"></div>'
@@ -394,6 +425,7 @@ function moduleBody(id: ModuleId): string {
     case 'player': return '<div id="player-container"></div>'
     case 'tuner': return '<div id="tuner-container"></div>'
     case 'piano': return '<div id="piano-container" class="fit"></div>'
+    case 'iso': return '<div id="iso-container" class="fit"></div>'
     case 'velocity': return '<div id="velocity-container"></div>'
     case 'history': return '<div id="zone2-content"></div>'
     case 'song': return '<div id="zone3-content"></div>'
