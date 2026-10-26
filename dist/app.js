@@ -1358,12 +1358,16 @@
     "a11y.piano": "Piano: {notes}",
     "a11y.strings": "Strings: {chord}",
     "a11y.strings.scale": "Strings, scale: {scale}",
-    "a11y.cof": "Circle of fifths: Enter plays a chord, Enter twice sets its key",
+    "a11y.cof": "Circle of fifths: arrows move, Enter plays, Enter twice sets the key",
     "a11y.nothing": "nothing played",
     "a11y.chip": "{chord}, {roman}: Enter shows and plays it, Delete removes it",
     "shortcut.tab": "Reach any control, chip or circle segment; Enter or Space presses it",
     "kbd.panelArrows": "Arrows on a panel title",
     "shortcut.panelArrows": "Move the panel; with Shift, resize it",
+    "kbd.panelKeys": "Enter / Delete on a panel title",
+    "shortcut.panelKeys": "Open the panel's options / hide the panel",
+    "kbd.cofArrows": "Arrows on the circle",
+    "shortcut.cofArrows": "Go round a ring; up and down, to the next ring",
     "tour.next": "Next",
     "tour.back": "Back",
     "tour.skip": "Skip the tour",
@@ -2363,12 +2367,16 @@
     "a11y.piano": "Piano: {notes}",
     "a11y.strings": "Cuerdas: {chord}",
     "a11y.strings.scale": "Cuerdas, escala: {scale}",
-    "a11y.cof": "C\xEDrculo de quintas: Intro toca un acorde, Intro dos veces fija su tonalidad",
+    "a11y.cof": "C\xEDrculo de quintas: flechas para moverse, Intro toca, Intro dos veces fija la tonalidad",
     "a11y.nothing": "nada tocado",
     "a11y.chip": "{chord}, {roman}: Intro lo muestra y lo toca, Supr lo quita",
     "shortcut.tab": "Llegar a cualquier control, ficha o segmento del c\xEDrculo; Intro o Espacio lo pulsa",
     "kbd.panelArrows": "Flechas en el t\xEDtulo de un panel",
     "shortcut.panelArrows": "Mover el panel; con May\xFAs, cambiar su tama\xF1o",
+    "kbd.panelKeys": "Intro / Supr en el t\xEDtulo de un panel",
+    "shortcut.panelKeys": "Abrir las opciones del panel / ocultarlo",
+    "kbd.cofArrows": "Flechas en el c\xEDrculo",
+    "shortcut.cofArrows": "Recorrer un anillo; arriba y abajo, al anillo siguiente",
     "tour.next": "Siguiente",
     "tour.back": "Atr\xE1s",
     "tour.skip": "Saltar la visita",
@@ -4325,7 +4333,8 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     const t2 = e.target;
     if (!(t2 instanceof Element)) return false;
     if ((e.key === " " || e.key === "Enter") && t2.closest('button, a[href], [role="button"], summary')) return true;
-    if (e.key.startsWith("Arrow") && t2.classList.contains("module-header")) return true;
+    if ((e.key.startsWith("Arrow") || e.key === "Delete") && t2.classList.contains("module-header")) return true;
+    if ((e.key.startsWith("Arrow") || e.key === "Home") && t2.closest("#cof-container")) return true;
     return false;
   }
 
@@ -7798,6 +7807,8 @@ ${explainCadence(cadence)}` : "");
       degree: color("cof-degree"),
       degreeSmall: color("cof-degree-small")
     };
+    const rings = opts.showMinor ? 3 : 1;
+    let chordSeg = -1, tonicSeg = -1;
     let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`;
     if (opts.backdrop) svg += `<circle cx="${size / 2}" cy="${size / 2}" r="${size * 0.43}" fill="${opts.backdrop}"/>`;
     keys.forEach((key, i) => {
@@ -7811,6 +7822,8 @@ ${explainCadence(cadence)}` : "");
       const isChordRoot = !isMinorActiveChord && !isDimActiveChord && chordRootPc === pitchClass(key);
       const fill = isTonic ? c.tonic : isChordRoot ? c.chord : isDiatonic ? c.diatonic : c.segment;
       const stroke = isChordRoot ? c.chord : isDiatonic ? c.diatonicStroke : c.stroke;
+      if (isChordRoot) chordSeg = i * rings;
+      if (isTonic) tonicSeg = i * rings;
       const suffix7 = opts.show7ths ? relPos === 1 ? "7" : "maj7" : "";
       svg += `<path d="${ring(outerR, innerR, angle, nextAngle)}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
       data-chord="${key + suffix7}" data-key="${key} Major"><title>${TIP}</title></path>`;
@@ -7828,6 +7841,8 @@ ${explainCadence(cadence)}` : "");
       const isMinorTonic = i === tonicMinorPos;
       const isMinorChordHere = isMinorActiveChord && chordRootPc === pitchClass(minorRoot);
       const minorChord = minorKeys[i] + (opts.show7ths ? "7" : "");
+      if (isMinorChordHere) chordSeg = i * rings + 1;
+      if (isMinorTonic) tonicSeg = i * rings + 1;
       const minorSegFill = isMinorTonic ? c.tonic : isMinorChordHere ? c.chord : isDiatonic ? c.diatonic : "transparent";
       const minorSegStroke = isMinorTonic ? c.tonic : isMinorChordHere ? c.chord : isDiatonic ? c.diatonicStroke : "transparent";
       svg += `<path d="${ring(minorOutR, minorInR, angle, nextAngle)}" fill="${minorSegFill}" stroke="${minorSegStroke}" stroke-width="1"
@@ -7846,6 +7861,7 @@ ${explainCadence(cadence)}` : "");
       const isDiatonicDim = i === activePos;
       const isDimChordHere = isDimActiveChord && chordRootPc === pitchClass(dimRoot);
       const dimChord = `${dimRoot}${opts.show7ths ? "m7b5" : "dim"}`;
+      if (isDimChordHere) chordSeg = i * rings + 2;
       svg += `<path d="${ring(dimOutR, dimInR, angle, nextAngle)}"
       fill="${isDimChordHere ? c.chord : isDiatonicDim ? c.dimDiatonic : c.dim}" stroke="${isDiatonicDim ? c.dimDiatonicStroke : c.dimStroke}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
       pointer-events="all" style="cursor:pointer" data-chord="${dimChord}"><title>${t("cof.segment.play")}</title></path>`;
@@ -7871,8 +7887,26 @@ ${explainCadence(cadence)}` : "");
     });
     container2.querySelector("svg")?.setAttribute("aria-label", t("a11y.cof"));
     container2.querySelector("svg")?.setAttribute("role", "group");
-    if (focused >= 0) segments()[focused]?.focus();
+    const all = segments();
+    const remembered = lastSegment.get(container2);
+    const stop = (n) => all.forEach((el2, k) => el2.setAttribute("tabindex", k === n ? "0" : "-1"));
+    stop([remembered ?? -1, chordSeg, tonicSeg, 0].find((n) => n >= 0 && n < all.length) ?? 0);
+    all.forEach((el2, k) => el2.addEventListener("focus", () => {
+      lastSegment.set(container2, k);
+      stop(k);
+    }));
+    container2.querySelector("svg")?.addEventListener("keydown", (e) => {
+      const k = all.indexOf(e.target);
+      if (k < 0) return;
+      const pos = Math.floor(k / rings), r = k % rings;
+      const next = e.key === "ArrowRight" ? (pos + 1) % 12 * rings + r : e.key === "ArrowLeft" ? (pos + 11) % 12 * rings + r : e.key === "ArrowUp" ? pos * rings + Math.max(0, r - 1) : e.key === "ArrowDown" ? pos * rings + Math.min(rings - 1, r + 1) : e.key === "Home" ? 0 : -1;
+      if (next < 0) return;
+      e.preventDefault();
+      all[next].focus();
+    });
+    if (focused >= 0) all[focused]?.focus();
   }
+  var lastSegment = /* @__PURE__ */ new WeakMap();
 
   // src/view/viewer.ts
   function cofOptions(key) {
@@ -9354,7 +9388,9 @@ ${explainCadence(cadence)}` : "");
     ["kbd.esc", "shortcut.escape"],
     ["1\u20139", "shortcut.candidate"],
     ["Tab", "shortcut.tab"],
-    ["kbd.panelArrows", "shortcut.panelArrows"]
+    ["kbd.panelArrows", "shortcut.panelArrows"],
+    ["kbd.panelKeys", "shortcut.panelKeys"],
+    ["kbd.cofArrows", "shortcut.cofArrows"]
   ];
   var GESTURES = [
     "gesture.click",

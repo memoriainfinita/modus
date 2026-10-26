@@ -7,9 +7,10 @@ import { openSettings, keyLabel } from '../ui/settings'
 import { startTour } from '../ui/tour'
 import { MODULE_IDS } from '../layout/presets'
 
-// Keys that are always the same: Esc, the readings, Tab, the arrows on a panel title
+// Keys that are always the same: Esc, the readings, Tab, the keys on a panel title and on the circle
 const FIXED_KEYS: [string, StringKey][] = [
   ['kbd.esc', 'shortcut.escape'], ['1–9', 'shortcut.candidate'], ['Tab', 'shortcut.tab'], ['kbd.panelArrows', 'shortcut.panelArrows'],
+  ['kbd.panelKeys', 'shortcut.panelKeys'], ['kbd.cofArrows', 'shortcut.cofArrows'],
 ]
 
 // What the mouse does that no label says.

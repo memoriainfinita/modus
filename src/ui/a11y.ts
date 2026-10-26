@@ -110,7 +110,9 @@ export function keyBelongsToControl(e: KeyboardEvent): boolean {
   const t = e.target
   if (!(t instanceof Element)) return false
   if ((e.key === ' ' || e.key === 'Enter') && t.closest('button, a[href], [role="button"], summary')) return true
-  // A focused panel header moves the panel with the arrows
-  if (e.key.startsWith('Arrow') && t.classList.contains('module-header')) return true
+  // A focused panel header moves the panel with the arrows and hides it with Delete
+  if ((e.key.startsWith('Arrow') || e.key === 'Delete') && t.classList.contains('module-header')) return true
+  // A focused circle segment moves the focus round the circle
+  if ((e.key.startsWith('Arrow') || e.key === 'Home') && t.closest('#cof-container')) return true
   return false
 }

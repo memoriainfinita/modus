@@ -101,6 +101,11 @@ export function renderCircleOfFifths(
     dimDiatonicLabel: color('cof-dim-diatonic-label'), degree: color('cof-degree'), degreeSmall: color('cof-degree-small'),
   }
 
+  // Segments in drawing order: per position major, then minor and diminished when shown. The
+  // one with the chord, else the tonic, is the circle's tab stop unless one was focused before
+  const rings = opts.showMinor ? 3 : 1
+  let chordSeg = -1, tonicSeg = -1
+
   let svg = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">`
   // A view window on a chroma background needs the rings on a solid disc.
   if (opts.backdrop) svg += `<circle cx="${size / 2}" cy="${size / 2}" r="${size * 0.43}" fill="${opts.backdrop}"/>`
@@ -118,6 +123,8 @@ export function renderCircleOfFifths(
     const isChordRoot = !isMinorActiveChord && !isDimActiveChord && chordRootPc === pitchClass(key)
     const fill = isTonic ? c.tonic : isChordRoot ? c.chord : isDiatonic ? c.diatonic : c.segment
     const stroke = isChordRoot ? c.chord : isDiatonic ? c.diatonicStroke : c.stroke
+    if (isChordRoot) chordSeg = i * rings
+    if (isTonic) tonicSeg = i * rings
     // The dominant seventh sits one step clockwise of the relative major (V in major, VII in minor).
     const suffix7 = opts.show7ths ? (relPos === 1 ? '7' : 'maj7') : ''
     svg += `<path d="${ring(outerR, innerR, angle, nextAngle)}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer"
@@ -132,6 +139,8 @@ export function renderCircleOfFifths(
     const isMinorTonic = i === tonicMinorPos
     const isMinorChordHere = isMinorActiveChord && chordRootPc === pitchClass(minorRoot)
     const minorChord = minorKeys[i] + (opts.show7ths ? '7' : '')
+    if (isMinorChordHere) chordSeg = i * rings + 1
+    if (isMinorTonic) tonicSeg = i * rings + 1
     const minorSegFill   = isMinorTonic ? c.tonic : isMinorChordHere ? c.chord : isDiatonic ? c.diatonic : 'transparent'
     const minorSegStroke = isMinorTonic ? c.tonic : isMinorChordHere ? c.chord : isDiatonic ? c.diatonicStroke : 'transparent'
     svg += `<path d="${ring(minorOutR, minorInR, angle, nextAngle)}" fill="${minorSegFill}" stroke="${minorSegStroke}" stroke-width="1"
@@ -145,6 +154,7 @@ export function renderCircleOfFifths(
     const isDiatonicDim = i === activePos
     const isDimChordHere = isDimActiveChord && chordRootPc === pitchClass(dimRoot)
     const dimChord = `${dimRoot}${opts.show7ths ? 'm7b5' : 'dim'}`
+    if (isDimChordHere) chordSeg = i * rings + 2
     svg += `<path d="${ring(dimOutR, dimInR, angle, nextAngle)}"
       fill="${isDimChordHere ? c.chord : isDiatonicDim ? c.dimDiatonic : c.dim}" stroke="${isDiatonicDim ? c.dimDiatonicStroke : c.dimStroke}" stroke-width="${isDiatonicDim ? 1.5 : 1}"
       pointer-events="all" style="cursor:pointer" data-chord="${dimChord}"><title>${t('cof.segment.play')}</title></path>`
@@ -168,5 +178,29 @@ export function renderCircleOfFifths(
   })
   container.querySelector('svg')?.setAttribute('aria-label', t('a11y.cof'))
   container.querySelector('svg')?.setAttribute('role', 'group')
-  if (focused >= 0) segments()[focused]?.focus()
+
+  // One tab stop (roving tabindex): arrows go round the ring and across the rings
+  const all = segments()
+  const remembered = lastSegment.get(container)
+  const stop = (n: number) => all.forEach((el, k) => el.setAttribute('tabindex', k === n ? '0' : '-1'))
+  stop([remembered ?? -1, chordSeg, tonicSeg, 0].find(n => n >= 0 && n < all.length) ?? 0)
+  all.forEach((el, k) => el.addEventListener('focus', () => { lastSegment.set(container, k); stop(k) }))
+  container.querySelector('svg')?.addEventListener('keydown', e => {
+    const k = all.indexOf(e.target as SVGPathElement)
+    if (k < 0) return
+    const pos = Math.floor(k / rings), r = k % rings
+    const next =
+      e.key === 'ArrowRight' ? ((pos + 1) % 12) * rings + r :
+      e.key === 'ArrowLeft' ? ((pos + 11) % 12) * rings + r :
+      e.key === 'ArrowUp' ? pos * rings + Math.max(0, r - 1) :
+      e.key === 'ArrowDown' ? pos * rings + Math.min(rings - 1, r + 1) :
+      e.key === 'Home' ? 0 : -1
+    if (next < 0) return
+    e.preventDefault()
+    all[next].focus()
+  })
+  if (focused >= 0) all[focused]?.focus()
 }
+
+// The segment last focused in each circle, by its place in drawing order
+const lastSegment = new WeakMap<HTMLElement, number>()
