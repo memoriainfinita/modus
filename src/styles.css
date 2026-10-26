@@ -593,7 +593,8 @@ body.rail-hidden .rail-col { display: none; }
   border-radius: 8px 8px 0 0;
 }
 .module-moving .module-header { cursor: grabbing; }
-.module-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: auto; }
+/* The title fills the header up to its buttons: it holds the header's "drag to move" tooltip */
+.module-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; min-width: 0; align-self: stretch; display: flex; align-items: center; }
 .module-more, .module-close {
   width: 28px; height: 26px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
   background: none; border: 0; border-radius: 6px; color: var(--text-dim); cursor: pointer; font-size: 17px; line-height: 1; padding: 0;

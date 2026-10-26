@@ -372,14 +372,15 @@ function moduleBody(id: ModuleId): string {
   }
 }
 
-// The header's title is the mouse's tooltip; its empty aria-description keeps a screen reader
-// from reading it after the keys its label gives
+// The header is a button for a screen reader: Firefox names no generic header by its label and
+// reads ⋯ and × inside it instead. The mouse's "drag to move" tooltip is on the title, which
+// fills the header: on the header itself a screen reader would read it after the keys
 function moduleFrame(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
   const menu = panelMenu(id, fieldsVisible)
   return `
     <section id="mod-${id}" class="module module-${id}" data-module="${id}" aria-labelledby="mod-${id}-title">
-      <header class="module-header" title="${t('module.drag')}" aria-description="" tabindex="0" aria-label="${t(menu ? 'a11y.panelKeys' : 'a11y.panelKeysNoMenu', { name: t(`module.${id}`) })}">
-        <span class="module-title" id="mod-${id}-title">${t(`module.${id}`)}</span>
+      <header class="module-header" role="button"${menu ? ' aria-haspopup="true"' : ''} tabindex="0" aria-label="${t(menu ? 'a11y.panelKeys' : 'a11y.panelKeysNoMenu', { name: t(`module.${id}`) })}">
+        <span class="module-title" id="mod-${id}-title" title="${t('module.drag')}">${t(`module.${id}`)}</span>
         ${menu ? `<button class="module-more" data-menu="${id}" title="${t('menu.options')}" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${id}" tabindex="-1">${ICONS.more}</button>` : ''}
         <button class="module-close" data-close="${id}" title="${t('module.hide')}" tabindex="-1">×</button>
       </header>
@@ -432,13 +433,13 @@ const narrow = () => matchMedia('(max-width: 720px)').matches
 
 function wireGrid() {
   const gridEl = $('grid')
-  // A focused header, the panel's one tab stop: Enter opens its ⋯ menu, Delete hides it,
+  // A focused header, the panel's one tab stop: Enter or Space opens its ⋯ menu, Delete hides it,
   // arrows move it a cell, Shift + arrows resize it. ⋯ and × stay out of the tab order
   gridEl.addEventListener('keydown', e => {
     const header = e.target as HTMLElement
     if (!header.classList?.contains('module-header')) return
     const id = header.closest<HTMLElement>('.module')!.dataset.module as ModuleId
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       header.querySelector<HTMLElement>('.module-more')?.click()
       return

@@ -1060,7 +1060,11 @@ body.rail-hidden .rail-col {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-right: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
 }
 .module-more,
 .module-close {
