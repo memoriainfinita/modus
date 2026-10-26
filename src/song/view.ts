@@ -8,7 +8,7 @@ import {
   replaceSectionProgression, sectionAsText,
 } from './model'
 import { romanInKey } from '../detector/analyzer'
-import { wirePopover, closePopover } from '../ui/popover'
+import { wirePopover, closePopover, isPopoverOpen } from '../ui/popover'
 import { saveSong, type SongMeta } from './library'
 import { makeActivatable } from '../ui/a11y'
 import { escapeHtml } from '../ui/html'
@@ -106,7 +106,8 @@ export function markActiveChord(chordId: string | null) {
 
 function rerender() {
   if (!_container || !_handlers) return
-  closePopover()
+  // Its own menus go with the DOM rebuilt; another panel's open menu (the key's, the input's) stays open
+  if ([..._container.querySelectorAll<HTMLElement>('.pop-menu.open')].some(isPopoverOpen)) closePopover()
   _container.innerHTML = ''
   _container.appendChild(buildSongDOM(_song, _handlers))
   markPlaying(_playing)

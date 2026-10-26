@@ -8492,7 +8492,7 @@ ${explainCadence(cadence)}` : "");
   }
   function rerender() {
     if (!_container || !_handlers) return;
-    closePopover();
+    if ([..._container.querySelectorAll(".pop-menu.open")].some(isPopoverOpen)) closePopover();
     _container.innerHTML = "";
     _container.appendChild(buildSongDOM(_song, _handlers));
     markPlaying(_playing);
