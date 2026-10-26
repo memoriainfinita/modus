@@ -100,7 +100,7 @@ function voicingEntries(noteNames: string[], symbol: string): Explanation[] {
   if (noteNames.length < 3) return []
   const chord = tryParseChord(symbol)
   const v = tryUMT('voicing', () => UMT.analyzeVoicing(noteNames.map(n => UMT.parseNote(n)), chord), null)
-  if (!v) return []
+  if (!v?.position) return []
   const out: Explanation[] = [{ term: t('ex.term.voicing', { v: t(`voicing.${v.position}`) }), text: t(`ex.voicing.${v.position}`) }]
   if (v.drop) out.push({ term: v.drop, text: t('ex.voicing.drop') })
   return out

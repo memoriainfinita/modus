@@ -48,12 +48,20 @@ export interface HarmonicAnalysis {
   substitutionTypes: string[]   // UMT's types, each once: "tritone", "diatonic"…
   cadence: string | null    // null = no standard cadence vs prev chord
   voicing: string | null        // e.g. "1st inversion · open · drop 2 · doubled R · no 5"
+  voicingCard: VoicingCard | null // the same reading in the header's rows; null for fewer than 3 notes
   upperStructures: string[]     // upper-structure triads present over a dominant: "II UST (D: 9 #11 13)"
   slash: SlashReading | null    // a chord over a bass foreign to it (UMT analyzeSlash); null for an inversion
   transformation: string | null // neo-Riemannian P / L / R from the previous triad, e.g. "R", "PL"
   voiceLeading: string | null   // each voice from the chord before: "C→B ↓1  E =  G =  — outer voices oblique · …"
   voiceRules: string[] | null   // four-part rules broken from the chord before; null when it cannot be read
   voiceRuleKeys: string[]       // the same rules by key ("parallel5"), each once
+}
+
+/** The voicing in three rows for the chord header; a row UMT cannot read is null. */
+export interface VoicingCard {
+  position: string | null   // "1st inversion", "E in the bass"
+  layout: string | null     // "close · drop 2"
+  degrees: string[]         // each chord member once, bass up; a note outside it as "+E": ["R", "3", "5", "♭7", "♯9"]
 }
 
 /** A chord over a foreign bass, as UMT reads it: D over C, an upper structure, 9 #11 13. */

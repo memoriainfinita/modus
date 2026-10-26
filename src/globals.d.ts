@@ -34,8 +34,9 @@ declare const UMT: {
   getProgression: (id: string, key: string) => any[]
   parseRomanProgression: (numerals: string, key: string) => any[]
   analyzeVoicing: (notes: any[], chord?: any) => {
-    chord: string; bass: string; bassDegree: string | null; inversion: number
-    position: 'close' | 'open'; drop: string | null
+    chord: string; voices: { note: string; degree: string | null }[]
+    bass: string; bassDegree: string | null; inversion: number | null
+    position: 'close' | 'open' | null; drop: string | null
     doubled: string[]; omitted: string[]; added: string[]
   }
   findScalesForNotes: (notes: any[], opts?: { tonic?: string; tonicOnly?: boolean; limit?: number }) => { name: string; root: string; type: string; notes: string[]; extra: string[]; tier: number }[]

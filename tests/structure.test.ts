@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { describeVoicing, presentUpperStructures, neoRiemannianPath, analyzeNoteSet, buildHarmonicAnalysis } from '../src/detector/analyzer'
+import { describeVoicing, voicingCard, presentUpperStructures, neoRiemannianPath, analyzeNoteSet, buildHarmonicAnalysis } from '../src/detector/analyzer'
 
 const chord = (s: string) => UMT.parseChordSymbol(s)
 
@@ -13,6 +13,18 @@ describe('describeVoicing (UMT analyzeVoicing)', () => {
 
   it('nothing for fewer than three notes', () => {
     expect(describeVoicing(['C4', 'E4'], chord('C'))).toBeNull()
+  })
+})
+
+describe('voicingCard', () => {
+  it('position, layout and each member once from the bass up', () => {
+    expect(voicingCard(['C3', 'E3', 'Bb3', 'D#4'], chord('C7#9'))).toEqual({ position: 'root position', layout: 'close · drop 2', degrees: ['R', '3', '♭7', '♯9'] })
+    expect(voicingCard(['E3', 'C4', 'G4', 'E4'], chord('C'))).toEqual({ position: '1st inversion', layout: 'close', degrees: ['3', 'R', '5'] })
+  })
+
+  it('a note outside the chord as +note; nothing for fewer than three notes', () => {
+    expect(voicingCard(['C4', 'E4', 'G4', 'F#5'], chord('C'))?.degrees).toEqual(['R', '3', '5', '+F#'])
+    expect(voicingCard(['C4', 'E4'], chord('C'))).toBeNull()
   })
 })
 

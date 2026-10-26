@@ -667,6 +667,7 @@ body.rail-hidden .rail-col { display: none; }
   .chord-roman { font-size: 20px; }
   .module-chord .chord-name-badge, .module-chord .chord-head-name { font-size: clamp(22px, 30cqh, 40vh); }
   .module-chord .chord-notes { font-size: 13px; }
+  .module-chord .chord-card { font-size: 13px; line-height: 1.15; gap: 0 10px; }
 }
 
 /* A phone: the same panels in one column, in layout order, each as tall as its rows in the
@@ -797,6 +798,10 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 .chord-head-prev { font-weight: 600; }
 .chord-head-prev-roman { font-weight: 600; }
 .chord-head-alts { margin-left: auto; gap: 6px; }
+/* The voicing beside the name: position, layout, degrees, in fixed rows */
+.chord-card { display: grid; grid-template-columns: max-content max-content; justify-content: start; gap: 2px 10px; align-items: baseline; font-size: 14px; }
+.chord-card-label { font-size: 12px; color: var(--text-muted); }
+.chord-card-value { color: var(--text); white-space: nowrap; }
 .fn-T { color: var(--fn-t); }
 .fn-S { color: var(--fn-s); }
 .fn-D { color: var(--fn-d); }
