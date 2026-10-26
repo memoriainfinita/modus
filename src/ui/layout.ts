@@ -123,7 +123,8 @@ function wirePanelMenus() {
     open.menu.hidden = true
     open.btn.setAttribute('aria-expanded', 'false')
     open.btn.closest('.module')?.classList.remove('module-menu-open')
-    if (focus) open.btn.focus()
+    // Back to the panel's header: ⋯ is out of the tab order
+    if (focus) open.btn.closest('.module')?.querySelector<HTMLElement>('.module-header')?.focus()
     open = null
   }
   document.addEventListener('click', e => {
@@ -138,8 +139,8 @@ function wirePanelMenus() {
       btn.setAttribute('aria-expanded', 'true')
       btn.closest('.module')?.classList.add('module-menu-open')
       open = { btn, menu }
-      // Opened from the keyboard (a click with no pointer: detail 0), the focus goes to its first
-      // option: Tab from ⋯ would reach the panel's × first, the menu coming after it
+      // Opened from the keyboard (Enter on the header: a click with no pointer, detail 0), the
+      // focus goes to its first option
       if ((e as MouseEvent).detail === 0) menu.querySelector<HTMLElement>('button, input, select')?.focus()
       return
     }
@@ -371,14 +372,16 @@ function moduleBody(id: ModuleId): string {
   }
 }
 
+// The header's title is the mouse's tooltip; its empty aria-description keeps a screen reader
+// from reading it after the keys its label gives
 function moduleFrame(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
   const menu = panelMenu(id, fieldsVisible)
   return `
     <section id="mod-${id}" class="module module-${id}" data-module="${id}" aria-labelledby="mod-${id}-title">
-      <header class="module-header" title="${t('module.drag')}" tabindex="0" aria-label="${t('a11y.panelKeys', { name: t(`module.${id}`) })}">
+      <header class="module-header" title="${t('module.drag')}" aria-description="" tabindex="0" aria-label="${t(menu ? 'a11y.panelKeys' : 'a11y.panelKeysNoMenu', { name: t(`module.${id}`) })}">
         <span class="module-title" id="mod-${id}-title">${t(`module.${id}`)}</span>
-        ${menu ? `<button class="module-more" data-menu="${id}" title="${t('menu.options')}" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${id}">${ICONS.more}</button>` : ''}
-        <button class="module-close" data-close="${id}" title="${t('module.hide')}">×</button>
+        ${menu ? `<button class="module-more" data-menu="${id}" title="${t('menu.options')}" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${id}" tabindex="-1">${ICONS.more}</button>` : ''}
+        <button class="module-close" data-close="${id}" title="${t('module.hide')}" tabindex="-1">×</button>
       </header>
       ${menu ? `<div id="menu-${id}" class="module-menu" role="group" aria-label="${t('menu.optionsOf', { name: t(`module.${id}`) })}" hidden>${menu}</div>` : ''}
       <div class="module-body">${moduleBody(id)}</div>
@@ -429,11 +432,28 @@ const narrow = () => matchMedia('(max-width: 720px)').matches
 
 function wireGrid() {
   const gridEl = $('grid')
-  // A focused header: arrows move the panel a cell, Shift + arrows resize it
+  // A focused header, the panel's one tab stop: Enter opens its ⋯ menu, Delete hides it,
+  // arrows move it a cell, Shift + arrows resize it. ⋯ and × stay out of the tab order
   gridEl.addEventListener('keydown', e => {
     const header = e.target as HTMLElement
-    if (!header.classList?.contains('module-header') || !e.key.startsWith('Arrow') || narrow()) return
+    if (!header.classList?.contains('module-header')) return
     const id = header.closest<HTMLElement>('.module')!.dataset.module as ModuleId
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      header.querySelector<HTMLElement>('.module-more')?.click()
+      return
+    }
+    if (e.key === 'Delete') {
+      e.preventDefault()
+      // The focus goes on to the next panel shown, or the one before when it was the last
+      const headers = [...gridEl.querySelectorAll<HTMLElement>('.module:not(.module-hidden) .module-header')]
+        .sort((a, b) => Number(a.closest<HTMLElement>('.module')!.style.order) - Number(b.closest<HTMLElement>('.module')!.style.order))
+      const i = headers.indexOf(header)
+      showModule(id, false)
+      ;(headers[i + 1] ?? headers[i - 1])?.focus()
+      return
+    }
+    if (!e.key.startsWith('Arrow') || narrow()) return
     const cell = grid.find(c => c.id === id)
     if (!cell) return
     e.preventDefault()

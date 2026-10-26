@@ -1344,7 +1344,10 @@
     "a11y.toolbar": "Controls",
     "a11y.rail": "Rail",
     "a11y.panels": "Panels",
-    "a11y.panelKeys": "{name} panel: arrows move it, Shift + arrows resize it",
+    "a11y.panelKeys": "{name} panel: Enter, options; arrows, move; Shift + arrows, resize; Delete, hide",
+    "a11y.panelKeysNoMenu": "{name} panel: arrows, move; Shift + arrows, resize; Delete, hide",
+    "a11y.cof.segment": "Enter: play \xB7 Enter twice: set as key",
+    "a11y.cof.segmentPlay": "Enter: play",
     "a11y.moved": "{name}: column {x}, row {y}, {w} columns wide, {h} rows tall",
     "a11y.midiDevice": "MIDI input device",
     "a11y.key": "Key",
@@ -2346,7 +2349,10 @@
     "a11y.toolbar": "Controles",
     "a11y.rail": "Riel",
     "a11y.panels": "Paneles",
-    "a11y.panelKeys": "Panel {name}: las flechas lo mueven, May\xFAs + flechas cambian su tama\xF1o",
+    "a11y.panelKeys": "Panel {name}: Intro, opciones; flechas, mover; May\xFAs + flechas, tama\xF1o; Supr, ocultar",
+    "a11y.panelKeysNoMenu": "Panel {name}: flechas, mover; May\xFAs + flechas, tama\xF1o; Supr, ocultar",
+    "a11y.cof.segment": "Intro: tocar \xB7 Intro dos veces: usar como tonalidad",
+    "a11y.cof.segmentPlay": "Intro: tocar",
     "a11y.moved": "{name}: columna {x}, fila {y}, {w} columnas de ancho, {h} filas de alto",
     "a11y.midiDevice": "Dispositivo de entrada MIDI",
     "a11y.key": "Tonalidad",
@@ -7080,7 +7086,7 @@ ${explainCadence(cadence)}` : "");
       open2.menu.hidden = true;
       open2.btn.setAttribute("aria-expanded", "false");
       open2.btn.closest(".module")?.classList.remove("module-menu-open");
-      if (focus) open2.btn.focus();
+      if (focus) open2.btn.closest(".module")?.querySelector(".module-header")?.focus();
       open2 = null;
     };
     document.addEventListener("click", (e) => {
@@ -7332,10 +7338,10 @@ ${explainCadence(cadence)}` : "");
     const menu = panelMenu(id, fieldsVisible);
     return `
     <section id="mod-${id}" class="module module-${id}" data-module="${id}" aria-labelledby="mod-${id}-title">
-      <header class="module-header" title="${t("module.drag")}" tabindex="0" aria-label="${t("a11y.panelKeys", { name: t(`module.${id}`) })}">
+      <header class="module-header" title="${t("module.drag")}" aria-description="" tabindex="0" aria-label="${t(menu ? "a11y.panelKeys" : "a11y.panelKeysNoMenu", { name: t(`module.${id}`) })}">
         <span class="module-title" id="mod-${id}-title">${t(`module.${id}`)}</span>
-        ${menu ? `<button class="module-more" data-menu="${id}" title="${t("menu.options")}" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${id}">${ICONS.more}</button>` : ""}
-        <button class="module-close" data-close="${id}" title="${t("module.hide")}">\xD7</button>
+        ${menu ? `<button class="module-more" data-menu="${id}" title="${t("menu.options")}" aria-haspopup="true" aria-expanded="false" aria-controls="menu-${id}" tabindex="-1">${ICONS.more}</button>` : ""}
+        <button class="module-close" data-close="${id}" title="${t("module.hide")}" tabindex="-1">\xD7</button>
       </header>
       ${menu ? `<div id="menu-${id}" class="module-menu" role="group" aria-label="${t("menu.optionsOf", { name: t(`module.${id}`) })}" hidden>${menu}</div>` : ""}
       <div class="module-body">${moduleBody(id)}</div>
@@ -7373,8 +7379,22 @@ ${explainCadence(cadence)}` : "");
     const gridEl = $("grid");
     gridEl.addEventListener("keydown", (e) => {
       const header = e.target;
-      if (!header.classList?.contains("module-header") || !e.key.startsWith("Arrow") || narrow()) return;
+      if (!header.classList?.contains("module-header")) return;
       const id = header.closest(".module").dataset.module;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        header.querySelector(".module-more")?.click();
+        return;
+      }
+      if (e.key === "Delete") {
+        e.preventDefault();
+        const headers = [...gridEl.querySelectorAll(".module:not(.module-hidden) .module-header")].sort((a, b) => Number(a.closest(".module").style.order) - Number(b.closest(".module").style.order));
+        const i = headers.indexOf(header);
+        showModule(id, false);
+        (headers[i + 1] ?? headers[i - 1])?.focus();
+        return;
+      }
+      if (!e.key.startsWith("Arrow") || narrow()) return;
       const cell = grid2.find((c) => c.id === id);
       if (!cell) return;
       e.preventDefault();
@@ -7841,13 +7861,17 @@ ${explainCadence(cadence)}` : "");
       );
     });
     svg += "</svg>";
+    const segments = () => [...container2.querySelectorAll("[data-chord]")];
+    const focused = segments().indexOf(document.activeElement);
     container2.innerHTML = svg;
-    container2.querySelectorAll("[data-chord]").forEach((el2) => {
+    segments().forEach((el2) => {
       el2.addEventListener("click", () => onSegmentClick(el2.dataset.chord, el2.dataset.key ?? null));
       makeActivatable(el2, chordLabel(el2.dataset.chord));
+      el2.setAttribute("aria-description", t(el2.dataset.key ? "a11y.cof.segment" : "a11y.cof.segmentPlay"));
     });
     container2.querySelector("svg")?.setAttribute("aria-label", t("a11y.cof"));
     container2.querySelector("svg")?.setAttribute("role", "group");
+    if (focused >= 0) segments()[focused]?.focus();
   }
 
   // src/view/viewer.ts

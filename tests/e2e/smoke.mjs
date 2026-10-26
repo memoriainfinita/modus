@@ -1061,13 +1061,39 @@ await check('keyboard: Help takes the focus and keeps Tab inside until Esc; a pa
   const stillInside = await inside('#shortcut-help')
   await page.keyboard.press('Escape')
   const backOnHelp = await page.evaluate(() => document.activeElement?.id)
-  await page.focus('#mod-guitar .module-more')
+  await page.focus('#mod-guitar .module-header')
   await page.keyboard.press('Enter')
   const menuFocused = await inside('#menu-guitar')
   await page.keyboard.press('Escape')
-  const backOnMore = await page.evaluate(() => document.activeElement?.classList.contains('module-more'))
+  const backOnHeader = await inside('#mod-guitar .module-header')
   assert(helpFocused && stillInside && backOnHelp === 'btn-help', `help: in ${helpFocused}, after Tabs ${stillInside}, Esc → ${backOnHelp}`)
-  assert(menuFocused && backOnMore, `⋯ menu: first option ${menuFocused}, Esc back ${backOnMore}`)
+  assert(menuFocused && backOnHeader, `⋯ menu: first option ${menuFocused}, Esc back on the header ${backOnHeader}`)
+})
+
+await check('keyboard: a panel is one tab stop; Delete on its header hides it, the focus goes on', async () => {
+  const stops = await page.evaluate(() => [...document.querySelectorAll('#mod-key header *, #mod-key header')].filter(e => e.tabIndex >= 0).length)
+  assert(stops === 1, `tab stops in the Key panel's header: ${stops}`)
+  await page.focus('#mod-tuner .module-header')
+  await page.keyboard.press('Delete')
+  const hidden = await page.locator('#mod-tuner').evaluate(e => e.classList.contains('module-hidden'))
+  const focused = await page.evaluate(() => document.activeElement?.classList.contains('module-header') && document.activeElement.closest('.module').id)
+  await showPanel('tuner')
+  assert(hidden && focused && focused !== 'mod-tuner', `hidden ${hidden}, focus on ${focused}`)
+})
+
+await check('keyboard: the circle\'s segments describe the keys, not the mouse; Enter keeps the focus on the segment', async () => {
+  const d = await page.evaluate(() => [...document.querySelectorAll('#cof-container [data-chord]')].map(e => [!!e.dataset.key, e.getAttribute('aria-description')]))
+  assert(d.length && d.every(([key, text]) => text === (key ? 'Enter: play · Enter twice: set as key' : 'Enter: play')), `descriptions: ${JSON.stringify(d.slice(0, 3))}`)
+  // Chrome's accessibility tree: a header's description is not its mouse tooltip
+  const cdp = await page.context().newCDPSession(page)
+  const { nodes } = await cdp.send('Accessibility.getFullAXTree')
+  const header = nodes.find(n => n.name?.value?.startsWith('Staff panel:'))
+  assert(header && !header.description?.value, `header description: ${header?.description?.value}`)
+  await page.focus('#cof-container [data-chord="D"]')
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(300)
+  const after = await page.evaluate(() => document.activeElement?.dataset?.chord)
+  assert(after === 'D', `focus after Enter: ${after}`)
 })
 
 await check('a note that keeps the chord does not rebuild the circle or guitar', async () => {
