@@ -12,7 +12,7 @@ What is true now. What already happened lives in `state-history.md`.
 **Modus** — see and understand the harmony of what you play, in real time. Aimed at being a complete, professional, useful, universal and didactic app, for studying, transcribing songs, composing, teaching and making videos. No time or budget limits, no marketing or profit goals. GPL-3.0, part of the **memoriainfinita** ecosystem: UMT (developed for Modus, all theory) and notae (diagrams).
 
 - **Spec:** `docs/spec.md` (purpose, design, behaviour) · **UMT contract:** `docs/umt-contract.md` · Executed plans and earlier spec revisions in `.archive/` (local, gitignored)
-- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to the tag `v0.11.0`, notae to `5a3ae1b` (per-dot colours and labels, open scale notes; 2026-10-25), both served from `vendor/`. `5a3ae1b` is committed in notae but not pushed: until it is, `pnpm vendor` cannot fetch it from jsDelivr (`vendor/notae.js` was copied from notae's `dist/`)
+- **Stack and commands:** `README.md`. Not there: pnpm 11 needs `allowBuilds: esbuild: true` in `pnpm-workspace.yaml` (it blocks install scripts by default); TypeScript held on 5.x on purpose; UMT pinned to the tag `v0.11.0`, notae to `5a3ae1b` (per-dot colours and labels, open scale notes; 2026-10-25), both served from `vendor/`
 
 ## Status
 
