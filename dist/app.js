@@ -7070,6 +7070,7 @@ ${explainCadence(cadence)}` : "");
         btn.setAttribute("aria-expanded", "true");
         btn.closest(".module")?.classList.add("module-menu-open");
         open2 = { btn, menu };
+        if (e.detail === 0) menu.querySelector("button, input, select")?.focus();
         return;
       }
       if (open2 && !e.composedPath().includes(open2.menu)) close();
@@ -9381,6 +9382,22 @@ ${explainCadence(cadence)}` : "");
     ${MODULE_IDS.map((id) => `<div class="gesture-row"><b>${escapeHtml(t(`module.${id}`))}</b> \u2014 ${escapeHtml(t(`help.panel.${id}`))}</div>`).join("")}
     <div class="help-setting"><button id="help-tour" class="ctrl-btn" title="${escapeHtml(t("tour.start.title"))}">${escapeHtml(t("tour.start"))}</button></div>`;
     document.body.appendChild(popup);
+    popup.setAttribute("aria-modal", "true");
+    popup.tabIndex = -1;
+    popup.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+      const stops = [...popup.querySelectorAll('button, [href], input, [tabindex="0"]')];
+      if (!stops.length) return;
+      const first = stops[0], last = stops[stops.length - 1];
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === popup)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+    popup.focus();
     popup.querySelector(".shortcut-help-close").addEventListener("click", closeHelp);
     popup.querySelector("#help-tour").addEventListener("click", () => {
       closeHelp();
