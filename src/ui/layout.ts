@@ -138,6 +138,9 @@ function wirePanelMenus() {
       btn.setAttribute('aria-expanded', 'true')
       btn.closest('.module')?.classList.add('module-menu-open')
       open = { btn, menu }
+      // Opened from the keyboard (a click with no pointer: detail 0), the focus goes to its first
+      // option: Tab from ⋯ would reach the panel's × first, the menu coming after it
+      if ((e as MouseEvent).detail === 0) menu.querySelector<HTMLElement>('button, input, select')?.focus()
       return
     }
     // composedPath: a menu that redraws its items on the click no longer contains the target

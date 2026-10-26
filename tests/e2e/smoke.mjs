@@ -1050,6 +1050,24 @@ await check('help panel lists the mouse gestures; P is presentation, not play', 
   await page.keyboard.press('Escape')
 })
 
+await check('keyboard: Help takes the focus and keeps Tab inside until Esc; a panel\'s ⋯ menu opens on its first option', async () => {
+  const inside = sel => page.evaluate(s => !!document.activeElement?.closest(s), sel)
+  await page.focus('#btn-help')
+  await page.keyboard.press('Enter')
+  const helpFocused = await inside('#shortcut-help')
+  for (let i = 0; i < 12; i++) await page.keyboard.press('Tab')
+  const stillInside = await inside('#shortcut-help')
+  await page.keyboard.press('Escape')
+  const backOnHelp = await page.evaluate(() => document.activeElement?.id)
+  await page.focus('#mod-guitar .module-more')
+  await page.keyboard.press('Enter')
+  const menuFocused = await inside('#menu-guitar')
+  await page.keyboard.press('Escape')
+  const backOnMore = await page.evaluate(() => document.activeElement?.classList.contains('module-more'))
+  assert(helpFocused && stillInside && backOnHelp === 'btn-help', `help: in ${helpFocused}, after Tabs ${stillInside}, Esc → ${backOnHelp}`)
+  assert(menuFocused && backOnMore, `⋯ menu: first option ${menuFocused}, Esc back ${backOnMore}`)
+})
+
 await check('a note that keeps the chord does not rebuild the circle or guitar', async () => {
   await play([60, 64, 67])
   await page.evaluate(() => {

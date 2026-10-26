@@ -79,6 +79,19 @@ export function toggleHelp() {
     ${MODULE_IDS.map(id => `<div class="gesture-row"><b>${escapeHtml(t(`module.${id}`))}</b> — ${escapeHtml(t(`help.panel.${id}`))}</div>`).join('')}
     <div class="help-setting"><button id="help-tour" class="ctrl-btn" title="${escapeHtml(t('tour.start.title'))}">${escapeHtml(t('tour.start'))}</button></div>`
   document.body.appendChild(popup)
+  // A modal dialog: the focus goes into it and Tab stays in it until Esc or ×; the page behind
+  // is not reached (a screen reader heard nothing of the help and tabbed on through the rail)
+  popup.setAttribute('aria-modal', 'true')
+  popup.tabIndex = -1
+  popup.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return
+    const stops = [...popup.querySelectorAll<HTMLElement>('button, [href], input, [tabindex="0"]')]
+    if (!stops.length) return
+    const first = stops[0], last = stops[stops.length - 1]
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === popup)) { e.preventDefault(); last.focus() }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+  })
+  popup.focus()
   popup.querySelector('.shortcut-help-close')!.addEventListener('click', closeHelp)
   popup.querySelector('#help-tour')!.addEventListener('click', () => { closeHelp(); startTour() })
   popup.querySelector('#help-keys')?.addEventListener('click', () => { closeHelp(); openSettings('shortcuts') })
