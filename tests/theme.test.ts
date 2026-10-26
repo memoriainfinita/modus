@@ -35,8 +35,8 @@ describe('theme tokens', () => {
       ...[...code.matchAll(/var\(--([\w-]+)\)/g)].map(m => m[1]),
       ...[...code.matchAll(/\bcolor\('([\w-]+)'\)/g)].map(m => m[1]),
     ])
-    // --row and --h are the layout grid's, not colours
-    for (const tok of used) if (tok !== 'row' && tok !== 'h') expect(dark.has(tok), tok).toBe(true)
+    // --row and --h are the layout grid's, not colours; --window-bg is a layout window's background, from its URL
+    for (const tok of used) if (!['row', 'h', 'window-bg'].includes(tok)) expect(dark.has(tok), tok).toBe(true)
   })
 
   it('no colour is written outside the theme, but the print view and the chroma backgrounds', () => {

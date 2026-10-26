@@ -4,6 +4,7 @@
 import type { Song } from '../types'
 import { createSong, isBlankSong, withoutEmptyChords } from './model'
 import { normalizeKey } from '../theory/keys'
+import { isStorageReadOnly } from '../ui/storage'
 
 const INDEX_KEY = 'modus-songs'
 const songKey = (id: string) => `modus-song:${id}`
@@ -22,6 +23,7 @@ function readJSON(key: string): any {
 }
 
 function write(key: string, value: unknown) {
+  if (isStorageReadOnly()) return   // a layout window shows the songs, never writes them
   localStorage.setItem(key, JSON.stringify(value))
 }
 

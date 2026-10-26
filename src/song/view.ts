@@ -118,7 +118,15 @@ function rerender() {
 let _playing: SongStep | null = null
 
 /** The chord sounding, outlined in the chart and kept in view; its section marked in the form strip. */
+// Told each step the song playing reaches, and its end (null): layout windows follow it
+let _onPlaying: (step: SongStep | null) => void = () => {}
+export function onPlayingChange(f: (step: SongStep | null) => void) { _onPlaying = f }
+
+/** A layout window: marks the step the main window's song is playing. */
+export function showPlaying(step: Pick<SongStep, 'chordId' | 'sectionId'> | null) { markPlaying(step as SongStep | null) }
+
 function markPlaying(step: SongStep | null) {
+  if (step?.chordId !== _playing?.chordId || !step !== !_playing) _onPlaying(step)
   _playing = step
   if (!_container) return
   _container.querySelectorAll<HTMLElement>('.chord-chip').forEach(c => c.classList.toggle('playing', !!step && c.dataset.chordId === step.chordId))

@@ -14,17 +14,18 @@ import { renderGuitar, getStringsView, getGuitarVoicingIndex, setGuitarVoicingCh
 import { createViewPublisher, viewUrl, VIEW_WINDOW, VIEW_BACKGROUNDS, VIEW_NAMES } from './view/channel'
 import type { ViewName, ViewBackground, ViewState } from './view/channel'
 import { runViewerFromUrl } from './view/viewer'
+import { createMirrorPublisher, subscribeMirror, layoutWindowParams, layoutWindowUrl, type MirrorState } from './view/mirror'
 import { exportDiagram } from './ui/export'
 import type { ExportTarget } from './ui/export'
 import { renderCircleOfFifths, cofAccidentalFor } from './diagrams/cof'
 import { renderKeyExplorer } from './diagrams/key-explorer'
 import { buildKeyMap } from './theory/key-map'
 import { scaleInfo, scaleSymbol } from './theory/scales'
-import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, notifyChordReleased, renderHistory, markActiveHistoryEntry, restoreCarriedHistory, rhythmText } from './history/history'
+import { setHistoryChangeCallback, clearHistoryWithUndo, notifyChordDetected, notifyChordReleased, renderHistory, markActiveHistoryEntry, restoreCarriedHistory, restoreEntries, rhythmText } from './history/history'
 import { addChord as songAddChord, addSection, insertChordAfter, updateChord } from './song/model'
 import { loadActiveSong, saveSong, songTabs, openSong, newSong, deleteSong, restoreSong } from './song/library'
 import { showUndo, dismiss as dismissUndo } from './ui/undo'
-import { mountSong, markActiveChord, removeChordWithUndo } from './song/view'
+import { mountSong, markActiveChord, removeChordWithUndo, onPlayingChange, showPlaying } from './song/view'
 import { isSongPlaying, stopSong, type SongStep } from './song/playback'
 import type { AppState, DetectionResult, HistoryEntry, MidiMode, NoteSetAnalysis, Song, SongChord } from './types'
 import { toggleHelp, wireKeyboard } from './input/shortcuts'
@@ -47,10 +48,10 @@ import { startMic, stopMic, isMicOn } from './input/mic'
 import type { AnalysisFieldKey } from './detector/analysis-panel'
 import { chordNoteNames, isKnownChord, readTypedChord, tryParseChord, tryUMT } from './theory/chord'
 import { spellDetection, spellVoicing } from './theory/spelling'
-import { loadBool, loadChoice, loadNumber, save } from './ui/storage'
+import { loadBool, loadChoice, loadNumber, save, setStorageReadOnly } from './ui/storage'
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps, keyMode, keyOnParent, KEY_MODES, type KeyMode } from './theory/keys'
-import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands, panelMenuCommands, isModuleShown } from './ui/layout'
+import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands, panelMenuCommands, isModuleShown, useLayout, layoutChoices } from './ui/layout'
 import { applyTheme, onThemeChange, followSystemTheme } from './ui/theme'
 import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang, getLang } from './i18n/i18n'
 import { announce, silence, watchIconButtons } from './ui/a11y'
@@ -115,6 +116,8 @@ function translatePage() {
 function init() {
   // Offline and installable (sw.js); service workers run over http(s), not from a file
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {})
+  publishMirror = createMirrorPublisher(mirrorState)
+  onPlayingChange(step => { songPlaying = step && { chordId: step.chordId, sectionId: step.sectionId }; publishMirror() })
   translatePage()
   applyTheme()
   followSystemTheme()
@@ -576,7 +579,8 @@ function renderNextPanel() {
   if (!el) return
   const sym = selectedSymbol()
   // Kept until another chord is played: the notes left while a chord is released do not count
-  if (sym && !liftingNotes) nextFrom = { symbol: sym, notes: displayedNotes(), prev: cadencePrev }
+  // (a layout window takes the main window's)
+  if (sym && !liftingNotes && !layoutWindow) nextFrom = { symbol: sym, notes: displayedNotes(), prev: cadencePrev }
   const key = analysisKey()
   renderNext(el, nextFrom?.symbol ?? null, key, nextFrom ? suggestNext(nextFrom.symbol, key, nextFrom.prev) : [], onNextPick,
     nextFrom ? substitutesFor(nextFrom.symbol, key) : [])
@@ -596,6 +600,7 @@ function onNextPick(chord: string, instead: boolean) {
 
 /** What a screen reader hears when the detector changes: the chord with its degree and function, a note, an interval. */
 function announceDetection() {
+  if (layoutWindow) return   // the main window says it
   const d = state.detection
   // The notes left while a chord is lifted are not played: nothing of them is said
   if (!d || liftingNotes) { silence(); return }
@@ -618,6 +623,7 @@ function renderDetector() {
   renderProgressionPanel()
   renderDiagrams()
   publishView()
+  publishMirror()
 }
 
 // ─── View windows (OBS) ──────────────────────────────────────────────────────
@@ -628,6 +634,83 @@ const sendView = createViewPublisher()
 function publishView() {
   const view = viewState()
   sendView(view)
+}
+
+// ─── Layout windows (OBS) ────────────────────────────────────────────────────
+
+// Set in a layout window (?window=…), which draws the main window's state instead of reading input
+const layoutWindow = layoutWindowParams()
+// Main window: sends its state to the layout windows; nothing in a layout window
+let publishMirror: () => void = () => {}
+// The song's step sounding, for the windows to mark it
+let songPlaying: MirrorState['playing'] = null
+// A layout window: the velocities the main window read, which has the MIDI
+let mirroredVelocities: NoteVelocity[] | null = null
+
+function mirrorState(): MirrorState {
+  return {
+    detection: state.detection, fromMidi: detectionFromMidi, velocities: noteVelocities(displayedNotes()),
+    cadencePrev, prevNotes: prevVoicing, activeKey: state.activeKey, melody, nextFrom,
+    history: state.history, historyActiveCursorId: state.historyActiveCursorId,
+    song: state.song, activeCursorId: state.activeCursorId, playing: songPlaying,
+  }
+}
+
+/** A layout window draws what the main window sends, with the same code the main window draws with. */
+function applyMirror(s: MirrorState) {
+  const songChanged = JSON.stringify([s.song, s.activeCursorId]) !== JSON.stringify([state.song, state.activeCursorId])
+  const keyChanged = s.activeKey !== state.activeKey
+  state.detection = s.detection
+  detectionFromMidi = s.fromMidi
+  mirroredVelocities = s.velocities
+  cadencePrev = s.cadencePrev
+  prevVoicing = s.prevNotes
+  melody = s.melody
+  nextFrom = s.nextFrom
+  state.activeKey = s.activeKey
+  state.song = s.song
+  state.activeCursorId = s.activeCursorId
+  state.historyActiveCursorId = s.historyActiveCursorId
+  if (selectedSymbol()) lastChordNotes = displayedNotes()
+  // The history in: the key it gives on Auto, the strip and the explanation's rhythm follow
+  if (JSON.stringify(s.history) !== JSON.stringify(state.history)) restoreEntries(s.history)
+  if (keyChanged) { updateAutoKeyLabel(); renderZone2() }
+  refreshAnalysis()
+  renderDetector()
+  if (songChanged || keyChanged) renderZone3()
+  showPlaying(s.playing)
+}
+
+/** A layout window: the layout asked for, without controls, on its background, following the main window. */
+function initLayoutWindow(w: { layout: string; background: string }) {
+  setStorageReadOnly()
+  if (!useLayout(w.layout)) useLayout('standard')
+  // A stable title, in English whatever the language: OBS window capture finds the window by it
+  const label = layoutChoices().find(c => c.id === w.layout)?.label ?? w.layout
+  document.title = `Modus window: ${label.replace(/^saved:/, '')}`
+  translatePage()
+  applyTheme()
+  followSystemTheme()
+  onThemeChange(() => {
+    for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k]
+    renderDetector()
+  })
+  buildLayout()
+  document.body.classList.add('layout-window')
+  document.documentElement.style.setProperty('--window-bg', w.background)
+  openPresentation(() => {})
+  drawEar()
+  drawTuner()
+  const metronome = document.getElementById('metronome-container')
+  if (metronome) renderMetronome(metronome)
+  setHistoryChangeCallback(onHistoryChange)
+  renderZone3()
+  subscribeMirror(applyMirror)
+  // Preferences changed in the main window (language, theme, a panel's options): drawn again
+  // with them. Its songs, history and own layout come over the channel, not from storage.
+  window.addEventListener('storage', e => {
+    if (e.key && !/^(modus-song|layout$|midi-|storage-persist)/.test(e.key)) location.reload()
+  })
 }
 
 function viewState(): ViewState {
@@ -659,9 +742,31 @@ let viewBackground = loadChoice('view-bg', Object.keys(VIEW_BACKGROUNDS) as View
 function wireViewMenu() {
   const menu = $('view-menu')
   wirePopover(menu, [$('btn-views')])
-  const bgSel = $('view-bg') as HTMLSelectElement
-  bgSel.value = viewBackground
-  bgSel.addEventListener('change', () => { viewBackground = bgSel.value as ViewBackground; save('view-bg', viewBackground) })
+  // The background, one for every window
+  const bgChips = [...menu.querySelectorAll<HTMLButtonElement>('[data-view-bg]')]
+  const showBg = () => bgChips.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.viewBg === viewBackground)))
+  showBg()
+  bgChips.forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation()
+    viewBackground = b.dataset.viewBg as ViewBackground
+    save('view-bg', viewBackground)
+    showBg()
+  }))
+  // A window per layout, the saved ones as they are when the menu opens
+  const list = $('window-list')
+  const fillWindows = () => {
+    list.innerHTML = layoutChoices().map(c =>
+      `<button class="choice-row" data-window="${escapeHtml(c.id)}">${escapeHtml(c.label)}</button>`).join('')
+  }
+  fillWindows()
+  $('btn-views').addEventListener('click', fillWindows)
+  list.addEventListener('click', e => {
+    const id = (e.target as HTMLElement).closest<HTMLElement>('[data-window]')?.dataset.window
+    if (!id) return
+    // One window per layout: opening it again brings the same window back
+    window.open(layoutWindowUrl(id, viewBackground), `modus-window-${id}`, 'popup,width=1280,height=720')?.focus()
+    closePopover()
+  })
   menu.querySelectorAll<HTMLButtonElement>('[data-view]').forEach(btn => {
     btn.addEventListener('click', () => {
       const view = btn.dataset.view as ViewName
@@ -858,6 +963,7 @@ function onHistoryChange(entries: HistoryEntry[]) {
   }
   renderZone2()
   renderExplain()   // its harmonic rhythm follows the history
+  publishMirror()
 }
 
 function updateAutoKeyLabel() {
@@ -916,6 +1022,7 @@ function updateComputerKeyboardButton() {
 /** Velocities of the notes on screen when they were played; none for a chord picked from history, song or circle. */
 function noteVelocities(noteNames: string[]): NoteVelocity[] {
   if (!detectionFromMidi) return []
+  if (mirroredVelocities) return mirroredVelocities
   return noteNames.flatMap(name => {
     const midi = noteNameToMidi(name)
     const velocity = midi === null ? null : getVelocity(midi)
@@ -1107,6 +1214,7 @@ function escapeAll() {
 
 function renderZone3() {
   mountSong($('zone3-content'), state.song, makeSongHandlers())
+  publishMirror()
 }
 
 function sendToSong(entry: HistoryEntry) {
@@ -1433,7 +1541,7 @@ function barCommands(): Command[] {
     { label: t('cmd.settings'), run: () => openSettings() },
     { label: t('cmd.help'), hint: '?', run: toggleHelp },
     { label: t('cmd.tour'), run: startTour },
-    ...[...document.querySelectorAll<HTMLElement>('#view-menu [data-export]')].map(b => ({
+    ...[...document.querySelectorAll<HTMLElement>('.module-menu [data-export]')].map(b => ({
       label: t('cmd.export', { name: t(`view.${b.dataset.export as ViewName}`), format: b.dataset.format!.toUpperCase() }), hint: t('views.save'), run: () => b.click(),
     })),
     ...settingsCommands(),
@@ -1446,5 +1554,9 @@ function barCommands(): Command[] {
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
-// A view window (?view=…) shows one element and nothing else: no MIDI, no audio.
-if (!runViewerFromUrl()) init()
+// A view window (?view=…) shows one element and nothing else: no MIDI, no audio. A layout
+// window (?window=…) shows a whole layout, drawn from the main window's state.
+if (!runViewerFromUrl()) {
+  if (layoutWindow) initLayoutWindow(layoutWindow)
+  else init()
+}

@@ -740,6 +740,8 @@ body.presenting .toolbar, body.presenting #midi-banner, body.presenting .module-
 body.presenting .module-resize, body.presenting .module-menu, body.presenting .guitar-chrome,
 body.presenting .chord-head-alts { display: none !important; }
 body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
+/* A layout window (OBS): its panels on the windows' background, keyed out around them */
+html:has(> body.layout-window), body.layout-window { background: var(--window-bg); }
 
 /* ─── Panels ──────────────────────────────────────────────────── */
 #analysis-content { display: flex; flex-direction: column; gap: 0.45em; flex-shrink: 0; }   /* taller than its panel: the panel scrolls */
@@ -1255,7 +1257,10 @@ body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
 }
 .view-menu.open { display: flex; }
 .view-menu-title { font-size: 11px; color: var(--text-muted); }
-.view-menu-bg { display: flex; gap: 6px; align-items: center; font-size: 11px; color: var(--text-muted); }
+.window-list { display: flex; flex-direction: column; gap: 2px; }
+.choice-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.choice-chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.menu-export { width: auto; padding: 0 8px; font-size: 12px; }
 .view-menu-hint { font-size: 10px; color: var(--text-dim); line-height: 1.4; }
 .view-menu-export { display: flex; gap: 4px; align-items: center; font-size: 11px; color: var(--text-muted); }
 .view-menu-export span { flex: 1; }

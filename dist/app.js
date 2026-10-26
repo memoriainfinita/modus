@@ -29,7 +29,13 @@
     const v = loadString(key, fallback);
     return choices.includes(v) ? v : fallback;
   }
+  var readOnly = false;
+  function setStorageReadOnly() {
+    readOnly = true;
+  }
+  var isStorageReadOnly = () => readOnly;
   function save(key, value) {
+    if (readOnly) return;
     try {
       localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
     } catch {
@@ -861,6 +867,7 @@
     "menu.clef": "Staves",
     "menu.staffNames": "Names",
     "menu.prev": "Chord before",
+    "menu.export": "Save",
     "menu.fields": "Fields",
     "menu.flat": "Flats",
     "menu.sharp": "Sharps",
@@ -886,6 +893,10 @@
     "views.title": "View windows for OBS, and diagram export (SVG, PNG)",
     "views.open": "Open a view window",
     "views.background": "Background",
+    "views.windows": "Windows for OBS",
+    "views.windows.hint": 'A window with a whole layout, without controls, that follows this one: play here in your layout and capture another in OBS (Window Capture of "Modus window: \u2026"). If OBS shows it frozen, leave it uncovered or on another screen.',
+    "views.single": "One diagram",
+    "views.bg.hint": "The background of the windows, for a Chroma Key filter in OBS (Magenta: the tonic is green)",
     "views.bg.green": "green",
     "views.bg.magenta": "magenta",
     "views.bg.black": "black",
@@ -1881,6 +1892,7 @@
     "menu.clef": "Pentagramas",
     "menu.staffNames": "Nombres",
     "menu.prev": "Acorde anterior",
+    "menu.export": "Guardar",
     "menu.fields": "Campos",
     "menu.flat": "Bemoles",
     "menu.sharp": "Sostenidos",
@@ -1906,6 +1918,10 @@
     "views.title": "Ventanas de vista para OBS y exportar diagramas (SVG, PNG)",
     "views.open": "Abrir una ventana de vista",
     "views.background": "Fondo",
+    "views.windows": "Ventanas para OBS",
+    "views.windows.hint": 'Una ventana con una disposici\xF3n entera, sin controles, que sigue a esta: toca aqu\xED con tu disposici\xF3n y captura otra en OBS (Captura de ventana de "Modus window: \u2026"). Si en OBS se queda congelada, d\xE9jala sin tapar o en otra pantalla.',
+    "views.single": "Un diagrama",
+    "views.bg.hint": "El fondo de las ventanas, para un filtro Chroma Key en OBS (Magenta: la t\xF3nica es verde)",
     "views.bg.green": "verde",
     "views.bg.magenta": "magenta",
     "views.bg.black": "negro",
@@ -3653,11 +3669,11 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       pitchClasses: names.map(pitchClassOf)
     };
   }
-  function systemsFor(info2, open2) {
-    return SCALE_SYSTEMS.filter((s) => s === "neck" || (s === "3nps" ? info2.names.length >= 7 : scalePositions(info2, open2, s).length > 0));
+  function systemsFor(info2, open3) {
+    return SCALE_SYSTEMS.filter((s) => s === "neck" || (s === "3nps" ? info2.names.length >= 7 : scalePositions(info2, open3, s).length > 0));
   }
-  function scalePositions(info2, open2, system, maxFret = 12) {
-    const tuning = open2.map((m) => m - 69);
+  function scalePositions(info2, open3, system, maxFret = 12) {
+    const tuning = open3.map((m) => m - 69);
     if (system === "neck") {
       const map = tryUMT("fretboard scale", () => UMT.getFretboardScale(info2.scale, tuning, { maxFret }), null);
       return map ? [{ name: "", frets: map.frets, degrees: map.degrees, baseFret: 1, span: maxFret }] : [];
@@ -3714,7 +3730,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   };
   var defaultTuning = (id) => Object.keys(INSTRUMENT_TUNINGS[id])[0];
   var referenceStrings = (id) => INSTRUMENT_TUNINGS[id][defaultTuning(id)];
-  var isReentrant = (open2) => open2.some((m, i) => i > 0 && m < open2[i - 1]);
+  var isReentrant = (open3) => open3.some((m, i) => i > 0 && m < open3[i - 1]);
 
   // src/theory/voicings.ts
   var STANDARD_OPEN_MIDI = [40, 45, 50, 55, 59, 64];
@@ -3835,8 +3851,8 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   var NECK_SPACING = 16;
   var NECK_SPACING_VERTICAL = 28;
   var nameOf = (midi) => PITCH_NAMES_FLAT[(midi % 12 + 12) % 12];
-  function namesOf(open2) {
-    return open2.map(nameOf);
+  function namesOf(open3) {
+    return open3.map(nameOf);
   }
   function loadStringTuning() {
     const saved = loadJSON("guitar-string-tuning", null);
@@ -3852,7 +3868,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     return preset ?? tuningToMidi(guitarStringTuning, referenceStrings(instrument2)) ?? referenceStrings(instrument2);
   }
   function detectPreset(names) {
-    const match = Object.entries(INSTRUMENT_TUNINGS[instrument2]).find(([, open2]) => namesOf(open2).every((n, i) => n === names[i]));
+    const match = Object.entries(INSTRUMENT_TUNINGS[instrument2]).find(([, open3]) => namesOf(open3).every((n, i) => n === names[i]));
     return match ? match[0] : "custom";
   }
   function shapeStyle() {
@@ -4037,16 +4053,16 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       }
     }).observe(container2);
   }
-  function neckPositions(noteNames, open2, split) {
+  function neckPositions(noteNames, open3, split) {
     const midi = noteNames.map(noteNameToMidi).filter((n) => n !== null);
-    const frets = open2.map((o) => midi.map((n) => n - o).filter((f) => f >= 0 && f <= NECK_FRETS));
+    const frets = open3.map((o) => midi.map((n) => n - o).filter((f) => f >= 0 && f <= NECK_FRETS));
     const whole = { name: "", frets, degrees: frets.map((fs) => fs.map(() => 0)), baseFret: 1, span: NECK_FRETS };
     return split ? neckWindows(whole) : [whole];
   }
-  function neckSvg(pos, noteNames, open2, preferFlats, vertical) {
+  function neckSvg(pos, noteNames, open3, preferFlats, vertical) {
     const spelled = new Map(noteNames.map((n) => [noteNameToMidi(n), n.replace(/-?\d+$/, "")]));
     const frets = pos.frets.map((fs) => fs.length ? fs : [null]);
-    const dotLabels = pos.frets.map((fs, i) => fs.map((f) => spelled.get(open2[i] + f) ?? ""));
+    const dotLabels = pos.frets.map((fs, i) => fs.map((f) => spelled.get(open3[i] + f) ?? ""));
     const style = { ...neckStyle(preferFlats, vertical), numFrets: pos.span, showNoteNames: false };
     return tryUMT("neck", () => Notae.renderFretboard({ name: "", frets, baseFret: pos.baseFret, dotLabels, tuning: guitarStringTuning }, style), "");
   }
@@ -4062,17 +4078,17 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     if (pos.span > REACH) parts.push(t("strings.scale.wide", { n: pos.span }));
     return parts.join(" \xB7 ");
   }
-  function scaleSvg(pos, info2, open2, noteNames, whole, vertical) {
+  function scaleSvg(pos, info2, open3, noteNames, whole, vertical) {
     const sounding3 = new Set(noteNames.map(noteNameToMidi).filter((m) => m !== null).map((m) => m % 12));
     const chordColor = functionColor(scaleChordFn);
-    const dotColors = pos.frets.map((fs, i) => fs.map((f, k) => sounding3.has((open2[i] + f) % 12) ? chordColor : pos.degrees[i][k] === 1 ? color("fret-dot") : color("scale-dot")));
+    const dotColors = pos.frets.map((fs, i) => fs.map((f, k) => sounding3.has((open3[i] + f) % 12) ? chordColor : pos.degrees[i][k] === 1 ? color("fret-dot") : color("scale-dot")));
     const dotLabels = pos.degrees.map((ds) => ds.map((d) => scaleLabelMode === "degrees" ? info2.degreeLabels[d - 1] ?? "" : scaleLabelMode === "notes" ? info2.names[d - 1] ?? "" : ""));
     const high = Math.max(...pos.frets.flat());
     const numFrets = whole ? NECK_FRETS : Math.max(4, high - pos.baseFret + 1);
     const style = { ...neckStyle(true, vertical), numFrets, showNoteNames: false, showOpenNotes: true, showFingerNumbers: false, dotColor: color("scale-dot") };
     return tryUMT("scale", () => Notae.renderFretboard({ name: "", frets: pos.frets, baseFret: pos.baseFret, dotColors, dotLabels, tuning: guitarStringTuning }, style), "");
   }
-  function renderScaleView(container2, noteNames, open2, forcedIdx) {
+  function renderScaleView(container2, noteNames, open3, forcedIdx) {
     const symbol = scaleKey ? scaleSymbol(scaleKey, scaleChoice) : null;
     const info2 = scaleInfo(symbol);
     if (!symbol || !info2) {
@@ -4081,12 +4097,12 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       wireChrome(container2);
       return;
     }
-    const systems = systemsFor(info2, open2);
+    const systems = systemsFor(info2, open3);
     const system = systems.includes(scaleSystem) ? scaleSystem : "neck";
     const vertical = neckVertical(container2);
     const split = system === "neck" && !vertical && neckNarrow(container2);
-    const positions = split ? scalePositions(info2, open2, system).flatMap((w) => neckWindows(w)) : scalePositions(info2, open2, system);
-    const sig = `${symbol}|${system}|${open2.join(" ")}|${split}`;
+    const positions = split ? scalePositions(info2, open3, system).flatMap((w) => neckWindows(w)) : scalePositions(info2, open3, system);
+    const sig = `${symbol}|${system}|${open3.join(" ")}|${split}`;
     if (sig !== lastScaleSig) {
       scaleIdx = 0;
       lastScaleSig = sig;
@@ -4106,7 +4122,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     neckDrawnNarrow = neckNarrow(container2);
     const frets = split ? t("strings.scale.frets", { from: pos.baseFret === 1 ? 0 : pos.baseFret, to: pos.baseFret + pos.span - 1 }) : positionLabel(pos);
     const where = [named, frets].filter(Boolean).join(" \xB7 ");
-    container2.innerHTML = tabs() + systemTabs(systems, system) + stage(scaleSvg(pos, info2, open2, noteNames, system === "neck" && !split, vertical), t("a11y.strings.scale", { scale: where }), total) + foot(where, total, idx);
+    container2.innerHTML = tabs() + systemTabs(systems, system) + stage(scaleSvg(pos, info2, open3, noteNames, system === "neck" && !split, vertical), t("a11y.strings.scale", { scale: where }), total) + foot(where, total, idx);
     localizeDrawnNoteNames(container2.querySelector(".strings-drawing"));
     container2.querySelectorAll(".guitar-nav").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -4120,7 +4136,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   function renderGuitar(container2, chordSymbol, noteNames = [], voicingIndex, preferFlats = true) {
     lastNoteNames = noteNames;
     lastPreferFlats = preferFlats;
-    const open2 = openStrings();
+    const open3 = openStrings();
     container2.classList.toggle("strings-bare", !guitarControlsVisible);
     watchShape(container2);
     renderMenu();
@@ -4129,7 +4145,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       lastGuitarSymbol = chordSymbol;
     }
     if (stringsView === "scale") {
-      renderScaleView(container2, noteNames, open2, voicingIndex);
+      renderScaleView(container2, noteNames, open3, voicingIndex);
       return;
     }
     if (voicingIndex !== void 0) guitarVoicingIdx = voicingIndex;
@@ -4138,13 +4154,13 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       neckDrawnVertical = neckVertical(container2);
       neckDrawnNarrow = neckNarrow(container2);
       const split = !neckDrawnVertical && neckDrawnNarrow;
-      const positions = neckPositions(noteNames, open2, split);
+      const positions = neckPositions(noteNames, open3, split);
       const total2 = positions.length;
       if (voicingIndex !== void 0) neckIdx = voicingIndex;
       const idx2 = Math.min(neckIdx, total2 - 1);
       const pos = positions[idx2];
       const where = split ? t("strings.scale.frets", { from: pos.baseFret === 1 ? 0 : pos.baseFret, to: pos.baseFret + pos.span - 1 }) : "";
-      container2.innerHTML = tabs() + stage(neckSvg(pos, noteNames, open2, preferFlats, neckDrawnVertical), t("a11y.strings", { chord: named }), total2) + foot(where, total2, idx2);
+      container2.innerHTML = tabs() + stage(neckSvg(pos, noteNames, open3, preferFlats, neckDrawnVertical), t("a11y.strings", { chord: named }), total2) + foot(where, total2, idx2);
       localizeDrawnNoteNames(container2.querySelector(".strings-drawing"));
       container2.querySelectorAll(".guitar-nav").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -4158,7 +4174,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     }
     neckDrawnVertical = null;
     if (!chordSymbol) {
-      const empty = { name: "", frets: open2.map(() => null), tuning: guitarStringTuning };
+      const empty = { name: "", frets: open3.map(() => null), tuning: guitarStringTuning };
       const svg2 = tryUMT("fretboard", () => Notae.renderFretboard(empty, shapeStyle()), "");
       container2.innerHTML = tabs() + stage(`<div class="guitar-placeholder">${svg2}</div>`, t("a11y.strings", { chord: named }), 0) + foot("", 0, 0);
       wireChrome(container2);
@@ -4166,7 +4182,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     }
     const chord = tryParseChord(chordSymbol);
     const bassPc = chord ? (((chord.bassStep ?? chord.rootStep) + 9) % 12 + 12) % 12 : 0;
-    const voicings = chord ? playableVoicings(tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, open2.map((m) => m - 69)) ?? [], []), open2, bassPc) : [];
+    const voicings = chord ? playableVoicings(tryUMT("fretboard voicings", () => UMT.getFretboardVoicings(chord, open3.map((m) => m - 69)) ?? [], []), open3, bassPc) : [];
     if (!voicings.length) {
       container2.innerHTML = tabs() + `<div class="no-voicing">${t("guitar.none")}</div>` + foot("", 0, 0);
       wireChrome(container2);
@@ -6154,10 +6170,10 @@ ${explainCadence(cadence)}` : "");
       const more = target.closest(".set-more");
       if (more) {
         const menu = more.parentElement.querySelector(".set-more-menu");
-        const open2 = menu.hidden;
+        const open3 = menu.hidden;
         closeMoreMenus();
-        menu.hidden = !open2;
-        more.setAttribute("aria-expanded", String(open2));
+        menu.hidden = !open3;
+        more.setAttribute("aria-expanded", String(open3));
         return;
       }
       if (!target.closest(".set-more-menu")) closeMoreMenus();
@@ -7148,6 +7164,18 @@ ${explainCadence(cadence)}` : "");
   function applyPreset(id) {
     setGrid(PRESETS[id].map((c) => ({ ...c })));
   }
+  function layoutChoices() {
+    return [
+      ...PRESET_IDS.map((p) => ({ id: p, label: t(`layout.preset.${p}`) })),
+      ...Object.keys(savedLayouts).sort((a, b) => a.localeCompare(b)).map((n) => ({ id: `saved:${n}`, label: n }))
+    ];
+  }
+  function useLayout(id) {
+    const next = PRESET_IDS.includes(id) ? PRESETS[id] : id.startsWith("saved:") ? savedLayouts[id.slice(6)] : void 0;
+    if (!next) return false;
+    grid2 = next.map((c) => ({ ...c }));
+    return true;
+  }
   function showModule(id, shown) {
     if (shown === isModuleShown(id)) return;
     setGrid(shown ? addCell(grid2, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid2, id));
@@ -7177,34 +7205,34 @@ ${explainCadence(cadence)}` : "");
     document.querySelector('.menu-item[data-panel="guitarControls"]')?.setAttribute("aria-pressed", String(panels.guitarControls));
   }
   function wirePanelMenus() {
-    let open2 = null;
+    let open3 = null;
     const close = (focus = false) => {
-      if (!open2) return;
-      open2.menu.hidden = true;
-      open2.btn.setAttribute("aria-expanded", "false");
-      open2.btn.closest(".module")?.classList.remove("module-menu-open");
-      if (focus) open2.btn.closest(".module")?.querySelector(".module-header")?.focus();
-      open2 = null;
+      if (!open3) return;
+      open3.menu.hidden = true;
+      open3.btn.setAttribute("aria-expanded", "false");
+      open3.btn.closest(".module")?.classList.remove("module-menu-open");
+      if (focus) open3.btn.closest(".module")?.querySelector(".module-header")?.focus();
+      open3 = null;
     };
     document.addEventListener("click", (e) => {
       const target = e.target;
       const btn = target.closest(".module-more");
       if (btn) {
-        const was = open2?.btn === btn;
+        const was = open3?.btn === btn;
         close();
         if (was) return;
         const menu = $(`menu-${btn.dataset.menu}`);
         menu.hidden = false;
         btn.setAttribute("aria-expanded", "true");
         btn.closest(".module")?.classList.add("module-menu-open");
-        open2 = { btn, menu };
+        open3 = { btn, menu };
         if (e.detail === 0) menu.querySelector("button, input, select")?.focus();
         return;
       }
-      if (open2 && !e.composedPath().includes(open2.menu)) close();
+      if (open3 && !e.composedPath().includes(open3.menu)) close();
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && open2) {
+      if (e.key === "Escape" && open3) {
         e.stopPropagation();
         close(true);
       }
@@ -7318,16 +7346,12 @@ ${explainCadence(cadence)}` : "");
       ${exportRows()}
     </div>
     <div id="view-menu" class="view-menu pop-menu">
-      <div class="view-menu-title">${t("views.open")}</div>
-      ${VIEW_NAMES.map((v) => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join("")}
-      <label class="view-menu-bg">${t("views.background")}
-        <select id="view-bg" class="ctrl-select">
-          ${Object.keys(VIEW_BACKGROUNDS).map((b) => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join("")}
-        </select>
-      </label>
-      <div class="view-menu-hint">${t("views.hint")}</div>
-      <div class="view-menu-title">${t("views.save")}</div>
-      ${exportRows()}
+      <div class="view-menu-title" title="${escapeHtml(t("views.windows.hint"))}">${t("views.windows")}</div>
+      <div id="window-list" class="window-list"></div>
+      <div class="view-menu-title" title="${escapeHtml(t("views.hint"))}">${t("views.single")}</div>
+      <div class="choice-chips">${VIEW_NAMES.map((v) => `<button class="choice-chip" data-view="${v}">${viewLabel(v)}</button>`).join("")}</div>
+      <div class="view-menu-title" title="${escapeHtml(t("views.bg.hint"))}">${t("views.background")}</div>
+      <div class="choice-chips" role="group" aria-label="${t("views.background")}">${Object.keys(VIEW_BACKGROUNDS).map((b) => `<button class="choice-chip" data-view-bg="${b}" aria-pressed="false">${t(`views.bg.${b}`)}</button>`).join("")}</div>
     </div>`;
   }
   var exportRows = () => ["staff", "cof", "guitar", "piano"].map((v) => `
@@ -7345,7 +7369,16 @@ ${explainCadence(cadence)}` : "");
     const prefs = prefMenuHtml(id);
     return own && prefs ? `${own}<div class="menu-sep"></div>${prefs}` : own || prefs;
   }
+  var EXPORTABLE = ["staff", "cof", "guitar", "piano"];
+  var exportMenu = (id) => `<div class="menu-sep"></div>
+  <div class="menu-row" title="${escapeHtml(t("views.save"))}"><span class="menu-label">${t("menu.export")}</span>
+    <button type="button" class="menu-step menu-export" data-export="${id}" data-format="svg">SVG</button>
+    <button type="button" class="menu-step menu-export" data-export="${id}" data-format="png">PNG</button></div>`;
   function ownMenu(id, fieldsVisible) {
+    const own = ownMenuBody(id, fieldsVisible);
+    return EXPORTABLE.includes(id) ? own + exportMenu(id) : own;
+  }
+  function ownMenuBody(id, fieldsVisible) {
     switch (id) {
       case "staff":
         return `
@@ -8061,6 +8094,60 @@ ${explainCadence(cadence)}` : "");
     return true;
   }
 
+  // src/view/mirror.ts
+  var NAME2 = "modus-mirror";
+  function open2() {
+    try {
+      return new BroadcastChannel(NAME2);
+    } catch {
+      return null;
+    }
+  }
+  function createMirrorPublisher(read) {
+    const channel2 = open2();
+    let queued = false;
+    let last = "";
+    channel2?.addEventListener("message", (e) => {
+      if (e.data?.type === "hello") {
+        last = "";
+        send2();
+      }
+    });
+    function send2() {
+      queued = false;
+      const state2 = read();
+      const sig = JSON.stringify(state2);
+      if (sig === last) return;
+      last = sig;
+      channel2?.postMessage({ type: "state", state: state2 });
+    }
+    return () => {
+      if (!channel2 || queued) return;
+      queued = true;
+      queueMicrotask(send2);
+    };
+  }
+  function subscribeMirror(onState) {
+    const channel2 = open2();
+    channel2?.addEventListener("message", (e) => {
+      if (e.data?.type === "state") onState(e.data.state);
+    });
+    channel2?.postMessage({ type: "hello" });
+  }
+  function layoutWindowParams() {
+    const params = new URLSearchParams(location.search);
+    const layout = params.get("window");
+    if (!layout) return null;
+    const bg = params.get("bg");
+    return { layout, background: bg && VIEW_BACKGROUNDS[bg] || VIEW_BACKGROUNDS.magenta };
+  }
+  function layoutWindowUrl(layout, bg, base = location.href) {
+    const url = new URL(base);
+    url.search = new URLSearchParams({ window: layout, bg }).toString();
+    url.hash = "";
+    return url.toString();
+  }
+
   // src/ui/export.ts
   var CONTAINERS = {
     staff: "#staff-container",
@@ -8507,6 +8594,7 @@ ${explainCadence(cadence)}` : "");
     }
   }
   function write(key, value) {
+    if (isStorageReadOnly()) return;
     localStorage.setItem(key, JSON.stringify(value));
   }
   var metaOf = (song) => ({ id: song.id, title: song.title, updatedAt: song.updatedAt });
@@ -8737,7 +8825,16 @@ ${explainCadence(cadence)}` : "");
     markPlaying(_playing);
   }
   var _playing = null;
+  var _onPlaying = () => {
+  };
+  function onPlayingChange(f) {
+    _onPlaying = f;
+  }
+  function showPlaying(step2) {
+    markPlaying(step2);
+  }
   function markPlaying(step2) {
+    if (step2?.chordId !== _playing?.chordId || !step2 !== !_playing) _onPlaying(step2);
     _playing = step2;
     if (!_container) return;
     _container.querySelectorAll(".chord-chip").forEach((c) => c.classList.toggle("playing", !!step2 && c.dataset.chordId === step2.chordId));
@@ -10508,6 +10605,11 @@ ${explainCadence(c.cadence)}` : ""}`;
   function init() {
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {
     });
+    publishMirror = createMirrorPublisher(mirrorState);
+    onPlayingChange((step2) => {
+      songPlaying = step2 && { chordId: step2.chordId, sectionId: step2.sectionId };
+      publishMirror();
+    });
     translatePage();
     applyTheme();
     followSystemTheme();
@@ -10666,8 +10768,8 @@ ${explainCadence(c.cadence)}` : ""}`;
       },
       onNewSong: () => showSong(newSong()),
       onDeleteSong: () => {
-        const { deleted, open: open2 } = deleteSong(state.song.id);
-        showSong(open2);
+        const { deleted, open: open3 } = deleteSong(state.song.id);
+        showSong(open3);
         if (deleted) showUndo(t("song.deleted", { title: deleted.title }), () => {
           restoreSong(deleted);
           showSong(deleted);
@@ -10972,7 +11074,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     const el2 = document.getElementById("next-container");
     if (!el2) return;
     const sym = selectedSymbol();
-    if (sym && !liftingNotes) nextFrom = { symbol: sym, notes: displayedNotes(), prev: cadencePrev };
+    if (sym && !liftingNotes && !layoutWindow) nextFrom = { symbol: sym, notes: displayedNotes(), prev: cadencePrev };
     const key = analysisKey();
     renderNext(
       el2,
@@ -10990,6 +11092,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     showChord(chord, void 0, prev);
   }
   function announceDetection() {
+    if (layoutWindow) return;
     const d = state.detection;
     if (!d || liftingNotes) {
       silence();
@@ -11018,11 +11121,87 @@ ${explainCadence(c.cadence)}` : ""}`;
     renderProgressionPanel();
     renderDiagrams();
     publishView();
+    publishMirror();
   }
   var sendView = createViewPublisher();
   function publishView() {
     const view2 = viewState();
     sendView(view2);
+  }
+  var layoutWindow = layoutWindowParams();
+  var publishMirror = () => {
+  };
+  var songPlaying = null;
+  var mirroredVelocities = null;
+  function mirrorState() {
+    return {
+      detection: state.detection,
+      fromMidi: detectionFromMidi,
+      velocities: noteVelocities(displayedNotes()),
+      cadencePrev,
+      prevNotes: prevVoicing,
+      activeKey: state.activeKey,
+      melody,
+      nextFrom,
+      history: state.history,
+      historyActiveCursorId: state.historyActiveCursorId,
+      song: state.song,
+      activeCursorId: state.activeCursorId,
+      playing: songPlaying
+    };
+  }
+  function applyMirror(s) {
+    const songChanged = JSON.stringify([s.song, s.activeCursorId]) !== JSON.stringify([state.song, state.activeCursorId]);
+    const keyChanged = s.activeKey !== state.activeKey;
+    state.detection = s.detection;
+    detectionFromMidi = s.fromMidi;
+    mirroredVelocities = s.velocities;
+    cadencePrev = s.cadencePrev;
+    prevVoicing = s.prevNotes;
+    melody = s.melody;
+    nextFrom = s.nextFrom;
+    state.activeKey = s.activeKey;
+    state.song = s.song;
+    state.activeCursorId = s.activeCursorId;
+    state.historyActiveCursorId = s.historyActiveCursorId;
+    if (selectedSymbol()) lastChordNotes = displayedNotes();
+    if (JSON.stringify(s.history) !== JSON.stringify(state.history)) restoreEntries(s.history);
+    if (keyChanged) {
+      updateAutoKeyLabel();
+      renderZone2();
+    }
+    refreshAnalysis();
+    renderDetector();
+    if (songChanged || keyChanged) renderZone3();
+    showPlaying(s.playing);
+  }
+  function initLayoutWindow(w) {
+    setStorageReadOnly();
+    if (!useLayout(w.layout)) useLayout("standard");
+    const label = layoutChoices().find((c) => c.id === w.layout)?.label ?? w.layout;
+    document.title = `Modus window: ${label.replace(/^saved:/, "")}`;
+    translatePage();
+    applyTheme();
+    followSystemTheme();
+    onThemeChange(() => {
+      for (const k of Object.keys(lastRenderSig)) delete lastRenderSig[k];
+      renderDetector();
+    });
+    buildLayout();
+    document.body.classList.add("layout-window");
+    document.documentElement.style.setProperty("--window-bg", w.background);
+    openPresentation(() => {
+    });
+    drawEar();
+    drawTuner();
+    const metronome = document.getElementById("metronome-container");
+    if (metronome) renderMetronome(metronome);
+    setHistoryChangeCallback(onHistoryChange);
+    renderZone3();
+    subscribeMirror(applyMirror);
+    window.addEventListener("storage", (e) => {
+      if (e.key && !/^(modus-song|layout$|midi-|storage-persist)/.test(e.key)) location.reload();
+    });
   }
   function viewState() {
     const d = state.detection;
@@ -11051,11 +11230,26 @@ ${explainCadence(c.cadence)}` : ""}`;
   function wireViewMenu() {
     const menu = $2("view-menu");
     wirePopover(menu, [$2("btn-views")]);
-    const bgSel = $2("view-bg");
-    bgSel.value = viewBackground;
-    bgSel.addEventListener("change", () => {
-      viewBackground = bgSel.value;
+    const bgChips = [...menu.querySelectorAll("[data-view-bg]")];
+    const showBg = () => bgChips.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.viewBg === viewBackground)));
+    showBg();
+    bgChips.forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      viewBackground = b.dataset.viewBg;
       save("view-bg", viewBackground);
+      showBg();
+    }));
+    const list = $2("window-list");
+    const fillWindows = () => {
+      list.innerHTML = layoutChoices().map((c) => `<button class="choice-row" data-window="${escapeHtml(c.id)}">${escapeHtml(c.label)}</button>`).join("");
+    };
+    fillWindows();
+    $2("btn-views").addEventListener("click", fillWindows);
+    list.addEventListener("click", (e) => {
+      const id = e.target.closest("[data-window]")?.dataset.window;
+      if (!id) return;
+      window.open(layoutWindowUrl(id, viewBackground), `modus-window-${id}`, "popup,width=1280,height=720")?.focus();
+      closePopover();
     });
     menu.querySelectorAll("[data-view]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -11215,6 +11409,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     }
     renderZone2();
     renderExplain();
+    publishMirror();
   }
   function updateAutoKeyLabel() {
     $2("auto-key-label").textContent = !state.activeKey && autoKey ? t("key.autoDetected", { key: keyLabel(autoKey) }) : "";
@@ -11258,6 +11453,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function noteVelocities(noteNames) {
     if (!detectionFromMidi) return [];
+    if (mirroredVelocities) return mirroredVelocities;
     return noteNames.flatMap((name) => {
       const midi = noteNameToMidi(name);
       const velocity2 = midi === null ? null : getVelocity(midi);
@@ -11436,6 +11632,7 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   function renderZone3() {
     mountSong($2("zone3-content"), state.song, makeSongHandlers());
+    publishMirror();
   }
   function sendToSong(entry) {
     if (!state.song.sections.length) {
@@ -11719,7 +11916,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       { label: t("cmd.settings"), run: () => openSettings() },
       { label: t("cmd.help"), hint: "?", run: toggleHelp },
       { label: t("cmd.tour"), run: startTour },
-      ...[...document.querySelectorAll("#view-menu [data-export]")].map((b) => ({
+      ...[...document.querySelectorAll(".module-menu [data-export]")].map((b) => ({
         label: t("cmd.export", { name: t(`view.${b.dataset.export}`), format: b.dataset.format.toUpperCase() }),
         hint: t("views.save"),
         run: () => b.click()
@@ -11736,6 +11933,9 @@ ${explainCadence(c.cadence)}` : ""}`;
       })))
     ];
   }
-  if (!runViewerFromUrl()) init();
+  if (!runViewerFromUrl()) {
+    if (layoutWindow) initLayoutWindow(layoutWindow);
+    else init();
+  }
 })();
 //# sourceMappingURL=app.js.map

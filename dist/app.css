@@ -1529,6 +1529,10 @@ body.presenting .chord-head-alts {
 body.presenting .grid {
   height: calc(100vh / var(--zoom, 1));
 }
+html:has(> body.layout-window),
+body.layout-window {
+  background: var(--window-bg);
+}
 #analysis-content {
   display: flex;
   flex-direction: column;
@@ -2911,12 +2915,25 @@ body.presenting .grid {
   font-size: 11px;
   color: var(--text-muted);
 }
-.view-menu-bg {
+.window-list {
   display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.choice-chips {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-muted);
+}
+.choice-chip[aria-pressed=true] {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.menu-export {
+  width: auto;
+  padding: 0 8px;
+  font-size: 12px;
 }
 .view-menu-hint {
   font-size: 10px;
