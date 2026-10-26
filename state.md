@@ -1,6 +1,6 @@
 ---
 created: 2026-05-20
-last_updated: 2026-10-25
+last_updated: 2026-10-26
 ---
 
 # Modus — state
@@ -119,6 +119,16 @@ The UMT audit ended 2026-10-11 (`umt/docs/auditoria-2026-10.md`).
 - [x] Movable do for didactics, 2026-10-20 (`theory/solfege.ts`, UMT `Solfege.movableDo` with `syllables: 'ti'` in every language: ti on the seventh, di ri fi si li / ra me se le te outside the scale): the Explanation's degree, a Mov. do field in Analysis (the notes on screen or the melody; hidden by default), the Degrees tab of ear training
 
 - [x] Scales on the fretboard and piano, 2026-10-25 (`theory/scales.ts`): a Scale view in Strings beside Shapes and Neck, the analysis key's scale or, in the ⋯ menu, its pentatonic, blues, harmonic or melodic minor on the same tonic; Whole neck (frets 0–12), CAGED (UMT, only where it gives shapes) and 3 per string (only scales of seven notes or more: on a pentatonic UMT's patterns span 10–17 frets), positions with ‹ › and dots, "Em shape · frets 5–8", a warning past 6 frets (a ukulele's 3nps). The tonic in the accent, the notes of the chord sounding in its function's colour, the rest `--scale-dot`; labels degrees (from UMT's spelled letters: ♭3, ♯4), notes or none. Piano: Scale in its ⋯ menu, off by default, the key's scale on every octave drawn, the tonic `--piano-scale-root`. View windows follow. Needed notae `dotColors`, `dotLabels`, `showOpenNotes`. Checked in headless Chrome (e2e, screenshots) and headless Firefox in Spanish (screenshots); not yet on a phone
+
+### Visualization, approved 2026-10-26 (seen in OrbKord, orbkord.net)
+
+- [ ] A fixed card in the chord header: position, voicing and degrees ("R 3 5 ♭7 ♯9") beside the name, always the same rows, so the chord reads without opening Analysis. The data is already in Analysis
+- [ ] Isomorphic keyboard (hex grid, harmonic table) as a new diagram panel: a chord or interval keeps its shape in every key. Drawing in notae, per [theory]; groundwork for the microtonal systems
+- [ ] Note names beside the staff: a column right of the staff, each name or degree at its note's height (eased apart in seconds, bass to top), across both staves on the grand staff; only the current chord when ⇠ shows the one before. In the staff's ⋯ menu, off by default, in the page's note names (letters or Do Re Mi). Placed by each note's staff step, not by abcjs' noteheads
+
+### Next panel, approved 2026-10-26
+
+- [ ] Borrowings and substitutions among the suggestions: the key's usual borrowings (UMT `common`, today only in the key panel) and the substitutes UMT gives for the chord on screen, each with its reason, beside the resolutions, cadences and progressions. Read from UMT only, as the rest of `detector/next.ts`
 
 ### Waiting on UMT
 
