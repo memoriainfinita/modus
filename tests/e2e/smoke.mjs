@@ -640,10 +640,34 @@ await check('view window: the strings view shows the drawing, without the panel\
   assert(drawn.w > 100 && drawn.h > 100 && !drawn.tabs, `drawn: ${JSON.stringify(drawn)}`)
 })
 
-await check('export: the staff as SVG and the circle as PNG', async () => {
+await check('layout window: a whole other layout that follows this one, on the chroma background, writing nothing', async () => {
+  const layoutBefore = await page.evaluate(() => localStorage.getItem('layout'))
+  await page.click('#btn-views')
+  const listed = await page.locator('#window-list [data-window]').evaluateAll(es => es.map(e => e.dataset.window))
+  assert(listed.slice(0, 5).join() === 'standard,study,class,transcription,recording', `listed: ${listed}`)
+  const [win] = await Promise.all([page.context().waitForEvent('page'), page.click('#window-list [data-window="class"]')])
+  await win.waitForFunction(() => window.UMT && document.body.classList.contains('layout-window'))
+  assert(await win.title() === 'Modus window: Class', `title: ${await win.title()}`)
+  assert(await win.evaluate(() => getComputedStyle(document.body).backgroundColor) === 'rgb(255, 0, 255)', 'background')
+  assert(!(await win.locator('#z1-toolbar').isVisible()) && !(await win.locator('.module-header').first().isVisible()), 'controls shown')
+  // Class shows the history under the chord; Standard does not: the window has its own layout
+  assert(await win.locator('#mod-history').isVisible(), 'not the Class layout')
+  for (const chord of [[60, 64, 67], [57, 60, 64], [65, 69, 72]]) { await play(chord, 700); await off(chord); await page.waitForTimeout(150) }
+  await play([67, 71, 74, 77], 700)
+  await win.waitForFunction(() => document.querySelector('#mod-chord .chord-name-badge')?.textContent === 'G7', null, { timeout: 5000 })
+  await off([67, 71, 74, 77])
+  await page.waitForTimeout(300)
+  const chips = async p => p.locator('#zone2-content .history-chip').count()
+  assert(await chips(win) === await chips(page) && await chips(win) > 0, `history ${await chips(win)} / ${await chips(page)}`)
+  await win.close()
+  assert(await page.evaluate(() => localStorage.getItem('layout')) === layoutBefore, 'the window changed the stored layout')
+})
+
+await check('export: the staff as SVG and the circle as PNG, from their own menus', async () => {
   const save = async (target, format) => {
-    await page.click('#btn-views')
-    const [dl] = await Promise.all([page.waitForEvent('download'), page.click(`#view-menu [data-export="${target}"][data-format="${format}"]`)])
+    await page.click(`#mod-${target} .module-more`)
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click(`#menu-${target} [data-export="${target}"][data-format="${format}"]`)])
+    await page.keyboard.press('Escape')
     const chunks = []
     for await (const c of await dl.createReadStream()) chunks.push(c)
     return { name: dl.suggestedFilename(), data: Buffer.concat(chunks) }

@@ -29,7 +29,14 @@ export function loadChoice<T extends string>(key: string, choices: readonly T[],
   return (choices as readonly string[]).includes(v) ? v as T : fallback
 }
 
+// A layout window reads the main window's preferences and writes none: its layout, songs and
+// settings are the main window's, never overwritten from it
+let readOnly = false
+export function setStorageReadOnly() { readOnly = true }
+export const isStorageReadOnly = () => readOnly
+
 export function save(key: string, value: string | number | boolean | object | null) {
+  if (readOnly) return
   try {
     localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value))
   } catch { }

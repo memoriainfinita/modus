@@ -73,6 +73,26 @@ function setGrid(next: Grid, persist = true) {
 
 export function applyPreset(id: PresetId) { setGrid(PRESETS[id].map(c => ({ ...c }))) }
 
+/** The layouts a window can show: the presets, then the saved ones by name. */
+export function layoutChoices(): { id: string; label: string }[] {
+  return [
+    ...PRESET_IDS.map(p => ({ id: p, label: t(`layout.preset.${p}`) })),
+    ...Object.keys(savedLayouts).sort((a, b) => a.localeCompare(b)).map(n => ({ id: `saved:${n}`, label: n })),
+  ]
+}
+
+/**
+ * A layout window's layout, before the page is built: a preset id or "saved:name". Never
+ * stored, so the main window's layout stays its own. False when there is no such layout.
+ */
+export function useLayout(id: string): boolean {
+  const next = (PRESET_IDS as readonly string[]).includes(id) ? PRESETS[id as PresetId]
+    : id.startsWith('saved:') ? savedLayouts[id.slice(6)] : undefined
+  if (!next) return false
+  grid = next.map(c => ({ ...c }))
+  return true
+}
+
 export function showModule(id: ModuleId, shown: boolean) {
   if (shown === isModuleShown(id)) return
   setGrid(shown ? addCell(grid, { id, x: 0, ...MODULE_SIZE[id] }) : removeCell(grid, id))
@@ -270,16 +290,13 @@ function buildMenus(): string {
       ${exportRows()}
     </div>
     <div id="view-menu" class="view-menu pop-menu">
-      <div class="view-menu-title">${t('views.open')}</div>
-      ${VIEW_NAMES.map(v => `<button class="ctrl-btn" data-view="${v}">${viewLabel(v)}</button>`).join('')}
-      <label class="view-menu-bg">${t('views.background')}
-        <select id="view-bg" class="ctrl-select">
-          ${(Object.keys(VIEW_BACKGROUNDS) as ViewBackground[]).map(b => `<option value="${b}">${t(`views.bg.${b}`)}</option>`).join('')}
-        </select>
-      </label>
-      <div class="view-menu-hint">${t('views.hint')}</div>
-      <div class="view-menu-title">${t('views.save')}</div>
-      ${exportRows()}
+      <div class="view-menu-title" title="${escapeHtml(t('views.windows.hint'))}">${t('views.windows')}</div>
+      <div id="window-list" class="window-list"></div>
+      <div class="view-menu-title" title="${escapeHtml(t('views.hint'))}">${t('views.single')}</div>
+      <div class="choice-chips">${VIEW_NAMES.map(v => `<button class="choice-chip" data-view="${v}">${viewLabel(v)}</button>`).join('')}</div>
+      <div class="view-menu-title" title="${escapeHtml(t('views.bg.hint'))}">${t('views.background')}</div>
+      <div class="choice-chips" role="group" aria-label="${t('views.background')}">${(Object.keys(VIEW_BACKGROUNDS) as ViewBackground[]).map(b =>
+        `<button class="choice-chip" data-view-bg="${b}" aria-pressed="false">${t(`views.bg.${b}`)}</button>`).join('')}</div>
     </div>`
 }
 
@@ -308,7 +325,19 @@ function panelMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean
   return own && prefs ? `${own}<div class="menu-sep"></div>${prefs}` : own || prefs
 }
 
+// The diagrams that save to a file: in their own ⋯ menu, as SVG or PNG on a transparent ground
+const EXPORTABLE = ['staff', 'cof', 'guitar', 'piano'] as const
+const exportMenu = (id: typeof EXPORTABLE[number]) => `<div class="menu-sep"></div>
+  <div class="menu-row" title="${escapeHtml(t('views.save'))}"><span class="menu-label">${t('menu.export')}</span>
+    <button type="button" class="menu-step menu-export" data-export="${id}" data-format="svg">SVG</button>
+    <button type="button" class="menu-step menu-export" data-export="${id}" data-format="png">PNG</button></div>`
+
 function ownMenu(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
+  const own = ownMenuBody(id, fieldsVisible)
+  return (EXPORTABLE as readonly string[]).includes(id) ? own + exportMenu(id as typeof EXPORTABLE[number]) : own
+}
+
+function ownMenuBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boolean>): string {
   switch (id) {
     case 'staff': return `
       ${heading(t('menu.clef'))}
