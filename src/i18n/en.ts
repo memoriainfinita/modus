@@ -583,6 +583,8 @@ export const en = {
   'set.section.shortcuts.hint': 'The keys of each action',
   'set.section.data': 'Data',
   'set.section.data.hint': 'Settings and layouts to a file, from a file, or back to how they came. Songs and history are not touched',
+  'set.io.in': 'MIDI input',
+  'set.io.in.title': 'The device whose notes are read; the same choice as in the bar\'s input menu',
   'set.io.inChannel': 'Input channel',
   'set.io.out': 'MIDI out',
   'set.io.outChannel': 'Output channel',

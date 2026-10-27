@@ -1552,6 +1552,12 @@ body.presenting .chord-head-alts {
 body.presenting .grid {
   height: calc(100vh / var(--zoom, 1));
 }
+body.presenting.presenting-scroll {
+  overflow: auto;
+}
+body.presenting.presenting-scroll .grid {
+  height: auto;
+}
 html:has(> body.layout-window),
 body.layout-window {
   background: var(--window-bg);

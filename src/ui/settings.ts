@@ -321,6 +321,7 @@ function sectionBody(s: Section): string {
       ${row(`<div class="set-label">${escapeHtml(t('tour.start'))}</div>`, t('tour.start.title'),
         `<button type="button" id="set-tour" class="ctrl-btn">${escapeHtml(t('tour.start'))}</button>`, `${t('tour.start')} tour`)}`
     case 'io': return `
+      ${selectRow('set-midi-device', t('set.io.in'), [], '', t('set.io.in.title'), `${t('set.io.in')} midi device controller`)}
       ${selectRow('midi-in-ch', t('set.io.inChannel'), [{ value: '0', label: t('midi.inChannel.all') }, ...Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: t('midi.inChannel.one', { n: i + 1 }) }))], '0', t('midi.inChannel.title'), `${t('set.io.inChannel')} midi`)}
       ${selectRow('midi-out', t('set.io.out'), [{ value: '', label: t('midi.out.off') }], '', t('midi.out.title'), `${t('set.io.out')} midi daw`)}
       ${selectRow('midi-out-ch', t('set.io.outChannel'), Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: t('midi.outChannel.one', { n: i + 1 }) })), '1', t('midi.outChannel.title'), `${t('set.io.outChannel')} midi`)}

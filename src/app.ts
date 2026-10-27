@@ -1291,6 +1291,13 @@ function refreshDeviceDropdown() {
   // message handler back.
   const target = resolveDevice()
   if (target) sel.value = target
+  // Settings › Input and output holds the same choice: its options and value follow the bar's
+  const mirror = document.getElementById('set-midi-device') as HTMLSelectElement | null
+  if (mirror) {
+    mirror.innerHTML = sel.innerHTML
+    mirror.value = sel.value
+    mirror.onchange = () => { chooseDevice(mirror.value); refreshDeviceDropdown(); refreshOutputDropdown() }
+  }
 
   // The bar names the device in use; its dot is green when one is connected
   const current = devices.find(d => d.id === sel.value)
