@@ -656,6 +656,8 @@ await check('isomorphic panel: G7 in C lit in the dominant\'s colour with its sh
   const soft = await fill(67), plain = await fill(61)
   assert(soft !== await token('fn-d') && soft !== plain && plain === await token('iso-cell'), `soft ${soft}, plain ${plain}`)
   assert(await page.locator('#iso-container path').count() === 1, 'the chord\'s shape')
+  // Named by its label alone: Firefox would read every cell's name to NVDA
+  assert(await page.locator('#iso-container svg').getAttribute('aria-hidden') === 'true', 'the cells reach a screen reader')
   await shot('g7-medium')
   const medium = await cells()
   await option('iso', '#menu-iso [data-iso-size="small"]')
