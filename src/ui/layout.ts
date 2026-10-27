@@ -7,7 +7,7 @@ import { ALL_KEYS, CHURCH_MODES } from '../theory/keys'
 import type { StringKey } from '../i18n/en'
 import { GM_INSTRUMENT_GROUPS, getCurrentInstrument, getVolume } from '../audio/audio'
 import { setGuitarControlsVisible } from '../diagrams/guitar'
-import { ANALYSIS_FIELD_KEYS, fieldTooltip, fieldLabel } from '../detector/analysis-panel'
+import { ANALYSIS_FIELD_KEYS, fieldTooltip, fieldLabel, rowLabel } from '../detector/analysis-panel'
 import type { AnalysisFieldKey } from '../detector/analysis-panel'
 import { loadBool, loadJSON, save } from './storage'
 import { escapeHtml } from './html'
@@ -358,7 +358,7 @@ function ownMenuBody(id: ModuleId, fieldsVisible: Record<AnalysisFieldKey, boole
       ${steps('btn-analysis-minus', 'btn-analysis-plus')}
       ${heading(t('menu.fields'))}
       <div class="menu-grid">${ANALYSIS_FIELD_KEYS.map(f =>
-        `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? ' active' : ''}" aria-pressed="${fieldsVisible[f]}" data-label="${escapeHtml(fieldLabel(f))}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
+        `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? ' active' : ''}" aria-pressed="${fieldsVisible[f]}" data-label="${escapeHtml(fieldLabel(f))}" data-name="${escapeHtml(rowLabel(f))}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
       ).join('')}</div>`
     case 'cof': return `
       ${item('btn-cof-flat', t('menu.flat'), t('cof.flat.title'))}

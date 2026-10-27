@@ -10,7 +10,7 @@ export type AnalysisFieldKey = (typeof ANALYSIS_FIELD_KEYS)[number]
 /** The field's toggle button, its tooltip and its row label in the panel. */
 export const fieldLabel = (f: AnalysisFieldKey) => t(`field.${f}`)
 export const fieldTooltip = (f: AnalysisFieldKey) => t(`field.${f}.title`)
-const rowLabel = (f: AnalysisFieldKey) => t(`field.${f}.row`)
+export const rowLabel = (f: AnalysisFieldKey) => t(`field.${f}.row`)
 
 /** A slash reading in one line: "D over C · upper structure · 9 #11 13". */
 export function slashText(s: SlashReading): string {

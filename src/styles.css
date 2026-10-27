@@ -895,7 +895,7 @@ body.layout-window.panels-clear .module svg { filter: drop-shadow(0 0 1px var(--
 .menu-chip:hover { border-color: var(--border); }
 .menu-chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .strings-inputs { display: grid; gap: 4px; padding: 2px 4px 4px; }
-.guitar-string-input {
+.guitar-string-input, .set-string {
   height: 28px; width: 100%; box-sizing: border-box; border: 1px solid var(--border-soft); border-radius: 6px;
   background: var(--surface-2); color: var(--text); text-align: center; font: inherit; font-size: 12px;
 }
@@ -1562,6 +1562,12 @@ body { touch-action: manipulation; }
 .set-info:hover, .set-info[aria-expanded="true"] { color: var(--accent-text); }
 .set-control { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .set-range { width: 180px; accent-color: var(--accent); }
+/* Panels: a heading per panel over its mirrored rows; hidden while searching, rows speak for themselves */
+.set-group { margin: 20px 0 0; font-size: 12px; font-weight: 600; color: var(--accent-text); }
+[data-mirror-of] > .set-group:first-child { margin-top: 8px; }
+.set-searching .set-group { display: none; }
+.set-strings { display: flex; gap: 4px; }
+.set-strings .set-string { width: 38px; }
 /* Switches: a checkbox or a button with role="switch" */
 .set-check, .set-switch {
   appearance: none; -webkit-appearance: none; position: relative; width: 36px; height: 20px; margin: 0; flex-shrink: 0;
