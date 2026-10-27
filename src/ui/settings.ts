@@ -1,7 +1,8 @@
 // The Settings dialog (⚙, or its shortcut): every option the user can change, in sections
 // with an index on the left and a search across all of them. Changes apply at once and are
 // kept; "Reset this section" puts a section's back. Some rows hold controls the app wires
-// itself (MIDI ports and channels); the Panels section mirrors the buttons on each panel.
+// itself (MIDI ports and channels); Panels and Windows mirror the panels' ⋯ menus and the views
+// menu, and Sound the bar's instrument and volume.
 // Data: export and import the settings and layouts to a file, or reset them, with Undo.
 
 import { escapeHtml } from './html'
@@ -19,8 +20,9 @@ import { MIC_MODES, getMicMode, setMicMode } from '../input/mic'
 import { startTour } from './tour'
 import { carryHistoryOverReload } from '../history/history'
 import { ICONS } from './icons'
+import { MODULE_IDS } from '../layout/presets'
 
-export const SECTIONS = ['general', 'io', 'sound', 'theory', 'detector', 'panels', 'practice', 'mic', 'shortcuts', 'data'] as const
+export const SECTIONS = ['general', 'io', 'sound', 'theory', 'detector', 'panels', 'windows', 'practice', 'mic', 'shortcuts', 'data'] as const
 export type Section = typeof SECTIONS[number]
 
 /** The preferences in each section, in the order they are shown. */
@@ -33,17 +35,6 @@ const SECTION_PREFS: Partial<Record<Section, PrefName[]>> = {
   mic: ['a4-hz', 'mic-sensitivity', 'mic-response'],
 }
 
-/** Each panel's own on/off buttons, mirrored in the Panels section (they keep the state). */
-const PANEL_BUTTONS: { id: string; label: StringKey }[] = [
-  { id: 'btn-staff-prev', label: 'set.panels.prev' },
-  { id: 'btn-cof-minor', label: 'set.panels.cofMinor' },
-  { id: 'btn-cof-deg', label: 'set.panels.cofDegrees' },
-  { id: 'btn-cof-7', label: 'set.panels.cofSevenths' },
-  { id: 'btn-key-7', label: 'set.panels.keySevenths' },
-  { id: 'btn-key-neg', label: 'set.panels.keyNegative' },
-  { id: 'btn-key-par', label: 'set.panels.keyParallel' },
-  { id: 'btn-key-colt', label: 'set.panels.keyColtrane' },
-]
 
 const CADENCE_UMT: Record<string, string> = {
   authentic: 'Authentic Cadence (V -> I)', plagal: 'Plagal Cadence (IV -> I)',
@@ -327,8 +318,7 @@ function sectionBody(s: Section): string {
       ${selectRow('midi-out-ch', t('set.io.outChannel'), Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: t('midi.outChannel.one', { n: i + 1 }) })), '1', t('midi.outChannel.title'), `${t('set.io.outChannel')} midi`)}
       ${row(`<div class="set-label">${escapeHtml(t('set.io.thru'))}</div>`, t('midi.thru.title'),
         `<button type="button" id="btn-thru" class="set-switch" role="switch" aria-checked="false" aria-label="${escapeHtml(t('set.io.thru'))}"></button>`, `${t('set.io.thru')} thru midi`)}`
-    case 'panels': return PANEL_BUTTONS.map(b => row(`<label class="set-label" for="mirror-${b.id}">${escapeHtml(t(b.label))}</label>`, '',
-        `<input type="checkbox" id="mirror-${b.id}" class="set-check" role="switch" data-mirror="${b.id}">`, t(b.label))).join('')
+    case 'panels': case 'windows': return `<div data-mirror-of="${s}"></div>`
     case 'practice': return `${prefs}
       ${row(`<div class="set-label">${escapeHtml(t('set.ear.reset'))}</div>`, t('set.ear.reset.hint'),
         `<button type="button" class="ctrl-btn" data-ear-reset>${escapeHtml(t('set.ear.reset.button'))}</button>`, `${t('set.ear.reset')}`)}`
@@ -344,17 +334,23 @@ function sectionBody(s: Section): string {
       ${row(`<div class="set-label">${escapeHtml(t('set.data.reset'))}</div>`, t('set.data.reset.hint'),
         `<button type="button" class="ctrl-btn set-danger" data-reset-settings>${escapeHtml(t('set.data.reset.button'))}</button>`, t('set.data.reset'))}
       <p class="set-error" role="alert" hidden></p>`
+    // Instrument and volume are the sound menu's: these rows follow its holders (renderMirrors)
+    case 'sound': return `
+      ${selectRow('set-instrument', t('set.sound.instrument'), [], '', t('audio.instrument.title'), `${t('set.sound.instrument')} instrument gm`)}
+      ${row(`<label class="set-label" for="set-volume">${escapeHtml(t('set.sound.volume'))}</label>`, '',
+        `<input type="range" id="set-volume" class="set-range" min="0" max="1" step="0.05"><output class="set-value" for="set-volume"></output>`, `${t('set.sound.volume')} volume`)}
+      ${prefs}`
     default: return prefs
   }
 }
 
 const SECTION_ICONS: Record<Section, string> = {
   general: ICONS.sliders, io: ICONS.midi, sound: ICONS.sound, theory: ICONS.note, detector: ICONS.clock,
-  panels: ICONS.layout, practice: ICONS.ear, mic: ICONS.mic, shortcuts: ICONS.keyboard, data: ICONS.file,
+  panels: ICONS.layout, windows: ICONS.views, practice: ICONS.ear, mic: ICONS.mic, shortcuts: ICONS.keyboard, data: ICONS.file,
 }
 
 /** Sections whose ⋮ menu offers to put their settings back. */
-const resettable = (s: Section) => s !== 'panels' && s !== 'data' && s !== 'io'
+const resettable = (s: Section) => !['panels', 'windows', 'data', 'io'].includes(s)
 
 /** A section's head: ← back to the list (on a phone), its name, ⓘ, and ⋮ with Reset this section. */
 function sectionHead(s: Section): string {
@@ -414,7 +410,7 @@ function sectionSummary(s: Section): string {
   const el = root()!
   const sec = el.querySelector<HTMLElement>(`.set-section[data-section="${s}"]`)!
   if (s === 'panels') {
-    const boxes = [...sec.querySelectorAll<HTMLInputElement>('[data-mirror]')]
+    const boxes = [...sec.querySelectorAll<HTMLInputElement>('[data-mir="item"]')]
     return t('set.summary.on', { n: boxes.filter(b => b.checked).length, total: boxes.length })
   }
   if (s === 'shortcuts') {
@@ -519,12 +515,143 @@ function applySearch(q: string) {
   ;(el.querySelector('.set-nothing') as HTMLElement).hidden = any
 }
 
-function syncMirrors() {
-  root()!.querySelectorAll<HTMLInputElement>('[data-mirror]').forEach(box => {
-    const b = document.getElementById(box.dataset.mirror!)
-    box.checked = b?.getAttribute('aria-pressed') === 'true'
-    box.disabled = !b
-  })
+// ─── Mirrors ─────────────────────────────────────────────────────────────────
+// Panels and Windows are drawn from the panels' ⋯ menus and the views menu themselves: a group
+// of chips is a choice, an item on or off a switch, a row of − and + its steps, a number field
+// a field. A change presses the menu's own control, which keeps the state, and the rows are
+// drawn again from the menus, so an option added to a menu shows here too. The preferences of
+// prefs.ts (in their own sections) and the exports are left out.
+
+const sources = new Map<string, HTMLElement>()
+
+const shownIn = (e: HTMLElement, menu: HTMLElement) => {
+  for (let p: HTMLElement | null = e; p && p !== menu; p = p.parentElement) if (p.hidden) return false
+  return true
+}
+const isPref = (e: HTMLElement) => e.matches('[data-pref-bool]') || !!e.querySelector('[data-pref-step], [data-pref-choice], [data-pref-set], [data-pref-bool]')
+const pressed = (e: HTMLElement) => e.getAttribute('aria-pressed') === 'true' || e.classList.contains('active')
+const chipsOf = (group: HTMLElement) => [...group.querySelectorAll<HTMLElement>('.menu-chip, .choice-chip')].filter(c => c.hasAttribute('aria-pressed'))
+const GROUPS = '.menu-chips, .choice-chips, .strings-inputs'
+
+/** A name for the control that holds whatever is shown around it: an id, or its first data attribute. */
+function sourceKey(e: HTMLElement): string {
+  const group = e.matches(GROUPS)
+  const target = e.id ? e : e.querySelector<HTMLElement>('[id]') ?? e.querySelector<HTMLElement>('.menu-chip, .choice-chip, input') ?? e
+  if (target.id) return target.id
+  const attr = [...target.attributes].find(a => a.name.startsWith('data-') && a.name !== 'data-label')
+  return attr ? (group ? attr.name : `${attr.name}-${attr.value}`) : ''
+}
+
+/** A group's name: its own label, or the heading above it. */
+function groupName(e: HTMLElement): string {
+  const prev = e.previousElementSibling
+  return e.getAttribute('aria-label') ?? (prev?.classList.contains('menu-heading') ? prev.textContent?.trim() ?? '' : '')
+}
+
+function mirrorRows(menu: HTMLElement, scope: string, title: string): string {
+  const rows: string[] = []
+  for (const e of menu.querySelectorAll<HTMLElement>(`${GROUPS}, .menu-item, .menu-row`)) {
+    // Actions (ear training's reset, in Practice) and exports are not options
+    if (!shownIn(e, menu) || isPref(e) || e.matches('.menu-action') || e.querySelector('[data-export]')) continue
+    const key = sourceKey(e)
+    if (!key) continue
+    const id = `mir-${scope}-${key}`
+    if (e.matches('.menu-chips, .choice-chips')) {
+      const chips = chipsOf(e)
+      if (!chips.length) continue
+      const name = groupName(e)
+      sources.set(id, e)
+      rows.push(selectRow(id, name, chips.map((c, i) => ({ value: String(i), label: c.textContent?.trim() ?? '' })),
+        String(chips.findIndex(pressed)), e.title, `${title} ${name}`, ' data-mir="chips"'))
+    } else if (e.matches('.strings-inputs')) {
+      const name = groupName(e)
+      sources.set(id, e)
+      rows.push(row(`<div class="set-label">${escapeHtml(name)}</div>`, '', `<div class="set-strings">${[...e.querySelectorAll<HTMLInputElement>('input')].map((input, i) =>
+        `<input class="set-string" data-mir="strings" data-mir-of="${id}" data-i="${i}" value="${escapeHtml(input.value)}" aria-label="${escapeHtml(input.getAttribute('aria-label') ?? '')}" maxlength="4" autocomplete="off" spellcheck="false">`).join('')}</div>`, `${title} ${name}`))
+    } else if (e.matches('.menu-item')) {
+      // As the menu reads it, or by the name the panel gives it (an Analysis field), its text behind ⓘ
+      const text = e.querySelector('.menu-label')?.textContent?.trim() ?? ''
+      const name = e.dataset.name ?? text
+      sources.set(id, e)
+      rows.push(row(`<label class="set-label" for="${id}">${escapeHtml(name)}</label>`, [name !== text ? text : '', e.title].filter(Boolean).join('. '),
+        `<input type="checkbox" id="${id}" class="set-check" role="switch" data-mir="item"${pressed(e) ? ' checked' : ''}>`, `${title} ${name}`))
+    } else if (e.querySelector('.menu-step')) {
+      const [down, up] = e.querySelectorAll<HTMLElement>('.menu-step')
+      const name = e.querySelector('.menu-label')?.textContent?.trim() ?? ''
+      const value = e.querySelector('.menu-value')?.textContent ?? ''
+      const step = (b: HTMLElement, dir: number, sign: string) =>
+        `<button type="button" class="menu-step" data-mir-step="${id}" data-dir="${dir}" aria-label="${escapeHtml(b.getAttribute('aria-label') ?? b.title)}">${sign}</button>`
+      sources.set(id, e)
+      rows.push(row(`<div class="set-label">${escapeHtml(name)}</div>`, e.title,
+        `${step(down, 0, '−')}${value ? `<span class="set-value">${escapeHtml(value)}</span>` : ''}${step(up, 1, '+')}`, `${title} ${name}`))
+    } else {
+      const input = e.querySelector<HTMLInputElement>('input')
+      if (!input) continue
+      const name = e.querySelector('.menu-label')?.textContent?.trim() ?? ''
+      const spans = e.querySelectorAll<HTMLElement>('span')
+      const unit = spans.length > 1 ? spans[spans.length - 1].textContent ?? '' : ''
+      sources.set(id, input)
+      rows.push(row(`<label class="set-label" for="${id}">${escapeHtml(name)}</label>`, e.title,
+        `<input type="${input.type}" id="${id}" class="metro-num" data-mir="input" min="${input.min}" max="${input.max}" step="${input.step}" value="${escapeHtml(input.value)}"><span class="set-value">${escapeHtml(unit)}</span>`, `${title} ${name}`))
+    }
+  }
+  return rows.join('')
+}
+
+/** Draws Panels and Windows from the menus, and Sound's rows from the sound menu, keeping the focus. */
+function renderMirrors() {
+  const el = root()
+  if (!el) return
+  const f = document.activeElement as HTMLElement | null
+  const focus = f && el.contains(f) ? (f.dataset.mirStep ? `[data-mir-step="${f.dataset.mirStep}"][data-dir="${f.dataset.dir}"]`
+    : f.dataset.pick ? `[data-pick="${f.dataset.pick}"]` : f.dataset.mirOf ? `[data-mir-of="${f.dataset.mirOf}"][data-i="${f.dataset.i}"]` : f.id ? `#${CSS.escape(f.id)}` : null) : null
+  sources.clear()
+  const panels = el.querySelector<HTMLElement>('[data-mirror-of="panels"]')
+  if (panels) panels.innerHTML = MODULE_IDS.map(id => {
+    const menu = document.getElementById(`menu-${id}`)
+    const name = t(`module.${id}` as StringKey)
+    const rows = menu ? mirrorRows(menu, id, name) : ''
+    return rows ? `<h3 class="set-group">${escapeHtml(name)}</h3>${rows}` : ''
+  }).join('')
+  const windows = el.querySelector<HTMLElement>('[data-mirror-of="windows"]')
+  const views = document.getElementById('view-menu')
+  if (windows && views) windows.innerHTML = mirrorRows(views, 'views', t('set.section.windows'))
+  const instrument = document.getElementById('audio-instrument') as HTMLSelectElement | null
+  const setInstrument = el.querySelector<HTMLSelectElement>('#set-instrument')
+  if (instrument && setInstrument) {
+    setInstrument.innerHTML = [...instrument.options].map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.textContent ?? '')}</option>`).join('')
+    setInstrument.value = instrument.value
+  }
+  const volume = document.getElementById('audio-volume') as HTMLInputElement | null
+  const setVolume = el.querySelector<HTMLInputElement>('#set-volume')
+  if (volume && setVolume) {
+    setVolume.value = volume.value
+    el.querySelector('output[for="set-volume"]')!.textContent = `${Math.round(Number(volume.value) * 100)} %`
+  }
+  refreshValues()
+  if (focus) el.querySelector<HTMLElement>(focus)?.focus()
+}
+
+/** A mirror row changed: the menu's own control does it, and the rows are drawn again. */
+function applyMirror(input: HTMLInputElement | HTMLSelectElement) {
+  const kind = input.dataset.mir
+  if (kind === 'strings') {
+    const original = sources.get(input.dataset.mirOf!)?.querySelectorAll<HTMLInputElement>('input')[Number(input.dataset.i)]
+    if (original) { original.value = input.value; original.dispatchEvent(new Event('change', { bubbles: true })) }
+  } else {
+    const src = sources.get(input.id)
+    if (!src) return
+    if (kind === 'chips') chipsOf(src)[Number(input.value)]?.click()
+    else if (kind === 'item') src.click()
+    else if (kind === 'input' && src instanceof HTMLInputElement) {
+      src.value = input.value
+      src.dispatchEvent(new Event('input', { bubbles: true }))
+      src.dispatchEvent(new Event('change', { bubbles: true }))
+    }
+  }
+  // Now, for the rows a choice shows or hides; again after the panel has drawn what follows it
+  renderMirrors()
+  setTimeout(renderMirrors)
 }
 
 export function openSettings(at?: Section) {
@@ -532,7 +659,7 @@ export function openSettings(at?: Section) {
   if (!el) return
   returnFocus = document.activeElement as HTMLElement | null
   el.hidden = false
-  syncMirrors()
+  renderMirrors()
   // A phone opens on the list of sections, unless a section was asked for
   const paged = !!at || !phone()
   ;(el.querySelector('#set-search') as HTMLInputElement).value = ''
@@ -688,11 +815,28 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
     else if (input.id === 'help-lang') reloadWith(() => saveLang(input.value as Lang))
     else if (input.id === 'help-note-names') reloadWith(() => saveNoteNaming(input.value as NoteNaming))
     else if (input.id === 'set-mic-mode') setMicMode(input.value as typeof MIC_MODES[number])
-    else if (input.dataset.mirror) {
-      document.getElementById(input.dataset.mirror)?.click()
-      syncMirrors()
+    else if (input.dataset.mir) applyMirror(input)
+    else if (input.id === 'set-instrument') {
+      const holder = document.getElementById('audio-instrument') as HTMLSelectElement
+      holder.value = input.value
+      holder.dispatchEvent(new Event('change'))
     }
     refreshSummaries()
+  })
+  el.addEventListener('input', e => {
+    const input = e.target as HTMLInputElement
+    if (input.id !== 'set-volume') return
+    const holder = document.getElementById('audio-volume') as HTMLInputElement
+    holder.value = input.value
+    holder.dispatchEvent(new Event('input'))
+    el.querySelector('output[for="set-volume"]')!.textContent = `${Math.round(Number(input.value) * 100)} %`
+  })
+  el.addEventListener('click', e => {
+    const step = (e.target as HTMLElement).closest<HTMLElement>('[data-mir-step]')
+    if (!step) return
+    sources.get(step.dataset.mirStep!)?.querySelectorAll<HTMLElement>('.menu-step')[Number(step.dataset.dir)]?.click()
+    renderMirrors()
+    setTimeout(renderMirrors)
   })
   el.addEventListener('click', e => { if ((e.target as HTMLElement).closest('#set-tour')) { closeSettings(); startTour() } })
 
@@ -747,4 +891,6 @@ export function wireSettings(opts: { resetEarScore: () => void }) {
     replaceSettings(next, 'set.data.imported')
   })
   el.querySelector('[data-reset-settings]')!.addEventListener('click', () => replaceSettings({}, 'set.data.wasReset'))
+  // Drawn now too, so the bar's field and a search find the mirrored rows before Settings opens
+  renderMirrors()
 }

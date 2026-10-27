@@ -2000,7 +2000,8 @@ body.layout-window.panels-clear .module svg {
   gap: 4px;
   padding: 2px 4px 4px;
 }
-.guitar-string-input {
+.guitar-string-input,
+.set-string {
   height: 28px;
   width: 100%;
   box-sizing: border-box;
@@ -4075,6 +4076,25 @@ body {
 .set-range {
   width: 180px;
   accent-color: var(--accent);
+}
+.set-group {
+  margin: 20px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+[data-mirror-of] > .set-group:first-child {
+  margin-top: 8px;
+}
+.set-searching .set-group {
+  display: none;
+}
+.set-strings {
+  display: flex;
+  gap: 4px;
+}
+.set-strings .set-string {
+  width: 38px;
 }
 .set-check,
 .set-switch {

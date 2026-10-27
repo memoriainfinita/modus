@@ -622,6 +622,39 @@ await check('settings: MIDI input lists the bar\'s devices and picks one for it'
   assert(await page.inputValue('#midi-device') === 'fake-1', 'not back on the first device')
 })
 
+await check('settings: Panels and Windows mirror the menus; Sound has the instrument and volume', async () => {
+  try { await mirrorChecks() } finally {
+    // Left open, Settings would cover the page for every later check
+    for (let i = 0; i < 3 && await page.locator('#settings').isVisible(); i++) await page.keyboard.press('Escape')
+  }
+})
+async function mirrorChecks() {
+  await openSettings('panels')
+  const groups = await page.locator('[data-mirror-of="panels"] .set-group').allInnerTexts()
+  assert(['Staff', 'Isomorphic', 'Strings', 'Metronome'].every(g => groups.includes(g)), `groups: ${groups}`)
+  // A choice made here is the panel's: pressed in its ⋯ menu, a row shown only with it appears
+  await page.click('[data-pick="mir-iso-data-iso-layout"]')
+  await page.locator('.set-pick-list .set-pick-option', { hasText: 'Custom' }).click()
+  const pressed = await page.getAttribute('#menu-iso [data-iso-layout="custom"]', 'aria-pressed')
+  await page.locator('[data-mir-step="mir-iso-iso-right-down"]').first().waitFor({ timeout: 2000 }).catch(() => {})
+  const steps = await page.locator('[data-mir-step="mir-iso-iso-right-down"]').count()
+  await page.click('[data-pick="mir-iso-data-iso-layout"]')
+  await page.locator('.set-pick-list .set-pick-option', { hasText: 'Harmonic' }).click()
+  assert(pressed === 'true' && steps === 2, `pressed ${pressed}, steps ${steps}`)
+  // A switch: the circle's degrees, there and back
+  const before = await page.getAttribute('#btn-cof-deg', 'aria-pressed')
+  await page.click('#mir-cof-btn-cof-deg')
+  const after = await page.getAttribute('#btn-cof-deg', 'aria-pressed')
+  await page.click('#mir-cof-btn-cof-deg')
+  assert(before !== after, `degrees ${before} → ${after}`)
+  await page.click('.set-nav-item[data-section="windows"]')
+  assert((await page.locator('[data-mirror-of="windows"] .set-row').count()) === 2, 'windows rows')
+  await page.click('.set-nav-item[data-section="sound"]')
+  const instrument = await text('[data-shows="set-instrument"]')
+  await page.keyboard.press('Escape')
+  assert(instrument === await page.evaluate(() => { const s = document.getElementById('audio-instrument'); return s.options[s.selectedIndex].textContent }), `instrument ${instrument}`)
+}
+
 await check('settings data: export and import round trip; reset offers Undo', async () => {
   await openSettings('data')
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-export-settings]')])

@@ -1272,13 +1272,17 @@
     "set.section.io": "Input and output",
     "set.section.io.hint": "MIDI channels and the port Modus sends to. The input device and mode stay in the toolbar",
     "set.section.sound": "Sound",
-    "set.section.sound.hint": "How previews sound. Instrument and volume stay in the toolbar",
+    "set.section.sound.hint": "What sounds and how: the same instrument and volume as in the bar's sound menu",
+    "set.sound.instrument": "Instrument",
+    "set.sound.volume": "Volume",
     "set.section.theory": "Theory",
     "set.section.theory.hint": "How chords are written and read",
     "set.section.detector": "Detector and history",
     "set.section.detector.hint": "How long things wait before they count",
     "set.section.panels": "Panels",
-    "set.section.panels.hint": "The options each panel carries on its own buttons, here too",
+    "set.section.panels.hint": "Each panel's \u22EF options, here too, panel by panel",
+    "set.section.windows": "Windows",
+    "set.section.windows.hint": "The windows for OBS: the same choices as in the views menu",
     "set.section.practice": "Practice",
     "set.section.practice.hint": "Progressions and ear training",
     "set.section.mic": "Microphone and tuner",
@@ -1293,15 +1297,7 @@
     "set.io.out": "MIDI out",
     "set.io.outChannel": "Output channel",
     "set.io.thru": "Thru",
-    "set.panels.intro": "Each box is the same option as in the panel's \u22EF menu: both stay the same.",
-    "set.panels.prev": "Staff and piano: show the chord before",
-    "set.panels.cofMinor": "Circle: minor and diminished rings",
-    "set.panels.cofDegrees": "Circle: degrees",
-    "set.panels.cofSevenths": "Circle: seventh chords",
-    "set.panels.keySevenths": "Key: seventh chords",
-    "set.panels.keyNegative": "Key: negative harmony",
-    "set.panels.keyParallel": "Key: parallel modes",
-    "set.panels.keyColtrane": "Key: Coltrane axis",
+    "set.panels.intro": "Each row is the same option as in the panel's \u22EF menu: both stay the same.",
     "set.ear.reset": "Reset the ear-training score",
     "set.ear.reset.button": "Reset",
     "set.ear.reset.hint": "Every kind back to 0 / 0",
@@ -2344,13 +2340,17 @@
     "set.section.io": "Entrada y salida",
     "set.section.io.hint": "Canales MIDI y el puerto al que env\xEDa Modus. El dispositivo de entrada y el modo siguen en la barra",
     "set.section.sound": "Sonido",
-    "set.section.sound.hint": "C\xF3mo suenan las vistas previas. Instrumento y volumen siguen en la barra",
+    "set.section.sound.hint": "Qu\xE9 suena y c\xF3mo: el mismo instrumento y volumen que en el men\xFA de sonido de la barra",
+    "set.sound.instrument": "Instrumento",
+    "set.sound.volume": "Volumen",
     "set.section.theory": "Teor\xEDa",
     "set.section.theory.hint": "C\xF3mo se escriben y se leen los acordes",
     "set.section.detector": "Detector e historial",
     "set.section.detector.hint": "Cu\xE1nto esperan las cosas antes de contar",
     "set.section.panels": "Paneles",
-    "set.section.panels.hint": "Las opciones que cada panel lleva en sus botones, tambi\xE9n aqu\xED",
+    "set.section.panels.hint": "Las opciones del men\xFA \u22EF de cada panel, tambi\xE9n aqu\xED, panel a panel",
+    "set.section.windows": "Ventanas",
+    "set.section.windows.hint": "Las ventanas para OBS: las mismas opciones que en el men\xFA de vistas",
     "set.section.practice": "Pr\xE1ctica",
     "set.section.practice.hint": "Progresiones y entrenamiento auditivo",
     "set.section.mic": "Micr\xF3fono y afinador",
@@ -2365,15 +2365,7 @@
     "set.io.out": "Salida MIDI",
     "set.io.outChannel": "Canal de salida",
     "set.io.thru": "Thru",
-    "set.panels.intro": "Cada casilla es la misma opci\xF3n que en el men\xFA \u22EF del panel: las dos van a la par.",
-    "set.panels.prev": "Pentagrama y piano: mostrar el acorde anterior",
-    "set.panels.cofMinor": "C\xEDrculo: anillos menor y disminuido",
-    "set.panels.cofDegrees": "C\xEDrculo: grados",
-    "set.panels.cofSevenths": "C\xEDrculo: acordes de s\xE9ptima",
-    "set.panels.keySevenths": "Tonalidad: acordes de s\xE9ptima",
-    "set.panels.keyNegative": "Tonalidad: armon\xEDa negativa",
-    "set.panels.keyParallel": "Tonalidad: modos paralelos",
-    "set.panels.keyColtrane": "Tonalidad: eje de Coltrane",
+    "set.panels.intro": "Cada fila es la misma opci\xF3n que en el men\xFA \u22EF del panel: las dos van a la par.",
     "set.ear.reset": "Poner a cero el marcador del entrenamiento",
     "set.ear.reset.button": "A cero",
     "set.ear.reset.hint": "Cada tipo vuelve a 0 / 0",
@@ -5696,8 +5688,118 @@ ${explainCadence(cadence)}` : "");
   };
   var LOGO = `<svg class="logo-mark" width="26" height="26" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="124" fill="var(--logo-bg)"/><g fill="var(--logo-ink)"><path d="M146 206 Q272 152 398 142 L398 93.1 Q272 101.6 146 154 Z"/><path d="M155 186.6 L155 376.2 M273 147.1 L273 338.2 M389 127.2 L389 302.2" fill="none" stroke="var(--logo-ink)" stroke-width="18" stroke-linecap="round"/><path d="M94 384 C94 367.1 110.1 358 130 358 C153.5 358 166 369.6 166 384 C166 395.8 149.9 411.9 130 410 C106.5 410 94 398.4 94 384 Z" transform="rotate(-24 130 384)"/><path d="M212 346 C212 329.1 228.1 320 248 320 C271.5 320 284 331.6 284 346 C284 357.8 267.9 373.9 248 372 C224.5 372 212 360.4 212 346 Z" transform="rotate(-24 248 346)"/><path d="M328 310 C328 293.1 344.1 284 364 284 C387.5 284 400 295.6 400 310 C400 321.8 383.9 337.9 364 336 C340.5 336 328 324.4 328 310 Z" transform="rotate(-24 364 310)"/></g></svg>`;
 
+  // src/layout/presets.ts
+  var MODULE_IDS = [
+    "chord",
+    "staff",
+    "analysis",
+    "explain",
+    "next",
+    "cof",
+    "guitar",
+    "key",
+    "piano",
+    "iso",
+    "velocity",
+    "progressions",
+    "ear",
+    "player",
+    "tuner",
+    "metronome",
+    "history",
+    "song"
+  ];
+  var MODULE_SIZE = {
+    chord: { w: 4, h: 3 },
+    staff: { w: 4, h: 8 },
+    analysis: { w: 3, h: 11 },
+    explain: { w: 4, h: 11 },
+    next: { w: 4, h: 8 },
+    cof: { w: 3, h: 7 },
+    guitar: { w: 3, h: 9 },
+    key: { w: 12, h: 11 },
+    piano: { w: 7, h: 5 },
+    iso: { w: 6, h: 8 },
+    velocity: { w: 2, h: 5 },
+    progressions: { w: 12, h: 4 },
+    ear: { w: 6, h: 5 },
+    player: { w: 6, h: 5 },
+    tuner: { w: 3, h: 5 },
+    metronome: { w: 6, h: 10 },
+    history: { w: 12, h: 3 },
+    song: { w: 12, h: 12 }
+  };
+  var PRESET_IDS = ["standard", "study", "class", "transcription", "recording"];
+  var grid = (specs) => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }));
+  var PRESETS = {
+    // Everything but Velocity, Next and Isomorphic (in the layout menu): the chord as a header across the page, the four
+    // diagrams under it, the key and its explanation, then the piano and the practice panels
+    standard: grid([
+      ["chord", 0, 0, 12, 3],
+      ["staff", 0, 3, 3, 11],
+      ["analysis", 3, 3, 3, 11],
+      ["cof", 6, 3, 3, 11],
+      ["guitar", 9, 3, 3, 11],
+      ["key", 0, 14, 8, 12],
+      ["explain", 8, 14, 4, 12],
+      ["piano", 0, 26, 12, 5],
+      ["progressions", 0, 31, 12, 4],
+      ["ear", 0, 35, 4, 5],
+      ["tuner", 4, 35, 3, 5],
+      ["player", 7, 35, 5, 5],
+      ["metronome", 0, 40, 12, 9],
+      ["history", 0, 49, 12, 3],
+      ["song", 0, 52, 12, 12]
+    ]),
+    // Harmony at the desk: the key and the analysis large, what is played next to them
+    study: grid([
+      ["chord", 0, 0, 4, 3],
+      ["analysis", 4, 0, 4, 12],
+      ["cof", 8, 0, 4, 8],
+      ["staff", 0, 3, 4, 9],
+      ["history", 8, 8, 4, 4],
+      ["key", 0, 12, 8, 12],
+      ["explain", 8, 12, 4, 12],
+      ["piano", 0, 24, 12, 5],
+      ["progressions", 0, 29, 12, 4],
+      ["ear", 0, 33, 6, 5],
+      ["next", 6, 33, 6, 5],
+      ["metronome", 0, 38, 6, 10]
+    ]),
+    // Teaching on a projector (made to be presented with P): few panels, large; the history
+    // under the chord shows where it came from, Next where it can go
+    class: grid([
+      ["chord", 0, 0, 12, 4],
+      ["history", 0, 4, 12, 4],
+      ["staff", 0, 8, 4, 10],
+      ["cof", 4, 8, 4, 10],
+      ["guitar", 8, 8, 4, 10],
+      ["piano", 0, 18, 12, 6],
+      ["next", 0, 24, 12, 4]
+    ]),
+    // Writing down a recording: the player on top, the song and the history in reach of what is heard
+    transcription: grid([
+      ["player", 0, 0, 9, 5],
+      ["tuner", 9, 0, 3, 5],
+      ["chord", 0, 5, 3, 3],
+      ["staff", 0, 8, 3, 8],
+      ["analysis", 3, 5, 3, 11],
+      ["piano", 6, 5, 6, 5],
+      ["guitar", 6, 10, 6, 6],
+      ["history", 0, 16, 12, 3],
+      ["song", 0, 19, 12, 14]
+    ]),
+    // On camera or screen capture: the chord and the instruments, no controls in view
+    recording: grid([
+      ["chord", 0, 0, 6, 4],
+      ["staff", 6, 0, 6, 9],
+      ["guitar", 0, 4, 6, 9],
+      ["piano", 0, 13, 12, 6]
+    ])
+  };
+
   // src/ui/settings.ts
-  var SECTIONS = ["general", "io", "sound", "theory", "detector", "panels", "practice", "mic", "shortcuts", "data"];
+  var SECTIONS = ["general", "io", "sound", "theory", "detector", "panels", "windows", "practice", "mic", "shortcuts", "data"];
   var SECTION_PREFS = {
     general: ["ui-zoom"],
     sound: ["preview-s", "piano-velocity"],
@@ -5706,16 +5808,6 @@ ${explainCadence(cadence)}` : "");
     practice: ["progression-bpm", "ear-interval-play", "ear-chords", "ear-cadences"],
     mic: ["a4-hz", "mic-sensitivity", "mic-response"]
   };
-  var PANEL_BUTTONS = [
-    { id: "btn-staff-prev", label: "set.panels.prev" },
-    { id: "btn-cof-minor", label: "set.panels.cofMinor" },
-    { id: "btn-cof-deg", label: "set.panels.cofDegrees" },
-    { id: "btn-cof-7", label: "set.panels.cofSevenths" },
-    { id: "btn-key-7", label: "set.panels.keySevenths" },
-    { id: "btn-key-neg", label: "set.panels.keyNegative" },
-    { id: "btn-key-par", label: "set.panels.keyParallel" },
-    { id: "btn-key-colt", label: "set.panels.keyColtrane" }
-  ];
   var CADENCE_UMT = {
     authentic: "Authentic Cadence (V -> I)",
     plagal: "Plagal Cadence (IV -> I)",
@@ -5983,12 +6075,8 @@ ${explainCadence(cadence)}` : "");
           `${t("set.io.thru")} thru midi`
         )}`;
       case "panels":
-        return PANEL_BUTTONS.map((b) => row(
-          `<label class="set-label" for="mirror-${b.id}">${escapeHtml(t(b.label))}</label>`,
-          "",
-          `<input type="checkbox" id="mirror-${b.id}" class="set-check" role="switch" data-mirror="${b.id}">`,
-          t(b.label)
-        )).join("");
+      case "windows":
+        return `<div data-mirror-of="${s}"></div>`;
       case "practice":
         return `${prefs}
       ${row(
@@ -6024,6 +6112,17 @@ ${explainCadence(cadence)}` : "");
           t("set.data.reset")
         )}
       <p class="set-error" role="alert" hidden></p>`;
+      // Instrument and volume are the sound menu's: these rows follow its holders (renderMirrors)
+      case "sound":
+        return `
+      ${selectRow("set-instrument", t("set.sound.instrument"), [], "", t("audio.instrument.title"), `${t("set.sound.instrument")} instrument gm`)}
+      ${row(
+          `<label class="set-label" for="set-volume">${escapeHtml(t("set.sound.volume"))}</label>`,
+          "",
+          `<input type="range" id="set-volume" class="set-range" min="0" max="1" step="0.05"><output class="set-value" for="set-volume"></output>`,
+          `${t("set.sound.volume")} volume`
+        )}
+      ${prefs}`;
       default:
         return prefs;
     }
@@ -6035,12 +6134,13 @@ ${explainCadence(cadence)}` : "");
     theory: ICONS.note,
     detector: ICONS.clock,
     panels: ICONS.layout,
+    windows: ICONS.views,
     practice: ICONS.ear,
     mic: ICONS.mic,
     shortcuts: ICONS.keyboard,
     data: ICONS.file
   };
-  var resettable = (s) => s !== "panels" && s !== "data" && s !== "io";
+  var resettable = (s) => !["panels", "windows", "data", "io"].includes(s);
   function sectionHead(s) {
     const intro = s === "panels" ? t("set.panels.intro") : s === "shortcuts" ? t("set.keys.intro") : "";
     return `<div class="set-section-head">
@@ -6094,7 +6194,7 @@ ${explainCadence(cadence)}` : "");
     const el2 = root();
     const sec = el2.querySelector(`.set-section[data-section="${s}"]`);
     if (s === "panels") {
-      const boxes = [...sec.querySelectorAll("[data-mirror]")];
+      const boxes = [...sec.querySelectorAll('[data-mir="item"]')];
       return t("set.summary.on", { n: boxes.filter((b) => b.checked).length, total: boxes.length });
     }
     if (s === "shortcuts") {
@@ -6185,19 +6285,149 @@ ${explainCadence(cadence)}` : "");
     el2.querySelectorAll(".set-nav-item").forEach((b) => b.setAttribute("aria-current", "false"));
     el2.querySelector(".set-nothing").hidden = any;
   }
-  function syncMirrors() {
-    root().querySelectorAll("[data-mirror]").forEach((box) => {
-      const b = document.getElementById(box.dataset.mirror);
-      box.checked = b?.getAttribute("aria-pressed") === "true";
-      box.disabled = !b;
-    });
+  var sources = /* @__PURE__ */ new Map();
+  var shownIn = (e, menu) => {
+    for (let p = e; p && p !== menu; p = p.parentElement) if (p.hidden) return false;
+    return true;
+  };
+  var isPref = (e) => e.matches("[data-pref-bool]") || !!e.querySelector("[data-pref-step], [data-pref-choice], [data-pref-set], [data-pref-bool]");
+  var pressed = (e) => e.getAttribute("aria-pressed") === "true" || e.classList.contains("active");
+  var chipsOf = (group) => [...group.querySelectorAll(".menu-chip, .choice-chip")].filter((c) => c.hasAttribute("aria-pressed"));
+  var GROUPS = ".menu-chips, .choice-chips, .strings-inputs";
+  function sourceKey(e) {
+    const group = e.matches(GROUPS);
+    const target = e.id ? e : e.querySelector("[id]") ?? e.querySelector(".menu-chip, .choice-chip, input") ?? e;
+    if (target.id) return target.id;
+    const attr = [...target.attributes].find((a) => a.name.startsWith("data-") && a.name !== "data-label");
+    return attr ? group ? attr.name : `${attr.name}-${attr.value}` : "";
+  }
+  function groupName(e) {
+    const prev = e.previousElementSibling;
+    return e.getAttribute("aria-label") ?? (prev?.classList.contains("menu-heading") ? prev.textContent?.trim() ?? "" : "");
+  }
+  function mirrorRows(menu, scope, title) {
+    const rows = [];
+    for (const e of menu.querySelectorAll(`${GROUPS}, .menu-item, .menu-row`)) {
+      if (!shownIn(e, menu) || isPref(e) || e.matches(".menu-action") || e.querySelector("[data-export]")) continue;
+      const key = sourceKey(e);
+      if (!key) continue;
+      const id = `mir-${scope}-${key}`;
+      if (e.matches(".menu-chips, .choice-chips")) {
+        const chips = chipsOf(e);
+        if (!chips.length) continue;
+        const name = groupName(e);
+        sources.set(id, e);
+        rows.push(selectRow(
+          id,
+          name,
+          chips.map((c, i) => ({ value: String(i), label: c.textContent?.trim() ?? "" })),
+          String(chips.findIndex(pressed)),
+          e.title,
+          `${title} ${name}`,
+          ' data-mir="chips"'
+        ));
+      } else if (e.matches(".strings-inputs")) {
+        const name = groupName(e);
+        sources.set(id, e);
+        rows.push(row(`<div class="set-label">${escapeHtml(name)}</div>`, "", `<div class="set-strings">${[...e.querySelectorAll("input")].map((input, i) => `<input class="set-string" data-mir="strings" data-mir-of="${id}" data-i="${i}" value="${escapeHtml(input.value)}" aria-label="${escapeHtml(input.getAttribute("aria-label") ?? "")}" maxlength="4" autocomplete="off" spellcheck="false">`).join("")}</div>`, `${title} ${name}`));
+      } else if (e.matches(".menu-item")) {
+        const text = e.querySelector(".menu-label")?.textContent?.trim() ?? "";
+        const name = e.dataset.name ?? text;
+        sources.set(id, e);
+        rows.push(row(
+          `<label class="set-label" for="${id}">${escapeHtml(name)}</label>`,
+          [name !== text ? text : "", e.title].filter(Boolean).join(". "),
+          `<input type="checkbox" id="${id}" class="set-check" role="switch" data-mir="item"${pressed(e) ? " checked" : ""}>`,
+          `${title} ${name}`
+        ));
+      } else if (e.querySelector(".menu-step")) {
+        const [down, up] = e.querySelectorAll(".menu-step");
+        const name = e.querySelector(".menu-label")?.textContent?.trim() ?? "";
+        const value = e.querySelector(".menu-value")?.textContent ?? "";
+        const step2 = (b, dir, sign) => `<button type="button" class="menu-step" data-mir-step="${id}" data-dir="${dir}" aria-label="${escapeHtml(b.getAttribute("aria-label") ?? b.title)}">${sign}</button>`;
+        sources.set(id, e);
+        rows.push(row(
+          `<div class="set-label">${escapeHtml(name)}</div>`,
+          e.title,
+          `${step2(down, 0, "\u2212")}${value ? `<span class="set-value">${escapeHtml(value)}</span>` : ""}${step2(up, 1, "+")}`,
+          `${title} ${name}`
+        ));
+      } else {
+        const input = e.querySelector("input");
+        if (!input) continue;
+        const name = e.querySelector(".menu-label")?.textContent?.trim() ?? "";
+        const spans = e.querySelectorAll("span");
+        const unit = spans.length > 1 ? spans[spans.length - 1].textContent ?? "" : "";
+        sources.set(id, input);
+        rows.push(row(
+          `<label class="set-label" for="${id}">${escapeHtml(name)}</label>`,
+          e.title,
+          `<input type="${input.type}" id="${id}" class="metro-num" data-mir="input" min="${input.min}" max="${input.max}" step="${input.step}" value="${escapeHtml(input.value)}"><span class="set-value">${escapeHtml(unit)}</span>`,
+          `${title} ${name}`
+        ));
+      }
+    }
+    return rows.join("");
+  }
+  function renderMirrors() {
+    const el2 = root();
+    if (!el2) return;
+    const f = document.activeElement;
+    const focus = f && el2.contains(f) ? f.dataset.mirStep ? `[data-mir-step="${f.dataset.mirStep}"][data-dir="${f.dataset.dir}"]` : f.dataset.pick ? `[data-pick="${f.dataset.pick}"]` : f.dataset.mirOf ? `[data-mir-of="${f.dataset.mirOf}"][data-i="${f.dataset.i}"]` : f.id ? `#${CSS.escape(f.id)}` : null : null;
+    sources.clear();
+    const panels = el2.querySelector('[data-mirror-of="panels"]');
+    if (panels) panels.innerHTML = MODULE_IDS.map((id) => {
+      const menu = document.getElementById(`menu-${id}`);
+      const name = t(`module.${id}`);
+      const rows = menu ? mirrorRows(menu, id, name) : "";
+      return rows ? `<h3 class="set-group">${escapeHtml(name)}</h3>${rows}` : "";
+    }).join("");
+    const windows = el2.querySelector('[data-mirror-of="windows"]');
+    const views = document.getElementById("view-menu");
+    if (windows && views) windows.innerHTML = mirrorRows(views, "views", t("set.section.windows"));
+    const instrument3 = document.getElementById("audio-instrument");
+    const setInstrument2 = el2.querySelector("#set-instrument");
+    if (instrument3 && setInstrument2) {
+      setInstrument2.innerHTML = [...instrument3.options].map((o) => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.textContent ?? "")}</option>`).join("");
+      setInstrument2.value = instrument3.value;
+    }
+    const volume2 = document.getElementById("audio-volume");
+    const setVolume2 = el2.querySelector("#set-volume");
+    if (volume2 && setVolume2) {
+      setVolume2.value = volume2.value;
+      el2.querySelector('output[for="set-volume"]').textContent = `${Math.round(Number(volume2.value) * 100)} %`;
+    }
+    refreshValues();
+    if (focus) el2.querySelector(focus)?.focus();
+  }
+  function applyMirror(input) {
+    const kind2 = input.dataset.mir;
+    if (kind2 === "strings") {
+      const original = sources.get(input.dataset.mirOf)?.querySelectorAll("input")[Number(input.dataset.i)];
+      if (original) {
+        original.value = input.value;
+        original.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    } else {
+      const src = sources.get(input.id);
+      if (!src) return;
+      if (kind2 === "chips") chipsOf(src)[Number(input.value)]?.click();
+      else if (kind2 === "item") src.click();
+      else if (kind2 === "input" && src instanceof HTMLInputElement) {
+        src.value = input.value;
+        src.dispatchEvent(new Event("input", { bubbles: true }));
+        src.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+    renderMirrors();
+    setTimeout(renderMirrors);
   }
   function openSettings(at) {
     const el2 = root();
     if (!el2) return;
     returnFocus2 = document.activeElement;
     el2.hidden = false;
-    syncMirrors();
+    renderMirrors();
     const paged = !!at || !phone();
     el2.querySelector("#set-search").value = "";
     showSection(at ?? section, paged);
@@ -6360,11 +6590,28 @@ ${explainCadence(cadence)}` : "");
       else if (input.id === "help-lang") reloadWith(() => saveLang(input.value));
       else if (input.id === "help-note-names") reloadWith(() => saveNoteNaming(input.value));
       else if (input.id === "set-mic-mode") setMicMode(input.value);
-      else if (input.dataset.mirror) {
-        document.getElementById(input.dataset.mirror)?.click();
-        syncMirrors();
+      else if (input.dataset.mir) applyMirror(input);
+      else if (input.id === "set-instrument") {
+        const holder = document.getElementById("audio-instrument");
+        holder.value = input.value;
+        holder.dispatchEvent(new Event("change"));
       }
       refreshSummaries();
+    });
+    el2.addEventListener("input", (e) => {
+      const input = e.target;
+      if (input.id !== "set-volume") return;
+      const holder = document.getElementById("audio-volume");
+      holder.value = input.value;
+      holder.dispatchEvent(new Event("input"));
+      el2.querySelector('output[for="set-volume"]').textContent = `${Math.round(Number(input.value) * 100)} %`;
+    });
+    el2.addEventListener("click", (e) => {
+      const step2 = e.target.closest("[data-mir-step]");
+      if (!step2) return;
+      sources.get(step2.dataset.mirStep)?.querySelectorAll(".menu-step")[Number(step2.dataset.dir)]?.click();
+      renderMirrors();
+      setTimeout(renderMirrors);
     });
     el2.addEventListener("click", (e) => {
       if (e.target.closest("#set-tour")) {
@@ -6434,6 +6681,7 @@ ${explainCadence(cadence)}` : "");
       replaceSettings(next, "set.data.imported");
     });
     el2.querySelector("[data-reset-settings]").addEventListener("click", () => replaceSettings({}, "set.data.wasReset"));
+    renderMirrors();
   }
 
   // src/ui/popover.ts
@@ -7084,116 +7332,6 @@ ${explainCadence(cadence)}` : "");
     return cells.length ? compact(cells) : null;
   }
 
-  // src/layout/presets.ts
-  var MODULE_IDS = [
-    "chord",
-    "staff",
-    "analysis",
-    "explain",
-    "next",
-    "cof",
-    "guitar",
-    "key",
-    "piano",
-    "iso",
-    "velocity",
-    "progressions",
-    "ear",
-    "player",
-    "tuner",
-    "metronome",
-    "history",
-    "song"
-  ];
-  var MODULE_SIZE = {
-    chord: { w: 4, h: 3 },
-    staff: { w: 4, h: 8 },
-    analysis: { w: 3, h: 11 },
-    explain: { w: 4, h: 11 },
-    next: { w: 4, h: 8 },
-    cof: { w: 3, h: 7 },
-    guitar: { w: 3, h: 9 },
-    key: { w: 12, h: 11 },
-    piano: { w: 7, h: 5 },
-    iso: { w: 6, h: 8 },
-    velocity: { w: 2, h: 5 },
-    progressions: { w: 12, h: 4 },
-    ear: { w: 6, h: 5 },
-    player: { w: 6, h: 5 },
-    tuner: { w: 3, h: 5 },
-    metronome: { w: 6, h: 10 },
-    history: { w: 12, h: 3 },
-    song: { w: 12, h: 12 }
-  };
-  var PRESET_IDS = ["standard", "study", "class", "transcription", "recording"];
-  var grid = (specs) => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }));
-  var PRESETS = {
-    // Everything but Velocity, Next and Isomorphic (in the layout menu): the chord as a header across the page, the four
-    // diagrams under it, the key and its explanation, then the piano and the practice panels
-    standard: grid([
-      ["chord", 0, 0, 12, 3],
-      ["staff", 0, 3, 3, 11],
-      ["analysis", 3, 3, 3, 11],
-      ["cof", 6, 3, 3, 11],
-      ["guitar", 9, 3, 3, 11],
-      ["key", 0, 14, 8, 12],
-      ["explain", 8, 14, 4, 12],
-      ["piano", 0, 26, 12, 5],
-      ["progressions", 0, 31, 12, 4],
-      ["ear", 0, 35, 4, 5],
-      ["tuner", 4, 35, 3, 5],
-      ["player", 7, 35, 5, 5],
-      ["metronome", 0, 40, 12, 9],
-      ["history", 0, 49, 12, 3],
-      ["song", 0, 52, 12, 12]
-    ]),
-    // Harmony at the desk: the key and the analysis large, what is played next to them
-    study: grid([
-      ["chord", 0, 0, 4, 3],
-      ["analysis", 4, 0, 4, 12],
-      ["cof", 8, 0, 4, 8],
-      ["staff", 0, 3, 4, 9],
-      ["history", 8, 8, 4, 4],
-      ["key", 0, 12, 8, 12],
-      ["explain", 8, 12, 4, 12],
-      ["piano", 0, 24, 12, 5],
-      ["progressions", 0, 29, 12, 4],
-      ["ear", 0, 33, 6, 5],
-      ["next", 6, 33, 6, 5],
-      ["metronome", 0, 38, 6, 10]
-    ]),
-    // Teaching on a projector (made to be presented with P): few panels, large; the history
-    // under the chord shows where it came from, Next where it can go
-    class: grid([
-      ["chord", 0, 0, 12, 4],
-      ["history", 0, 4, 12, 4],
-      ["staff", 0, 8, 4, 10],
-      ["cof", 4, 8, 4, 10],
-      ["guitar", 8, 8, 4, 10],
-      ["piano", 0, 18, 12, 6],
-      ["next", 0, 24, 12, 4]
-    ]),
-    // Writing down a recording: the player on top, the song and the history in reach of what is heard
-    transcription: grid([
-      ["player", 0, 0, 9, 5],
-      ["tuner", 9, 0, 3, 5],
-      ["chord", 0, 5, 3, 3],
-      ["staff", 0, 8, 3, 8],
-      ["analysis", 3, 5, 3, 11],
-      ["piano", 6, 5, 6, 5],
-      ["guitar", 6, 10, 6, 6],
-      ["history", 0, 16, 12, 3],
-      ["song", 0, 19, 12, 14]
-    ]),
-    // On camera or screen capture: the chord and the instruments, no controls in view
-    recording: grid([
-      ["chord", 0, 0, 6, 4],
-      ["staff", 6, 0, 6, 9],
-      ["guitar", 0, 4, 6, 9],
-      ["piano", 0, 13, 12, 6]
-    ])
-  };
-
   // src/metronome/panel.ts
   var KINDS = ["meter", "cycle", "clave", "euclid", "poly"];
   var METERS = ["2/4", "3/4", "4/4", "6/8", "7/8", "2+2+3/8"];
@@ -7765,7 +7903,7 @@ ${explainCadence(cadence)}` : "");
       ${steps("btn-analysis-minus", "btn-analysis-plus")}
       ${heading(t("menu.fields"))}
       <div class="menu-grid">${ANALYSIS_FIELD_KEYS.map(
-          (f) => `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? " active" : ""}" aria-pressed="${fieldsVisible[f]}" data-label="${escapeHtml(fieldLabel(f))}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
+          (f) => `<button type="button" id="btn-field-${f}" class="menu-item${fieldsVisible[f] ? " active" : ""}" aria-pressed="${fieldsVisible[f]}" data-label="${escapeHtml(fieldLabel(f))}" data-name="${escapeHtml(rowLabel(f))}"><span class="menu-check" aria-hidden="true"></span><span class="menu-label">${escapeHtml(fieldTooltip(f))}</span></button>`
         ).join("")}</div>`;
       case "cof":
         return `
@@ -10140,14 +10278,14 @@ ${explainCadence(cadence)}` : "");
     "bVI-bVII-I",
     "picardy-third"
   ];
-  var GROUPS = {
+  var GROUPS2 = {
     jazz: ["ii-V-I", "ii-V-i", "turnaround-jazz", "backdoor-ii-V", "rhythm-changes", "coltrane-changes", "giant-steps-cycle"],
     blues: ["blues-12", "blues-minor", "blues-jazz", "bird-blues"],
     pop: ["I-V-vi-IV", "I-vi-IV-V", "I-IV-V", "pachelbel", "andalusian"],
     cadence: ["authentic-cadence", "plagal-cadence", "deceptive-cadence", "half-cadence", "phrygian-half-cadence", "minor-plagal-cadence"],
     mixture: ["bVI-bVII-I", "picardy-third"]
   };
-  var groupOf = (id) => Object.keys(GROUPS).find((g) => GROUPS[g].includes(id));
+  var groupOf = (id) => Object.keys(GROUPS2).find((g) => GROUPS2[g].includes(id));
   var MINOR_UNMARKED = ["ii-V-i", "blues-minor", "andalusian"];
   var isMinorProgression = (id) => UMT.PROGRESSIONS[id]?.mode === "minor" || MINOR_UNMARKED.includes(id);
   var barMs = () => 4 * 6e4 / getPref("progression-bpm");
@@ -10202,8 +10340,8 @@ ${explainCadence(cadence)}` : "");
     const key = progressionKey(current3, analysisKey2);
     const chords = realizeProgression(current3, key);
     const group = groupOf(current3);
-    const groups = Object.keys(GROUPS).map((g) => `<button type="button" class="mode-btn${g === group ? " active-mode" : ""}" data-group="${g}">${escapeHtml(t(`prog.group.${g}`))}</button>`).join("");
-    const picks = GROUPS[group].map((id) => `<button type="button" class="menu-chip" data-prog="${id}" aria-pressed="${id === current3}">${escapeHtml(t(`prog.${id}`))}</button>`).join("");
+    const groups = Object.keys(GROUPS2).map((g) => `<button type="button" class="mode-btn${g === group ? " active-mode" : ""}" data-group="${g}">${escapeHtml(t(`prog.group.${g}`))}</button>`).join("");
+    const picks = GROUPS2[group].map((id) => `<button type="button" class="menu-chip" data-prog="${id}" aria-pressed="${id === current3}">${escapeHtml(t(`prog.${id}`))}</button>`).join("");
     let strip = "";
     chords.forEach((c, i) => {
       if (i > 0 && c.bar !== chords[i - 1].bar) strip += '<span class="prog-bar">|</span>';
@@ -10233,7 +10371,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     };
     container2.querySelectorAll("[data-group]").forEach((b) => b.addEventListener("click", () => {
       const g = b.dataset.group;
-      if (g !== group) pick2(GROUPS[g][0]);
+      if (g !== group) pick2(GROUPS2[g][0]);
     }));
     container2.querySelectorAll("[data-prog]").forEach((b) => b.addEventListener("click", () => pick2(b.dataset.prog)));
     const chips = [...container2.querySelectorAll(".prog-chip")];
@@ -11157,15 +11295,15 @@ ${explainCadence(c.cadence)}` : ""}`;
       btn.title = key ? t("cof.spelledInKey", { key: keyLabel(key) }) : acc === "flat" ? t("cof.flat.title") : t("cof.sharp.title");
     }
   }
-  function pressed(id, on) {
+  function pressed2(id, on) {
     $2(id).setAttribute("aria-pressed", String(on));
   }
   function wireLayoutEvents() {
     const updateCofButtons = () => {
       syncCofAccidentalButtons();
-      pressed("btn-cof-minor", cofShowMinor);
-      pressed("btn-cof-deg", cofShowDegrees);
-      pressed("btn-cof-7", cofShow7ths);
+      pressed2("btn-cof-minor", cofShowMinor);
+      pressed2("btn-cof-deg", cofShowDegrees);
+      pressed2("btn-cof-7", cofShow7ths);
     };
     updateCofButtons();
     const onCofControl = (id, apply) => {
@@ -11258,11 +11396,11 @@ ${explainCadence(c.cadence)}` : ""}`;
       });
     });
     const updateKeyButtons = () => {
-      pressed("btn-key-7", keySevenths);
-      pressed("btn-key-neg", keyShowNegative);
-      pressed("btn-key-par", keyShowParallel);
-      pressed("btn-key-usual", keyUsualOnly);
-      pressed("btn-key-colt", keyShowColtrane);
+      pressed2("btn-key-7", keySevenths);
+      pressed2("btn-key-neg", keyShowNegative);
+      pressed2("btn-key-par", keyShowParallel);
+      pressed2("btn-key-usual", keyUsualOnly);
+      pressed2("btn-key-colt", keyShowColtrane);
     };
     updateKeyButtons();
     const onKeyControl = (id, apply) => {
@@ -11514,7 +11652,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       playing: songPlaying
     };
   }
-  function applyMirror(s) {
+  function applyMirror2(s) {
     const songChanged = JSON.stringify([s.song, s.activeCursorId]) !== JSON.stringify([state.song, state.activeCursorId]);
     const keyChanged = s.activeKey !== state.activeKey;
     state.detection = s.detection;
@@ -11563,7 +11701,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     if (metronome) renderMetronome(metronome);
     setHistoryChangeCallback(onHistoryChange);
     renderZone3();
-    subscribeMirror(applyMirror);
+    subscribeMirror(applyMirror2);
     window.addEventListener("storage", (e) => {
       if (e.key && !/^(modus-song|layout$|midi-|storage-persist)/.test(e.key)) location.reload();
     });
