@@ -1068,12 +1068,14 @@ function renderZone1Diagrams(noteNames: string[], chordSymbol: string | null) {
   const isoEl = $('iso-container')
   renderIfChanged('iso', `${notes}|${fn}|${key}|${JSON.stringify(isoOptions)}|${isoEl.clientWidth}x${isoEl.clientHeight}`, () =>
     renderIso(isoEl, noteNames, fn, key, isoOptions, onPianoPress))
-  // The drawings by name, for a screen reader: the notes they show
+  // The drawings by name, for a screen reader: the notes they show. Their SVG is hidden from it:
+  // Firefox gives NVDA a role="img"'s text too, every cell's name before the label
   const spoken = noteNames.map(noteLabel).join(' ') || t('a11y.nothing')
   for (const [id, key] of [['staff-container', 'a11y.staff'], ['piano-container', 'a11y.piano'], ['iso-container', 'a11y.iso']] as const) {
     const el = $(id)
     el.setAttribute('role', 'img')
     el.setAttribute('aria-label', t(key, { notes: spoken }))
+    el.querySelectorAll('svg').forEach(svg => svg.setAttribute('aria-hidden', 'true'))
   }
   const vel = noteVelocities(noteNames)
   renderIfChanged('velocity', JSON.stringify(vel), () => renderVelocity($('velocity-container'), vel))

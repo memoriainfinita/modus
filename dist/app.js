@@ -11849,6 +11849,7 @@ ${explainCadence(c.cadence)}` : ""}`;
       const el2 = $2(id);
       el2.setAttribute("role", "img");
       el2.setAttribute("aria-label", t(key2, { notes: spoken }));
+      el2.querySelectorAll("svg").forEach((svg) => svg.setAttribute("aria-hidden", "true"));
     }
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
