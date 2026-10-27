@@ -600,6 +600,28 @@ await check('shortcuts: a key changed in Settings runs its action; a taken key a
   await page.keyboard.press('Escape')
 })
 
+await check('settings: MIDI input lists the bar\'s devices and picks one for it', async () => {
+  await page.evaluate(() => window.__plug('fake-2', 'Second Keys'))
+  await page.waitForTimeout(100)
+  await openSettings('io')
+  await page.click('[data-pick="set-midi-device"]')
+  const listed = await page.locator('.set-pick-list .set-pick-option').allInnerTexts()
+  await page.locator('.set-pick-list .set-pick-option', { hasText: 'Second Keys' }).click()
+  const shown = await text('[data-shows="set-midi-device"]')
+  await page.keyboard.press('Escape')
+  const bar = await page.inputValue('#midi-device')
+  // Back to the first device, as the later checks expect
+  await page.evaluate(() => window.__plug('fake-2', null))
+  await page.waitForTimeout(100)
+  await openSettings('io')
+  await page.click('[data-pick="set-midi-device"]')
+  await page.locator('.set-pick-list .set-pick-option', { hasText: 'Fake' }).click()
+  await page.keyboard.press('Escape')
+  assert(listed.some(l => l.includes('Fake')) && listed.includes('Second Keys'), `listed: ${listed}`)
+  assert(bar === 'fake-2' && shown === 'Second Keys', `bar ${bar}, row ${shown}`)
+  assert(await page.inputValue('#midi-device') === 'fake-1', 'not back on the first device')
+})
+
 await check('settings data: export and import round trip; reset offers Undo', async () => {
   await openSettings('data')
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-export-settings]')])
@@ -1078,6 +1100,27 @@ await check('P presents the layout without controls, filling the window; Esc lea
   await page.click('#btn-layout')
   await page.click('#layout-menu [data-preset="standard"]')
   await page.mouse.click(5, 990)
+})
+
+await check('P at a projector\'s 1280×720: Class fills the window; Standard, too tall to, keeps its sizes and scrolls', async () => {
+  await page.setViewportSize({ width: 1280, height: 720 })
+  const present = async preset => {
+    await page.click('#btn-layout'); await page.click(`#layout-menu [data-preset="${preset}"]`); await page.mouse.click(5, 700)
+    await page.keyboard.press('p')
+    await page.waitForTimeout(200)
+    const r = await page.evaluate(() => ({
+      scrolls: document.body.classList.contains('presenting-scroll'),
+      height: document.documentElement.scrollHeight,
+      chord: Math.round(document.getElementById('mod-chord').getBoundingClientRect().height),
+    }))
+    await page.keyboard.press('Escape')
+    return r
+  }
+  const cls = await present('class'), std = await present('standard')
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  assert(!cls.scrolls && cls.height <= 720, `Class: ${JSON.stringify(cls)}`)
+  // Standard's chord panel at its own three rows, not squeezed to a few pixels
+  assert(std.scrolls && std.height > 720 && std.chord >= 100, `Standard: ${JSON.stringify(std)}`)
 })
 
 await check('a phone stacks the panels in one column, in layout order', async () => {

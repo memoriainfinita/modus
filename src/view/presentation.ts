@@ -10,16 +10,28 @@ let onClose: () => void = () => {}
 
 export function isPresenting(): boolean { return presenting }
 
-/** The rows share the window's height, whatever the layout. */
+/** Below this a row is too short to read: the layout is shown at its own sizes and scrolls.
+ *  Class at 1280×720 gets 15 px rows and reads well; Standard at 1920×1080, 7 px. */
+const MIN_ROW = 12
+
+/**
+ * The rows share the window's height when each still gets MIN_ROW. A taller layout (Standard
+ * has some 64 rows, whose gaps alone take 630 px) keeps its own sizes and scrolls instead of
+ * being squeezed past what the window shows.
+ */
 function fitRows() {
   const gridEl = document.getElementById('grid')
   if (!gridEl) return
-  if (!presenting) { gridEl.style.removeProperty('--row'); return }
+  const scrolls = (on: boolean) => document.body.classList.toggle('presenting-scroll', on)
+  if (!presenting) { gridEl.style.removeProperty('--row'); scrolls(false); return }
   const cs = getComputedStyle(gridEl)
   const rows = Math.max(1, gridRows(currentGrid()))
   const gap = parseFloat(cs.rowGap) || 0
   const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)
-  gridEl.style.setProperty('--row', `${Math.max(4, (window.innerHeight - pad - gap * (rows - 1)) / rows)}px`)
+  const row = (window.innerHeight - pad - gap * (rows - 1)) / rows
+  scrolls(row < MIN_ROW)
+  if (row < MIN_ROW) gridEl.style.removeProperty('--row')
+  else gridEl.style.setProperty('--row', `${row}px`)
 }
 
 onLayoutChange(fitRows)

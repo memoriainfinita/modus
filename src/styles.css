@@ -766,6 +766,9 @@ body.presenting .toolbar, body.presenting #midi-banner, body.presenting .module-
 body.presenting .module-resize, body.presenting .module-menu, body.presenting .guitar-chrome,
 body.presenting .chord-head-alts { display: none !important; }
 body.presenting .grid { height: calc(100vh / var(--zoom, 1)); }
+/* A layout too tall to fill the window with readable rows: its own sizes, scrolled */
+body.presenting.presenting-scroll { overflow: auto; }
+body.presenting.presenting-scroll .grid { height: auto; }
 /* A layout window (OBS): its panels on the windows' background, keyed out around them */
 html:has(> body.layout-window), body.layout-window { background: var(--window-bg); }
 /* Clear panels: keyed out with the background; text and drawings keep a dark glow to read over video */

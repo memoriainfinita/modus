@@ -573,6 +573,8 @@ export const es: Record<StringKey, string> = {
   'set.section.shortcuts.hint': 'Las teclas de cada acción',
   'set.section.data': 'Datos',
   'set.section.data.hint': 'Ajustes y disposiciones a un archivo, desde un archivo, o como venían. Las canciones y el historial no se tocan',
+  'set.io.in': 'Entrada MIDI',
+  'set.io.in.title': 'El dispositivo cuyas notas se leen; la misma elección que en el menú de entrada de la barra',
   'set.io.inChannel': 'Canal de entrada',
   'set.io.out': 'Salida MIDI',
   'set.io.outChannel': 'Canal de salida',

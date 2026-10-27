@@ -1287,6 +1287,8 @@
     "set.section.shortcuts.hint": "The keys of each action",
     "set.section.data": "Data",
     "set.section.data.hint": "Settings and layouts to a file, from a file, or back to how they came. Songs and history are not touched",
+    "set.io.in": "MIDI input",
+    "set.io.in.title": "The device whose notes are read; the same choice as in the bar's input menu",
     "set.io.inChannel": "Input channel",
     "set.io.out": "MIDI out",
     "set.io.outChannel": "Output channel",
@@ -2357,6 +2359,8 @@
     "set.section.shortcuts.hint": "Las teclas de cada acci\xF3n",
     "set.section.data": "Datos",
     "set.section.data.hint": "Ajustes y disposiciones a un archivo, desde un archivo, o como ven\xEDan. Las canciones y el historial no se tocan",
+    "set.io.in": "Entrada MIDI",
+    "set.io.in.title": "El dispositivo cuyas notas se leen; la misma elecci\xF3n que en el men\xFA de entrada de la barra",
     "set.io.inChannel": "Canal de entrada",
     "set.io.out": "Salida MIDI",
     "set.io.outChannel": "Canal de salida",
@@ -5968,6 +5972,7 @@ ${explainCadence(cadence)}` : "");
         )}`;
       case "io":
         return `
+      ${selectRow("set-midi-device", t("set.io.in"), [], "", t("set.io.in.title"), `${t("set.io.in")} midi device controller`)}
       ${selectRow("midi-in-ch", t("set.io.inChannel"), [{ value: "0", label: t("midi.inChannel.all") }, ...Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: t("midi.inChannel.one", { n: i + 1 }) }))], "0", t("midi.inChannel.title"), `${t("set.io.inChannel")} midi`)}
       ${selectRow("midi-out", t("set.io.out"), [{ value: "", label: t("midi.out.off") }], "", t("midi.out.title"), `${t("set.io.out")} midi daw`)}
       ${selectRow("midi-out-ch", t("set.io.outChannel"), Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: t("midi.outChannel.one", { n: i + 1 }) })), "1", t("midi.outChannel.title"), `${t("set.io.outChannel")} midi`)}
@@ -8122,18 +8127,24 @@ ${explainCadence(cadence)}` : "");
   function isPresenting() {
     return presenting;
   }
+  var MIN_ROW = 12;
   function fitRows() {
     const gridEl = document.getElementById("grid");
     if (!gridEl) return;
+    const scrolls = (on) => document.body.classList.toggle("presenting-scroll", on);
     if (!presenting) {
       gridEl.style.removeProperty("--row");
+      scrolls(false);
       return;
     }
     const cs = getComputedStyle(gridEl);
     const rows = Math.max(1, gridRows(currentGrid()));
     const gap = parseFloat(cs.rowGap) || 0;
     const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-    gridEl.style.setProperty("--row", `${Math.max(4, (window.innerHeight - pad - gap * (rows - 1)) / rows)}px`);
+    const row3 = (window.innerHeight - pad - gap * (rows - 1)) / rows;
+    scrolls(row3 < MIN_ROW);
+    if (row3 < MIN_ROW) gridEl.style.removeProperty("--row");
+    else gridEl.style.setProperty("--row", `${row3}px`);
   }
   onLayoutChange(fitRows);
   window.addEventListener("resize", fitRows);
@@ -12043,6 +12054,16 @@ ${explainCadence(c.cadence)}` : ""}`;
     };
     const target = resolveDevice();
     if (target) sel.value = target;
+    const mirror = document.getElementById("set-midi-device");
+    if (mirror) {
+      mirror.innerHTML = sel.innerHTML;
+      mirror.value = sel.value;
+      mirror.onchange = () => {
+        chooseDevice(mirror.value);
+        refreshDeviceDropdown();
+        refreshOutputDropdown();
+      };
+    }
     const current4 = devices.find((d) => d.id === sel.value);
     setMidiStatus(current4 ? current4.name : t("midi.noDevices"), current4 ? "var(--ok)" : "var(--text-dim)", devices.length ? t("midi.connected") : t("midi.noDevices"));
     if (!deviceListenersAttached) {
