@@ -2079,7 +2079,7 @@ body.layout-window.panels-clear .module svg {
   color: var(--text-muted);
 }
 .module-history .history-strip {
-  font-size: clamp(12px, 19cqh, 6vh);
+  font-size: clamp(12px, min(19cqh, 3.2cqw), 6vh);
 }
 .module-history .history-chip-symbol {
   font-size: 1em;

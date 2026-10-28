@@ -934,8 +934,9 @@ body.layout-window.panels-clear .module svg { filter: drop-shadow(0 0 1px var(--
 }
 .history-chip-roman, .prog-chip-roman { font-size: 10px; color: var(--text-muted); }
 /* The history grows with its panel, as the chord does: on a projector (Class) the
-   progression is read from the back of the room */
-.module-history .history-strip { font-size: clamp(12px, 19cqh, 6vh); }
+   progression is read from the back of the room. A narrow panel (Study's is a third of the
+   page) bounds it by its width too, or a few chips would fill it and the rest scroll away */
+.module-history .history-strip { font-size: clamp(12px, min(19cqh, 3.2cqw), 6vh); }
 .module-history .history-chip-symbol { font-size: 1em; }
 .module-history :is(.history-chip-roman, .history-cadence, .history-modulation) { font-size: 0.8em; }
 .module-history .history-chip { min-width: 4.2em; padding: 0.33em 0.66em; }
