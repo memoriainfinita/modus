@@ -776,8 +776,20 @@ function buildChordChip(chord: SongChord, section: Section, measure: Measure, h:
   controls.append(editBtn, dupBtn, captureBtn, delBtn)
   wrap.appendChild(controls)
 
-  wrap.addEventListener('mouseenter', () => controls.style.display = 'flex')
-  wrap.addEventListener('mouseleave', () => controls.style.display = 'none')
+  // The toolbar is wider than its chip and lies over the next one's: aimed at its far button
+  // the pointer crosses the neighbour on the way. The neighbour's own toolbar only shows once
+  // the pointer rests on it, and this one lingers a moment after it leaves
+  let showTimer = 0, hideTimer = 0
+  wrap.addEventListener('mouseenter', () => {
+    clearTimeout(hideTimer)
+    if (controls.style.display === 'flex') return
+    clearTimeout(showTimer)
+    showTimer = window.setTimeout(() => controls.style.display = 'flex', 150)
+  })
+  wrap.addEventListener('mouseleave', () => {
+    clearTimeout(showTimer)
+    hideTimer = window.setTimeout(() => controls.style.display = 'none', 300)
+  })
 
   makeActivatable(wrap)
   wrap.addEventListener('focus', () => controls.style.display = 'flex')
