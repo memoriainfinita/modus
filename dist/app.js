@@ -9963,8 +9963,17 @@ ${explainCadence(cadence)}` : "");
     }
     controls.append(editBtn, dupBtn, captureBtn, delBtn);
     wrap.appendChild(controls);
-    wrap.addEventListener("mouseenter", () => controls.style.display = "flex");
-    wrap.addEventListener("mouseleave", () => controls.style.display = "none");
+    let showTimer = 0, hideTimer = 0;
+    wrap.addEventListener("mouseenter", () => {
+      clearTimeout(hideTimer);
+      if (controls.style.display === "flex") return;
+      clearTimeout(showTimer);
+      showTimer = window.setTimeout(() => controls.style.display = "flex", 150);
+    });
+    wrap.addEventListener("mouseleave", () => {
+      clearTimeout(showTimer);
+      hideTimer = window.setTimeout(() => controls.style.display = "none", 300);
+    });
     makeActivatable(wrap);
     wrap.addEventListener("focus", () => controls.style.display = "flex");
     wrap.addEventListener("pointerdown", (e) => {

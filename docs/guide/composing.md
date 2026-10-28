@@ -19,7 +19,7 @@ Songs live in the browser, several at once, as tabs, each with its own key. A so
 - **Form strip:** above the chart, the song as blocks as long as their bars. Click a block to go to its section; drag blocks to reorder.
 - **Fill by playing:** arm a chord slot (⊙) and play; each chord fills a slot and arms the next, across measures and sections, until the end or `Esc`.
 - **Write as text:** a section can be written as `Am F | C G`, `|` marking the bars; without bars each chord takes a measure. Paste a progression the same way.
-- **Edit:** click a chord to select and play it; its buttons edit, duplicate, fill from MIDI or remove it. Drag chords and history chips between measures.
+- **Edit:** click a chord to select and play it. Rest the pointer on it (or focus it, or tap it on a touch screen) and four buttons appear above it: ✎ edits the symbol, ⧉ duplicates it, ⊙ arms it for MIDI fill and × removes it (`Del` does too, and the Undo toast brings it back). Drag chords and history chips between measures.
 - **Transpose** the whole song by semitones from the ⋯ menu.
 - **Play** with ▶, at the song's tempo and beats per bar, sections repeated as many times as set; the chart and the detector follow. ■ or `Esc` stops.
 - **Export** as a printable chord chart from the ⋯ menu.
