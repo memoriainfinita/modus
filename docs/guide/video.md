@@ -9,6 +9,8 @@ The ⧉ menu opens windows that follow what you play live. Each is a plain windo
 - **A whole layout:** any preset or one you saved, without controls, in its own window. It follows the main window, so you can keep working in another layout.
 - **One element alone:** the chord with its degree, the staff, the circle of fifths, the piano, the guitar or the isomorphic keyboard.
 
+![The ⧉ menu: a window per layout, one window per diagram, the background colour and the panels with ground or clear](img/views-menu.png)
+
 ## Make it transparent
 
 Windows open on a chroma colour. Magenta is the default (green would key out the tonic, drawn in green); green, black and dark are in the menu too. **Panels** in the same menu can be *clear*: panels take the window's background, so the key takes them out too, and text and drawings get a soft shadow to stay readable.
