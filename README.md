@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
+**Live:** https://memoriainfinita.github.io/modus/
+
 See and understand the harmony of what you play, in real time. Connect a controller, play notes, get instant chord detection and full harmonic analysis — Roman numerals, harmonic function, figured bass, scales, substitutions, and more — and a map of the key: its chords, functions, parallel modes, negative harmony and Coltrane axis.
 
 A chord history and song structure builder extend that — log what you play, build chord sequences, document song structure.
