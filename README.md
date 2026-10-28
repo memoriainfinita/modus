@@ -4,6 +4,10 @@
 
 **Live:** https://memoriainfinita.github.io/modus/
 
+![Modus on desktop, dark theme: Dm7 in C Major, read as ii7, a subdominant, with its staff, analysis, circle of fifths, guitar shapes, key panel and explanation](docs/modus-desktop.png)
+
+<img src="docs/modus-phone.png" alt="Modus on a phone: the chord, its numeral and function, and the staff, with the bottom bar" width="280">
+
 See and understand the harmony of what you play, in real time. Connect a controller, play notes, get instant chord detection and full harmonic analysis — Roman numerals, harmonic function, figured bass, scales, substitutions, and more — and a map of the key: its chords, functions, parallel modes, negative harmony and Coltrane axis.
 
 A chord history and song structure builder extend that — log what you play, build chord sequences, document song structure.
