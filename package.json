@@ -1,6 +1,7 @@
 {
   "name": "modus",
   "version": "0.1.0",
+  "packageManager": "pnpm@11.1.1",
   "type": "module",
   "scripts": {
     "build": "esbuild src/app.ts --bundle --outfile=dist/app.js --format=iife --sourcemap && pnpm build:worker",
