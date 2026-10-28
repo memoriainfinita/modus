@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-**Live:** https://memoriainfinita.github.io/modus/
+**Live:** https://memoriainfinita.github.io/modus/ · **Guide:** [how to use it](docs/guide/README.md)
 
 ![Modus on desktop, dark theme: Dm7 in C Major, read as ii7, a subdominant, with its staff, analysis, circle of fifths, guitar shapes, key panel and explanation](docs/modus-desktop.png)
 
@@ -309,6 +309,7 @@ dist/                 the built app, tracked
 index.html, sw.js, manifest.webmanifest, icons/   the page, its service worker and install files
 .github/workflows/    CI and the Pages deploy
 docs/
+  guide/              how to use Modus, by what you want to do
   spec.md             purpose, design and behaviour
   umt-contract.md     UMT API signatures Modus relies on
 ```
