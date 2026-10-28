@@ -15,15 +15,26 @@ The **Key** panel shows the key without playing: its diatonic chords as triads o
 ## See where it sits
 
 - **Circle of fifths:** click a segment to play it.
-- **Piano and Isomorphic keyboard:** the isomorphic grid keeps a chord's shape the same in every key, which makes patterns visible.
-- **Strings:** any fretted instrument, with playable chord shapes, the whole neck, or a **Scale** view (CAGED shapes or three notes per string) of the key's scale.
+- **Piano and Isomorphic keyboard:** the isomorphic grid keeps a chord's shape the same in every key, which makes patterns visible. It is not in any layout: turn it on in the ▦ menu.
+
+![The isomorphic keyboard with a chord lit: the same shape repeats wherever the chord sounds](img/isomorphic.png)
+
+- **Strings:** any fretted instrument, with playable chord shapes (**Shapes**), the whole neck (**Neck**), or a **Scale** view of the key's scale, over the whole neck, in CAGED shapes or three notes per string.
+
+![Strings in its Scale view: C major over the whole neck, with the degrees numbered and the chord's notes in colour](img/strings-scale.png)
+
+
 - **Staff:** the grand staff with the key signature. ⇠ draws the previous chord faded to see how each voice moves; its ⋯ menu writes note names or degrees beside it.
 
 ## Hear what comes next
 
-**Next** lists chords that can follow the one on screen, each with every reason: where it resolves, the cadence it makes, the named progressions it continues, usual borrowings and substitutes. Click one to hear it.
+**Next** lists chords that can follow the one on screen, each with every reason: where it resolves, the cadence it makes, the named progressions it continues, usual borrowings and substitutes. Click one to hear it. It is in the ▦ menu, not in the Standard layout.
+
+![The Next panel after Dm7: G7 with its half cadence and the progressions it continues, then substitutes for Dm7](img/next.png)
 
 **Progressions** has the classic ones — ii-V-I, blues, rhythm changes, Coltrane changes, the Andalusian cadence, plus cadences and modal mixture — in your key, bar by bar. Click a chord to hear it; ▶ plays the whole progression.
+
+![The Progressions panel: ii-V-I in C major, with its cadences and a sentence on what it is](img/progressions.png)
 
 ## Train the ear
 

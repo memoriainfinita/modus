@@ -9,13 +9,17 @@ Work out the chords of a song and see the harmony of what you find.
 3. Click the waveform to go anywhere. Set an **A–B loop** on the passage, slow it down from 50 to 125 % — the pitch does not change — and use *back 5 s* to hear it again.
 4. With **Chords** on, Modus reads the chord at the playhead and sends it to the detector: it is analysed, logged in the history and read in the key like anything you play.
 
+![The Transcription layout: a recording open in the Player, playing at 0:09 with its chord G read, analysed and logged in the history](img/transcribing.png)
+
+The first time, the file is read before it can be followed: "reading chords" climbs to 100 % (the first time it also loads the model, about 15 seconds on a slow start), and the chords then follow the playhead. Panels the layout leaves out, such as Next, are in the ▦ menu.
+
 Chords are read by a model (Spotify's Basic Pitch) running in your browser; nothing is uploaded. It was measured on synthesized guitar strums and is least certain on dense mixes, so treat it as a first guess to check with your ear.
 
 ## By ear, on an instrument
 
 Play what you hear on a MIDI keyboard, the computer keyboard (`M`) or the piano panel, and read the name. With the key on **Auto**, Modus finds the key from the chords you have played so far.
 
-With the 🎤 **microphone**, one note at a time (a voice, a wind instrument) goes to the detector and to **Fits**, which lists the scales that contain the melody; chords played near the microphone are read too, under a second behind. The **Tuner** shows the note, the cents and the frequency. The microphone needs HTTPS or `localhost`.
+With the **microphone** (pick it in the Play with menu, or switch it on in the **Tuner** panel), **Notes** takes one note at a time (a voice, a wind instrument) to the detector and to **Fits**, which lists the scales that contain the melody; **Chords** reads chords played near the microphone, under a second behind. The Tuner shows the note, the cents and the frequency. The microphone needs HTTPS or `localhost`.
 
 ## Keep what you find
 

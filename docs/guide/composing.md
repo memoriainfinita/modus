@@ -11,7 +11,9 @@ Try progressions and write a song down.
 
 ## The Song panel
 
-Songs live in the browser, several at once, each with its own key. A song is made of sections (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro) with colours and repeat counts.
+Songs live in the browser, several at once, as tabs, each with its own key. A song is made of sections (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro) added with **+ Section**, with colours and repeat counts. The panel is not in the Standard layout: turn it on in the ▦ menu.
+
+![The Song panel: a song in C major with a Verse and a Chorus, the form strip above, and every chord with its numeral](img/song.png)
 
 - **Chart:** measures flow four to a line, like a chord chart; each chord shows its numeral and borrowed chords are highlighted.
 - **Form strip:** above the chart, the song as blocks as long as their bars. Click a block to go to its section; drag blocks to reorder.
