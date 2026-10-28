@@ -12,7 +12,7 @@ See and understand the harmony of what you play, in real time. Connect a control
 
 A chord history and song structure builder extend that — log what you play, build chord sequences, document song structure.
 
-No server. No account. No installation. Open in Chrome, Edge or Firefox and play.
+No server, no account, nothing to install: open it in Chrome, Edge or Firefox and play. It also installs as an app and then works offline.
 
 ---
 
@@ -77,7 +77,7 @@ Every element is a panel on a grid: drag it by its title, resize it from its cor
 - **Ear training** — the app plays an interval, a chord or a cadence without showing it; you name it, it keeps the score and shows the answer on the staff, piano and analysis
 - **Explanation** — what each term of the analysis means for the chord on screen: "D7 is V7/V: a secondary dominant, the dominant of G…", the borrowed mode and its foreign notes, the cadence, the inversion, the voice-leading rules broken
 - **Circle of Fifths** — click any segment to play and show its chord without changing the key; double-click a major or minor segment to set it as the key. A minor key lights its own tonic on the minor ring. Three rings: major, minor, diminished. Controls: enharmonic (b/♯), ring visibility, degree labels (counted from the tonic, major or minor), 7th labels
-- **Strings** (notae) — guitar, 7-string guitar, bass, 5-string bass, ukulele, baritone ukulele, mandolin or banjo, each in its usual tunings or a custom one per string. **Shapes:** out of every fingering UMT finds, only playable ones are kept (chord bass lowest, no muted string in between, four-fret hand, open strings only in first position), ordered from the open shapes up the neck; next/prev to browse. **Neck:** every place the notes sounding are over 12 frets, each dot labelled with its note (flats or sharps by key)
+- **Strings** (notae) — guitar, 7-string guitar, bass, 5-string bass, ukulele, baritone ukulele, mandolin or banjo, each in its usual tunings or a custom one per string. **Shapes:** out of every fingering UMT finds, only playable ones are kept (chord bass lowest, no muted string in between, four-fret hand, open strings only in first position), ordered from the open shapes up the neck; next/prev to browse. **Neck:** every place the notes sounding are over 12 frets, each dot labelled with its note (flats or sharps by key). **Scale:** the key's scale (or its pentatonic, blues, harmonic or melodic minor) over the whole neck, in CAGED shapes or three notes per string
 
 **Key** — a map of the analysis key (selected, or detected on Auto), without playing:
 
@@ -88,13 +88,15 @@ Every element is a panel on a grid: drag it by its title, resize it from its cor
 
 Click a chord to play it and show it in the detector; the key stays. The chord on screen is outlined wherever it appears. Font scale −/+.
 
-- **Piano** (notae) — 4 octaves C2–B5, click any key to play
+- **Next** — chords that can follow the one on screen, each with every reason: where it resolves, the cadence it makes, the named progressions it continues, usual borrowings and substitutes; click one to hear it
+- **Metronome** — meters including additive ones, cycles (talas, flamenco compás, aksak), claves, Euclidean rhythms, polyrhythms, subdivisions, tap tempo and a tempo trainer, drawn as a necklace of beats
+- **Piano** (notae) — as many octaves as the panel fits, click any key to play; optionally the key's scale on every octave
 - **Isomorphic** (notae) — a hexagon grid (harmonic table, Wicki-Hayden, Gerhard, Jankó, custom) where a chord keeps its shape in every key; click a cell to play
 - **Velocity** — how hard each note on screen was struck, as a bar and a number
 
 ### Views for OBS, and export
 
-The ⧉ button opens a window with one element alone — the chord name with its degree, the staff, the circle of fifths, the piano or the guitar — filling the window on a chroma magenta (or green, black, dark) background, following what you play live. In OBS: Window Capture of "Modus view: chord" (or staff, cof…), then a Chroma Key filter with Magenta as its key colour (green would key out the tonic, drawn in green). The same menu saves the staff, circle, guitar or piano as SVG or PNG with a transparent background.
+The ⧉ button opens windows that follow what you play live, on a chroma magenta (or green, black, dark) background: a whole layout (any preset or saved one, without controls) or one element alone — the chord name with its degree, the staff, the circle of fifths, the piano, the guitar or the isomorphic keyboard. Panels can be drawn clear, so the chroma key takes them out too. In OBS: Window Capture of "Modus view: chord" (or staff, cof…), then a Chroma Key filter with Magenta as its key colour (green would key out the tonic, drawn in green). Each diagram's ⋯ menu saves it as SVG or PNG with a transparent background.
 
 **Presentation** (⛶ or P) shows the current layout over the whole screen with no controls, for a class or a recording of the screen (the Class layout is made for it); Esc leaves.
 
@@ -115,7 +117,8 @@ Every chord is logged automatically after 0.8s of stability. Each chip shows cho
 A scratchpad and structure builder.
 
 - Several songs saved in the browser, listed by last change; each keeps its own key
-
+- Measures flow four to a line like a chord chart, with a strip above showing the song's form as blocks: click one to go to its section, drag it to reorder
+- ▶ plays the song at its tempo, sections as many times as they repeat; the chart and the detector follow
 - Sections (Intro, Verse, Pre-Chorus, Chorus, Bridge, Outro) with colour coding and repeat counts
 - Unlimited chords per measure, unlimited measures per section
 - Each chord shows its Roman numeral — borrowed chords highlighted in amber
@@ -123,7 +126,7 @@ A scratchpad and structure builder.
 - Click a chord to select and play it
 - MIDI fill: arm any chord slot (⊙) and play — each chord fills a slot and the next slot is armed, across measures and sections, until the song ends or Esc
 - Transpose entire song in semitone steps (stored voicings move with it)
-- Paste a progression as text: `|` marks bar lines (`Dm7 G7 | Cmaj7`); without bars, one chord per measure
+- Write a section as text: `|` marks bar lines (`Dm7 G7 | Cmaj7`); without bars, one chord per measure. Paste a progression the same way
 - Deleting a chord, measure, section or song happens at once and can be undone
 - Export as printable chord chart
 
@@ -135,9 +138,11 @@ Modus is part of the **[memoriainfinita](https://github.com/memoriainfinita)** o
 
 - **[UMT](https://github.com/memoriainfinita/UMT)** — Universal Music Theory library. Powers all harmonic analysis in Modus.
 - **[notae](https://github.com/memoriainfinita/notae)** — SVG diagram renderer for instruments. Renders piano, guitar, and fretboard diagrams.
-- **Modus** — the first integration app. Ships UMT and notae with it (`vendor/`), pinned.
+- **Modus** — the first app built on both. It ships UMT and notae with it (`vendor/`), pinned.
 
 All three projects are independent, GPL-3.0, and built for the music community — not for profit.
+
+Modus's own spec is in [`docs/spec.md`](docs/spec.md) and its contract with UMT in [`docs/umt-contract.md`](docs/umt-contract.md); `state.md` says where the project stands.
 
 ---
 
@@ -149,6 +154,7 @@ All three projects are independent, GPL-3.0, and built for the music community �
 | Theory | [UMT](https://github.com/memoriainfinita/UMT) v0.12.0, served with the app (`vendor/`) |
 | Diagrams | [notae](https://github.com/memoriainfinita/notae), pinned commit, served with the app |
 | Staff | abcjs 6.7.1, served with the app |
+| Chords from audio | Spotify's Basic Pitch 1.0.1 (TensorFlow.js) in a Web Worker, model served with the app; pitch by YIN |
 | MIDI | Web MIDI API (Chrome, Edge, Firefox — Firefox asks for MIDI permission per site) |
 | Audio | soundfont-player 0.12.0 + FluidR3_GM: the piano served with the app, other instruments from the soundfont's host on first use |
 | Offline | Service worker (`sw.js`) and web manifest: installable, works offline once opened |
@@ -161,18 +167,19 @@ All three projects are independent, GPL-3.0, and built for the music community �
 
 - A browser with Web MIDI: Chrome, Edge or Firefox. Without it the app runs, minus the controller
 - A MIDI controller (optional — the computer keyboard, the on-screen piano and the chord field play without one)
-- A local server: `pnpm dlx http-server . -p 8080`
+- To run your own copy: any static server (below). The microphone, Web MIDI and the service worker need a secure context: HTTPS or `localhost`
 
 ---
 
 ## Running
 
+Open https://memoriainfinita.github.io/modus/ in Chrome, Edge or Firefox and connect your MIDI controller when prompted. To run your own copy, serve the folder — the built app is in the repo, no build step needed:
+
 ```bash
-# Serve the built app — no build step needed
 pnpm dlx http-server . -p 8080
 ```
 
-Open `http://localhost:8080` in Chrome or Firefox. Connect your MIDI controller when prompted.
+and open `http://localhost:8080`.
 
 **Settings** (⚙ or `,`): language, note names, theme, interface size, MIDI channels and out, how previews sound, chord symbols (Cmaj7 / CΔ7 / CM7), the key-detection profile, voice-leading rules, movable do, detector timings, practice, microphone and tuner (A4), the shortcuts, and export / import / reset of the settings to a file.
 
@@ -198,7 +205,9 @@ pnpm test:e2e:midi    # real Web MIDI in Chrome and Firefox through loopMIDI ("l
                       # Firefox: pnpm exec playwright-core install firefox)
 ```
 
-UMT and notae are loaded from jsDelivr, pinned in `index.html`: UMT to a release tag (same as `package.json`), notae to a commit hash. Bump deliberately after a release of either library.
+UMT and notae are served from `vendor/`, pinned in `scripts/vendor.mjs`: UMT to a release tag (same as `package.json`), notae to a commit hash. Bump deliberately after a release of either library, then `pnpm vendor` and the tests. The e2e walk needs network only for the instruments other than the piano.
+
+CI (`.github/workflows/ci.yml`) typechecks, runs the unit tests and the build, and on `main` publishes the app to GitHub Pages.
 
 ---
 
@@ -287,15 +296,18 @@ src/
     export.ts             SVG / PNG export of the diagrams
     theme.ts              dark / light / system theme; colour tokens for the SVG diagrams
 tests/
-  setup-umt.ts        loads the real UMT bundle (pinned devDependency) as the UMT global
-  setup-theme.ts      puts the stylesheet in the test document, for the theme tokens
-  analyzer.test.ts, chord.test.ts, staff.test.ts, song.test.ts, history.test.ts,
-  midi.test.ts, analysis-panel.test.ts, cof.test.ts, voicings.test.ts, audio.test.ts,
-  library.test.ts, spelling.test.ts, key-explorer.test.ts, cadences.test.ts, midi-out.test.ts,
-  structure.test.ts, i18n.test.ts, theme.test.ts, grid.test.ts, voice-leading.test.ts, piano.test.ts, explain.test.ts, progressions.test.ts, ear.test.ts, player.test.ts, pitch.test.ts, settings.test.ts, commands.test.ts, strings.test.ts
+  *.test.ts           unit tests (vitest) next to each module's name; setup-umt.ts loads the real UMT bundle
   e2e/smoke.mjs       pnpm test:e2e
   e2e/real-midi.mjs   pnpm test:e2e:midi
   e2e/serve.mjs       static server shared by both
+  manual/             what to check by hand with the guitar takes (answers.txt)
+scripts/
+  vendor.mjs          copies the pinned libraries and the piano into vendor/
+  bench/              chords-from-audio bench and the guitar takes (pnpm bench:audio)
+vendor/               UMT, notae, abcjs, soundfont-player, the piano and Basic Pitch's model, served with the app
+dist/                 the built app, tracked
+index.html, sw.js, manifest.webmanifest, icons/   the page, its service worker and install files
+.github/workflows/    CI and the Pages deploy
 docs/
   spec.md             purpose, design and behaviour
   umt-contract.md     UMT API signatures Modus relies on
