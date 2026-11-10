@@ -74,6 +74,11 @@ Reviewed without changing the app: spec, README, code, tests, CI and the publish
 6. [ ] Tablet upright: at 768 px wide the desktop layout is used as it is (phone mode starts at 720 px). Seen 2026-11-10 in an emulated viewport without touch, Standard: the circle 148 px wide with text under 5 px, Strings' view tabs cut with a horizontal scrollbar inside the panel, the staff as narrow. At 1024 px wide it reads well. Decide how panels are laid out between 720 and 1000 px
 7. [ ] Non-Western and microtonal systems, if in v1: the spec's "universal" and the README promise them; nothing is built or designed. The key menu offers major, minor and the church modes; only the metronome's cycles come from other traditions
 
+Proposed in the same review and accepted by the user, not yet placed in the order nor designed. Read from the code and the empty page; the app was not played:
+- [ ] The first screen: without playing, Standard shows the Analysis fields as sixteen rows of dashes and several empty panels. An example chord already analysed instead
+- [ ] Join what teaches: from an explanation, hear the concept in a progression and practise it in ear training. Explanation, Progressions and Ear training exist and do not lead to one another
+- [ ] Hierarchy: the metronome, the tuner and the player shown as tools beside the analysis, not as panels at its level
+
 Open items found scattered in the closed ones, for step 1:
 - Song builder: the eleven under "not yet placed in the order"
 - Metronome: a click under the song playing, takes recorded into bars, metric modulation
