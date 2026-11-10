@@ -1,6 +1,6 @@
 ---
 created: 2026-05-20
-last_updated: 2026-10-29
+last_updated: 2026-11-10
 ---
 
 # Modus — state
@@ -61,6 +61,28 @@ What is true now. What already happened lives in `state-history.md`.
 - `pnpm dev` only when a task needs continuous rebuilds, not at session start; otherwise `pnpm build`. When launched: in background (`run_in_background: true`, `timeout: 7200000` — the default background limit kills it after 30 min), never with `!` in chat (it blocks). `--watch=forever` outlives TaskStop and the session: at the end, kill the `cmd.exe` tree whose command line has `watch=forever` (`taskkill /PID <pid> /T /F`).
 
 ## TODO
+
+### Project review, 2026-11-10 (next sessions, in order)
+
+Reviewed without changing the app: spec, README, code, tests, CI and the published app in a browser. TSC clean, 474 unit tests pass, CI green, UMT and notae at their latest. Everything numbered below is built. The app is not finished by its own spec, and nothing written says when it will be.
+
+1. [ ] Decide the scope of v1: go through every open item (list below) and mark it in or out. The user's decisions; the rest depends on this one
+2. [ ] Clean this file: one list of what is open; closed items to `state-history.md`. Item 10 (microphone) is marked [~] without saying what it lacks
+3. [ ] Bring `docs/spec.md` up to date. Its header says Rev 8 · 2026-10-09. It describes the rail (17 mentions; removed 2026-10-26), the song builder as frozen (reopened 2026-10-13), "borders, not buttons" (redesign 2026-10-12), green as the view windows' default (magenta). Missing: the Next panel, Next and Metronome in the list of panels (18 in the app, 16 in the spec), layout windows, clear panels, Settings › Windows, the Scale view of Strings, the chord's card, note names beside the staff
+4. [ ] Protect publication: every push to `main` is published after the unit tests only; the 109 e2e checks run on this machine alone. Find the cause of the key menu's flaky check. No tag or release yet (version 0.1.0): tag when v1 closes
+5. [ ] Checks pending: Safari / iOS (no record of any), a real tablet, Thru with a controller, note names beside the staff in view windows, HTML5 drag on touch
+6. [ ] Tablet upright: at 768 px wide the desktop layout is used as it is (phone mode starts at 720 px). Seen 2026-11-10 in an emulated viewport without touch, Standard: the circle 148 px wide with text under 5 px, Strings' view tabs cut with a horizontal scrollbar inside the panel, the staff as narrow. At 1024 px wide it reads well. Decide how panels are laid out between 720 and 1000 px
+7. [ ] Non-Western and microtonal systems, if in v1: the spec's "universal" and the README promise them; nothing is built or designed. The key menu offers major, minor and the church modes; only the metronome's cycles come from other traditions
+
+Open items found scattered in the closed ones, for step 1:
+- Song builder: the eleven under "not yet placed in the order"
+- Metronome: a click under the song playing, takes recorded into bars, metric modulation
+- Player: pitch shift, markers
+- Ear training: answering by playing, more cadences, minor keys
+- Offline: the other 127 instruments come from `gleitz.github.io` on first use
+- Isomorphic: microtonal grids, waiting on notae
+
+All checks by hand so far are the user's; nobody else has tried teaching or learning with it.
 
 ### Analysis, in order (2026-10-10)
 
