@@ -4,7 +4,7 @@
 
 **Live:** https://memoriainfinita.github.io/modus/ · **Guide:** [how to use it](docs/guide/README.md)
 
-![Modus on desktop, dark theme: Dm7 in C Major, read as ii7, a subdominant, with its staff, analysis, circle of fifths, guitar shapes, key panel and explanation](docs/modus-desktop.png)
+![Modus on desktop, dark theme: Dm7 in C Major, read as ii7, a subdominant, with its staff, analysis, circle of fifths, guitar shapes, key panel and explanation](docs/modus-demo.png)
 
 <img src="docs/modus-phone.png" alt="Modus on a phone: the chord, its numeral and function, and the staff, with the bottom bar" width="280">
 
@@ -344,3 +344,7 @@ Shortcuts are disabled while typing in input fields or with a dropdown focused, 
 ## License
 
 GPL-3.0. See `LICENSE`. Any software using this must also remain free and open.
+
+## Credits
+
+Developed by [@memoriainfinita](https://github.com/memoriainfinita) with the assistance of Claude (Anthropic).
