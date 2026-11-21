@@ -1736,6 +1736,18 @@ body.layout-window.panels-clear .module svg {
   color: var(--text-muted);
   font-size: 15px;
   justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+.chord-head-start {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.analysis-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9em;
 }
 .chord-head-group {
   display: flex;

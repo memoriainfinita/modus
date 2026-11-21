@@ -153,6 +153,11 @@ Key reference: the key selector (or the detected key on Auto).
 
 Each field is shown or hidden from the panel's ⋯ menu, which also sets the text size (10–24 px, 13 by default). The panel scrolls when it is taller than its place.
 
+**What a row shows** (`renderZone1Analysis` in `detector/analysis-panel.ts`):
+- **At rest** (nothing played, picked or typed): one line, "Play or type a chord to see it analysed here", instead of a row of dashes per field. The Chord panel says the ways to start: MIDI keyboard, computer keyboard (with the key the user has for it), piano, microphone, or typing a chord (with the key for the field); with a finger alone and no fine pointer, without the keys. No chord is shown that nobody played
+- **A chord:** first its own fields, in a fixed order: Roman, Function, Figured bass, Voicing, Diatonic, Scales and Cadence, each with "—" when it cannot be read (Roman without a key says a key is missing). Then, only when they have a value, Fits, P/L/R, Voices, Rules, Secondary, Substitutions, Upper structures, Slash, Movable do and Set class
+- **A note or an interval:** its own row (note and MIDI number, or interval and inversion) and, when they have a value, Fits, Movable do and Set class; none of the chord's fields
+
 ### Explanation
 
 A panel that says, of the chord on screen and in its key, what each term of the analysis means (`detector/explain.ts`): the degree it stands on and its name (tonic … leading tone; subtonic for the whole-step 7th of a minor key; a lowered or raised degree is a note outside the scale), how numerals are written, the function, and then whichever applies: diatonic, a secondary dominant or leading-tone chord with the chord it tonicizes (D7 in C: the dominant of G), borrowed from a named mode with its notes from outside the key, a tritone substitute, or chromatic. Then the figured bass, close / open position and drop voicings, the cadence from the chord before, each P / L / R move with an example, each substitution type UMT offers, upper structures and each voice-leading rule broken. An interval gets its size and its inversion. Nothing is decided here: the sentences come from the same analysis the panel shows. The cadence tags of the history carry the same explanation as a tooltip.

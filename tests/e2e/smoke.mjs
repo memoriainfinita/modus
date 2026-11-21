@@ -163,6 +163,21 @@ await check('MIDI device name is escaped', async () => {
   assert(opt === '<b>Fake</b> Keys', `option text: ${opt}`)
 })
 
+await check('at rest: one line in Analysis and the ways to start in Chord; fields that do not apply are left out', async () => {
+  assert(await page.locator('#analysis-content .analysis-empty').count() === 1 && await page.locator('#analysis-content .analysis-row').count() === 0, 'Analysis at rest')
+  const start = await text('#chord-summary .chord-head-start')
+  assert(/computer keyboard \(M\)/.test(start) && /\(\/\)/.test(start), `ways to start: ${start}`)
+  const labels = async () => (await page.locator('#analysis-content .analysis-label').allInnerTexts()).join('|')
+  await play([60])   // a note: no chord fields
+  const note = await labels()
+  assert(/Note/.test(note) && !/Roman/.test(note), `a note: ${note}`)
+  await off([60])
+  await play([60, 64, 67])   // C E G: the chord's own fields, none that has no value
+  const chord = await labels()
+  assert(/Roman/.test(chord) && /Function/.test(chord) && !/Upper|Slash|Secondary/.test(chord), `a triad: ${chord}`)
+  await off([60, 64, 67])
+})
+
 await check('C E G detected as C, roman I in C Major', async () => {
   await setKey('C Major')
   await play([60, 64, 67])
@@ -1175,9 +1190,11 @@ await check('a phone stacks the panels in one column, in layout order', async ()
 await check('a tablet upright (721 to 1000 px): two columns in layout order, no overlap, nothing dragged; the desktop grid above and the phone below', async () => {
   const boxes = () => page.locator('.module:not(.module-hidden)').evaluateAll(els => els.map(e => { const r = e.getBoundingClientRect(); return { id: e.dataset.module, x: r.x, y: r.y, w: r.width, h: r.height } }))
   const overlap = bs => bs.some((a, i) => bs.some((b, j) => j > i && a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1))
+  // The media query's change redraws the grid a moment after the resize: wait for it
+  const twoColumns = (on, why) => page.waitForFunction(on => document.getElementById('grid').classList.contains('grid-2') === on, on, { timeout: 5000 }).catch(() => { throw new Error(why) })
   for (const width of [768, 1000]) {
     await page.setViewportSize({ width, height: 1024 })
-    assert(await page.evaluate(() => document.getElementById('grid').classList.contains('grid-2')), `${width}: not two columns`)
+    await twoColumns(true, `${width}: not two columns`)
     const bs = await boxes()
     assert(!overlap(bs), `${width}: panels overlap`)
     const staff = bs.find(b => b.id === 'staff'), analysis = bs.find(b => b.id === 'analysis'), chord = bs.find(b => b.id === 'chord')
@@ -1192,9 +1209,9 @@ await check('a tablet upright (721 to 1000 px): two columns in layout order, no 
   await page.mouse.move(h.x + 40, h.y + 12); await page.mouse.down(); await page.mouse.move(h.x + 300, h.y + 200, { steps: 5 }); await page.mouse.up()
   assert((await page.evaluate(() => localStorage.getItem('layout'))) === before, 'a drag changed the layout')
   await page.setViewportSize({ width: 1001, height: 1000 })
-  assert(!(await page.evaluate(() => document.getElementById('grid').classList.contains('grid-2'))), '1001: still two columns')
+  await twoColumns(false, '1001: still two columns')
   await page.setViewportSize({ width: 720, height: 800 })
-  assert(!(await page.evaluate(() => document.getElementById('grid').classList.contains('grid-2'))), '720: two columns on a phone')
+  await twoColumns(false, '720: two columns on a phone')
   await page.setViewportSize({ width: 1440, height: 1000 })
 })
 

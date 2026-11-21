@@ -888,6 +888,8 @@
     "head.from": "from",
     "head.also": "Also",
     "head.empty": "Play, or type a chord",
+    "head.start": "MIDI keyboard \xB7 computer keyboard ({keyboard}) \xB7 piano \xB7 microphone \xB7 or type a chord ({type})",
+    "head.start.touch": "MIDI keyboard \xB7 piano \xB7 microphone \xB7 or type a chord in the field at the top",
     "head.position": "Position",
     "head.layout": "Voicing",
     "head.degrees": "Degrees",
@@ -1045,6 +1047,7 @@
     "analysis.inversion": "Inversion",
     "analysis.semitones": "{n} st",
     "analysis.yes": "Yes",
+    "analysis.empty": "Play or type a chord to see it analysed here.",
     "ex.term.diatonic": "Diatonic",
     "ex.term.figbass": "Figured bass {fig}",
     "ex.term.voicing": "Position: {v}",
@@ -1962,6 +1965,8 @@
     "head.from": "desde",
     "head.also": "Tambi\xE9n",
     "head.empty": "Toca, o escribe un acorde",
+    "head.start": "Teclado MIDI \xB7 teclado del ordenador ({keyboard}) \xB7 piano \xB7 micr\xF3fono \xB7 o escribe un acorde ({type})",
+    "head.start.touch": "Teclado MIDI \xB7 piano \xB7 micr\xF3fono \xB7 o escribe un acorde en el campo de arriba",
     "head.position": "Posici\xF3n",
     "head.layout": "Disposici\xF3n",
     "head.degrees": "Grados",
@@ -2115,6 +2120,7 @@
     "analysis.inversion": "Inversi\xF3n",
     "analysis.semitones": "{n} semit.",
     "analysis.yes": "S\xED",
+    "analysis.empty": "Toca o escribe un acorde para verlo analizado aqu\xED.",
     "ex.term.diatonic": "Diat\xF3nico",
     "ex.term.figbass": "Bajo cifrado {fig}",
     "ex.term.voicing": "Posici\xF3n {v}",
@@ -4306,6 +4312,94 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     wireChrome(container2);
   }
 
+  // src/input/bindings.ts
+  var ACTIONS = [
+    "play",
+    "stepPrev",
+    "stepNext",
+    "delete",
+    "hold",
+    "arpeggio",
+    "send",
+    "clear",
+    "keyboard",
+    "present",
+    "type",
+    "help",
+    "settings"
+  ];
+  var DEFAULT_KEYS = {
+    play: ["Space"],
+    stepPrev: ["ArrowLeft"],
+    stepNext: ["ArrowRight"],
+    delete: ["Delete", "Backspace"],
+    hold: ["H"],
+    arpeggio: ["A"],
+    send: ["S"],
+    clear: ["C"],
+    keyboard: ["M"],
+    present: ["P"],
+    type: ["/"],
+    help: ["?"],
+    settings: [","]
+  };
+  var RESERVED = /* @__PURE__ */ new Set(["Escape", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Tab", "Enter", "Shift", "Control", "Alt", "Meta", "CapsLock"]);
+  var MAX_KEYS = 2;
+  function keyName2(e) {
+    if (e.key === " ") return "Space";
+    return e.key.length === 1 ? e.key.toUpperCase() : e.key;
+  }
+  var custom = loadCustom();
+  function loadCustom() {
+    const raw = loadJSON("shortcuts", {});
+    const out = {};
+    for (const a of ACTIONS) {
+      const v = raw?.[a];
+      if (Array.isArray(v) && v.length <= MAX_KEYS && v.every((k) => typeof k === "string" && !RESERVED.has(k))) out[a] = v;
+    }
+    return out;
+  }
+  function keysOf(action) {
+    return custom[action] ?? DEFAULT_KEYS[action];
+  }
+  function isDefaultBinding(action) {
+    return !custom[action];
+  }
+  function actionFor(key) {
+    return ACTIONS.find((a) => keysOf(a).includes(key)) ?? null;
+  }
+  function conflictFor(key, except) {
+    return ACTIONS.find((a) => a !== except && keysOf(a).includes(key)) ?? null;
+  }
+  function store() {
+    save("shortcuts", custom);
+  }
+  function setKeys(action, keys) {
+    const clean = [...new Set(keys)].filter((k) => !RESERVED.has(k)).slice(0, MAX_KEYS);
+    if (JSON.stringify(clean) === JSON.stringify(DEFAULT_KEYS[action])) delete custom[action];
+    else custom[action] = clean;
+    store();
+  }
+  function assignKey(action, key, slot) {
+    const other = conflictFor(key, action);
+    if (other) setKeys(other, keysOf(other).filter((k) => k !== key));
+    const keys = [...keysOf(action)];
+    if (slot < keys.length) keys[slot] = key;
+    else keys.push(key);
+    setKeys(action, keys);
+  }
+  function removeKey(action, key) {
+    setKeys(action, keysOf(action).filter((k) => k !== key));
+  }
+  function resetKeys(action) {
+    delete custom[action];
+    store();
+  }
+  function resetAllKeys() {
+    custom = {};
+    store();
+  }
+
   // src/detector/analysis-panel.ts
   var ANALYSIS_FIELD_KEYS = ["roman", "function", "figbass", "voicing", "diatonic", "scales", "fits", "cadence", "plr", "voices", "rules", "secondary", "subs", "upper", "slash", "movable", "forte"];
   var fieldLabel = (f) => t(`field.${f}`);
@@ -4320,12 +4414,17 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     return degrees ? `${cadenceLabel(cadence, true)} (${degrees.replace(/->/g, "\u2192")})` : cadenceLabel(cadence, true);
   }
   var fnClass = (fn) => fn === "T" || fn === "S" || fn === "D" ? ` fn-${fn}` : "";
+  function startText() {
+    const key = (a) => keysOf(a).join(" ");
+    if (!matchMedia("(any-pointer: fine)").matches || !key("keyboard") || !key("type")) return t("head.start.touch");
+    return t("head.start", { keyboard: key("keyboard"), type: key("type") });
+  }
   function renderChordSummary(detection, analysis, head, onAltSelect2) {
     const el2 = document.getElementById("chord-summary");
     if (!el2) return;
     const notesOf = (names) => escapeHtml(names.map((n) => noteLabel(n.replace(/(-?\d+)$/, ""))).join(" \xB7 "));
     if (!detection) {
-      el2.innerHTML = `<div class="chord-head chord-head-empty">${escapeHtml(t("head.empty"))}</div>`;
+      el2.innerHTML = `<div class="chord-head chord-head-empty"><span>${escapeHtml(t("head.empty"))}</span><span class="chord-head-start">${escapeHtml(startText())}</span></div>`;
       return;
     }
     if (detection.kind === "note") {
@@ -4392,8 +4491,12 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     const el2 = document.getElementById("analysis-content");
     if (!el2) return;
     el2.style.fontSize = scale + "px";
-    const visibleCount = ANALYSIS_FIELD_KEYS.filter((f) => fieldsVisible[f]).length;
-    el2.style.minHeight = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + "px";
+    if (!detection) {
+      el2.style.minHeight = "";
+      el2.innerHTML = `<p class="analysis-empty">${escapeHtml(t("analysis.empty"))}</p>`;
+      return;
+    }
+    el2.style.minHeight = "";
     const colEl = document.getElementById("col-analysis");
     if (colEl) {
       const w = Math.round(scale * 19) + "px";
@@ -4405,6 +4508,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       <span class="analysis-value">${escapeHtml(val)}</span>
     </div>`;
     const fieldRow = (f, val) => fieldsVisible[f] ? row3(rowLabel(f), val ?? "\u2014") : "";
+    const optionalRow = (f, val) => fieldsVisible[f] && val ? row3(rowLabel(f), val) : "";
     let roman = "\u2014", func_ = "\u2014", figuredBass = "\u2014", diatonic = "\u2014", scales = "\u2014", cadence = "\u2014";
     let secondary = null, subs = null;
     let voicing = null, plr = null, upper = null, slash = null;
@@ -4431,7 +4535,8 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
       if (analysis.slash) slash = slashText(analysis.slash);
     }
     const fits = noteSet2?.fits.length ? (noteSet2.fromMelody ? `(${noteSet2.notes.map(noteLabel).join(" ")}) ` : "") + noteSet2.fits.slice(0, 4).join(", ") : null;
-    el2.innerHTML = fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("fits", fits) + fieldRow("cadence", cadence) + fieldRow("plr", plr) + fieldRow("voices", voices2) + fieldRow("rules", rules) + fieldRow("secondary", secondary) + fieldRow("subs", subs) + fieldRow("upper", upper) + fieldRow("slash", slash) + fieldRow("movable", noteSet2?.syllables?.length ? noteSet2.syllables.join(" ") : null) + fieldRow("forte", noteSet2?.forte ?? null) + extra;
+    const chord = detection?.kind === "chord";
+    el2.innerHTML = (chord ? fieldRow("roman", roman) + fieldRow("function", func_) + fieldRow("figbass", figuredBass) + fieldRow("voicing", voicing) + fieldRow("diatonic", diatonic) + fieldRow("scales", scales) + fieldRow("cadence", cadence) : "") + extra + optionalRow("fits", fits) + optionalRow("plr", plr) + optionalRow("voices", voices2) + optionalRow("rules", rules) + optionalRow("secondary", secondary) + optionalRow("subs", subs) + optionalRow("upper", upper) + optionalRow("slash", slash) + optionalRow("movable", noteSet2?.syllables?.length ? noteSet2.syllables.join(" ") : null) + optionalRow("forte", noteSet2?.forte ?? null);
   }
 
   // src/ui/fit.ts
@@ -4577,94 +4682,6 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     });
     document.body.appendChild(el2);
     current = { el: el2, timer: window.setTimeout(dismiss, UNDO_MS) };
-  }
-
-  // src/input/bindings.ts
-  var ACTIONS = [
-    "play",
-    "stepPrev",
-    "stepNext",
-    "delete",
-    "hold",
-    "arpeggio",
-    "send",
-    "clear",
-    "keyboard",
-    "present",
-    "type",
-    "help",
-    "settings"
-  ];
-  var DEFAULT_KEYS = {
-    play: ["Space"],
-    stepPrev: ["ArrowLeft"],
-    stepNext: ["ArrowRight"],
-    delete: ["Delete", "Backspace"],
-    hold: ["H"],
-    arpeggio: ["A"],
-    send: ["S"],
-    clear: ["C"],
-    keyboard: ["M"],
-    present: ["P"],
-    type: ["/"],
-    help: ["?"],
-    settings: [","]
-  };
-  var RESERVED = /* @__PURE__ */ new Set(["Escape", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Tab", "Enter", "Shift", "Control", "Alt", "Meta", "CapsLock"]);
-  var MAX_KEYS = 2;
-  function keyName2(e) {
-    if (e.key === " ") return "Space";
-    return e.key.length === 1 ? e.key.toUpperCase() : e.key;
-  }
-  var custom = loadCustom();
-  function loadCustom() {
-    const raw = loadJSON("shortcuts", {});
-    const out = {};
-    for (const a of ACTIONS) {
-      const v = raw?.[a];
-      if (Array.isArray(v) && v.length <= MAX_KEYS && v.every((k) => typeof k === "string" && !RESERVED.has(k))) out[a] = v;
-    }
-    return out;
-  }
-  function keysOf(action) {
-    return custom[action] ?? DEFAULT_KEYS[action];
-  }
-  function isDefaultBinding(action) {
-    return !custom[action];
-  }
-  function actionFor(key) {
-    return ACTIONS.find((a) => keysOf(a).includes(key)) ?? null;
-  }
-  function conflictFor(key, except) {
-    return ACTIONS.find((a) => a !== except && keysOf(a).includes(key)) ?? null;
-  }
-  function store() {
-    save("shortcuts", custom);
-  }
-  function setKeys(action, keys) {
-    const clean = [...new Set(keys)].filter((k) => !RESERVED.has(k)).slice(0, MAX_KEYS);
-    if (JSON.stringify(clean) === JSON.stringify(DEFAULT_KEYS[action])) delete custom[action];
-    else custom[action] = clean;
-    store();
-  }
-  function assignKey(action, key, slot) {
-    const other = conflictFor(key, action);
-    if (other) setKeys(other, keysOf(other).filter((k) => k !== key));
-    const keys = [...keysOf(action)];
-    if (slot < keys.length) keys[slot] = key;
-    else keys.push(key);
-    setKeys(action, keys);
-  }
-  function removeKey(action, key) {
-    setKeys(action, keysOf(action).filter((k) => k !== key));
-  }
-  function resetKeys(action) {
-    delete custom[action];
-    store();
-  }
-  function resetAllKeys() {
-    custom = {};
-    store();
   }
 
   // src/input/pitch.ts

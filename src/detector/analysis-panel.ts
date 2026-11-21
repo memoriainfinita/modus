@@ -1,6 +1,7 @@
 import type { DetectionResult, HarmonicAnalysis, NoteSetAnalysis, SlashReading } from '../types'
 import { escapeHtml } from '../ui/html'
 import { t, noteLabel, chordLabel, cadenceLabel } from '../i18n/i18n'
+import { keysOf } from '../input/bindings'
 
 // ─── Field config ─────────────────────────────────────────────────────────────
 
@@ -35,6 +36,16 @@ export interface ChordHeadContext {
 
 const fnClass = (fn: string | null | undefined) => fn === 'T' || fn === 'S' || fn === 'D' ? ` fn-${fn}` : ''
 
+/**
+ * The ways to start, said at rest: the keys are the user's own (they can be changed in Settings);
+ * with a finger alone (no fine pointer: no keyboard to name) the computer keyboard is left out.
+ */
+function startText(): string {
+  const key = (a: 'keyboard' | 'type') => keysOf(a).join(' ')
+  if (!matchMedia('(any-pointer: fine)').matches || !key('keyboard') || !key('type')) return t('head.start.touch')
+  return t('head.start', { keyboard: key('keyboard'), type: key('type') })
+}
+
 // The chord as a header: its name large, its notes, its degree and function, the cadence
 // from the chord before, and the other readings of the same notes
 function renderChordSummary(
@@ -46,7 +57,7 @@ function renderChordSummary(
   const el = document.getElementById('chord-summary')
   if (!el) return
   const notesOf = (names: string[]) => escapeHtml(names.map(n => noteLabel(n.replace(/(-?\d+)$/, ''))).join(' · '))
-  if (!detection) { el.innerHTML = `<div class="chord-head chord-head-empty">${escapeHtml(t('head.empty'))}</div>`; return }
+  if (!detection) { el.innerHTML = `<div class="chord-head chord-head-empty"><span>${escapeHtml(t('head.empty'))}</span><span class="chord-head-start">${escapeHtml(startText())}</span></div>`; return }
   if (detection.kind === 'note') {
     el.innerHTML = `<div class="chord-head"><span class="chord-head-name">${escapeHtml(noteLabel(detection.pitchClass))}</span><span class="chord-notes">${escapeHtml(noteLabel(detection.noteName))} · MIDI ${detection.midiNumber}</span></div>`
     return
@@ -135,9 +146,9 @@ export function renderZone1Analysis(
   if (!el) return
 
   el.style.fontSize = scale + 'px'
-  const visibleCount = ANALYSIS_FIELD_KEYS.filter(f => fieldsVisible[f]).length
-  // A floor, so the panel does not jump between a note and a chord; long values (Fits) wrap and grow it
-  el.style.minHeight = Math.ceil((visibleCount * 1.6 - 0.4) * scale) + 'px'
+  // At rest, one line instead of every field as a row of dashes
+  if (!detection) { el.style.minHeight = ''; el.innerHTML = `<p class="analysis-empty">${escapeHtml(t('analysis.empty'))}</p>`; return }
+  el.style.minHeight = ''
   const colEl = document.getElementById('col-analysis')
   if (colEl) { const w = Math.round(scale * 19) + 'px'; colEl.style.width = w; colEl.style.flex = `0 0 ${w}` }
 
@@ -146,8 +157,12 @@ export function renderZone1Analysis(
       <span class="analysis-label">${label}</span>
       <span class="analysis-value">${escapeHtml(val)}</span>
     </div>`
+  // A field of the chord's own (key, function, cadence…) shows "—" when it cannot be read; one
+  // that only some chords and notes have is left out when it has no value
   const fieldRow = (f: AnalysisFieldKey, val: string | null) =>
     fieldsVisible[f] ? row(rowLabel(f), val ?? '—') : ''
+  const optionalRow = (f: AnalysisFieldKey, val: string | null) =>
+    fieldsVisible[f] && val ? row(rowLabel(f), val) : ''
 
   let roman = '—', func_ = '—', figuredBass = '—', diatonic = '—', scales = '—', cadence = '—'
   let secondary: string | null = null, subs: string | null = null
@@ -180,23 +195,25 @@ export function renderZone1Analysis(
     ? (noteSet.fromMelody ? `(${noteSet.notes.map(noteLabel).join(' ')}) ` : '') + noteSet.fits.slice(0, 4).join(', ')
     : null
 
-  el.innerHTML =
+  // The chord's own fields first, in a fixed order, then those that come and go
+  const chord = detection?.kind === 'chord'
+  el.innerHTML = (chord ?
     fieldRow('roman', roman) +
     fieldRow('function', func_) +
     fieldRow('figbass', figuredBass) +
     fieldRow('voicing', voicing) +
     fieldRow('diatonic', diatonic) +
     fieldRow('scales', scales) +
-    fieldRow('fits', fits) +
-    fieldRow('cadence', cadence) +
-    fieldRow('plr', plr) +
-    fieldRow('voices', voices) +
-    fieldRow('rules', rules) +
-    fieldRow('secondary', secondary) +
-    fieldRow('subs', subs) +
-    fieldRow('upper', upper) +
-    fieldRow('slash', slash) +
-    fieldRow('movable', noteSet?.syllables?.length ? noteSet.syllables.join(' ') : null) +
-    fieldRow('forte', noteSet?.forte ?? null) +
-    extra
+    fieldRow('cadence', cadence) : '') +
+    extra +
+    optionalRow('fits', fits) +
+    optionalRow('plr', plr) +
+    optionalRow('voices', voices) +
+    optionalRow('rules', rules) +
+    optionalRow('secondary', secondary) +
+    optionalRow('subs', subs) +
+    optionalRow('upper', upper) +
+    optionalRow('slash', slash) +
+    optionalRow('movable', noteSet?.syllables?.length ? noteSet.syllables.join(' ') : null) +
+    optionalRow('forte', noteSet?.forte ?? null)
 }

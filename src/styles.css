@@ -825,7 +825,9 @@ body.layout-window.panels-clear .module svg { filter: drop-shadow(0 0 1px var(--
 /* ─── Chord header ────────────────────────────────────────────── */
 /* Name, notes, degree and function, the cadence from the chord before, the other readings */
 .chord-head { display: flex; align-items: center; gap: 10px 28px; flex-wrap: wrap; min-height: 100%; }
-.chord-head-empty { color: var(--text-muted); font-size: 15px; justify-content: center; }
+.chord-head-empty { color: var(--text-muted); font-size: 15px; justify-content: center; flex-direction: column; gap: 4px; text-align: center; }
+.chord-head-start { font-size: 13px; color: var(--text-dim); }
+.analysis-empty { margin: 0; color: var(--text-muted); font-size: 0.9em; }
 .chord-head-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .chord-head-main { align-items: baseline; gap: 16px; }
 .chord-name-badge, .chord-head-name { font-size: 64px; font-weight: 700; line-height: 1.05; color: var(--text-strong); }
