@@ -24,7 +24,7 @@ No server, no account, nothing to install: open it in Chrome, Edge or Firefox an
 - **Teaching:** explaining concepts and giving examples in class
 - **Making videos** and other content about music
 
-For any musician, from learners to teachers and content creators. Modus is in active development towards a complete, universal and didactic app: usable with or without a controller, on any device, in English and Spanish, and beyond Western tonal harmony.
+For any musician, from learners to teachers and content creators. Modus aims to be a complete, universal and didactic app: usable with or without a controller, on any device, in English and Spanish. It is built for Western tonal harmony, church modes included; other systems, modes and tunings (ragas, maqamat, microtonal scales) are the aim and are not built yet. What is open is listed in [`docs/spec.md`](docs/spec.md) under Open.
 
 ---
 
@@ -207,7 +207,7 @@ pnpm test:e2e:midi    # real Web MIDI in Chrome and Firefox through loopMIDI ("l
 
 UMT and notae are served from `vendor/`, pinned in `scripts/vendor.mjs`: UMT to a release tag (same as `package.json`), notae to a commit hash. Bump deliberately after a release of either library, then `pnpm vendor` and the tests. The e2e walk needs network only for the instruments other than the piano.
 
-CI (`.github/workflows/ci.yml`) typechecks, runs the unit tests and the build, and on `main` publishes the app to GitHub Pages.
+CI (`.github/workflows/ci.yml`) typechecks, runs the unit tests and the build, runs the browser walk (`pnpm test:e2e`, in the runner's Chrome), and on `main`, when all pass, publishes the app to GitHub Pages. The real Web MIDI run (`test:e2e:midi`) stays on a machine with loopMIDI.
 
 ---
 
@@ -279,8 +279,8 @@ src/
     grid.ts               panels on a 12-column grid: snap, push down, close up
     presets.ts            the panels and the ready-made layouts
   ui/
-    layout.ts             bar and rail, panels on the grid, dragging and resizing, the ▦ menu
-    popover.ts            the menus of the bar and the rail: one open at a time, next to its button
+    layout.ts             the bar, panels on the grid, dragging and resizing, the ▦ menu
+    popover.ts            the menus of the bar: one open at a time, next to its button
     commands.ts           the bar's field: a chord to play, or an order found by its name
     fit.ts                an SVG scaled to its panel
     progressions.ts       the Progressions panel: UMT's named progressions in the key

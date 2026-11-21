@@ -1,7 +1,7 @@
 # Modus — Design Spec
-_Rev 8 · 2026-10-09_
+_Rev 9 · 2026-11-21_
 
-Purpose, design and behaviour. Stack, build and commands: `README.md`. UMT API contract: `docs/umt-contract.md`. Roadmap: TODO in `state.md`.
+Purpose, design and behaviour. Stack, build and commands: `README.md`. UMT API contract: `docs/umt-contract.md`. What is open: `state.md`.
 
 ## Purpose
 
@@ -20,7 +20,7 @@ See and understand the harmony of what you play, in real time. Modus aims to be 
 - With or without a MIDI controller; on desktop, phone or tablet
 - In English and Spanish
 - Accessible by keyboard and screen reader
-- Not limited to Western tonal harmony: other systems, modes and tunings
+- Not limited to Western tonal harmony: other systems, modes and tunings. This is the aim and it is **not built yet**: the key menu offers major, minor and the church modes, and only the metronome's cycles come from other traditions. UMT has ragas, maqamat, EDOs and Scala; what Modus would show is not designed (see Out of scope)
 
 **Didactic:** the app does not only name things (V7/V, borrowed from dorian); it can explain what they mean.
 
@@ -28,7 +28,7 @@ All theory comes from UMT, developed for Modus. What UMT lacks is added to UMT, 
 
 ## Structure
 
-The core is the **Detector**: input → chord detection → harmonic analysis, shown at once. A chord history extends it over time. The song builder is kept as it is (frozen since 2026-10-10): new work goes to the detector and the analysis.
+The core is the **Detector**: input → chord detection → harmonic analysis, shown at once. A chord history extends it over time. The song builder (chart, form strip, sections as text, songs as tabs, playing the song) is part of the app; it was frozen on 2026-10-10 and reopened on 2026-10-13.
 
 ## Design principles
 
@@ -36,7 +36,7 @@ The core is the **Detector**: input → chord detection → harmonic analysis, s
 
 **Two ways to look.** The full view is for studying; presentation (P) is for teaching and recording: the layout with no controls, filling the screen.
 
-**Neutral functional dark — neobrutalista.** Colour carries meaning only: chord quality, harmonic function, borrowed chords. UI chrome is monochrome: borders, not buttons; no decorative colour, no pill buttons, no gradients. Plain CSS (`src/styles.css`). Dark and light themes and two colour themes (see Theme).
+**Quiet and neutral.** Neutral black (#141414, panels #1d1d1d) and one accent, parchment #d9c9a3, for what is on, focus, terms and cadences. Colour carries meaning only: the harmonic function (tonic green, subdominant amber, dominant red) and borrowed chords. Quiet controls: a panel's options sit in its ⋯ menu, panels have no border and are 10 px apart, icons are line icons, each control appears once. Destructive actions run at once and offer Undo, never a confirmation. Plain CSS (`src/styles.css`). Four themes (see Theme).
 
 **User-configurable.** Every panel can be moved, resized and hidden on the layout grid; layouts, visible fields and options persist in localStorage.
 
@@ -44,48 +44,50 @@ The core is the **Detector**: input → chord detection → harmonic analysis, s
 
 ## Browser compatibility
 
-Web MIDI: Chrome, Edge, Firefox (Firefox asks for permission per site). Safari has none.
+Web MIDI: Chrome, Edge, Firefox (Firefox asks for permission per site). Safari has none. Tried by hand: Chrome and Firefox on desktop, Chrome on a phone (installed, microphone included). Not tried: Safari and iOS, a real tablet.
 
 Without Web MIDI a dismissible warning says a controller cannot connect. Song builder, CoF and history keep working.
 
 ## Layout
 
-Single page, dark or light (see Theme): the bar on top, the rail down the left, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size; text panels (analysis, key, history, song) scroll inside it.
+Single page (see Theme): the bar on top, then the panels on a grid of 12 columns and rows of 30 px. Each panel has a header with its title, its own buttons and × to hide it; it is moved by dragging the header and resized from its bottom-right corner, and both snap to the grid. The panels it lands on go below it, and every panel then rises as far as it can, so they never overlap and leave no holes (`layout/grid.ts`, tested on its own). Diagrams (staff, circle, strings, piano) scale to fill their panel, so a panel's size is its diagram's size.
 
-Panels: Chord (name, notes, alternatives), Staff, Analysis, Explanation, Circle of fifths, Strings, Key, Piano, Isomorphic, Velocity, Progressions, Ear training, Player, Tuner, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
+**Panels fit what they show** (`fitGrid` in `layout/grid.ts`, `FITTED` and `measureContentRows` in `ui/layout.ts`): the stored layout keeps each panel's full height; what is drawn is that grid over the rows each text or list panel (Key, Explanation, History, Song, Tuner, Progressions, Ear training, Next) needs for its content, at least three rows and at most its size in the layout, re-measured on a timer after any change in its body. Empty, such a panel stays small; filled, it grows and the ones under it move. Diagrams, the player and the metronome keep their size. While a panel is dragged, and while presenting, the layout is drawn at its own sizes.
 
-The ▦ menu in the rail:
-- **Layouts:** Standard (every panel, as the page was before panels could move), Study (key and analysis large), Class (the chord and its history across the top, then staff, circle, strings and piano, large, made to be presented with P), Transcription (the player and tuner on top, history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
+Panels (18): Chord (name, card, alternatives), Staff, Analysis, Explanation, Next, Circle of fifths, Strings, Key, Piano, Isomorphic, Velocity, Progressions, Ear training, Player, Tuner, Metronome, History, Song. A stored layout with the Fretboard panel of before (now the strings panel's Neck view) drops it.
+
+The layout menu (▦ in the bar):
+- **Layouts:** Standard (every panel but Velocity, Next and Isomorphic: the chord as a header across the page, the four diagrams under it, the key and its explanation, then the piano and the practice panels), Study (key and analysis large, with Next and ear training), Class (the chord and its history across the top, then staff, circle, strings and piano, large, and Next; made to be presented with P), Transcription (the player and tuner on top, history and song next to piano and strings), Recording (chord, staff, strings, piano). A preset replaces the current layout
 - **Saved:** the current layout saved under a name; opened or deleted from the menu
 - **Panels:** a box per panel to show or hide it; a panel shown again goes at the bottom, at its usual size
 
 The current layout is kept as it is left (`layout`), saved ones under `layouts`; a stored layout that cannot be read falls back to Standard, and unknown panels in it are dropped.
 
-**Phone** (720 px wide or less): the same panels in one column, in layout order (top to bottom, left to right); diagrams as tall as their rows, text panels (analysis, explanation, key, progressions, ear training, history, song) as tall as their content, so nothing is cut off; no dragging.
+**Phone** (720 px wide or less): the same panels in one column, in layout order (top to bottom, left to right); each keeps the rows it has in the layout and a text that does not fit scrolls inside it (nothing is fitted, so a panel that grew with a chord does not push the piano from under the fingers); the chord, first on the page, keeps its height auto; no dragging.
+
+**Between 720 and 1000 px** (a tablet upright) the desktop layout is used as it is. At 768 px the circle is 148 px wide with text under 5 px and Strings' view tabs are cut with a scrollbar inside the panel; at 1024 px it reads well. How panels are laid out in that range is open (see `state.md`).
 
 **Touch:** each finger on the on-screen piano holds its own key, so a chord can be pressed with several; on a phone the piano shows two octaves (C3–B4), widened to every note shown. A long press on a history chip removes it, as a right click does; a tap on a song chord shows its buttons, which a mouse gets on hover. No double-tap zoom (the circle sets a key with two taps); buttons, selects and chips are at least 34 px with a coarse pointer, and the corner that resizes a panel is larger.
 
 ## Detector
 
-### Bar and rail
+### The bar
 
-**The bar**, left to right (`ui/layout.ts`, wired in `app.ts`):
-- **Rail button:** shows or hides the rail. It is kept as left (`rail-open`). Not on a phone (see the bottom bar).
+**The bar**, left to right (`buildToolbar` in `ui/layout.ts`, wired in `app.ts`); each control appears once, and there is no side rail (it was removed on 2026-10-26). Below 1000 px the brand's name, the playing mode and the `/` hint hide:
 - **Key:** the key in use, marked "auto" when it is read from what is played. It opens the key menu: Auto, Major or Minor, the church modes (Dorian, Phrygian, Lydian, Mixolydian, Locrian), and the twelve tonics in the order of their signatures. A mode is a key as UMT reads it (since 0.9): its chords keep the function of their degree, a diatonic dominant seventh is the mode's own; its tonic is spelled as the degree of its parent major (C# Dorian, not Db Dorian), its signature that major's (the staff writes `K:Ddor`), and on the circle the diatonic block is the parent major's with the tonic marked on its ring. On Auto the key detected drives the whole app; the choice belongs to the open song (see Song).
-- **Field (/):** a chord or an order (`ui/commands.ts`). A chord name, in letters or in solfège (Am7, Lam7), is offered first as "Play …": Enter shows and plays it like a chord picked from history, and an unknown name is marked red. Any other text finds the orders whose name has a word starting with each word typed, without regard to case or accents: a mode, the computer keyboard, the microphone, a key, a layout, showing or hiding a panel, every option of the panels' ⋯ menus, playing the chord, sending it to the song, clearing the history, letting go of a held chord (Esc), presentation, a view window, saving a diagram, Settings and each of its rows (it opens Settings on that row), Help, the guided tour, the rail, an instrument. So whatever has only a key or a gesture can be done by touch too. The arrows move through the list and Enter does the one marked; Esc closes the list, and then leaves the field.
-- **Input status:** the device in use, with a dot (green connected, grey none, red disconnected), and the mode. It opens the input menu.
+- **Field (/):** a chord or an order (`ui/commands.ts`). A chord name, in letters or in solfège (Am7, Lam7), is offered first as "Play …": Enter shows and plays it like a chord picked from history, and an unknown name is marked red. Any other text finds the orders whose name has a word starting with each word typed, without regard to case or accents: a mode, the computer keyboard, the microphone, a key, a layout, showing or hiding a panel, every option of the panels' ⋯ menus, playing the chord, sending it to the song, clearing the history, letting go of a held chord (Esc), presentation, a view window, saving a diagram, Settings and each of its rows (it opens Settings on that row), Help, the guided tour, an instrument. So whatever has only a key or a gesture can be done by touch too. The arrows move through the list and Enter does the one marked; Esc closes the list, and then leaves the field.
+- **Input status:** the device in use, with a dot (green connected, grey none, red disconnected), and the mode; the computer keyboard's and the microphone's icons show in it while they are on. It opens the input menu, which also turns the computer keyboard (M) and the microphone on.
 - **Sound status:** the instrument, with a dot for the soundfont (amber waiting for a gesture, green ready, red failed). It opens the sound menu.
+- **The page:** ▦ (layouts and panels), ⛶ (P, presentation) and ⧉ (view windows).
 - **⚙ (,):** Settings (see Settings). **? :** help: the keys, mouse gestures, what each panel is for, the guided tour. On a touch screen without a mouse or trackpad (no fine pointer, taken as no keyboard) the keys and the mouse give way to the touch gestures, first; on a phone help fills the screen.
 
-**The rail**, held in view while the page scrolls: the input menu, the sound menu, ⌨ (M, the computer keyboard as a piano), 🎤 (the microphone), then the page: ▦ (layouts and panels), ⛶ (P, presentation) and ⧉ (view windows and export). With the rail hidden nothing is lost: the bar's statuses open the same menus, and the rest is in the field and the shortcuts.
+**The bottom bar** takes the page's buttons on a phone (`buildTabbar` in `ui/layout.ts`), always in view, in reach of the thumb, each icon with its name: Input, Sound, Mic, Panels, More. What a phone has no use for stays out: the computer keyboard, and the view windows for OBS. Panels is the layout menu; More holds presentation and saving a diagram (SVG, PNG).
 
-**The bottom bar** stands for the rail on a phone (`buildTabbar` in `ui/layout.ts`), always in view, in reach of the thumb, each icon with its name: Input, Sound, Mic, Panels, More. What a phone has no use for stays out: the computer keyboard, and the view windows for OBS. Panels is the layout menu; More holds presentation and saving a diagram (SVG, PNG).
-
-**Menus** (`ui/popover.ts`): one open at a time, next to the button that opened it (beside the rail, or below the bar); a press outside or Esc closes it. Lists of buttons stand for the selects, which stay hidden as the holders of the values. On a phone the input, sound, layout and More menus, from the bottom bar or from the top bar's statuses, rise from the bottom as sheets across the screen, over a dimmed page, with touch-sized rows; a swipe down on the handle at their top closes them too. There the input menu leaves out the computer keyboard, and the layout menu shows the layouts and then each panel as a switch, without saving a layout or the hint on dragging (panels are not dragged on a phone).
+**Menus** (`ui/popover.ts`): one open at a time, below the bar's button that opened it; a press outside or Esc closes it. Lists of buttons stand for the selects, which stay hidden as the holders of the values. On a phone the input, sound, layout and More menus, from the bottom bar or from the top bar's statuses, rise from the bottom as sheets across the screen, over a dimmed page, with touch-sized rows; a swipe down on the handle at their top closes them too. There the input menu leaves out the computer keyboard, and the layout menu shows the layouts and then each panel as a switch, without saving a layout or the hint on dragging (panels are not dragged on a phone).
 - **Input:** the MIDI devices (updated on connect and disconnect; Firefox reports neither, so the list is rescanned every 2 s while the page is visible, and on focus; the device the user picks, or the first one used, is preferred by name and taken back when it reappears, and a fallback used meanwhile does not replace it), the computer keyboard with its octave and velocity, the microphone, and the mode: Normal, Hold, Arpeggio, which apply to every input (controller, computer keyboard, on-screen piano), with what the one chosen does.
 - **Sound:** play (▶, same as Space), volume, the soundfont's status, and the instruments by family with a search; the names are the General MIDI ones, in Spanish in the Spanish interface (`i18n/instruments.ts`).
 
-The bar and the rail keep what is touched while playing; setup (MIDI channels and out, language, theme…) is in Settings.
+The bar keeps what is touched while playing; setup (MIDI channels and out, language, theme…) is in Settings.
 
 ### MIDI input
 
@@ -123,7 +125,7 @@ Every source — MIDI, history, song, CoF, arrow keys — goes through the same 
 
 ### Chord summary
 
-The Chord panel, a header across the page in Standard: the chord's name, its notes (pitch class), its degree and its function in the function's colour, the cadence from the chord before ("from G7 · V7 · Authentic"), and the other readings of the same notes as chips. Selecting one (click or `1`–`9`) switches the whole analysis to it. A note or an interval is shown the same way. In a narrow panel the line from the chord before is left out (the cadence stays in Analysis) and the rest goes on two lines.
+The Chord panel, a header across the page in Standard: the chord's name, sized by the panel's height and shrunk to its width (`fitChordName`, after each chord and on resize), its notes (pitch class), its degree and its function in the function's colour, the cadence from the chord before ("from G7 · V7 · Authentic"), and the other readings of the same notes as chips. A fixed card beside the name has three rows, Position, Voicing and Degrees ("R 3 ♭7 ♯9": each member once from the bass up, a note outside the chord as "+E"; "—" for a row UMT cannot read), from `analyzeVoicing` (`voicingCard` in `detector/analyzer.ts`); beside the name where it fits, under it in a narrow panel. The chord's header and the diagrams' (staff, circle, piano, velocity) float over the panel and are seen on hover or focus; panels whose text starts at the top keep theirs in place, and on touch and on a phone all stay. Selecting one (click or `1`–`9`) switches the whole analysis to it. A note or an interval is shown the same way. In a narrow panel the line from the chord before is left out (the cadence stays in Analysis) and the rest goes on two lines.
 
 One colour code for harmony across the app, the function: tonic green, subdominant amber, dominant red; a chord with no function in the key is drawn in a neutral tone. The quality is read in the name.
 
@@ -156,6 +158,10 @@ Each field is shown or hidden from the panel's ⋯ menu, which also sets the tex
 A panel that says, of the chord on screen and in its key, what each term of the analysis means (`detector/explain.ts`): the degree it stands on and its name (tonic … leading tone; subtonic for the whole-step 7th of a minor key; a lowered or raised degree is a note outside the scale), how numerals are written, the function, and then whichever applies: diatonic, a secondary dominant or leading-tone chord with the chord it tonicizes (D7 in C: the dominant of G), borrowed from a named mode with its notes from outside the key, a tritone substitute, or chromatic. Then the figured bass, close / open position and drop voicings, the cadence from the chord before, each P / L / R move with an example, each substitution type UMT offers, upper structures and each voice-leading rule broken. An interval gets its size and its inversion. Nothing is decided here: the sentences come from the same analysis the panel shows. The cadence tags of the history carry the same explanation as a tooltip.
 
 
+### Next
+
+Where the chord on screen can go (`detector/next.ts`; in Study and Class, not in Standard; added from the layout menu). Each chord is offered once with every reason it has: where it resolves (a secondary to its target), the cadence it makes with each of the key's chords (UMT `analyzeCadence`), and the named progressions that follow the current chord with it (only those written in the key's mode, a two-chord match first). The key's usual borrowings (UMT `common`) that UMT's `getSubstitutions` gives as its `modal` substitutes come in by mode ("F … or Fm from aeolian"). Under the list, "In place of Dm7": the substitutes of the chord on screen with their type (`ex.sub.*` in the tooltip). A click plays a chord and shows it after the chord it follows; one picked from the substitutes is shown in its place. Released, the panel keeps the last chord played. There is no rule of function flow (S to D): that would be theory decided in Modus.
+
 ### Progressions
 
 Every named progression of UMT (`PROGRESSIONS`, `getProgression`): ii-V-I and ii-V-i, the jazz turnaround, the backdoor ii-V, rhythm changes, Coltrane changes, the opening of Giant Steps, the 12-bar, minor, jazz and Bird blues, I-V-vi-IV, I-vi-IV-V, I-IV-V, Pachelbel's Canon and the Andalusian cadence; and UMT's examples of each cadence (authentic, plagal, deceptive, half, Phrygian half, minor plagal) and of modal mixture (♭VI-♭VII-I, the Picardy third) (`ui/progressions.ts`). The one picked is written in the analysis key, in the progression's mode (ii-V-i, the minor blues, the Andalusian cadence and the examples UMT marks `mode: 'minor'` in the parallel minor of a major key); with no key, in its own (rhythm changes in B♭) or in C major / A minor. It is drawn bar by bar as the history draws its chips: each chord with its numeral and function colour, cadence tags and the key where UMT finds a modulation, all from `analyzeProgression`, with `style: 'blues'` for the 12-bar, jazz and Bird blues (their I7, IV7, V7 are the key's own). A sentence says what the progression is, written by Modus in both languages (UMT's descriptions are English only).
@@ -164,7 +170,7 @@ Picked by kind (Jazz, Blues, Pop and classical, Cadences, Modal mixture) and the
 
 ### Microphone and tuner
 
-🎤 in the rail or the input menu, or the Tuner panel's button, turns the microphone on (`input/mic.ts`, `input/pitch.ts`); the browser asks for it the first time. It is read raw (no echo cancelling, noise suppression or gain control, which bend a sung note), every 40 ms, below a level gate as silence. Two modes, remembered (`mic-mode`):
+🎤 in the input menu, or the Tuner panel's button, turns the microphone on (`input/mic.ts`, `input/pitch.ts`); the browser asks for it the first time. It is read raw (no echo cancelling, noise suppression or gain control, which bend a sung note), every 40 ms, below a level gate as silence. Two modes, remembered (`mic-mode`):
 - **Notes:** the one note sung or played, by YIN (de Cheveigné & Kawahara, 2002) over the newest 2048 samples, 50–1600 Hz. A note that holds for three frames (~120 ms) is held in the detector like a key, and let go after five frames (~200 ms) without it; so a melody sung feeds Fits (the scales of the melody) as one played on keys does, and chords played note by note on a guitar are read as an arpeggio is
 - **Chords:** every 300 ms while there is sound, the last ~0.7 s (the analyser's 32768 samples) goes to the notes worker (`audio-notes/`: Spotify's Basic Pitch, Apache-2.0, on TensorFlow.js, in a Web Worker built apart as `dist/notes-worker.js`, its model in `vendor/basic-pitch/`, loaded on first use). The notes sounding 0.1 s before the window's end, two or more, are the chord, held until the next reading or a silence, with their real octaves. Under a second behind what is played. On FluidR3 guitar samples it names the chord 92–94 % of the time just after the strum (the chromagram it replaced, 16 %; `pnpm bench:audio`)
 
@@ -197,13 +203,14 @@ New question plays one, ↺ plays it again; answers open only while a question w
 
 ### Staff, circle and strings
 
-**Staff:** detected notes in ABC notation, rendered by abcjs. Grand staff by default: notes from middle C up on the treble staff, the rest on the bass staff, split by the written letter (B♯3 sounds as C4 and goes below); an empty staff stays blank, nothing at all shows a rest on both. The staves (Grand, Treble or Bass) are chosen in the panel's ⋯ menu, the three in view and the one chosen marked. Key signature from the active key, read from UMT's letter-spelled scale. The drawing is cropped to what abcjs draws and fills its panel. Chord before (in the ⋯ menu here or on the piano, one setting for both) writes the previous chord first, faded and in a bar of its own so its accidentals do not carry, to see each voice move.
+**Staff:** detected notes in ABC notation, rendered by abcjs. Grand staff by default: notes from middle C up on the treble staff, the rest on the bass staff, split by the written letter (B♯3 sounds as C4 and goes below); an empty staff stays blank, nothing at all shows a rest on both. The staves (Grand, Treble or Bass) are chosen in the panel's ⋯ menu, the three in view and the one chosen marked. Key signature from the active key, read from UMT's letter-spelled scale. The drawing is cropped to what abcjs draws and fills its panel. Chord before (in the ⋯ menu here or on the piano, one setting for both) writes the previous chord first, faded and in a bar of its own so its accidentals do not carry, to see each voice move. Names (⋯ menu: None by default, Notes or Degrees) puts a column of labels right of the staff, each at its note's height, eased apart from the bass up across both staves (`placeNames` in `diagrams/staff.ts`, `staffLabels` in `detector/analyzer.ts`); degrees come from `analyzeVoicing` (a note outside the chord as "+D"), names are used below three notes or with no chord; drawn in `currentColor`, so an export keeps them.
 
 **Circle of Fifths:** custom SVG (`diagrams/cof.ts`). Rings: major, minor, diminished. Active key filled; active chord root outlined. Its ⋯ menu: flats or sharps, minor/dim rings, degree labels, seventh labels. The enharmonic segments are spelled by the key in effect (selected, or detected on Auto): sharps for a sharp signature, flats otherwise. b/♯ only apply with no key, and are greyed out while one decides. Click a segment: play and show its chord, key unchanged. Double-click a major or minor segment: set that key. A minor key sits on its relative major's segment with its tonic lit on the minor ring. Degrees are the ones the analysis fields give (`analyzeProgression`), counted from the tonic: F#° in C is ♯iv°.
 
 **Strings:** one panel for any fretted instrument, drawn by notae. Instruments (`theory/instruments.ts`, open strings as MIDI, thickest first): guitar (standard, drop D, open G, open D, DADGAD), 7-string guitar, bass and 5-string bass (standard, drop D), ukulele (standard reentrant G4 C4 E4 A4, low G), baritone ukulele, mandolin, 5-string banjo (open G, the short string first); each with a custom tuning per string, whose octaves are the instrument's usual ones (a ukulele's G stays high). Changing the instrument goes back to its usual tuning. The panel shows the view (Shapes or Neck) on top, the drawing between two arrows, the shapes as dots (a count past 16) and a line saying where the shape is played (open; open strings from fret N; a barre at fret N; from fret N) and on what instrument and tuning. That line opens the ⋯ menu, which holds the instrument, the tuning, the strings (one field each, lowest first, in the note names chosen: typing a note makes a tuning of one's own) and the labels under the strings (nothing, tuning, notes), with Controls to hide the view, arrows, dots and line (as presentation and view windows do). The chord's name is drawn over the shape only when no Chord panel names it. Two views:
 - **Shapes:** `UMT.getFretboardVoicings(chord, tuning)` kept only when playable — bass lowest (not asked of a reentrant tuning, which plays chords in any inversion), contiguous strings, four sounding strings (three on a four-string instrument), four-fret span, open strings only in first position — ordered with the open shapes first (the fullest first), then up the neck; the arrows go through them
-- **Neck:** every place the sounding notes are over frets 0–12, each dot named (flats or sharps by key); standing in a panel taller than wide, lying in a wide one, and drawn again when the panel changes shape
+- **Neck:** every place the sounding notes are over frets 0–12, each dot named by its spelled name (E# in F# major); standing in a panel taller than wide, lying in a wide one, and drawn again when the panel changes shape. In a panel narrower than 520 px (`NARROW_NECK` in `diagrams/guitar.ts`: a phone, Class at 1280 and 1440) it goes four frets at a time with ‹ ›
+- **Scale** (`theory/scales.ts`): the analysis key's scale or, from the ⋯ menu, its pentatonic, blues, harmonic or melodic minor on the same tonic. Whole neck (frets 0–12, four at a time when narrow), CAGED (UMT, only where it gives shapes) and 3 per string (only scales of seven notes or more); positions with ‹ › and "Em shape · frets 5–8", a warning past 6 frets. The tonic in the accent, the notes of the chord sounding in its function's colour, the rest `--scale-dot`; labels degrees (♭3, ♯4), notes or none. The piano has Scale in its ⋯ menu (off by default): the key's scale on every octave drawn, the tonic stronger
 
 ### Key panel
 
@@ -324,11 +331,15 @@ Notes requested before the instrument can sound (still loading, or suspended wit
 
 For recording and streaming (`view/`, `ui/export.ts`).
 
-**View windows.** The ⧉ menu opens a popup per view: Chord (name in its function's colour, degree and function below), Staff, Circle of Fifths, Piano, Guitar. Each is the same page with `?view=<name>&bg=<green|magenta|black|dark>`: it hides the app, draws only that element filling the window, starts no MIDI and plays nothing. Background green by default (`#00ff00`, OBS's chroma key default), chosen in the menu and remembered. Title `Modus view: <name>`, so OBS Window Capture keeps finding it. Opening a view again brings its window back.
+Two kinds of window, both opened from the ⧉ menu; neither starts MIDI, audio or the microphone. An OBS Browser Source cannot be either: it is another browser, with no channel to the tab where one plays, and on Windows 10 the controller usually cannot be opened by two programs at once. Capture with Window Capture.
 
-The main window sends what the detector shows over a `BroadcastChannel` (`modus-view`): key, chord, notes, degree, function, guitar voicing. A view that opens asks for the current state. Guitar tuning and CoF options are read from localStorage; when the main window changes them, the views reload. An OBS Browser Source cannot be the view: it is another browser, with no channel to the tab where one plays, and on Windows 10 the controller usually cannot be opened by two programs at once.
+**Layout windows** (`view/mirror.ts`): a window per layout, the presets and the saved ones, showing the whole layout without controls on the windows' background, in a layout other than the one played in. Each is the same page with `?window=<preset or saved:name>&bg=&panels=`: `initLayoutWindow` runs instead of `init()`, and storage is read-only (`setStorageReadOnly`: the layout and songs of the main window stay its own). The main window sends its state (`mirrorState()`: detector, analysis, history, key, song and its playing step) over the `modus-mirror` BroadcastChannel, once per task, and the window sets it and draws with the same functions; what a panel draws from must be in `MirrorState`. Preferences reach it by reloading on a `storage` event. The tools panels (ear training, metronome, tuner, player) show their own idle state there.
 
-**Presentation** (⛶ or P; Esc or P to leave), for teaching and recording: the current layout with no bar, rail, panel headers or controls, its rows stretched so the layout fills the window, full screen when the browser allows it. The Class preset is made for it; any layout can be presented. MIDI, audio and shortcuts keep working; leaving the browser's full screen leaves it too.
+**One-diagram windows** (`view/viewer.ts`): Chord (name in its function's colour, degree and function below), Staff, Circle of Fifths, Piano, Strings, Isomorphic. Each is the same page with `?view=<name>&bg=`: it draws only that element filling the window. The main window sends what the detector shows over the `modus-view` BroadcastChannel (`view/channel.ts`); anything a view should follow goes through `publishView()` in `app.ts`. A view that opens asks for the current state. Strings' tuning and CoF options are read from localStorage; when the main window changes them, the views reload. Note names beside the staff follow too.
+
+**Background:** magenta by default (`#ff00ff`; OBS's key colour Magenta, similarity 400 or less: the dominant's red is 0.485 from magenta in CbCr, and the tonic's green was keyed out of a green chroma), green, black or dark, one choice for all windows, remembered. **Panels:** ground (default) or clear; clear panels take the windows' background, so the Chroma Key takes them out too, text and drawings get a `--glow` shadow, and the circle gets an opaque disc behind its rings (its minor ring is see-through). Title `Modus view: <name>`, so OBS Window Capture keeps finding it; opening a view again brings its window back. In OBS a covered window does not freeze. The delay seen in OBS is its Window Capture, not Modus (measured: the main window paints the chord in a median of 112 ms, a layout window about 10 ms later); try the capture method (Windows 10 1903+ or BitBlt). The window titles stay "Modus view: …" in every language.
+
+**Presentation** (⛶ or P; Esc or P to leave), for teaching and recording: the current layout with no bar, panel headers or controls, its rows stretched so the layout fills the window, full screen when the browser allows it. The Class preset is made for it; any layout can be presented. MIDI, audio and shortcuts keep working; leaving the browser's full screen leaves it too.
 
 **Export.** The same menu saves the staff, circle, guitar or piano on screen as SVG or PNG (3× the screen size), transparent background, cropped to the drawing, named `modus-<diagram>-<chord or key>`. The circle gets the page colour behind its rings (its minor ring is transparent).
 
@@ -357,8 +368,7 @@ Dark, light, high contrast (black ground, bright marks, for a projector or a far
 ## Customization
 
 Persisted to localStorage:
-- Layout: where each panel is and its size, which panels show; saved layouts; whether the Strings panel shows its controls; whether the rail shows (`rail-open`)
-- Analysis fields and font scale
+- Layout: where each panel is and its size, which panels show; saved layouts; whether the Strings panel shows its controls- Analysis fields and font scale
 - Staff clef; the previous chord shown on staff and piano (`show-prev-chord`)
 - CoF b/♯ (without a key), minor/dim rings, degrees, sevenths
 - Key panel font scale, triads / sevenths, sections shown
@@ -390,7 +400,8 @@ On a phone, as Android's settings: full screen; first the search and the section
 - **Theory:** chord symbols (Cmaj7 / CΔ7 / CM7, UMT `formatChordSymbol`), the key profile Auto detects with (Krumhansl-Kessler, Temperley-Kostka-Payne, Aarden-Essen, Bellman-Budge, simple; UMT `KEY_PROFILES`), whether Auto finds church modes, voice-leading rules (strict, contemporary, species: UMT `checkVoiceLeading`), movable do in the explanation of the degree (UMT `Solfege.movableDo`)
 - **Detector and history:** how long a chord holds before it is logged (0.8 s), chips kept (200), arpeggio window (1.2 s), the pause that starts a new melody (6 s), the settle time of MIDI fill (250 ms)
 - **A panel's preferences** are in its ⋯ menu as well (`ui/pref-menu.ts`): Analysis the voice-leading rules, Explanation movable do, Piano the velocity of its keys, History the hold and the chips kept, Progressions the tempo, Ear training how intervals sound, the chords and cadences it asks and its score back to zero, Tuner A4, sensitivity and response; a change in one place shows in the other at once
-- **Panels:** each panel's own on/off buttons (previous chord, circle rings, degrees, sevenths, key panel sections) as boxes that press them
+- **Panels:** every panel's ⋯ options, panel by panel (`renderMirrors` in `ui/settings.ts`): a group of chips is a choice, an item with `aria-pressed` a switch, a row of − + its steps; a change clicks the menu's own control and the rows are drawn again. A new ⋯ option shows here by itself if it follows those forms
+- **Windows:** the views menu's windows, background and panels, drawn the same way
 - **Practice:** progression tempo (60–160 bpm), how intervals are played (rising, falling, together), which chord kinds and cadences ear training asks (none ticked asks all), its score back to zero
 - **Microphone and tuner:** notes or chords, A4 (415–466 Hz), sensitivity (the silence gate), response (frames a note holds before it counts)
 - **Shortcuts:** see Keyboard shortcuts
@@ -436,7 +447,7 @@ Every note sent is tracked: changing port or channel, turning Thru off and leavi
 
 Everything can be used from the keyboard and read by a screen reader (`ui/a11y.ts`):
 - **Keyboard:** Tab reaches every control, the circle's segments, the history and song chips and each panel's title; Enter or Space presses them (Enter twice on a circle segment sets its key, as a double click does; Delete on a history chip removes it). On a focused panel title the arrows move the panel a cell and Shift + arrows resize it, said aloud. The app's shortcuts leave Enter and Space to the button that has the focus. The help panel is a dialog: Esc closes it and the focus goes back where it was. Every focused element shows an outline in the theme's cursor colour
-- **Screen reader:** a polite live region says what the detector shows once it holds for 350 ms: the chord's long name with its degree and function ("G major, V, Dominant"), a note, an interval. The bar is a toolbar, the rail a navigation region, and the panels a main region; each panel is a section named by its title. Buttons that only carry an icon are named by their tooltip; the menu buttons say whether their menu is open. The staff, piano and strings drawings are images named by what they show ("Staff: C4 E4 G4", "Strings: C x 3 2 0 1 0"); the computer keyboard (M) plays the piano for someone who cannot point
+- **Screen reader:** a polite live region says what the detector shows once it holds for 350 ms: the chord's long name with its degree and function ("G major, V, Dominant"), a note, an interval. The bar is a toolbar, the bottom bar on a phone a navigation region, and the panels a main region; each panel is a section named by its title. Buttons that only carry an icon are named by their tooltip; the menu buttons say whether their menu is open. The staff, piano and strings drawings are images named by what they show ("Staff: C4 E4 G4", "Strings: C x 3 2 0 1 0"); the computer keyboard (M) plays the piano for someone who cannot point
 
 ## Offline and installation
 
@@ -446,9 +457,17 @@ Everything the page loads is served with it: UMT, notae, abcjs and soundfont-pla
 
 ## Out of scope
 
-Only what contradicts the principles:
+What contradicts the principles, and so is never built:
 
 - Cloud sync and accounts
-- Analytics and monetization
+- Analytics, telemetry and monetization
 
-Everything else that was out of scope in v1 (MIDI files, mobile, light mode, microtonal, channel filtering, velocity display, free section colours) is on the roadmap.
+## Open
+
+What is not built and is left open on purpose; the list is kept in `state.md`. Nothing here is decided against.
+
+- **Non-Western and microtonal systems, modes and tunings.** The aim of "universal" (see Purpose). UMT has ragas, maqamat, EDOs and Scala; what Modus would show, in the key menu, the circle, the strings and the isomorphic grid, is not designed. Microtonal isomorphic grids also wait on notae, whose grid knows only MIDI semitones
+- **Song builder:** export and import to a file, share by URL, MIDI file import and export, MusicXML and chord-sheet PDF, chord durations within the measure, lyrics and notes per measure, undo and redo of edits, free colour for sections, a click under the song playing, takes recorded into bars
+- **Metronome:** metric modulation. **Player:** pitch shift, markers. **Ear training:** answering by playing, more cadences, minor keys
+- **Offline:** the other 127 instruments come from the soundfont's host on first use (shipping them all is ~250 MB)
+- **Not tried:** Safari and iOS, a real tablet, Thru with a controller, HTML5 drag on touch
