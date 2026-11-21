@@ -6,7 +6,7 @@ Play a chord and ask Modus why it is what it is.
 
 With a key set, the **Chord** panel shows the name, its numeral (`ii7`, `V7/V`, `bVII`) and its function — Tonic, Subdominant or Dominant. **Analysis** adds the figured bass, the voicing (inversion, close or open, drop 2, doubled and missing notes), the scales that fit, substitutions and the cadence from the chord before. Its ⋯ menu picks which rows to show.
 
-**Explanation** says each of those in words for the chord on screen: why D7 is V7/V, which mode a borrowed chord comes from and which notes are foreign to the key, what the cadence does. The cadence tags in the history explain themselves in their tooltip.
+**Explanation** says each of those in words for the chord on screen: why D7 is V7/V, which mode a borrowed chord comes from and which notes are foreign to the key, what the cadence does. Where there is a real example, the entry has **Hear** (plays it in Progressions) and **Practise** (opens that kind in Ear training). The cadence tags in the history explain themselves in their tooltip.
 
 ## Study a key
 

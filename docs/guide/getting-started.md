@@ -25,9 +25,9 @@ The key at the top left of the bar sets the key you play in. Leave it on **Auto*
 
 ## The page
 
-Everything is a panel on a grid. Drag one by its title, resize it from its corner, hide it with ×. Its options are in its ⋯ menu. The ▦ button in the bar has ready-made layouts — Standard, Study, Class, Transcription, Recording — keeps layouts you save with a name, and has a box per panel to show or hide it. Panels snap to the grid and the others make room; nothing overlaps.
+Everything is a panel on a grid. Drag one by its title, resize it from its corner, hide it with ×. Its options are in its ⋯ menu. The ▦ button in the bar has ready-made layouts — Standard, Study, Class, Transcription, Recording — keeps layouts you save with a name, and has a box per panel to show or hide it, grouped under Harmony, Practice and Tools. Panels snap to the grid and the others make room; nothing overlaps.
 
-![The layouts menu: five ready-made layouts, a field to save your own, and a box for each panel](img/layout-menu.png)
+![The layouts menu: five ready-made layouts, a field to save your own, and a box for each panel, grouped](img/layout-menu.png)
 
 ## Input modes
 
