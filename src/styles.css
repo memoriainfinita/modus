@@ -602,6 +602,11 @@ body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--t
   gap: 10px;
   padding: 10px;
 }
+/* A tablet upright (721–1000 px): two columns, the layout's panels in its order (layout/grid.ts
+   twoColumns, ui/layout.ts). Nothing is moved or resized by hand there, as on a phone */
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-2 .module-header { cursor: default; }
+.grid-2 .module-resize { display: none; }
 .module {
   display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative;
   background: var(--surface-2); border-radius: 8px;

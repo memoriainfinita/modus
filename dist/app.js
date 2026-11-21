@@ -7315,6 +7315,26 @@ ${explainCadence(cadence)}` : "");
     });
     return fitted.every((c, i) => c.h === grid3[i].h) ? grid3 : compact(fitted);
   }
+  var WIDE = 7;
+  function twoColumns(grid3) {
+    const list = [...grid3].sort(byPosition);
+    const out = [];
+    let y = 0;
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      const b = list[i + 1];
+      if (a.w >= WIDE || !b || b.w >= WIDE) {
+        out.push({ id: a.id, x: 0, y, w: 2, h: a.h });
+        y += a.h;
+        continue;
+      }
+      const h = Math.max(a.h, b.h);
+      out.push({ id: a.id, x: 0, y, w: 1, h }, { id: b.id, x: 1, y, w: 1, h });
+      y += h;
+      i++;
+    }
+    return out;
+  }
   function gridRows(grid3) {
     return grid3.reduce((m, c) => Math.max(m, c.y + c.h), 0);
   }
@@ -8012,12 +8032,14 @@ ${explainCadence(cadence)}` : "");
   var contentRows = {};
   var dragging = false;
   function shownGrid() {
-    return dragging || document.body.classList.contains("presenting") || narrow() ? grid2 : fitGrid(grid2, contentRows);
+    if (dragging || document.body.classList.contains("presenting") || narrow()) return grid2;
+    return medium() ? twoColumns(grid2) : fitGrid(grid2, contentRows);
   }
   function refreshLayout() {
     applyGrid();
   }
   function applyGrid() {
+    $("grid").classList.toggle("grid-2", medium());
     const shown = shownGrid();
     const order = [...shown].sort(byPosition2).map((c) => c.id);
     for (const id of MODULE_IDS) {
@@ -8034,6 +8056,9 @@ ${explainCadence(cadence)}` : "");
     renderLayoutMenu();
   }
   var narrow = () => matchMedia("(max-width: 720px)").matches;
+  var MEDIUM = "(min-width: 721px) and (max-width: 1000px)";
+  var medium = () => matchMedia(MEDIUM).matches && !document.body.classList.contains("presenting");
+  var arranged = () => narrow() || medium();
   function wireGrid() {
     const gridEl = $("grid");
     gridEl.addEventListener("keydown", (e) => {
@@ -8053,7 +8078,7 @@ ${explainCadence(cadence)}` : "");
         (headers[i + 1] ?? headers[i - 1])?.focus();
         return;
       }
-      if (!e.key.startsWith("Arrow") || narrow()) return;
+      if (!e.key.startsWith("Arrow") || arranged()) return;
       const cell = grid2.find((c) => c.id === id);
       if (!cell) return;
       e.preventDefault();
@@ -8069,7 +8094,7 @@ ${explainCadence(cadence)}` : "");
       if (close) showModule(close.dataset.close, false);
     });
     gridEl.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0 || narrow() || document.body.classList.contains("presenting")) return;
+      if (e.button !== 0 || arranged() || document.body.classList.contains("presenting")) return;
       const target = e.target;
       const resize = target.closest(".module-resize");
       const header = target.closest(".module-header");
@@ -8170,6 +8195,7 @@ ${explainCadence(cadence)}` : "");
     }
     onLayoutChange(schedule2);
     matchMedia("(max-width: 720px)").addEventListener("change", () => applyGrid());
+    matchMedia(MEDIUM).addEventListener("change", () => applyGrid());
     schedule2();
   }
   function renderLayoutMenu() {

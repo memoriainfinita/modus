@@ -1010,6 +1010,15 @@ body {
   gap: 10px;
   padding: 10px;
 }
+.grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.grid-2 .module-header {
+  cursor: default;
+}
+.grid-2 .module-resize {
+  display: none;
+}
 .module {
   display: flex;
   flex-direction: column;

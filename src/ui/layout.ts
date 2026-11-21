@@ -25,7 +25,7 @@ import { VIEW_NAMES, VIEW_BACKGROUNDS } from '../view/channel'
 import { WINDOW_PANELS } from '../view/mirror'
 import type { ViewName, ViewBackground } from '../view/channel'
 import { t, keyLabel } from '../i18n/i18n'
-import { COLS, placeCell, addCell, removeCell, parseGrid, fitGrid } from '../layout/grid'
+import { COLS, placeCell, addCell, removeCell, parseGrid, fitGrid, twoColumns } from '../layout/grid'
 import type { Cell, Grid } from '../layout/grid'
 import { MODULE_IDS, MODULE_SIZE, PRESETS, PRESET_IDS } from '../layout/presets'
 import type { ModuleId, PresetId } from '../layout/presets'
@@ -463,7 +463,8 @@ let dragging = false
  * and on a phone, where the panels keep their rows (styles.css says why).
  */
 function shownGrid(): Grid {
-  return dragging || document.body.classList.contains('presenting') || narrow() ? grid : fitGrid(grid, contentRows)
+  if (dragging || document.body.classList.contains('presenting') || narrow()) return grid
+  return medium() ? twoColumns(grid) : fitGrid(grid, contentRows)
 }
 
 /** Draws the layout again, as after presentation starts or ends. */
@@ -471,6 +472,7 @@ export function refreshLayout() { applyGrid() }
 
 /** Puts each panel in its cells; on a narrow screen they stack in the same order. */
 function applyGrid() {
+  $('grid').classList.toggle('grid-2', medium())
   const shown = shownGrid()
   const order = [...shown].sort(byPosition).map(c => c.id)
   for (const id of MODULE_IDS) {
@@ -490,6 +492,12 @@ function applyGrid() {
 // ─── Moving and resizing ─────────────────────────────────────────────────────
 
 const narrow = () => matchMedia('(max-width: 720px)').matches
+// A tablet upright, 721 to 1000 px: two columns in layout order (twoColumns in layout/grid.ts). Not
+// while presenting, which draws the layout as it is
+const MEDIUM = '(min-width: 721px) and (max-width: 1000px)'
+const medium = () => matchMedia(MEDIUM).matches && !document.body.classList.contains('presenting')
+// Where panels are not moved or resized by hand: the layout is drawn another way
+const arranged = () => narrow() || medium()
 
 function wireGrid() {
   const gridEl = $('grid')
@@ -514,7 +522,7 @@ function wireGrid() {
       ;(headers[i + 1] ?? headers[i - 1])?.focus()
       return
     }
-    if (!e.key.startsWith('Arrow') || narrow()) return
+    if (!e.key.startsWith('Arrow') || arranged()) return
     const cell = grid.find(c => c.id === id)
     if (!cell) return
     e.preventDefault()
@@ -530,7 +538,7 @@ function wireGrid() {
     if (close) showModule(close.dataset.close as ModuleId, false)
   })
   gridEl.addEventListener('pointerdown', e => {
-    if (e.button !== 0 || narrow() || document.body.classList.contains('presenting')) return
+    if (e.button !== 0 || arranged() || document.body.classList.contains('presenting')) return
     const target = e.target as HTMLElement
     const resize = target.closest('.module-resize')
     const header = target.closest('.module-header')
@@ -638,6 +646,7 @@ function watchFittedPanels() {
   onLayoutChange(schedule)
   // Into or out of a phone's width: fitted on one side, the layout's rows on the other
   matchMedia('(max-width: 720px)').addEventListener('change', () => applyGrid())
+  matchMedia(MEDIUM).addEventListener('change', () => applyGrid())
   schedule()
 }
 

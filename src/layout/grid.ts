@@ -80,6 +80,35 @@ export function fitGrid(grid: Grid, rows: Readonly<Record<string, number>>): Gri
   return fitted.every((c, i) => c.h === grid[i].h) ? grid : compact(fitted)
 }
 
+/** Panels this many columns wide or more, in the layout, take both columns of a two-column page. */
+export const WIDE = 7
+
+/**
+ * The grid for a page of two columns (a tablet upright): the panels in layout order, top to bottom
+ * and left to right. A wide one takes both columns; the others go in pairs, both as tall as the
+ * taller; one left without a partner (the next is wide, or it is the last) takes both columns.
+ * Never overlapping and with no hole. The layout itself is not changed.
+ */
+export function twoColumns(grid: Grid): Grid {
+  const list = [...grid].sort(byPosition)
+  const out: Grid = []
+  let y = 0
+  for (let i = 0; i < list.length; i++) {
+    const a = list[i]
+    const b = list[i + 1]
+    if (a.w >= WIDE || !b || b.w >= WIDE) {
+      out.push({ id: a.id, x: 0, y, w: 2, h: a.h })
+      y += a.h
+      continue
+    }
+    const h = Math.max(a.h, b.h)
+    out.push({ id: a.id, x: 0, y, w: 1, h }, { id: b.id, x: 1, y, w: 1, h })
+    y += h
+    i++
+  }
+  return out
+}
+
 /** Rows the grid takes. */
 export function gridRows(grid: Grid): number {
   return grid.reduce((m, c) => Math.max(m, c.y + c.h), 0)

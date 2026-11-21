@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { compact, placeCell, addCell, removeCell, parseGrid, overlaps, clampCell, gridRows, fitGrid, FIT_MIN_H, COLS } from '../src/layout/grid'
+import { compact, placeCell, addCell, removeCell, parseGrid, overlaps, clampCell, gridRows, fitGrid, twoColumns, WIDE, FIT_MIN_H, COLS } from '../src/layout/grid'
 import type { Grid } from '../src/layout/grid'
 import { PRESETS, PRESET_IDS, MODULE_IDS } from '../src/layout/presets'
 
@@ -82,5 +82,48 @@ describe('presets', () => {
   it('standard shows every panel but Velocity, Next and Isomorphic, the chord across the top', () => {
     expect(PRESETS.standard.map(c => c.id).sort()).toEqual(MODULE_IDS.filter(id => id !== 'velocity' && id !== 'next' && id !== 'iso').sort())
     expect(PRESETS.standard.find(c => c.id === 'chord')).toMatchObject({ x: 0, y: 0, w: 12 })
+  })
+
+  describe('twoColumns (a tablet upright)', () => {
+    const cols = (g: Grid) => g.every(c => c.x >= 0 && c.x + c.w <= 2)
+
+    it('a wide panel takes both columns; narrow ones go in pairs as tall as the taller', () => {
+      const g = twoColumns([
+        { id: 'chord', x: 0, y: 0, w: 12, h: 3 },
+        { id: 'staff', x: 0, y: 3, w: 3, h: 11 }, { id: 'analysis', x: 3, y: 3, w: 3, h: 8 },
+        { id: 'piano', x: 0, y: 14, w: WIDE, h: 5 },
+      ])
+      expect(at(g, 'chord')).toEqual({ id: 'chord', x: 0, y: 0, w: 2, h: 3 })
+      expect(at(g, 'staff')).toEqual({ id: 'staff', x: 0, y: 3, w: 1, h: 11 })
+      expect(at(g, 'analysis')).toEqual({ id: 'analysis', x: 1, y: 3, w: 1, h: 11 })
+      expect(at(g, 'piano')).toMatchObject({ x: 0, y: 14, w: 2, h: 5 })
+    })
+
+    it('a narrow panel with no partner, before a wide one or last, takes both columns', () => {
+      const g = twoColumns([
+        { id: 'a', x: 0, y: 0, w: 3, h: 4 }, { id: 'b', x: 0, y: 4, w: 12, h: 2 }, { id: 'c', x: 0, y: 6, w: 3, h: 4 },
+      ])
+      expect(at(g, 'a')).toMatchObject({ x: 0, w: 2 })
+      expect(at(g, 'c')).toMatchObject({ x: 0, w: 2, y: 6 })
+    })
+
+    it('keeps the layout order, leaves no overlap and uses two columns, for every preset', () => {
+      for (const id of PRESET_IDS) {
+        const g = twoColumns(PRESETS[id])
+        expect(g.length).toBe(PRESETS[id].length)
+        expect(noOverlap(g)).toBe(true)
+        expect(cols(g)).toBe(true)
+        const order = [...PRESETS[id]].sort((a, b) => a.y - b.y || a.x - b.x).map(c => c.id)
+        expect(g.map(c => c.id)).toEqual(order)
+        expect(gridRows(g)).toBe(g.reduce((s, c) => c.x === 1 ? s : s + c.h, 0))   // no row is left empty
+      }
+    })
+
+    it('does not change the grid it is given', () => {
+      const g: Grid = [{ id: 'a', x: 0, y: 0, w: 3, h: 4 }, { id: 'b', x: 3, y: 0, w: 3, h: 6 }]
+      const before = JSON.stringify(g)
+      twoColumns(g)
+      expect(JSON.stringify(g)).toBe(before)
+    })
   })
 })
