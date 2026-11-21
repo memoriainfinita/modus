@@ -69,8 +69,10 @@ async function check(name, fn) {
     const detail = /Timeout/.test(lines[0]) ? [plain.find(l => /locator\(|getBy/.test(l)), plain.at(-1)].filter(Boolean).join(' | ') : ''
     results.push(['FAIL', name, lines[0] + (detail ? ` (${detail})` : '')])
   }
-  // A failed check must not leave keys held for the next one.
+  // A failed check must not leave keys held for the next one, nor a dialog or a menu open (the next
+  // checks would all time out behind it)
   await page.evaluate(() => { for (let n = 0; n < 128; n++) window.__midi([0x80, n, 0]) }).catch(() => {})
+  if (results.at(-1)?.[0] === 'FAIL') await page.keyboard.press('Escape').catch(() => {})
 }
 function assert(cond, msg) { if (!cond) throw new Error(msg) }
 
@@ -664,6 +666,8 @@ await check('settings data: export and import round trip; reset offers Undo', as
   const file = JSON.parse(body)
   assert(file.app === 'modus' && file.kind === 'settings' && !Object.keys(file.data).some(k => k.startsWith('modus-song')), 'export content')
   await page.setInputFiles('[data-import-settings]', { name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"x":1}') })
+  // The file is read asynchronously: wait for the refusal (a slower machine shows it later)
+  await page.locator('.set-error:not([hidden])').waitFor({ timeout: 5000 }).catch(() => {})
   assert((await text('.set-error')).length > 0, 'a bad file was not refused')
   await page.keyboard.press('Escape')
 })
@@ -1165,6 +1169,32 @@ await check('a phone stacks the panels in one column, in layout order', async ()
   const order = await page.locator('.module:not(.module-hidden)').evaluateAll(els =>
     els.map(e => [e.dataset.module, e.getBoundingClientRect().y]).sort((a, b) => a[1] - b[1]).map(a => a[0]))
   assert(order[0] === 'chord' && order.at(-1) === 'song', `order: ${order}`)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+})
+
+await check('a tablet upright (721 to 1000 px): two columns in layout order, no overlap, nothing dragged; the desktop grid above and the phone below', async () => {
+  const boxes = () => page.locator('.module:not(.module-hidden)').evaluateAll(els => els.map(e => { const r = e.getBoundingClientRect(); return { id: e.dataset.module, x: r.x, y: r.y, w: r.width, h: r.height } }))
+  const overlap = bs => bs.some((a, i) => bs.some((b, j) => j > i && a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1))
+  for (const width of [768, 1000]) {
+    await page.setViewportSize({ width, height: 1024 })
+    assert(await page.evaluate(() => document.getElementById('grid').classList.contains('grid-2')), `${width}: not two columns`)
+    const bs = await boxes()
+    assert(!overlap(bs), `${width}: panels overlap`)
+    const staff = bs.find(b => b.id === 'staff'), analysis = bs.find(b => b.id === 'analysis'), chord = bs.find(b => b.id === 'chord')
+    assert(Math.abs(staff.y - analysis.y) < 2 && analysis.x > staff.x + staff.w - 2, `${width}: staff and analysis are not side by side`)
+    assert(chord.w > staff.w * 1.9, `${width}: the chord does not span both columns`)
+    assert(staff.w > 300, `${width}: staff ${Math.round(staff.w)} px wide`)
+    assert(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)), `${width}: horizontal scroll`)
+  }
+  // A drag does nothing here: the stored layout stays
+  const before = await page.evaluate(() => localStorage.getItem('layout'))
+  const h = await page.locator('#mod-staff .module-header').boundingBox()
+  await page.mouse.move(h.x + 40, h.y + 12); await page.mouse.down(); await page.mouse.move(h.x + 300, h.y + 200, { steps: 5 }); await page.mouse.up()
+  assert((await page.evaluate(() => localStorage.getItem('layout'))) === before, 'a drag changed the layout')
+  await page.setViewportSize({ width: 1001, height: 1000 })
+  assert(!(await page.evaluate(() => document.getElementById('grid').classList.contains('grid-2'))), '1001: still two columns')
+  await page.setViewportSize({ width: 720, height: 800 })
+  assert(!(await page.evaluate(() => document.getElementById('grid').classList.contains('grid-2'))), '720: two columns on a phone')
   await page.setViewportSize({ width: 1440, height: 1000 })
 })
 
