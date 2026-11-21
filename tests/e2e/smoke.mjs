@@ -1,6 +1,6 @@
 // End-to-end smoke test: serves the repo, opens index.html in the installed Chrome with a
-// fake Web MIDI input, and walks the main flows. Needs network (UMT, notae, abcjs and the
-// soundfont come from CDNs). Run: pnpm test:e2e  (HEADED=1 to watch it; E2E_ONLY="next" for the
+// fake Web MIDI input, and walks the main flows. The libraries and the piano are served from
+// vendor/; it needs network only for the other instruments. CI runs it (job e2e). Run: pnpm test:e2e  (HEADED=1 to watch it; E2E_ONLY="next" for the
 // checks whose name holds "next")
 
 import { chromium } from 'playwright-core'
@@ -102,7 +102,9 @@ async function pickSetting(id, value) {
 }
 // The key from the bar's key menu: Auto, or Major/Minor and the tonic
 async function setKey(key) {
-  await page.click('#btn-key')
+  // The button toggles: a menu still open from the last call (picking a key does not close it)
+  // would be closed by this click, and its Major/Minor never show. Open it only when closed
+  if (await page.getAttribute('#btn-key', 'aria-expanded') !== 'true') await page.click('#btn-key')
   if (!key) await page.click('#key-auto')
   else {
     await page.click(`#key-menu [data-keymode="${key.endsWith('Minor') ? 'minor' : 'major'}"]`)

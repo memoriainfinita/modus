@@ -30,9 +30,26 @@ jobs:
         with:
           path: site
 
+  # The browser walk (tests/e2e/smoke.mjs): the built page in the Chrome the runner ships, with a
+  # fake Web MIDI input and a fake microphone. The real Web MIDI run (loopMIDI) stays on the
+  # author's machine. The site is published only when this passes too
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0, version from packageManager
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test:e2e
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: test
+    needs: [test, e2e]
     runs-on: ubuntu-latest
     permissions:
       pages: write
