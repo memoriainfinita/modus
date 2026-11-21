@@ -27,7 +27,7 @@ import type { ViewName, ViewBackground } from '../view/channel'
 import { t, keyLabel } from '../i18n/i18n'
 import { COLS, placeCell, addCell, removeCell, parseGrid, fitGrid, twoColumns } from '../layout/grid'
 import type { Cell, Grid } from '../layout/grid'
-import { MODULE_IDS, MODULE_SIZE, PRESETS, PRESET_IDS } from '../layout/presets'
+import { MODULE_IDS, MODULE_GROUPS, MODULE_SIZE, PRESETS, PRESET_IDS } from '../layout/presets'
 import type { ModuleId, PresetId } from '../layout/presets'
 import { metronomeMenuHtml } from '../metronome/panel'
 
@@ -672,10 +672,12 @@ function renderLayoutMenu() {
       <button id="layout-save" class="ctrl-btn">${t('layout.save')}</button>
     </div>
     <div class="view-menu-title">${t('layout.panels')}</div>
+    ${MODULE_GROUPS.map(g => `
+    <div class="layout-group-title">${t(`layout.group.${g.id}`)}</div>
     <div class="layout-modules">
-      ${MODULE_IDS.map(id => `
+      ${g.modules.map(id => `
         <label class="layout-module"><input type="checkbox" data-module="${id}"${isModuleShown(id) ? ' checked' : ''}> ${t(`module.${id}`)}</label>`).join('')}
-    </div>
+    </div>`).join('')}
     <div class="view-menu-hint">${t('layout.hint')}</div>`
 }
 

@@ -1,5 +1,7 @@
+// @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest'
-import { explainDetection, explainCadence } from '../src/detector/explain'
+import { explainDetection, explainCadence, cadenceLinks, renderExplanation } from '../src/detector/explain'
+import { PROGRESSION_IDS } from '../src/ui/progressions'
 import { buildHarmonicAnalysis } from '../src/detector/analyzer'
 import { useLang } from '../src/i18n/i18n'
 import type { ChordResult } from '../src/types'
@@ -93,5 +95,46 @@ describe('explainCadence', () => {
     }
     expect(explainCadence('Phrygian Half Cadence (iv -> V)')).toContain('iv in first inversion')
     expect(explainCadence('Half Cadence (-> V)')).toContain('stops on the dominant')
+  })
+})
+
+describe('what an explanation links to', () => {
+  it('a cadence links to its example, and to ear training only where it asks that cadence', () => {
+    expect(cadenceLinks('Authentic Cadence (V -> I)')).toEqual([{ do: 'hear', progression: 'authentic-cadence' }, { do: 'practise', ear: 'cadence' }])
+    expect(cadenceLinks('Half Cadence (-> V)')).toEqual([{ do: 'hear', progression: 'half-cadence' }, { do: 'practise', ear: 'cadence' }])
+    expect(cadenceLinks('Phrygian Half Cadence (iv6 -> V)')).toEqual([{ do: 'hear', progression: 'phrygian-half-cadence' }])
+    expect(cadenceLinks('Backdoor Cadence (bVII -> I)')).toEqual([{ do: 'hear', progression: 'backdoor-ii-V' }])
+    expect(cadenceLinks('Something else')).toEqual([])
+  })
+
+  it('every example it names is one of the progressions the panel offers', () => {
+    for (const c of ['Authentic Cadence (V -> I)', 'Plagal Cadence (IV -> I)', 'Minor Plagal Cadence (iv -> i)', 'Deceptive Cadence (V -> vi)', 'Half Cadence (-> V)',
+      'Phrygian Half Cadence (iv6 -> V)', 'Backdoor Cadence (bVII -> I)', 'Picardy Third (v -> I)']) {
+      for (const l of cadenceLinks(c)) if (l.do === 'hear') expect(PROGRESSION_IDS as readonly string[]).toContain(l.progression)
+    }
+  })
+
+  it('the cadence of a chord on screen carries its links; an interval links to ear training', () => {
+    const items = explain('C', 'C Major', ['C4', 'E4', 'G4'], 'G7', ['G3', 'B3', 'D4', 'F4'])
+    const cadence = items.find(i => /Authentic/.test(i.term))
+    expect(cadence?.links).toContainEqual({ do: 'practise', ear: 'cadence' })
+    const interval = explainDetection({ kind: 'interval', notes: ['C4', 'E4'], intervalName: 'Major 3rd', semitones: 4, inversionName: 'Minor 6th' }, null, null, null)
+    expect(interval[0].links).toEqual([{ do: 'practise', ear: 'interval' }])
+  })
+
+  it('a borrowed bVI or bVII links to modal mixture; other borrowed chords do not', () => {
+    const bvii = explain('Bb', 'C Major', ['Bb3', 'D4', 'F4']).find(i => /Borrowed/i.test(i.term))
+    expect(bvii?.links).toEqual([{ do: 'hear', progression: 'bVI-bVII-I' }])
+    const iv = explain('Fm', 'C Major', ['F3', 'Ab3', 'C4']).find(i => /Borrowed/i.test(i.term))
+    expect(iv?.links ?? []).toEqual([])
+  })
+
+  it('the buttons are drawn only when links are wanted (not in a window that only shows)', () => {
+    const el = document.createElement('div')
+    const items = [{ term: 'Authentic', text: 'x', links: cadenceLinks('Authentic Cadence (V -> I)') }]
+    renderExplanation(el, items)
+    expect(el.querySelectorAll('.explain-link').length).toBe(2)
+    renderExplanation(el, items, false)
+    expect(el.querySelectorAll('.explain-link').length).toBe(0)
   })
 })

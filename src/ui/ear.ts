@@ -142,7 +142,21 @@ export function resetEarScore() {
 }
 let answered = false
 
+// The panel as last drawn, so another panel can ask it for a kind of question
+let view: { container: HTMLElement; handlers: EarHandlers } | null = null
+
+/** Another panel (the Explanation's "Practise") opens a kind of question, without asking one: that is for the user to press. */
+export function showEarMode(m: string): boolean {
+  if (!view || !(EAR_MODES as readonly string[]).includes(m)) return false
+  mode = m as EarMode
+  save('ear-mode', mode)
+  question = null
+  renderEar(view.container, view.handlers)
+  return true
+}
+
 export function renderEar(container: HTMLElement, handlers: EarHandlers) {
+  view = { container, handlers }
   const tally = score[mode]
   container.innerHTML = `
     <div class="ear-head">

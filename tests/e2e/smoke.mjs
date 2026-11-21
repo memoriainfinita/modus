@@ -196,6 +196,22 @@ await check('D7 in C Major reads V7/V, secondary → V; the explanation says wha
   await off([62, 66, 69, 72])
 })
 
+await check('the Explanation of a cadence says "Hear" (its example in Progressions) and "Practise" (ear training); neither asks anything on its own', async () => {
+  await setKey('C Major')
+  await play([55, 59, 62, 65], 1000); await off([55, 59, 62, 65])
+  await play([60, 64, 67], 150)
+  const links = await page.locator('#explain-container .explain-link').allInnerTexts()
+  assert(links.includes('Hear') && links.includes('Practise'), `links: ${links}`)
+  await page.locator('#explain-container .explain-link[data-do="practise"]').first().click()
+  assert(await page.getAttribute('#ear-container .ear-mode[data-mode="cadence"]', 'aria-pressed') === 'true', 'ear training not on Cadences')
+  assert(await page.locator('#ear-container .ear-answer:not([disabled])').count() === 0, 'a question was asked by itself')
+  await page.locator('#explain-container .explain-link[data-do="hear"]').first().click()
+  assert(await page.getAttribute('#progressions-container [data-prog="authentic-cadence"]', 'aria-pressed') === 'true', 'the example was not picked')
+  await page.locator('#prog-play').click()   // stops what the link started
+  await page.click('#progressions-container [data-group="jazz"]')   // back to ii-V-I, as the next check expects
+  await off([60, 64, 67])
+})
+
 await check('C3 D4 F#4 A4 reads D over C, an upper structure, in Analysis and Explanation', async () => {
   await play([48, 62, 66, 69])
   const a = await text('#analysis-content')
@@ -1183,7 +1199,7 @@ await check('a phone stacks the panels in one column, in layout order', async ()
   assert(new Set(xs).size === 1, `columns: ${[...new Set(xs)]}`)
   const order = await page.locator('.module:not(.module-hidden)').evaluateAll(els =>
     els.map(e => [e.dataset.module, e.getBoundingClientRect().y]).sort((a, b) => a[1] - b[1]).map(a => a[0]))
-  assert(order[0] === 'chord' && order.at(-1) === 'song', `order: ${order}`)
+  assert(order[0] === 'chord' && order.indexOf('song') < order.indexOf('tuner') && order.at(-1) === 'metronome', `order: ${order}`)   // the tools last
   await page.setViewportSize({ width: 1440, height: 1000 })
 })
 

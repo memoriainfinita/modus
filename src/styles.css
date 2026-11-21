@@ -1337,6 +1337,7 @@ body.view-mode .guitar-chrome { display: none; }
 .layout-save-row { display: flex; gap: 4px; }
 .layout-save-row input { flex: 1; min-width: 0; }
 .layout-save-row input.invalid { border-color: var(--danger); }
+.layout-group-title { font-size: 11px; font-weight: 600; color: var(--text-muted); margin: 6px 0 2px; }
 .layout-modules { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font-size: 11px; color: var(--text-soft); }
 .layout-module { display: flex; align-items: center; gap: 4px; cursor: pointer; }
 
@@ -1350,6 +1351,13 @@ body.view-mode .guitar-chrome { display: none; }
 .explain-list dt:first-child { margin-top: 0; }
 .explain-list dd { margin: .1em 0 0; color: var(--text-soft); }
 .explain-empty { color: var(--text-muted); margin: 0; }
+.explain-links { display: inline-flex; gap: 6px; margin-left: 8px; vertical-align: baseline; }
+.explain-link {
+  font: inherit; font-size: 0.85em; padding: 0 8px; border-radius: 999px; cursor: pointer;
+  background: none; color: var(--accent-text); border: 1px solid var(--border-soft);
+}
+.explain-link:hover, .explain-link:focus-visible { background: var(--surface); border-color: var(--accent); }
+body.presenting .explain-links { display: none; }
 
 /* Next panel: a row per suggested chord, its button, its numeral and why */
 .next-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }

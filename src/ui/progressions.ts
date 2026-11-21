@@ -98,7 +98,21 @@ export function stopProgression() {
   if (btn) { btn.textContent = '▶'; btn.title = t('prog.play.title') }
 }
 
+// The panel as last drawn, so another panel can ask it for a progression
+let view: { container: HTMLElement; analysisKey: string | null; handlers: ProgressionHandlers } | null = null
+
+/** Another panel (the Explanation's "Hear") picks a progression, and plays it when asked. False when it is not one of UMT's. */
+export function showProgression(id: string, play: boolean): boolean {
+  if (!view || !(PROGRESSION_IDS as readonly string[]).includes(id)) return false
+  current = id as ProgressionId
+  save('progression', current)
+  renderProgressions(view.container, view.analysisKey, view.handlers)
+  if (play) document.getElementById('prog-play')?.click()
+  return true
+}
+
 export function renderProgressions(container: HTMLElement, analysisKey: string | null, handlers: ProgressionHandlers) {
+  view = { container, analysisKey, handlers }
   stopProgression()
   const key = progressionKey(current, analysisKey)
   const chords = realizeProgression(current, key)

@@ -33,8 +33,8 @@ import { toggleHelp, wireKeyboard } from './input/shortcuts'
 import { ANALYSIS_FIELD_KEYS, renderZone1Analysis, fitChordName } from './detector/analysis-panel'
 import { explainDetection, renderExplanation } from './detector/explain'
 import { suggestNext, renderNext, substitutesFor } from './detector/next'
-import { renderProgressions } from './ui/progressions'
-import { renderEar, resetEarScore, type EarQuestion } from './ui/ear'
+import { renderProgressions, showProgression } from './ui/progressions'
+import { renderEar, resetEarScore, showEarMode, type EarQuestion } from './ui/ear'
 import { wireSettings, openSettings, closeSettings, offerSettingsUndo, settingsCommands } from './ui/settings'
 import { renderPlayer, setPlayerNotesCallback } from './ui/player'
 import { renderMetronome } from './metronome/panel'
@@ -52,7 +52,7 @@ import { spellDetection, spellVoicing } from './theory/spelling'
 import { loadBool, loadChoice, loadNumber, save, setStorageReadOnly } from './ui/storage'
 import { escapeHtml } from './ui/html'
 import { normalizeKey, keyPrefersSharps, keyMode, keyOnParent, KEY_MODES, type KeyMode } from './theory/keys'
-import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands, panelMenuCommands, isModuleShown, useLayout, layoutChoices } from './ui/layout'
+import { loadPanels, renderLayout, applyPanelVisibility, wirePanelToggles, onLayoutChange, currentGrid, layoutCommands, panelMenuCommands, isModuleShown, useLayout, layoutChoices, showModule } from './ui/layout'
 import { applyTheme, onThemeChange, followSystemTheme, color } from './ui/theme'
 import { t, chordLabel, noteLabel, keyLabel, applyDocumentLang, getLang } from './i18n/i18n'
 import { announce, silence, watchIconButtons } from './ui/a11y'
@@ -145,6 +145,7 @@ function init() {
   window.addEventListener('pointerup', onPianoRelease)
   window.addEventListener('pointercancel', onPianoRelease)
   wireBar()
+  wireExplainLinks()
   setModeBtn(getMode())
   renderDetector()
   drawEar()
@@ -574,7 +575,31 @@ function renderExplain() {
   // The history's harmonic rhythm, when it has one: a term of the progression, not of the chord
   const rhythm = state.detection ? rhythmText() : null
   if (rhythm) items.push({ term: t('ex.term.rhythm'), text: `${rhythm}. ${t('ex.rhythm')}` })
-  renderExplanation(el, items)
+  renderExplanation(el, items, !layoutWindow)
+}
+
+/**
+ * The Explanation's buttons: "Hear" plays the example of a term in the Progressions panel,
+ * "Practise" opens the kind of ear training that asks it. The panel is shown first if the layout
+ * hides it, and brought into view; ear training only opens (the question is the user's to ask).
+ */
+function wireExplainLinks() {
+  document.getElementById('explain-container')?.addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('.explain-link')
+    if (!b) return
+    const reveal = (id: 'progressions' | 'ear') => {
+      showModule(id, true)
+      document.getElementById(`mod-${id}`)?.scrollIntoView({ block: 'nearest' })
+    }
+    if (b.dataset.do === 'hear') {
+      reveal('progressions')
+      initAudioOnGesture()
+      showProgression(b.dataset.progression ?? '', true)
+    } else {
+      reveal('ear')
+      if (showEarMode(b.dataset.ear ?? '')) document.getElementById('ear-new')?.focus()
+    }
+  })
 }
 
 // Next keeps the last chord shown after its keys are released, so a suggestion can still be picked

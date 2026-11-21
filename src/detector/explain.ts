@@ -14,8 +14,14 @@ import { hasLeadingTone } from '../theory/keys'
 import { escapeHtml } from '../ui/html'
 import { getPref } from '../settings/prefs'
 
+/**
+ * Where a term can be heard or practised: an example in the Progressions panel (UMT's id), or a
+ * kind of ear training. Only where there is such an example or kind; nothing else is linked.
+ */
+export type ExplanationLink = { do: 'hear'; progression: string } | { do: 'practise'; ear: 'interval' | 'cadence' }
+
 /** One term and what it means here. */
-export interface Explanation { term: string; text: string }
+export interface Explanation { term: string; text: string; links?: ExplanationLink[] }
 
 type Degree = 1 | 2 | 3 | 4 | 5 | 6 | 7
 const nth = (n: number) => t(`ex.nth.${n as Degree}`)
@@ -73,7 +79,9 @@ function colourEntries(symbol: string, key: string, a: HarmonicAnalysis): Explan
   const notes = notesOutside(symbol, key).join(' ')
   if (a.isBorrowed && a.borrowedFrom) {
     const mode = scaleLabel(`${key.split(' ')[0]} ${a.borrowedFrom}`)
-    return [{ term: t('analysis.borrowed', { mode: a.borrowedFrom }), text: t('ex.borrowed', { chord, mode, key: k, notes }) }]
+    // The example of modal mixture in the Progressions panel is a ♭VI and a ♭VII
+    const links: ExplanationLink[] = /^[b♭]VII?(?!I)/.test(a.degree ?? a.roman) ? [{ do: 'hear', progression: 'bVI-bVII-I' }] : []
+    return [{ term: t('analysis.borrowed', { mode: a.borrowedFrom }), text: t('ex.borrowed', { chord, mode, key: k, notes }), links }]
   }
   if (a.substitutionCandidate?.startsWith('tritone')) return [{ term: substitutionTypeLabel('tritone'), text: t('ex.tritoneSub', { chord }) }]
   return [{ term: t('analysis.chromatic'), text: t('ex.chromatic', { chord, key: k, notes }) }]
@@ -84,6 +92,23 @@ const CADENCES: [string, string][] = [
   ['Authentic', 'authentic'], ['Minor Plagal', 'minorPlagal'], ['Plagal', 'plagal'], ['Deceptive', 'deceptive'],
   ['Phrygian Half', 'phrygianHalf'], ['Phrygian', 'phrygian'], ['Backdoor', 'backdoor'], ['Half', 'half'], ['Picardy', 'picardy'],
 ]
+
+// The example of each cadence in the Progressions panel, and the ones ear training asks
+const CADENCE_EXAMPLE: Record<string, string> = {
+  authentic: 'authentic-cadence', plagal: 'plagal-cadence', deceptive: 'deceptive-cadence', half: 'half-cadence',
+  phrygianHalf: 'phrygian-half-cadence', minorPlagal: 'minor-plagal-cadence', backdoor: 'backdoor-ii-V', picardy: 'picardy-third',
+}
+const CADENCE_EAR = ['authentic', 'plagal', 'deceptive', 'half']
+
+/** What a cadence can be linked to: its example, and ear training when it asks that cadence. */
+export function cadenceLinks(cadence: string): ExplanationLink[] {
+  const k = CADENCES.find(([start]) => cadence.startsWith(start))?.[1]
+  if (!k) return []
+  const links: ExplanationLink[] = []
+  if (CADENCE_EXAMPLE[k]) links.push({ do: 'hear', progression: CADENCE_EXAMPLE[k] })
+  if (CADENCE_EAR.includes(k)) links.push({ do: 'practise', ear: 'cadence' })
+  return links
+}
 
 /** What a cadence UMT names is ("Authentic Cadence (V -> I)"); null for one it does not explain. */
 export function explainCadence(cadence: string): string | null {
@@ -112,7 +137,7 @@ export const SUBSTITUTION_TYPES = ['tritone', 'diatonic', 'deceptive', 'chromati
 /** Every term of the analysis of what is on screen, explained. */
 export function explainDetection(detection: DetectionResult, a: HarmonicAnalysis | null, key: string | null, prevSymbol: string | null): Explanation[] {
   if (detection?.kind === 'interval') {
-    return [{ term: detection.intervalName, text: t('ex.interval', { n: detection.semitones % 12 || 12, inv: detection.inversionName }) }]
+    return [{ term: detection.intervalName, text: t('ex.interval', { n: detection.semitones % 12 || 12, inv: detection.inversionName }), links: [{ do: 'practise', ear: 'interval' }] }]
   }
   if (detection?.kind !== 'chord' || !a) return []
   const symbol = detection.candidates[detection.selectedIndex]
@@ -128,7 +153,7 @@ export function explainDetection(detection: DetectionResult, a: HarmonicAnalysis
   out.push(...voicingEntries(detection.notes, symbol))
   if (a.cadence) {
     const text = explainCadence(a.cadence)
-    if (text) out.push({ term: cadenceLabel(a.cadence), text })
+    if (text) out.push({ term: cadenceLabel(a.cadence), text, links: cadenceLinks(a.cadence) })
   }
   if (a.transformation && prevSymbol) {
     out.push({ term: a.transformation, text: t('ex.plr', { chord: chordLabel(symbol), prev: chordLabel(prevSymbol), path: a.transformation }) })
@@ -151,8 +176,13 @@ export function explainDetection(detection: DetectionResult, a: HarmonicAnalysis
   return out
 }
 
-export function renderExplanation(container: HTMLElement, items: Explanation[]) {
+const linkButton = (l: ExplanationLink) => l.do === 'hear'
+  ? `<button type="button" class="explain-link" data-do="hear" data-progression="${escapeHtml(l.progression)}" title="${escapeHtml(t('ex.link.hear.title'))}">${escapeHtml(t('ex.link.hear'))}</button>`
+  : `<button type="button" class="explain-link" data-do="practise" data-ear="${l.ear}" title="${escapeHtml(t('ex.link.practise.title'))}">${escapeHtml(t('ex.link.practise'))}</button>`
+
+/** The terms as a list; `links` false (a window that only shows, as for OBS) leaves out the buttons. */
+export function renderExplanation(container: HTMLElement, items: Explanation[], links = true) {
   container.innerHTML = items.length
-    ? `<dl class="explain-list">${items.map(i => `<dt>${escapeHtml(i.term)}</dt><dd>${escapeHtml(i.text)}</dd>`).join('')}</dl>`
+    ? `<dl class="explain-list">${items.map(i => `<dt>${escapeHtml(i.term)}</dt><dd>${escapeHtml(i.text)}${links && i.links?.length ? `<span class="explain-links">${i.links.map(linkButton).join('')}</span>` : ''}</dd>`).join('')}</dl>`
     : `<p class="explain-empty">${escapeHtml(t('ex.empty'))}</p>`
 }

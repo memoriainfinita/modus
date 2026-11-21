@@ -840,6 +840,9 @@
     "layout.name": "Name",
     "layout.save": "Save this one",
     "layout.panels": "Panels",
+    "layout.group.harmony": "Harmony",
+    "layout.group.practice": "Practice",
+    "layout.group.tools": "Tools",
     "layout.hint": "Drag a panel by its title, resize it from its corner: it snaps to the grid.",
     "module.chord": "Chord",
     "module.staff": "Staff",
@@ -1104,6 +1107,10 @@
     "vl.issue.leadingTone": "leading tone does not rise to the tonic ({voices})",
     "vl.issue.doubledLeadingTone": "leading tone doubled ({voices})",
     "vl.issue.seventh": "seventh does not fall by step ({voices})",
+    "ex.link.hear": "Hear",
+    "ex.link.hear.title": "Play an example in the Progressions panel",
+    "ex.link.practise": "Practise",
+    "ex.link.practise.title": "Open ear training on this",
     "ex.empty": "Play or pick a chord: each term the analysis shows is explained here, in its key.",
     "next.empty": "Play or pick a chord: the chords that usually follow it are suggested here, each with why.",
     "next.noKey": "Pick a key, or play a few chords for it to be read: what follows a chord depends on the key.",
@@ -1917,6 +1924,9 @@
     "layout.name": "Nombre",
     "layout.save": "Guardar esta",
     "layout.panels": "Paneles",
+    "layout.group.harmony": "Armon\xEDa",
+    "layout.group.practice": "Pr\xE1ctica",
+    "layout.group.tools": "Herramientas",
     "layout.hint": "Arrastra un panel por su t\xEDtulo y cambia su tama\xF1o desde la esquina: se ajusta a la rejilla.",
     "module.chord": "Acorde",
     "module.staff": "Pentagrama",
@@ -2175,6 +2185,10 @@
     "vl.issue.leadingTone": "la sensible no sube a la t\xF3nica ({voices})",
     "vl.issue.doubledLeadingTone": "sensible doblada ({voices})",
     "vl.issue.seventh": "la s\xE9ptima no baja por grado conjunto ({voices})",
+    "ex.link.hear": "Escuchar",
+    "ex.link.hear.title": "Reproduce un ejemplo en el panel de Progresiones",
+    "ex.link.practise": "Practicar",
+    "ex.link.practise.title": "Abre el entrenamiento auditivo con esto",
     "ex.empty": "Toca o elige un acorde: aqu\xED se explica cada t\xE9rmino del an\xE1lisis, en su tonalidad.",
     "next.empty": "Toca o elige un acorde: aqu\xED se proponen los acordes que suelen seguirle, cada uno con su porqu\xE9.",
     "next.noKey": "Elige una tonalidad, o toca unos acordes para que se lea: lo que sigue a un acorde depende de la tonalidad.",
@@ -5390,7 +5404,8 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     const notes2 = notesOutside(symbol, key).join(" ");
     if (a.isBorrowed && a.borrowedFrom) {
       const mode4 = scaleLabel(`${key.split(" ")[0]} ${a.borrowedFrom}`);
-      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode4, key: k, notes: notes2 }) }];
+      const links = /^[b♭]VII?(?!I)/.test(a.degree ?? a.roman) ? [{ do: "hear", progression: "bVI-bVII-I" }] : [];
+      return [{ term: t("analysis.borrowed", { mode: a.borrowedFrom }), text: t("ex.borrowed", { chord, mode: mode4, key: k, notes: notes2 }), links }];
     }
     if (a.substitutionCandidate?.startsWith("tritone")) return [{ term: substitutionTypeLabel("tritone"), text: t("ex.tritoneSub", { chord }) }];
     return [{ term: t("analysis.chromatic"), text: t("ex.chromatic", { chord, key: k, notes: notes2 }) }];
@@ -5406,6 +5421,25 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     ["Half", "half"],
     ["Picardy", "picardy"]
   ];
+  var CADENCE_EXAMPLE = {
+    authentic: "authentic-cadence",
+    plagal: "plagal-cadence",
+    deceptive: "deceptive-cadence",
+    half: "half-cadence",
+    phrygianHalf: "phrygian-half-cadence",
+    minorPlagal: "minor-plagal-cadence",
+    backdoor: "backdoor-ii-V",
+    picardy: "picardy-third"
+  };
+  var CADENCE_EAR = ["authentic", "plagal", "deceptive", "half"];
+  function cadenceLinks(cadence) {
+    const k = CADENCES.find(([start]) => cadence.startsWith(start))?.[1];
+    if (!k) return [];
+    const links = [];
+    if (CADENCE_EXAMPLE[k]) links.push({ do: "hear", progression: CADENCE_EXAMPLE[k] });
+    if (CADENCE_EAR.includes(k)) links.push({ do: "practise", ear: "cadence" });
+    return links;
+  }
   function explainCadence(cadence) {
     const k = CADENCES.find(([start]) => cadence.startsWith(start))?.[1];
     return k ? t(`ex.cad.${k}`) : null;
@@ -5435,7 +5469,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
   var SUBSTITUTION_TYPES = ["tritone", "diatonic", "deceptive", "chromatic-mediant", "sus4", "modal"];
   function explainDetection(detection, a, key, prevSymbol) {
     if (detection?.kind === "interval") {
-      return [{ term: detection.intervalName, text: t("ex.interval", { n: detection.semitones % 12 || 12, inv: detection.inversionName }) }];
+      return [{ term: detection.intervalName, text: t("ex.interval", { n: detection.semitones % 12 || 12, inv: detection.inversionName }), links: [{ do: "practise", ear: "interval" }] }];
     }
     if (detection?.kind !== "chord" || !a) return [];
     const symbol = detection.candidates[detection.selectedIndex];
@@ -5451,7 +5485,7 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     out.push(...voicingEntries(detection.notes, symbol));
     if (a.cadence) {
       const text = explainCadence(a.cadence);
-      if (text) out.push({ term: cadenceLabel(a.cadence), text });
+      if (text) out.push({ term: cadenceLabel(a.cadence), text, links: cadenceLinks(a.cadence) });
     }
     if (a.transformation && prevSymbol) {
       out.push({ term: a.transformation, text: t("ex.plr", { chord: chordLabel(symbol), prev: chordLabel(prevSymbol), path: a.transformation }) });
@@ -5472,8 +5506,9 @@ ${bar(prev && lower(prev), lower(notes2), empty)}`;
     for (const k of a.voiceRuleKeys) out.push({ term: t(`vl.issue.${k}`, { voices: "" }).replace(/\s*\(\)$/, ""), text: t(`ex.vl.${k}`) });
     return out;
   }
-  function renderExplanation(container2, items) {
-    container2.innerHTML = items.length ? `<dl class="explain-list">${items.map((i) => `<dt>${escapeHtml(i.term)}</dt><dd>${escapeHtml(i.text)}</dd>`).join("")}</dl>` : `<p class="explain-empty">${escapeHtml(t("ex.empty"))}</p>`;
+  var linkButton = (l) => l.do === "hear" ? `<button type="button" class="explain-link" data-do="hear" data-progression="${escapeHtml(l.progression)}" title="${escapeHtml(t("ex.link.hear.title"))}">${escapeHtml(t("ex.link.hear"))}</button>` : `<button type="button" class="explain-link" data-do="practise" data-ear="${l.ear}" title="${escapeHtml(t("ex.link.practise.title"))}">${escapeHtml(t("ex.link.practise"))}</button>`;
+  function renderExplanation(container2, items, links = true) {
+    container2.innerHTML = items.length ? `<dl class="explain-list">${items.map((i) => `<dt>${escapeHtml(i.term)}</dt><dd>${escapeHtml(i.text)}${links && i.links?.length ? `<span class="explain-links">${i.links.map(linkButton).join("")}</span>` : ""}</dd>`).join("")}</dl>` : `<p class="explain-empty">${escapeHtml(t("ex.empty"))}</p>`;
   }
 
   // src/id.ts
@@ -5726,6 +5761,11 @@ ${explainCadence(cadence)}` : "");
     "history",
     "song"
   ];
+  var MODULE_GROUPS = [
+    { id: "harmony", modules: ["chord", "staff", "analysis", "explain", "next", "cof", "guitar", "key", "piano", "iso", "velocity", "history", "song"] },
+    { id: "practice", modules: ["progressions", "ear"] },
+    { id: "tools", modules: ["tuner", "player", "metronome"] }
+  ];
   var MODULE_SIZE = {
     chord: { w: 4, h: 3 },
     staff: { w: 4, h: 8 },
@@ -5750,7 +5790,7 @@ ${explainCadence(cadence)}` : "");
   var grid = (specs) => specs.map(([id, x, y, w, h]) => ({ id, x, y, w, h }));
   var PRESETS = {
     // Everything but Velocity, Next and Isomorphic (in the layout menu): the chord as a header across the page, the four
-    // diagrams under it, the key and its explanation, then the piano and the practice panels
+    // diagrams under it, the key and its explanation, then the piano, the practice panels, the history and the song, and the tools last
     standard: grid([
       ["chord", 0, 0, 12, 3],
       ["staff", 0, 3, 3, 11],
@@ -5761,12 +5801,12 @@ ${explainCadence(cadence)}` : "");
       ["explain", 8, 14, 4, 12],
       ["piano", 0, 26, 12, 5],
       ["progressions", 0, 31, 12, 4],
-      ["ear", 0, 35, 4, 5],
-      ["tuner", 4, 35, 3, 5],
-      ["player", 7, 35, 5, 5],
-      ["metronome", 0, 40, 12, 9],
-      ["history", 0, 49, 12, 3],
-      ["song", 0, 52, 12, 12]
+      ["ear", 0, 35, 12, 5],
+      ["history", 0, 40, 12, 3],
+      ["song", 0, 43, 12, 12],
+      ["player", 0, 55, 7, 5],
+      ["tuner", 7, 55, 5, 5],
+      ["metronome", 0, 60, 12, 9]
     ]),
     // Harmony at the desk: the key and the analysis large, what is played next to them
     study: grid([
@@ -7212,9 +7252,9 @@ ${explainCadence(cadence)}` : "");
     });
     channel2?.postMessage({ type: "hello" });
   }
-  function viewUrl(view2, bg, base = location.href) {
+  function viewUrl(view4, bg, base = location.href) {
     const url = new URL(base);
-    url.search = new URLSearchParams({ view: view2, bg }).toString();
+    url.search = new URLSearchParams({ view: view4, bg }).toString();
     url.hash = "";
     return url.toString();
   }
@@ -8235,10 +8275,12 @@ ${explainCadence(cadence)}` : "");
       <button id="layout-save" class="ctrl-btn">${t("layout.save")}</button>
     </div>
     <div class="view-menu-title">${t("layout.panels")}</div>
+    ${MODULE_GROUPS.map((g) => `
+    <div class="layout-group-title">${t(`layout.group.${g.id}`)}</div>
     <div class="layout-modules">
-      ${MODULE_IDS.map((id) => `
+      ${g.modules.map((id) => `
         <label class="layout-module"><input type="checkbox" data-module="${id}"${isModuleShown(id) ? " checked" : ""}> ${t(`module.${id}`)}</label>`).join("")}
-    </div>
+    </div>`).join("")}
     <div class="view-menu-hint">${t("layout.hint")}</div>`;
   }
   function wireLayoutMenu() {
@@ -8627,9 +8669,9 @@ ${explainCadence(cadence)}` : "");
     <div class="view-chord-name" style="color:${fill}">${escapeHtml(s.label)}</div>
     ${detail ? `<div class="view-chord-detail">${escapeHtml(detail)}</div>` : ""}`;
   }
-  function renderView(view2, el2, s) {
-    if (view2 === "chord") return renderChordView(el2, s);
-    if (view2 === "staff") {
+  function renderView(view4, el2, s) {
+    if (view4 === "chord") return renderChordView(el2, s);
+    if (view4 === "staff") {
       el2.innerHTML = "<div></div>";
       const inner = el2.firstElementChild;
       renderStaff(
@@ -8644,15 +8686,15 @@ ${explainCadence(cadence)}` : "");
       );
       inner.style.height = "100%";
       inner.style.width = "100%";
-    } else if (view2 === "cof") renderCircleOfFifths(el2, s.key, s.symbol, () => {
+    } else if (view4 === "cof") renderCircleOfFifths(el2, s.key, s.symbol, () => {
     }, 400, { ...cofOptions(s.key), backdrop: color("bg") });
-    else if (view2 === "piano") {
+    else if (view4 === "piano") {
       const scale = loadBool("piano-scale", false) && s.key ? scaleInfo(scaleSymbol(s.key, "key")) : null;
       renderPiano(el2, s.notes, s.symbol ? s.function : null, void 0, null, scale);
-    } else if (view2 === "iso") {
+    } else if (view4 === "iso") {
       renderIso(el2, s.notes, s.symbol && s.function !== "unknown" ? s.function : null, s.key, loadIsoOptions());
       return;
-    } else if (view2 === "guitar") {
+    } else if (view4 === "guitar") {
       setGuitarScaleContext(s.key, s.symbol ? s.function : null);
       renderGuitar(el2, s.symbol, s.notes, s.guitarVoicing);
     }
@@ -8660,11 +8702,11 @@ ${explainCadence(cadence)}` : "");
   }
   function runViewerFromUrl() {
     const params = new URLSearchParams(location.search);
-    const view2 = params.get("view");
-    if (!view2 || !VIEW_NAMES.includes(view2)) return false;
+    const view4 = params.get("view");
+    if (!view4 || !VIEW_NAMES.includes(view4)) return false;
     const bg = params.get("bg") ?? "magenta";
     const background = VIEW_BACKGROUNDS[bg] ?? VIEW_BACKGROUNDS.magenta;
-    document.title = `Modus view: ${view2}`;
+    document.title = `Modus view: ${view4}`;
     applyDocumentLang();
     applyTheme("dark");
     document.body.classList.add("view-mode");
@@ -8672,15 +8714,15 @@ ${explainCadence(cadence)}` : "");
     document.getElementById("app").style.display = "none";
     const el2 = document.createElement("div");
     el2.id = "view-content";
-    el2.className = `view-${view2}`;
+    el2.className = `view-${view4}`;
     document.body.appendChild(el2);
     let last = null;
     subscribeView((s) => {
       last = s;
-      renderView(view2, el2, s);
+      renderView(view4, el2, s);
     });
-    if (view2 === "iso") window.addEventListener("resize", () => {
-      if (last) renderView(view2, el2, last);
+    if (view4 === "iso") window.addEventListener("resize", () => {
+      if (last) renderView(view4, el2, last);
     });
     window.addEventListener("storage", (e) => {
       if (e.key && /^(guitar-|cof-|staff-clef|staff-names$|piano-scale$|iso-|lang$|note-names$)/.test(e.key)) location.reload();
@@ -10387,7 +10429,17 @@ ${explainCadence(cadence)}` : "");
       btn.title = t("prog.play.title");
     }
   }
+  var view2 = null;
+  function showProgression(id, play) {
+    if (!view2 || !PROGRESSION_IDS.includes(id)) return false;
+    current3 = id;
+    save("progression", current3);
+    renderProgressions(view2.container, view2.analysisKey, view2.handlers);
+    if (play) document.getElementById("prog-play")?.click();
+    return true;
+  }
   function renderProgressions(container2, analysisKey2, handlers) {
+    view2 = { container: container2, analysisKey: analysisKey2, handlers };
     stopProgression();
     const key = progressionKey(current3, analysisKey2);
     const chords = realizeProgression(current3, key);
@@ -10665,7 +10717,17 @@ ${explainCadence(c.cadence)}` : ""}`;
     save("ear-score", score);
   }
   var answered = false;
+  var view3 = null;
+  function showEarMode(m) {
+    if (!view3 || !EAR_MODES.includes(m)) return false;
+    mode3 = m;
+    save("ear-mode", mode3);
+    question = null;
+    renderEar(view3.container, view3.handlers);
+    return true;
+  }
   function renderEar(container2, handlers) {
+    view3 = { container: container2, handlers };
     const tally = score[mode3];
     container2.innerHTML = `
     <div class="ear-head">
@@ -11186,6 +11248,7 @@ ${explainCadence(c.cadence)}` : ""}`;
     window.addEventListener("pointerup", onPianoRelease);
     window.addEventListener("pointercancel", onPianoRelease);
     wireBar();
+    wireExplainLinks();
     setModeBtn(getMode());
     renderDetector();
     drawEar();
@@ -11619,7 +11682,25 @@ ${explainCadence(c.cadence)}` : ""}`;
     const items = explainDetection(state.detection, state.analysis, analysisKey(), cadencePrev);
     const rhythm = state.detection ? rhythmText() : null;
     if (rhythm) items.push({ term: t("ex.term.rhythm"), text: `${rhythm}. ${t("ex.rhythm")}` });
-    renderExplanation(el2, items);
+    renderExplanation(el2, items, !layoutWindow);
+  }
+  function wireExplainLinks() {
+    document.getElementById("explain-container")?.addEventListener("click", (e) => {
+      const b = e.target.closest(".explain-link");
+      if (!b) return;
+      const reveal = (id) => {
+        showModule(id, true);
+        document.getElementById(`mod-${id}`)?.scrollIntoView({ block: "nearest" });
+      };
+      if (b.dataset.do === "hear") {
+        reveal("progressions");
+        initAudioOnGesture();
+        showProgression(b.dataset.progression ?? "", true);
+      } else {
+        reveal("ear");
+        if (showEarMode(b.dataset.ear ?? "")) document.getElementById("ear-new")?.focus();
+      }
+    });
   }
   var nextFrom = null;
   var liftingNotes = false;
@@ -11679,8 +11760,8 @@ ${explainCadence(c.cadence)}` : ""}`;
   }
   var sendView = createViewPublisher();
   function publishView() {
-    const view2 = viewState();
-    sendView(view2);
+    const view4 = viewState();
+    sendView(view4);
   }
   var layoutWindow = layoutWindowParams();
   var publishMirror = () => {
@@ -11818,9 +11899,9 @@ ${explainCadence(c.cadence)}` : ""}`;
     });
     menu.querySelectorAll("[data-view]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const view2 = btn.dataset.view;
-        const [w, h] = VIEW_WINDOW[view2];
-        window.open(viewUrl(view2, viewBackground), `modus-view-${view2}`, `popup,width=${w},height=${h}`)?.focus();
+        const view4 = btn.dataset.view;
+        const [w, h] = VIEW_WINDOW[view4];
+        window.open(viewUrl(view4, viewBackground), `modus-view-${view4}`, `popup,width=${w},height=${h}`)?.focus();
         closePopover();
       });
     });
@@ -12054,12 +12135,12 @@ ${explainCadence(c.cadence)}` : ""}`;
     }
     const vel = noteVelocities(noteNames);
     renderIfChanged("velocity", JSON.stringify(vel), () => renderVelocity($2("velocity-container"), vel));
-    const view2 = getStringsView();
-    const neck = view2 === "neck" ? `${notes2}|${keyPrefersSharps(key)}` : view2 === "scale" ? `${notes2}|${key}|${fn}` : "";
+    const view4 = getStringsView();
+    const neck = view4 === "neck" ? `${notes2}|${keyPrefersSharps(key)}` : view4 === "scale" ? `${notes2}|${key}|${fn}` : "";
     setGuitarScaleContext(key, fn);
     const named = !isModuleShown("chord");
     setGuitarShowsName(named);
-    renderIfChanged("guitar", `${chordSymbol}|${view2}|${neck}|${named}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames, void 0, !keyPrefersSharps(key)));
+    renderIfChanged("guitar", `${chordSymbol}|${view4}|${neck}|${named}`, () => renderGuitar($2("guitar-container"), chordSymbol, noteNames, void 0, !keyPrefersSharps(key)));
     renderIfChanged("cof", `${key}|${chordSymbol}|${JSON.stringify(cofOpts)}`, () => renderCircleOfFifths($2("cof-container"), key, chordSymbol, onCofClick, COF_SIZE, cofOpts));
     const keyOpts = { sevenths: keySevenths, showNegative: keyShowNegative, showParallel: keyShowParallel, showColtrane: keyShowColtrane, usualOnly: keyUsualOnly, fontScale: keyScale };
     const keyTitle = key ? state.activeKey ? keyLabel(key) : t("keyPanel.auto", { key: keyLabel(key) }) : "";

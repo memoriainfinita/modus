@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { compact, placeCell, addCell, removeCell, parseGrid, overlaps, clampCell, gridRows, fitGrid, twoColumns, WIDE, FIT_MIN_H, COLS } from '../src/layout/grid'
 import type { Grid } from '../src/layout/grid'
-import { PRESETS, PRESET_IDS, MODULE_IDS } from '../src/layout/presets'
+import { PRESETS, PRESET_IDS, MODULE_IDS, MODULE_GROUPS } from '../src/layout/presets'
 
 const noOverlap = (g: Grid) => g.every(a => g.every(b => !overlaps(a, b)))
 const at = (g: Grid, id: string) => g.find(c => c.id === id)!
@@ -77,6 +77,17 @@ describe('presets', () => {
       expect(g.every(c => c.x + c.w <= COLS), id).toBe(true)
       expect(compact(g).map(c => [c.id, c.y]).sort(), id).toEqual(g.map(c => [c.id, c.y]).sort())
     }
+  })
+
+  it('the layout menu lists every panel once, under harmony, practice or tools', () => {
+    const listed = MODULE_GROUPS.flatMap(g => [...g.modules])
+    expect([...listed].sort()).toEqual([...MODULE_IDS].sort())
+    expect(MODULE_GROUPS.find(g => g.id === 'tools')!.modules).toEqual(['tuner', 'player', 'metronome'])
+  })
+
+  it('in standard the tools come last, after the history and the song', () => {
+    const rows = (id: string) => PRESETS.standard.find(c => c.id === id)!.y
+    for (const tool of ['tuner', 'player', 'metronome']) expect(rows(tool)).toBeGreaterThan(rows('song'))
   })
 
   it('standard shows every panel but Velocity, Next and Isomorphic, the chord across the top', () => {

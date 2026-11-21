@@ -8,6 +8,17 @@ export const MODULE_IDS = [
 ] as const
 export type ModuleId = typeof MODULE_IDS[number]
 
+/**
+ * The panels by what they are, as the layout menu lists them: harmony (what is played and what it
+ * says), practice (what teaches it) and tools (a metronome, a tuner and a player work beside the
+ * analysis, not as part of it).
+ */
+export const MODULE_GROUPS = [
+  { id: 'harmony', modules: ['chord', 'staff', 'analysis', 'explain', 'next', 'cof', 'guitar', 'key', 'piano', 'iso', 'velocity', 'history', 'song'] },
+  { id: 'practice', modules: ['progressions', 'ear'] },
+  { id: 'tools', modules: ['tuner', 'player', 'metronome'] },
+] as const satisfies readonly { id: string; modules: readonly ModuleId[] }[]
+
 /** Width and height a panel takes when it is added (columns of 12, rows). */
 export const MODULE_SIZE: Record<ModuleId, { w: number; h: number }> = {
   chord: { w: 4, h: 3 }, staff: { w: 4, h: 8 }, analysis: { w: 3, h: 11 }, explain: { w: 4, h: 11 }, next: { w: 4, h: 8 }, cof: { w: 3, h: 7 },
@@ -23,14 +34,16 @@ const grid = (specs: Spec[]): Grid => specs.map(([id, x, y, w, h]) => ({ id, x, 
 
 export const PRESETS: Record<PresetId, Grid> = {
   // Everything but Velocity, Next and Isomorphic (in the layout menu): the chord as a header across the page, the four
-  // diagrams under it, the key and its explanation, then the piano and the practice panels
+  // diagrams under it, the key and its explanation, then the piano, the practice panels, the history and the song, and the tools last
   standard: grid([
     ['chord', 0, 0, 12, 3],
     ['staff', 0, 3, 3, 11], ['analysis', 3, 3, 3, 11], ['cof', 6, 3, 3, 11], ['guitar', 9, 3, 3, 11],
     ['key', 0, 14, 8, 12], ['explain', 8, 14, 4, 12],
     ['piano', 0, 26, 12, 5],
-    ['progressions', 0, 31, 12, 4], ['ear', 0, 35, 4, 5], ['tuner', 4, 35, 3, 5], ['player', 7, 35, 5, 5],
-    ['metronome', 0, 40, 12, 9], ['history', 0, 49, 12, 3], ['song', 0, 52, 12, 12],
+    ['progressions', 0, 31, 12, 4], ['ear', 0, 35, 12, 5],
+    ['history', 0, 40, 12, 3], ['song', 0, 43, 12, 12],
+    ['player', 0, 55, 7, 5], ['tuner', 7, 55, 5, 5],
+    ['metronome', 0, 60, 12, 9],
   ]),
   // Harmony at the desk: the key and the analysis large, what is played next to them
   study: grid([
